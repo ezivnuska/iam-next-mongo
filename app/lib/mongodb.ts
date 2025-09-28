@@ -5,7 +5,8 @@ if (!process.env.MONGODB_URI) {
 }
 
 const uri = process.env.MONGODB_URI;
-const options = { appName: "devrel.template.nextjs" };
+// const options = { appName: "devrel.template.nextjs" };
+const options = {};
 
 let client: MongoClient;
 
