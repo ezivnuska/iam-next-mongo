@@ -1,7 +1,7 @@
 // apps/backend/src/models/image.model.ts
 
-import { Schema, model } from 'mongoose'
-import type { ImageDocument } from '@/app/lib/definitions'
+import mongoose, { Schema, model } from 'mongoose'
+import { ImageDocument } from '@/app/lib/definitions'
 
 const VariantSchema = new Schema(
 	{
@@ -51,4 +51,5 @@ ImageSchema.virtual('url').get(function (this: ImageDocument) {
 	return `/images/users/${this.username}/${this.filename}`
 })
 
-export const ImageModel = model('Image', ImageSchema)
+const ImageModel = mongoose.models.Image || model<ImageDocument>('Image', ImageSchema);
+export default ImageModel;

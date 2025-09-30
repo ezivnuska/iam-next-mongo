@@ -1,2 +1,3 @@
-export * from './image.types'
-export * from './user.types'
+export * from './image'
+export * from './post'
+export * from './user'

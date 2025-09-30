@@ -10,7 +10,7 @@ export default async function Page() {
         </p>
         <div>
             {posts?.length
-                ? posts?.map((post, index) => <p key={index}>{String(post._id)}</p>)
+                ? posts?.map((post, index) => <p key={index}>{String(post.id)}</p>)
                 : <p>No posts</p>
             }
         </div>

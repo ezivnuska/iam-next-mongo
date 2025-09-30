@@ -1,4 +1,4 @@
-// packages/types/src/image.ts
+// app/lib/definitions/image.ts
 
 import { Document, Types } from 'mongoose'
 

@@ -1,7 +1,7 @@
-//packages/types/src/user.types.ts
+//app/lib/definitions/user.ts
 
 import { Document, Types } from 'mongoose'
-import type { Image, ImageDocument } from './image.types'
+import type { Image, ImageDocument } from './image'
 
 export enum UserRole {
 	User = 'user',
@@ -24,6 +24,13 @@ export interface UserDocument extends Document {
 	resetPasswordExpires?: Date
 	createdAt: Date
 	updatedAt: Date
+}
+
+export interface AuthResponse {
+	id: string
+	username: string
+	email: string
+	password: string
 }
 
 // Normalized version for client/API use
