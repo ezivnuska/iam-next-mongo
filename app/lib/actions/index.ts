@@ -1,4 +1,5 @@
 export * from './authenticate'
 export * from './posts'
+export * from './register'
 export * from './signout'
 export * from './users'

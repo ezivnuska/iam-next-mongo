@@ -1,11 +1,9 @@
 // app/lib/actions/signout.ts
 
-"use server";
+"use client";
+
+import { signOut } from "next-auth/react";
 
 export async function signOutUser(): Promise<void> {
-  await fetch("/api/auth/signout", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ callbackUrl: "/" }),
-  });
+  await signOut({ callbackUrl: "/" });
 }

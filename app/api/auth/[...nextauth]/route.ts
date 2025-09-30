@@ -7,7 +7,6 @@ import type { User } from "@/app/lib/definitions/user";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
-import { UserRole } from "@/app/lib/definitions/user";
 import bcrypt from 'bcrypt'
 import { Image, ImageDocument } from "@/app/lib/definitions";
 
