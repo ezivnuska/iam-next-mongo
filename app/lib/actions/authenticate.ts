@@ -1,7 +1,5 @@
 // app/lib/actions/authenticate.ts
 
-"use client";
-
 import { signIn } from "next-auth/react";
 
 export async function authenticate(formData: FormData): Promise<string | undefined> {
@@ -16,9 +14,6 @@ export async function authenticate(formData: FormData): Promise<string | undefin
     callbackUrl: redirectTo,
   });
 
-  if (result?.error) {
-    return result.error;
-  }
-
+  if (result?.error) return result.error;
   return undefined;
 }

@@ -32,7 +32,7 @@ export async function register(formData: FormData): Promise<string | undefined> 
       return result.error;
     }
 
-    return undefined; // successful registration & login
+    return undefined; // success
   } catch (err) {
     console.error("Registration error:", err);
     return "Failed to register. Please try again later.";

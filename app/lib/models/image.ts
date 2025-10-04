@@ -1,55 +1,53 @@
-// apps/backend/src/models/image.model.ts
+// app/lib/models/image.ts
 
-import mongoose, { Schema, model } from 'mongoose'
-import { ImageDocument } from '@/app/lib/definitions'
+import mongoose, { Schema, model, Model, Types, Document } from "mongoose";
 
-const VariantSchema = new Schema(
-	{
-		size: { type: String, required: true },
-		filename: { type: String, required: true },
-		width: { type: Number, required: true },
-		height: { type: Number, required: true },
-	},
-	{ _id: false }
-)
+export interface ImageVariant {
+  size: string;
+  filename: string;
+  width: number;
+  height: number;
+  url?: string;
+}
+
+export interface ImageDocument extends Document {
+  userId: Types.ObjectId;
+  username: string;
+  alt?: string;
+  variants: ImageVariant[];
+  likes: Types.ObjectId[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const VariantSchema = new Schema<ImageVariant>(
+  {
+    size: { type: String, required: true },
+    filename: { type: String, required: true },
+    width: { type: Number, required: true },
+    height: { type: Number, required: true },
+    url: { type: String },
+  },
+  { _id: false }
+);
 
 const ImageSchema = new Schema<ImageDocument>(
-	{
-		userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-		username: { type: String, required: true },
-		filename: { type: String, required: true },
-		alt: { type: String, default: '' },
-		variants: {
-			type: [VariantSchema],
-			default: [],
-		},
-	},
-	{
-		timestamps: true,
-		toJSON: {
-            virtuals: true,
-            transform: (_doc, ret: any) => {
-                ret.id = ret._id.toString()
-                delete (ret as any)._id
-                delete (ret as any).__v
-            
-                if (Array.isArray(ret.variants)) {
-                    ret.variants = ret.variants.map((v: any) => {
-                        const { url, ...rest } = v
-                        return rest
-                    })
-                }
-            
-                return ret
-            },
-        },          
-	}
-)
+  {
+    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    username: { type: String, required: true },
+    alt: { type: String, default: "" },
+    variants: { type: [VariantSchema], default: [] },
+    likes: { type: [Schema.Types.ObjectId], ref: "User", default: [] },
+  },
+  { timestamps: true }
+);
 
-ImageSchema.virtual('url').get(function (this: ImageDocument) {
-	if (!this.username || !this.filename) return ''
-	return `/images/users/${this.username}/${this.filename}`
-})
+ImageSchema.virtual("url").get(function (this: ImageDocument) {
+  if (!this.variants || !this.variants.length) return "";
+  return this.variants.find(v => v.size === "original")?.url || "";
+});
 
-const ImageModel = mongoose.models.Image || model<ImageDocument>('Image', ImageSchema);
+const ImageModel: Model<ImageDocument> =
+  mongoose.models.Image || model<ImageDocument>("Image", ImageSchema);
+
 export default ImageModel;

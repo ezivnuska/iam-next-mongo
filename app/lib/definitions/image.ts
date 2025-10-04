@@ -1,67 +1,55 @@
 // app/lib/definitions/image.ts
 
-import { Document, Types } from 'mongoose'
+import { Types } from "mongoose";
 
+// Each variant (original, small, medium, etc.)
 export interface ImageVariant {
-    size: string
-    filename: string
-    width: number
-    height: number
-    url?: string
+  size: string;
+  filename: string;
+  width: number;
+  height: number;
+  url?: string;
 }
 
-export interface ImageDocument extends Document {
-	_id: Types.ObjectId
-    userId: Types.ObjectId
-	filename: string
-	username: string
-	alt?: string
-	url?: string
-    variants: ImageVariant[]
-    likes: Types.ObjectId[]
+// DB document representation
+export interface ImageDocument {
+  _id: Types.ObjectId;
+  userId: Types.ObjectId;
+  username: string;
+  alt?: string;
+  variants: ImageVariant[];
+  likes: Types.ObjectId[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
+// Client-facing image object
 export interface Image {
-	id: string
-    userId: Types.ObjectId
-	filename: string
-	username: string
-	url: string
-	alt?: string
-    variants: ImageVariant[]
-    likes: string[]
-    likedByCurrentUser: boolean
+  id: string;
+  userId: string;
+  username: string;
+  alt?: string;
+  variants: ImageVariant[];
+  likes: string[];
+  likedByCurrentUser: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export type UploadedImage = {
-	id: string
-    userId: Types.ObjectId
-	filename: string
-	username: string
-	alt: string
-	url: string
-	createdAt: string
-	updatedAt: string
-	variants: ImageVariant[]
-	likes: string[]
-	likedByCurrentUser: boolean
-}
-
+// Optional smaller types for API responses or sockets
 export type SanitizedImage = {
-	id: string
-    userId: Types.ObjectId
-	filename: string
-	username: string
-	url: string
-	variants: ImageVariant[]
-}
+  id: string;
+  userId: string;
+  username: string;
+  variants: ImageVariant[];
+  url: string;
+  alt?: string;
+};
 
 export type SocketImage = {
-	id: string
-    userId: string
-	filename: string
-	username: string
-	url: string
-	variants: ImageVariant[]
-	alt?: string
-}
+  id: string;
+  userId: string;
+  username: string;
+  variants: ImageVariant[];
+  alt?: string;
+};

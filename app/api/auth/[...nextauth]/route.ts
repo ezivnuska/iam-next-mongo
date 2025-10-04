@@ -1,16 +1,16 @@
 // app/api/auth/[...nextauth]/route.ts
 
-import NextAuth from "next-auth";
-import type { Account, Profile, Session } from "next-auth";
-import { JWT } from "next-auth/jwt";
-import type { User } from "@/app/lib/definitions/user";
+import NextAuth, { type NextAuthConfig } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import type { JWT } from "next-auth/jwt";
+import type { Session, User } from "next-auth";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
-import bcrypt from 'bcrypt'
-import { Image, ImageDocument } from "@/app/lib/definitions";
+import bcrypt from "bcrypt";
+import { mapUserDocumentToAppUser } from "@/app/lib/utils/mapUser";
+import { UserRole } from "@/app/lib/definitions/user";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const authOptions: NextAuthConfig = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -18,86 +18,57 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
       },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials.password) return null;
 
-      async authorize(credentials: any) {
-        console.log("[authorize] credentials", credentials);
+        const email = String(credentials.email);
+        const password = String(credentials.password);
+
         await connectToDatabase();
-      
-        // Populate avatar with ImageDocument
-        const userDoc = await UserModel.findOne({ email: credentials.email }).populate<{ avatar: ImageDocument }>('avatar');
-      
-        if (!userDoc) {
-            console.log("[authorize] user not found");
-            return null;
-        }
-      
-        const user = userDoc.toObject();
-        console.log("[authorize] found user", user);
-      
-        const isValid = await bcrypt.compare(credentials.password, user.password);
-        console.log("[authorize] password valid?", isValid);
-      
-        let avatar: Image | undefined;
-      
-        if (user.avatar && typeof user.avatar !== 'string' && '_id' in user.avatar) {
-            const a = user.avatar as ImageDocument;
-            avatar = {
-                id: a._id.toString(),
-                userId: a.userId,
-                filename: a.filename,
-                username: a.username,
-                url: a.url ?? '',
-                alt: a.alt ?? '',
-                variants: a.variants ?? [],
-                likes: (a.likes ?? []).map(l => l.toString()),
-                likedByCurrentUser: false,
-            };
-        }
-      
-        return {
-            id: user._id.toString(),
-            username: user.username,
-            email: user.email,
-            role: user.role,
-            bio: user.bio,
-            verified: user.verified,
-            createdAt: user.createdAt.toISOString(),
-            updatedAt: user.updatedAt.toISOString(),
-            avatar,
-        };
-      }      
+        const userDoc = await UserModel.findOne({ email }).populate("avatar");
+        if (!userDoc) return null;
+
+        const isValid = await bcrypt.compare(password, userDoc.password);
+        if (!isValid) return null;
+
+        return mapUserDocumentToAppUser(userDoc);
+      },
     }),
   ],
-  session: {
-    strategy: "jwt",
-  },
+  session: { strategy: "jwt" },
   callbacks: {
-    jwt(params: { token: JWT; user?: User | Record<string, any>; account: Account | null; profile?: Profile; trigger?: string; isNewUser?: boolean; session?: Session }) {
-        const { token, user } = params;
-        if (user && 'id' in user) {  // type guard for your AppUser
-            token.id = user.id;
-            token.username = (user as any).username;
-            token.role = (user as any).role;
-            token.email = user.email;
-            token.avatar = user.avatar as User['avatar'];
-        }
-        return token;
+    jwt({ token, user }: { token: JWT; user?: User }) {
+      if (user) {
+        Object.assign(token, user, {
+          emailVerified: (user as any).emailVerified ?? null,
+        });
+      }
+      return token;
     },
-    async session({ session, token }: { session: any; token: JWT }) {
-        session.user = {
-          ...session.user,
-          id: token.id as string,
-          username: token.username as string,
-          role: token.role,
-          avatar: token.avatar,
-        };
-        return session;
+    session({ session, token }: { session: Session; token: JWT }) {
+      if (!token?.id) return session;
+
+      session.user = {
+        id: token.id,
+        username: token.username ?? "",
+        email: token.email ?? "",
+        role: token.role ?? UserRole.User,
+        bio: token.bio ?? "",
+        avatar: token.avatar ?? undefined,
+        verified: token.verified ?? false,
+        createdAt: token.createdAt ?? new Date().toISOString(),
+        updatedAt: token.updatedAt ?? new Date().toISOString(),
+        emailVerified: token.emailVerified ?? null,
+      };
+
+      return session;
     },
   },
-  pages: {
-    signIn: "/auth/signin",
-  },
+  pages: { signIn: "/auth/signin" },
   debug: true,
-});
+};
+
+const { auth, handlers } = NextAuth(authOptions);
 
 export const { GET, POST } = handlers;
+export { auth };

@@ -14,12 +14,15 @@ export default function LoginForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
 
-  // Use correct generics: state = string | undefined, payload = FormData
+  // 🔹 Fully type useActionState
+  // state = string | undefined (error message)
+  // payload = FormData
   const [errorMessage, formAction, isPending] = useActionState<
     string | undefined,
     FormData
   >(
     async (_prevState, formData) => {
+      // formData is guaranteed to be FormData
       return await authenticate(formData);
     },
     undefined
