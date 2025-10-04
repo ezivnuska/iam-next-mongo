@@ -13,14 +13,20 @@ const s3 = new S3Client({
   },
 });
 
-export async function DELETE(req: Request, context: { params: { id: string } }) {
-  const { params } = await context;
-  const { id } = params;
-
+export async function DELETE(req: Request) {
   try {
+    const url = new URL(req.url);
+    const id = url.pathname.split("/").pop();
+    if (!id) {
+      return NextResponse.json({ error: "Missing image ID" }, { status: 400 });
+    }
+
     await connectToDatabase();
+
     const img = await ImageModel.findById(id);
-    if (!img) return NextResponse.json({ error: "Image not found" }, { status: 404 });
+    if (!img) {
+      return NextResponse.json({ error: "Image not found" }, { status: 404 });
+    }
 
     // Delete S3 variants
     for (const variant of img.variants) {
@@ -38,12 +44,12 @@ export async function DELETE(req: Request, context: { params: { id: string } }) 
       }
     }
 
-    // Delete MongoDB document
+    // Delete from database
     await img.deleteOne();
 
-    return NextResponse.json({ ok: true });
-  } catch (err) {
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (err: any) {
     console.error(err);
-    return NextResponse.json({ error: "Failed to delete image" }, { status: 500 });
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

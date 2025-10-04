@@ -2,54 +2,48 @@
 
 "use client";
 
+import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { uploadFile } from "@/app/lib/actions/upload";
+import type { Image } from "@/app/lib/definitions/image";
 
-export default function UploadForm() {
+interface UploadFormProps {
+  onUploadSuccess?: (uploadedImage: Image) => void;
+}
+
+export default function UploadForm({ onUploadSuccess }: UploadFormProps) {
+  const { data: session } = useSession();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const router = useRouter();
-
-  // Generate preview when file changes
+  // Generate preview
   useEffect(() => {
-    if (!file) {
-      setPreview(null);
-      return;
-    }
+    if (!file) return setPreview(null);
     const objectUrl = URL.createObjectURL(file);
     setPreview(objectUrl);
-
-    return () => URL.revokeObjectURL(objectUrl); // memory clean up
+    return () => URL.revokeObjectURL(objectUrl);
   }, [file]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) return;
 
+    if (!session?.user) {
+      setError("You must be signed in to upload");
+      return;
+    }
+
     setIsUploading(true);
     setError(null);
 
     try {
-      const url = await uploadFile(file);
-      if (url) {
-        setUploadedUrl(url);
-        setPreview(url);
-        setFile(null);
-
-        // Redirect after 1 second
-        setTimeout(() => {
-          router.push("/profile/images");
-        }, 1000);
-      } else {
-        setError("Upload failed: No URL returned");
-      }
+      const uploaded: Image = await uploadFile(file, session);
+      onUploadSuccess?.(uploaded); // Pass new image to parent
+      setFile(null);
+      setPreview(null);
     } catch (err: any) {
-      console.error(err);
       setError(err.message || "Upload failed");
     } finally {
       setIsUploading(false);
@@ -84,20 +78,6 @@ export default function UploadForm() {
       >
         {isUploading ? "Uploading..." : "Upload"}
       </button>
-
-      {uploadedUrl && (
-        <div className="mt-2">
-          <p className="text-sm text-green-600">Upload successful! Redirecting...</p>
-          <a
-            href={uploadedUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 underline"
-          >
-            View uploaded file
-          </a>
-        </div>
-      )}
 
       {error && <p className="text-red-500 mt-2">{error}</p>}
     </form>

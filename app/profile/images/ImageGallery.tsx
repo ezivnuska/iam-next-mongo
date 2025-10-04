@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import DeleteButton from "./DeleteButton";
 import type { Image as ImageType } from "@/app/lib/definitions/image";
@@ -13,6 +13,10 @@ interface ImageGalleryProps {
 
 export default function ImageGallery({ initialImages }: ImageGalleryProps) {
   const [images, setImages] = useState<ImageType[]>(initialImages);
+  
+  useEffect(() => {
+    setImages(initialImages);
+  }, [initialImages]);
 
   const handleDeleted = (deletedId: string) => {
     setImages((prev) => prev.filter((img) => img.id !== deletedId));

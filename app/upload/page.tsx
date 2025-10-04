@@ -1,5 +1,9 @@
 // app/upload/page.tsx
 
+"use client";
+
+import { useState } from "react";
+import Modal from "@/app/ui/modal";
 import UploadForm from "@/app/ui/upload-form";
 
 export const metadata = {
@@ -7,13 +11,15 @@ export const metadata = {
   description: "Upload an image to the server",
 };
 
-export default function UploadPage() {
+export default function UploadModalPage() {
+  const [isOpen, setIsOpen] = useState(true);
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-md">
-        <h1 className="mb-4 text-2xl font-semibold text-gray-800">Upload a File</h1>
-        <UploadForm />
-      </div>
-    </div>
+    <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
+      <h1 className="mb-4 text-2xl font-semibold text-gray-800">
+        Upload an Image
+      </h1>
+      <UploadForm />
+    </Modal>
   );
 }

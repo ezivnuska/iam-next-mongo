@@ -53,3 +53,10 @@ export type SocketImage = {
   variants: ImageVariant[];
   alt?: string;
 };
+
+export interface GalleryImage {
+    id: string;
+    url: string;
+    title?: string;
+    createdAt?: string;
+}

@@ -17,19 +17,13 @@ export default function DeleteButton({ imageId, onDeleted }: DeleteButtonProps) 
 
     setLoading(true);
     try {
-      const res = await fetch(`/api/images/${imageId}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error || "Failed to delete image");
-      }
+      const res = await fetch(`/api/images/${imageId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete image");
 
       onDeleted();
     } catch (err) {
       console.error(err);
-      alert((err as Error).message || "Failed to delete image");
+      alert("Failed to delete image");
     } finally {
       setLoading(false);
     }

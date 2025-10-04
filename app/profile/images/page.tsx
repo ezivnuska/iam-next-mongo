@@ -3,12 +3,12 @@
 import Breadcrumbs from "../../ui/breadcrumbs";
 import { auth } from "@/app/api/auth/[...nextauth]/route";
 import { getImages } from "@/app/lib/actions/images";
-import ImageGallery from "./ImageGallery";
+import ImagesClient from "./ImagesClient";
+import type { Image } from "@/app/lib/definitions";
 import Link from "next/link";
 
 export default async function Page() {
   const session = await auth();
-  const images = await getImages();
 
   if (!session) {
     return (
@@ -21,6 +21,9 @@ export default async function Page() {
     );
   }
 
+  const imagesFromServer = await getImages();
+  const images: Image[] = imagesFromServer;
+
   return (
     <main className="flex grow flex-col p-2">
       <Breadcrumbs
@@ -29,7 +32,7 @@ export default async function Page() {
           { label: "Images", href: "/profile/images", active: true },
         ]}
       />
-      <ImageGallery initialImages={images} />
+      <ImagesClient initialImages={images} />
     </main>
   );
 }

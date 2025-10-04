@@ -11,14 +11,15 @@ export interface ImageVariant {
 }
 
 export interface ImageDocument extends Document {
-  userId: Types.ObjectId;
-  username: string;
-  alt?: string;
-  variants: ImageVariant[];
-  likes: Types.ObjectId[];
-  createdAt: Date;
-  updatedAt: Date;
-}
+    _id: Types.ObjectId;
+    userId: Types.ObjectId;
+    username: string;
+    alt?: string;
+    variants: ImageVariant[];
+    likes: Types.ObjectId[];
+    createdAt: Date;
+    updatedAt: Date;
+}  
 
 const VariantSchema = new Schema<ImageVariant>(
   {
