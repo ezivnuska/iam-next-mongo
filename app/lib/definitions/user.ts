@@ -1,7 +1,7 @@
 //app/lib/definitions/user.ts
 
 import { Document, Types } from "mongoose";
-import type { Image, ImageDocument } from "./image";
+import type { Image } from "./image";
 
 export enum UserRole {
   User = "user",
@@ -17,7 +17,7 @@ export interface UserDocument extends Document {
   email: string;
   role: UserRole;
   bio: string;
-  avatar?: Types.ObjectId | ImageDocument;
+  avatar?: Types.ObjectId | Image;
   password: string;
   verified: boolean;
   verifyToken?: string;

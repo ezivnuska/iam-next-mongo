@@ -14,8 +14,8 @@ export default function AuthLinks() {
   const pathname = usePathname();
   const [isSigningOut, setIsSigningOut] = useState(false);
 
-  // hide auth links on /login or /signup
-  const hideAuthLinks = pathname === "/login" || pathname === "/signup";
+  // hide auth links on /signin or /signup
+  const hideAuthLinks = pathname === "/signin" || pathname === "/signup";
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
@@ -46,7 +46,7 @@ export default function AuthLinks() {
       ) : status === "loading" ? null : (
         <>
           <Link
-            href="/login"
+            href="/signin"
             className="flex items-center gap-2 self-start rounded-lg bg-blue-500 px-3 py-2 m-1 text-sm text-nowrap font-medium text-white transition-colors hover:bg-blue-400 md:text-base"
           >
             Sign In <ArrowRightIcon className="w-5" />

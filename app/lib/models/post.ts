@@ -1,3 +1,5 @@
+// app/lib/models/post.ts
+
 import mongoose, { Schema, Types, Document, Model } from 'mongoose'
 
 export interface IPost extends Document {
@@ -11,7 +13,7 @@ export interface IPost extends Document {
     image?: string
     siteName?: string
   }
-  likedByCurrentUser?: boolean
+  likes?: Types.ObjectId[]
 }
 
 const postSchema = new Schema<IPost>(
@@ -26,6 +28,7 @@ const postSchema = new Schema<IPost>(
       image: String,
       siteName: String,
     },
+    likes: [{ type: Schema.Types.ObjectId, ref: 'User', default: [] }],
   },
   { timestamps: true }
 )
@@ -38,5 +41,4 @@ postSchema.pre('validate', function (next) {
 })
 
 const Post: Model<IPost> = mongoose.models.Post || mongoose.model<IPost>('Post', postSchema)
-
 export default Post

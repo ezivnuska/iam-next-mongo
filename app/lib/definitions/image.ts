@@ -18,7 +18,6 @@ export interface ImageDocument {
   username: string;
   alt?: string;
   variants: ImageVariant[];
-  likes: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,11 +29,23 @@ export interface Image {
   username: string;
   alt?: string;
   variants: ImageVariant[];
-  likes: string[];
-  likedByCurrentUser: boolean;
   createdAt: string;
   updatedAt: string;
 }
+
+export interface UploadedImage {
+    id: string
+    userId: string
+    username: string
+    alt: string
+    variants: {
+      url: string
+      width: number
+      height: number
+    }[]
+    createdAt: string
+    updatedAt: string
+}  
 
 // Optional smaller types for API responses or sockets
 export type SanitizedImage = {

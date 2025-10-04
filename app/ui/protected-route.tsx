@@ -2,40 +2,34 @@
 
 "use client";
 
-import { useEffect, ReactNode } from "react";
-import { useSession } from "next-auth/react";
-import type { Session } from "next-auth";
-import { useRouter } from "next/navigation";
+import { useSession, signIn } from "next-auth/react";
+import { ReactNode, useEffect, useState } from "react";
 
 interface ProtectedRouteProps {
-  children: (session: Session) => ReactNode; // render-prop function
-  redirectTo?: string;
+  children: ReactNode;
 }
 
-export default function ProtectedRoute({
-  children,
-  redirectTo = "/login",
-}: ProtectedRouteProps) {
+export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { data: session, status } = useSession();
-  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
-  // Redirect if unauthenticated
+  // only render on client
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push(redirectTo);
-    }
-  }, [status, router, redirectTo]);
+    setMounted(true);
+  }, []);
 
-  // Show a loading state while session is loading
-  if (status === "loading") {
-    return <p className="flex grow flex-col p-2">Loading...</p>;
+  if (!mounted || status === "loading") {
+    return <p>Loading...</p>;
   }
 
-  // Render children only if authenticated
-  if (session?.user) {
-    return <>{children(session)}</>;
+  if (!session) {
+    // Optionally redirect to sign-in
+    //
+    // TODO: open sign-in modal
+    //
+    signIn();
+    return <p>Redirecting...</p>;
   }
 
-  // Null while redirecting
-  return null;
+  return <>{children}</>;
 }

@@ -1,19 +1,38 @@
-import { lusitana } from '@/app/ui/fonts';
-import { getPosts } from '@/app/lib/actions';
+// app/posts/page.tsx
+
+import { lusitana } from "@/app/ui/fonts";
+import { getPosts } from "@/app/lib/actions/posts";
+import ProtectedRoute from "@/app/ui/protected-route";
+import type { Post } from "@/app/lib/definitions/post";
 
 export default async function Page() {
-  const posts = await getPosts()
+  const posts: Post[] = await getPosts();
+
   return (
-    <main className="flex grow flex-col p-2">
+    <ProtectedRoute>
+      <main className="flex grow flex-col p-2">
         <p className={`${lusitana.className} text-xl text-gray-800 md:text-3xl md:leading-normal`}>
-            <strong>Posts</strong>
+          <strong>Posts</strong>
         </p>
         <div>
-            {posts?.length
-                ? posts?.map((post, index) => <p key={index}>{String(post.id)}</p>)
-                : <p>No posts</p>
-            }
+          {posts.length ? (
+            posts.map((post) => (
+              <div key={post.id} className="mb-2 p-2 border rounded">
+                <p className="font-semibold">{post.author.username}</p>
+                <p>{post.content}</p>
+                {post.image && <img src={post.image.url} alt="Post image" className="max-h-40 mt-2" />}
+                {post.linkUrl && (
+                  <a href={post.linkUrl} target="_blank" className="text-blue-500 underline">
+                    {post.linkPreview?.title || post.linkUrl}
+                  </a>
+                )}
+              </div>
+            ))
+          ) : (
+            <p>No posts</p>
+          )}
         </div>
-    </main>
+      </main>
+    </ProtectedRoute>
   );
 }
