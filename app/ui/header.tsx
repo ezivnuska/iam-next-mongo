@@ -10,7 +10,7 @@ import { signOutUser } from "@/app/lib/actions/signout";
 import { useState } from "react";
 
 export default function Header() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleSignOut = async () => {
@@ -22,15 +22,18 @@ export default function Header() {
     }
   };
 
+  // Only render NavLinks when session status is known
+  const showNavLinks = status === "authenticated";
+
   return (
     <div className="flex flex-row items-center gap-2">
       <Link href="/" className="px-2">
         <h1 className="text-[32px] font-bold">iameric</h1>
       </Link>
       <div className="flex w-full items-center justify-between">
-        {session && <NavLinks />}
+        {showNavLinks && <NavLinks />}
         <div className="flex w-full justify-end items-center gap-2">
-          {session ? (
+          {status === "authenticated" ? (
             <button
               onClick={handleSignOut}
               disabled={isSigningOut}
@@ -43,7 +46,7 @@ export default function Header() {
               <PowerIcon className="w-5" />
               {isSigningOut ? "Signing Out..." : "Sign Out"}
             </button>
-          ) : (
+          ) : status === "loading" ? null : (
             <>
               <Link
                 href="/login"

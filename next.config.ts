@@ -1,12 +1,9 @@
 import type { NextConfig } from 'next';
  
 const nextConfig: NextConfig = {
-    // experimental: {
-        // esmExternals: "loose",
-        // serverComponentsExternalPackages: ["mongoose"],
-        // Partial Prerendering
-        // ppr: 'incremental',
-//   }
+    images: {
+        domains: ["iameric-bucket.s3.us-west-1.amazonaws.com"],
+    },
 };
  
 export default nextConfig;
