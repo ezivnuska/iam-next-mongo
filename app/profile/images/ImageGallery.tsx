@@ -2,29 +2,17 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
 import Image from "next/image";
 import DeleteButton from "./DeleteButton";
 import type { Image as ImageType } from "@/app/lib/definitions/image";
 
 interface ImageGalleryProps {
-  initialImages: ImageType[];
+  images: ImageType[];
+  onDeleted?: (deletedId: string) => void;
 }
 
-export default function ImageGallery({ initialImages }: ImageGalleryProps) {
-  const [images, setImages] = useState<ImageType[]>(initialImages);
-  
-  useEffect(() => {
-    setImages(initialImages);
-  }, [initialImages]);
-
-  const handleDeleted = (deletedId: string) => {
-    setImages((prev) => prev.filter((img) => img.id !== deletedId));
-  };
-
-  if (images.length === 0) {
-    return <p>No images uploaded yet.</p>;
-  }
+export default function ImageGallery({ images, onDeleted }: ImageGalleryProps) {
+  if (images.length === 0) return <p>No images uploaded yet.</p>;
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -44,7 +32,7 @@ export default function ImageGallery({ initialImages }: ImageGalleryProps) {
                 />
                 <DeleteButton
                   imageId={img.id}
-                  onDeleted={() => handleDeleted(img.id)}
+                  onDeleted={() => onDeleted?.(img.id)}
                 />
               </>
             ) : (

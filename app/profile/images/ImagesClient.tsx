@@ -13,12 +13,12 @@ interface ImagesClientProps {
 }
 
 export default function ImagesClient({ initialImages }: ImagesClientProps) {
-  const [images, setImages] = useState(initialImages);
+  const [images, setImages] = useState<Image[]>(initialImages);
   const [isModalOpen, setModalOpen] = useState(false);
 
   const handleUploadSuccess = (uploadedImage: Image) => {
-    setImages([uploadedImage, ...images]);
-    setModalOpen(false);
+    setImages((prev) => [uploadedImage, ...prev]);
+    setModalOpen(false); // close modal
   };
 
   return (
@@ -30,13 +30,17 @@ export default function ImagesClient({ initialImages }: ImagesClientProps) {
         Upload File
       </button>
 
-      <ImageGallery initialImages={images} />
+      <ImageGallery
+        images={images}
+        onDeleted={(deletedId) => setImages(prev => prev.filter(img => img.id !== deletedId))}
+      />
 
       <Modal isOpen={isModalOpen} onClose={() => setModalOpen(false)}>
-        <h1 className="mb-4 text-2xl font-semibold text-gray-800">
-          Upload a File
-        </h1>
-        <UploadForm onUploadSuccess={handleUploadSuccess} />
+        <h1 className="mb-4 text-2xl font-semibold">Upload a File</h1>
+        <UploadForm
+          onUploadSuccess={handleUploadSuccess}
+          onClose={() => setModalOpen(false)}
+        />
       </Modal>
     </div>
   );
