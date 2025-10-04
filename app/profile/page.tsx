@@ -3,35 +3,33 @@
 "use client";
 
 import Breadcrumbs from "../ui/breadcrumbs";
-import { useSession, signIn, signOut } from "next-auth/react";
+import ProtectedRoute from "@/app/ui/protected-route";
+import type { Session } from "next-auth";
 
-export default function Page() {
-  const { data: session, status } = useSession();
-
-  if (status === "loading") return <p>Loading...</p>;
-  if (!session?.user) return <button onClick={() => signIn("credentials")}>Sign In</button>;
-
+function ProfileContent({ session }: { session: Session }) {
   return (
     <main className="flex grow flex-col p-2">
-        <Breadcrumbs
-            breadcrumbs={[
-                {
-                    label: 'Profile',
-                    href: '/profile',
-                    active: true,
-                },
-                {
-                    label: 'Images',
-                    href: `/profile/images`,
-                },
-            ]}
-        />
-        <div>
-            <h1>Welcome, {session.user.username}</h1>
-            <p>Email: {session.user.email}</p>
-            <p>ID: {session.user.id}</p>
-            <button onClick={() => signOut()}>Sign Out</button>
-        </div>
+      <Breadcrumbs
+        breadcrumbs={[
+          { label: "Profile", href: "/profile", active: true },
+          { label: "Images", href: "/profile/images" },
+        ]}
+      />
+      <div className="mt-4">
+        <h1 className="text-2xl font-bold mb-2">
+          Welcome, {session.user.username}
+        </h1>
+        <p>Email: {session.user.email}</p>
+        <p>ID: {session.user.id}</p>
+      </div>
     </main>
+  );
+}
+
+export default function Page() {
+  return (
+    <ProtectedRoute>
+      {(session) => <ProfileContent session={session} />}
+    </ProtectedRoute>
   );
 }
