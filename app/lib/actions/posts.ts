@@ -3,7 +3,7 @@
 import Post from "@/app/lib/models/post";
 import type { Post as PostType } from "@/app/lib/definitions/post";
 import type { PartialUser } from "@/app/lib/definitions/user";
-import type { UploadedImage } from "@/app/lib/definitions/image";
+import type { Image } from "@/app/lib/definitions/image";
 import { connectToDatabase } from "../mongoose";
 
 export async function getPosts(): Promise<PostType[]> {
@@ -14,7 +14,7 @@ export async function getPosts(): Promise<PostType[]> {
     .exec();
   
   return postsFromDb.map((p: any) => {
-    const simpleImage: UploadedImage | undefined = p.image
+    const simpleImage: Image | undefined = p.image
       ? {
           id: p.image._id.toString(),
           userId: p.image.userId.toString(),

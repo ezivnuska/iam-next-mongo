@@ -1,9 +1,9 @@
-// app/profile/images/ImageGallery.tsx
+// app/profile/images/image-gallery.tsx
 
 "use client";
 
 import Image from "next/image";
-import DeleteButton from "./DeleteButton";
+import DeleteButton from "./delete-button";
 import type { Image as ImageType } from "@/app/lib/definitions/image";
 
 interface ImageGalleryProps {

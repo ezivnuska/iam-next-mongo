@@ -2,15 +2,16 @@
 
 import Breadcrumbs from "../../ui/breadcrumbs";
 import ProtectedRoute from "@/app/ui/protected-route";
-import ImagesClient from "./ImagesClient";
+import ImagesClient from "./images-client";
 import { getImages } from "@/app/lib/actions/images";
+import Main from "@/app/ui/main";
 
 export default async function Page() {
   const images = await getImages();
 
   return (
     <ProtectedRoute>
-      <main className="flex grow flex-col p-2">
+      <Main>
         <Breadcrumbs
           breadcrumbs={[
             { label: "Profile", href: "/profile" },
@@ -18,7 +19,7 @@ export default async function Page() {
           ]}
         />
         <ImagesClient initialImages={images} />
-      </main>
+      </Main>
     </ProtectedRoute>
   );
 }

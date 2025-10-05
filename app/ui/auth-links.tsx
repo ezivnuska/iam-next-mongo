@@ -41,7 +41,7 @@ export default function AuthLinks() {
           }`}
         >
           <PowerIcon className="w-5" />
-          {isSigningOut ? "Signing Out..." : "Sign Out"}
+          <p className="hidden min-[376px]:block">{isSigningOut ? "Signing Out..." : "Sign Out"}</p>
         </button>
       ) : status === "loading" ? null : (
         <>

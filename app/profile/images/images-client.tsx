@@ -1,12 +1,13 @@
-// app/profile/images/ImagesClient.tsx
+// app/profile/images/images-client.tsx
 
 "use client";
 
 import { useState } from "react";
 import Modal from "@/app/ui/modal";
 import UploadForm from "@/app/ui/upload-form";
-import ImageGallery from "./ImageGallery";
+import ImageGallery from "./image-gallery";
 import type { Image } from "@/app/lib/definitions/image";
+import { Button } from "@/app/ui/button";
 
 interface ImagesClientProps {
   initialImages: Image[];
@@ -23,12 +24,13 @@ export default function ImagesClient({ initialImages }: ImagesClientProps) {
 
   return (
     <div className="mt-4">
-      <button
+      <Button
         onClick={() => setModalOpen(true)}
-        className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-400"
+        // className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-400"
+        className='mb-4'
       >
         Upload File
-      </button>
+      </Button>
 
       <ImageGallery
         images={images}

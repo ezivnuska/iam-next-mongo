@@ -1,7 +1,7 @@
 // app/lib/definitions/post.ts
 
 import { PartialUser } from "./user";
-import type { UploadedImage } from "./image"
+import type { Image } from "./image"
 
 export interface Post {
   id: string
@@ -9,7 +9,7 @@ export interface Post {
   createdAt: string
   updatedAt: string
   author: PartialUser
-  image?: UploadedImage
+  image?: Image
   linkUrl?: string
   linkPreview?: {
     title?: string

@@ -1,4 +1,4 @@
-// app/profile/images/DeleteButton.tsx
+// app/profile/images/delete-button.tsx
 
 "use client";
 

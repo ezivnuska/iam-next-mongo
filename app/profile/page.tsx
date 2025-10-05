@@ -3,6 +3,7 @@
 "use client";
 
 import Breadcrumbs from "../ui/breadcrumbs";
+import Main from "../ui/main";
 import ProtectedRoute from "../ui/protected-route";
 import { useSession } from "next-auth/react";
 
@@ -11,7 +12,7 @@ export default function ProfilePage() {
 
   return (
     <ProtectedRoute>
-      <main className="flex grow flex-col p-2">
+      <Main>
         <Breadcrumbs
           breadcrumbs={[
             { label: "Profile", href: "/profile", active: true },
@@ -25,7 +26,7 @@ export default function ProfilePage() {
           <p>Email: {session?.user.email}</p>
           <p>ID: {session?.user.id}</p>
         </div>
-      </main>
+      </Main>
     </ProtectedRoute>
   );
 }

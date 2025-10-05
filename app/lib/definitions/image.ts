@@ -28,23 +28,29 @@ export interface Image {
   userId: string;
   username: string;
   alt?: string;
-  variants: ImageVariant[];
+  variants: {
+    url: string;
+    size: string;
+    width: number;
+    height: number;
+  }[];
   createdAt: string;
   updatedAt: string;
 }
 
 export interface UploadedImage {
-    id: string
-    userId: string
-    username: string
-    alt: string
+    id: string;
+    userId: string;
+    username: string;
+    alt: string;
     variants: {
-      url: string
-      width: number
-      height: number
+      url: string;
+      size: string;
+      width: number;
+      height: number;
     }[]
-    createdAt: string
-    updatedAt: string
+    createdAt: string;
+    updatedAt: string;
 }  
 
 // Optional smaller types for API responses or sockets
