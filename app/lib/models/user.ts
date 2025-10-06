@@ -9,7 +9,7 @@ const UserSchema = new Schema<UserDocument>(
     email: { type: String, required: true, unique: true },
     role: { type: String, enum: Object.values(UserRole), default: UserRole.User },
     bio: { type: String, default: "" },
-    avatar: { type: Schema.Types.ObjectId, ref: "Image", default: undefined },
+    avatar: { type: Schema.Types.ObjectId, ref: "Image" },
     password: { type: String, required: true },
     verified: { type: Boolean, default: false },
     verifyToken: String,
@@ -20,9 +20,15 @@ const UserSchema = new Schema<UserDocument>(
   {
     timestamps: true,
     toJSON: {
-      virtuals: true,
+    //   virtuals: true,
       transform: (_doc, ret: any) => {
         ret.id = ret._id.toString();
+        if (ret.avatar && typeof ret.avatar === "object" && "_id" in ret.avatar) {
+            ret.avatar = {
+              _id: ret.avatar._id.toString(),
+              variants: ret.avatar.variants,
+            };
+        }
         delete ret._id;
         delete ret.__v;
         delete ret.password;

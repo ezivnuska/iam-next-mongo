@@ -1,21 +1,34 @@
 // app/lib/utils/normalizeUser.ts
 
-import type { User } from '@/app/lib/definitions'
-import { normalizeImage } from './normalizeImage'
+import type { User, UserDocument } from '@/app/lib/definitions'
 
-export function normalizeUser(user: any): User {
-	return {
-		id: user.id ?? user._id.toString(),
-		username: user.username,
-		email: user.email,
-		role: user.role,
-		bio: user.bio ?? '',
-		verified: user.verified ?? false,
-		createdAt: user.createdAt,
-		updatedAt: user.updatedAt,
-		avatar: normalizeImage(user.avatar),
-	}
-}
+export function normalizeUser(doc: UserDocument): User {
+    return {
+      id: doc._id.toString(),
+      username: doc.username,
+      email: doc.email,
+      role: doc.role,
+      bio: doc.bio,
+      verified: doc.verified,
+      createdAt: doc.createdAt.toISOString(),
+      updatedAt: doc.updatedAt.toISOString(),
+      emailVerified: doc.emailVerified ?? null,
+      avatar: doc.avatar && typeof doc.avatar === "object" && "variants" in doc.avatar
+        ? {
+            id: doc.avatar._id?.toString(),
+            userId: doc.avatar.userId?.toString(),
+            username: doc.avatar.username,
+            alt: doc.avatar.alt,
+            variants: doc.avatar.variants.map(v => ({
+              url: v.url,
+              size: v.size,
+              width: v.width,
+              height: v.height,
+            })),
+          }
+        : null,
+    };
+  }
 
 export function normalizeUsers(rawUsers: any[]): User[] {
     return rawUsers.map(normalizeUser)

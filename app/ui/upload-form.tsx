@@ -2,8 +2,8 @@
 
 "use client";
 
-import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
+import { useUser } from "../lib/providers/user-provider";
 import { uploadFile } from "@/app/lib/actions/upload";
 import type { Image } from "@/app/lib/definitions/image";
 
@@ -13,7 +13,7 @@ interface UploadFormProps {
 }
 
 export default function UploadForm({ onUploadSuccess, onClose }: UploadFormProps) {
-    const { data: session } = useSession();
+    const { user } = useUser();
     const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
@@ -30,7 +30,7 @@ export default function UploadForm({ onUploadSuccess, onClose }: UploadFormProps
         e.preventDefault();
         if (!file) return;
       
-        if (!session || !session.user) {
+        if (!user) {
           setError("You must be signed in to upload");
           return;
         }
@@ -39,7 +39,7 @@ export default function UploadForm({ onUploadSuccess, onClose }: UploadFormProps
         setError(null);
       
         try {
-          const uploaded: Image = await uploadFile(file, session);
+          const uploaded: Image = await uploadFile(file, user);
           if (uploaded) {
             onUploadSuccess?.(uploaded);
             onClose?.();

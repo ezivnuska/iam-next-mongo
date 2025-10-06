@@ -2,8 +2,11 @@
 
 "use client";
 
-import { signOut } from "next-auth/react";
+import { signOut as nextAuthSignOut } from "next-auth/react";
 
-export async function signOutUser(): Promise<void> {
-  await signOut({ callbackUrl: "/" });
+export async function signOutUser(signOutCallback?: () => void): Promise<void> {
+  // Optional: trigger any provider state update before redirect
+  if (signOutCallback) signOutCallback();
+
+  await nextAuthSignOut({ redirect: true, callbackUrl: "/" });
 }

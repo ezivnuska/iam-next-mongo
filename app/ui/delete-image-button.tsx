@@ -1,7 +1,8 @@
-// app/profile/images/delete-button.tsx
+// app/ui/delete-image-button.tsx
 
 "use client";
 
+import { Button } from "@/app/ui/button";
 import { useState } from "react";
 
 interface DeleteButtonProps {
@@ -30,12 +31,13 @@ export default function DeleteButton({ imageId, onDeleted }: DeleteButtonProps) 
   };
 
   return (
-    <button
+    <Button
+      size='sm'
       onClick={handleDelete}
       disabled={loading}
       className="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded text-xs z-10 hover:bg-red-500"
     >
       {loading ? "Deleting..." : "Delete"}
-    </button>
+    </Button>
   );
 }

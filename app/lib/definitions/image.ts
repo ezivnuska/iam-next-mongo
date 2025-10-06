@@ -8,7 +8,7 @@ export interface ImageVariant {
   filename: string;
   width: number;
   height: number;
-  url?: string;
+  url: string;
 }
 
 // DB document representation
@@ -34,8 +34,6 @@ export interface Image {
     width: number;
     height: number;
   }[];
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface UploadedImage {

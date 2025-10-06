@@ -1,13 +1,14 @@
 // app/users/page.tsx
 
+"use server";
+
 import { lusitana } from '@/app/ui/fonts';
 import ProtectedRoute from '@/app/ui/protected-route';
 import { getUsers } from '@/app/lib/actions';
-import Main from '../ui/main';
-import Link from 'next/link';
+import Main from '../../ui/main';
 
 export default async function Page() {
-  const users = await getUsers();
+  const users = await getUsers(); // runs on server, safe to call mongoose here
 
   return (
     <ProtectedRoute>
@@ -18,15 +19,7 @@ export default async function Page() {
         <div>
           {users?.length
             ? (
-                users.map(user => (
-                    <Link
-                        key={user.id}
-                        href={`/users/${user.username}`}
-                        className='block'
-                    >
-                        {user.username}
-                    </Link>
-                ))
+                users.map(user => <p key={user.username}>{user.username}</p>)
             ) 
             : <p>No users</p>
           }

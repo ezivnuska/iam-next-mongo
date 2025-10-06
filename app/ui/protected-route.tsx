@@ -2,34 +2,34 @@
 
 "use client";
 
-import { useSession, signIn } from "next-auth/react";
 import { ReactNode, useEffect, useState } from "react";
+import { useUser } from "../lib/providers/user-provider";
 
 interface ProtectedRouteProps {
-  children: ReactNode;
+    children: ReactNode;
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { data: session, status } = useSession();
-  const [mounted, setMounted] = useState(false);
+    const { status, user, signIn } = useUser();
+    const [mounted, setMounted] = useState(false);
 
-  // only render on client
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+    // only render on client
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
-  if (!mounted || status === "loading") {
-    return <p>Loading...</p>;
-  }
+    if (!mounted || status === "loading") {
+        return <p>Loading...</p>;
+    }
 
-  if (!session) {
-    // Optionally redirect to sign-in
-    //
-    // TODO: open sign-in modal
-    //
-    signIn();
-    return <p>Redirecting...</p>;
-  }
+    if (!user) {
+        // Optionally redirect to sign-in
+        //
+        // TODO: open sign-in modal
+        //
+        signIn();
+        return <p>Redirecting...</p>;
+    }
 
-  return <>{children}</>;
+    return <>{children}</>;
 }

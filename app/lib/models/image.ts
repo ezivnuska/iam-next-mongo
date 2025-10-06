@@ -43,10 +43,10 @@ const ImageSchema = new Schema<ImageDocument>(
   { timestamps: true }
 );
 
-ImageSchema.virtual("url").get(function (this: ImageDocument) {
-  if (!this.variants || !this.variants.length) return "";
-  return this.variants.find(v => v.size === "original")?.url || "";
-});
+// ImageSchema.virtual("url").get(function (this: ImageDocument) {
+//   if (!this.variants || !this.variants.length) return "";
+//   return this.variants.find(v => v.size === "original")?.url || "";
+// });
 
 const ImageModel: Model<ImageDocument> =
   mongoose.models.Image || model<ImageDocument>("Image", ImageSchema);

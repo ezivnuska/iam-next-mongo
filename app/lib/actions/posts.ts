@@ -30,17 +30,17 @@ export async function getPosts(): Promise<PostType[]> {
       ? {
           id: p.author._id.toString(),
           username: p.author.username,
-          avatar: p.author.avatar
-            ? {
-                id: p.author.avatar._id.toString(),
-                userId: p.author.avatar.userId.toString(),
-                username: p.author.avatar.username,
-                alt: p.author.avatar.alt ?? "",
-                variants: p.author.avatar.variants,
-                createdAt: p.author.avatar.createdAt.toISOString(),
-                updatedAt: p.author.avatar.updatedAt.toISOString(),
-              }
-            : undefined,
+          avatar: p.author.avatar ?? null,
+            // ? {
+            //     id: p.author.avatar._id.toString(),
+            //     userId: p.author.avatar.userId.toString(),
+            //     username: p.author.avatar.username,
+            //     alt: p.author.avatar.alt ?? "",
+            //     variants: p.author.avatar.variants,
+            //     createdAt: p.author.avatar.createdAt.toISOString(),
+            //     updatedAt: p.author.avatar.updatedAt.toISOString(),
+            //   }
+            // : undefined,
         }
       : {
           id: "unknown",

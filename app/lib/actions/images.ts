@@ -6,7 +6,7 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import ImageModel from "@/app/lib/models/image";
 import { Image } from "@/app/lib/definitions/image";
 import { deleteS3File } from "@/app/lib/aws/s3";
-
+import { auth } from "@/app/api/auth/[...nextauth]/route";
 /**
  * Fetch images from the database
  * @param userId Optional filter to get images for a specific user
@@ -16,11 +16,12 @@ export async function getImages(
   userId?: string,
   currentUserId?: string
 ): Promise<Image[]> {
+    const session = await auth();
   try {
     await connectToDatabase();
 
-    const query = userId ? { userId } : {};
-
+    const query = userId ? { userId } : { userId: session?.user.id };
+    console.log('query', query)
     const images = await ImageModel.find(query)
       .sort({ createdAt: -1 })
       .lean({ virtuals: true });

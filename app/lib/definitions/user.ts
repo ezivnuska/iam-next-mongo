@@ -1,12 +1,17 @@
 //app/lib/definitions/user.ts
 
-import { Document, Types } from "mongoose";
-import type { Image } from "./image";
+import { Document, PopulatedDoc, Types } from "mongoose";
+import type { ObjectId } from "mongoose";
+import type { Image, ImageVariant, ImageDocument } from "./image";
 
 export enum UserRole {
   User = "user",
   Admin = "admin",
 }
+
+// export interface AppUserAvatar extends Image {
+//     variants: ImageVariant[];
+// }
 
 // ----------------------
 // DB-level document (server only)
@@ -17,7 +22,7 @@ export interface UserDocument extends Document {
   email: string;
   role: UserRole;
   bio: string;
-  avatar?: Types.ObjectId | Image;
+  avatar?: Types.ObjectId | ImageDocument;
   password: string;
   verified: boolean;
   verifyToken?: string;
@@ -26,6 +31,7 @@ export interface UserDocument extends Document {
   resetPasswordExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
+  emailVerified?: Date | null;
 }
 
 // ----------------------
@@ -36,12 +42,23 @@ export interface AppUser {
     username: string;
     email: string;
     role: UserRole;
+    emailVerified?: Date | null;
+}
+
+// ----------------------
+// Client-facing normalized user (safe to expose)
+// ----------------------
+export interface User {
+    id: string;
+    username: string;
+    email: string;
+    role: UserRole;
+    emailVerified?: Date | null;
     bio: string;
-    avatar?: Image; 
+    avatar: Image | null;
     verified: boolean;
     createdAt: string;
     updatedAt: string;
-    emailVerified?: Date | null;
 }
 
 // ----------------------
