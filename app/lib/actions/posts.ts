@@ -21,8 +21,6 @@ export async function getPosts(): Promise<PostType[]> {
           username: p.image.username,
           alt: p.image.alt,
           variants: p.image.variants,
-          createdAt: p.image.createdAt.toISOString(),
-          updatedAt: p.image.updatedAt.toISOString(),
         }
       : undefined;
 

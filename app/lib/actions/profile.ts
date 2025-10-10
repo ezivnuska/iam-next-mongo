@@ -24,9 +24,9 @@ export async function getProfile() {
 export async function setAvatar(imageId: string | null) {
     const session = await auth();
     if (!session?.user?.id) throw new Error("Unauthorized");
-  
+
     await connectToDatabase();
-  
+
     try {
       const user = await UserModel.findByIdAndUpdate(
         session.user.id,
@@ -36,10 +36,33 @@ export async function setAvatar(imageId: string | null) {
       .populate("avatar", "_id variants");
 
       if (!user) return { success: false, error: "User not found" };
-  
+
       return { success: true, user: normalizeUser(user) };
     } catch (e) {
       console.error(e);
       return { success: false, error: "Failed to update avatar" };
+    }
+}
+
+export async function updateBio(bio: string) {
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    await connectToDatabase();
+
+    try {
+      const user = await UserModel.findByIdAndUpdate(
+        session.user.id,
+        { bio },
+        { new: true }
+      )
+      .populate("avatar", "_id variants");
+
+      if (!user) return { success: false, error: "User not found" };
+
+      return { success: true, user: normalizeUser(user) };
+    } catch (e) {
+      console.error(e);
+      return { success: false, error: "Failed to update bio" };
     }
 }

@@ -32,16 +32,17 @@ export default function NavLinks() {
     const pathname = usePathname();
     const avatar = user?.avatar
     return (
-        <div className='flex flex-row w-full'>
+        <div className='flex flex-row w-full items-center gap-2'>
             {avatar
                 ? (
                     <Link
                         href='/profile'
-                        className='self-center m-1'
+                        // className='border-1'
                     >
                         <Avatar
                             avatar={avatar}
-                            size={40}
+                            size={30}
+                            className='h-[30px] border-1 mr-2'
                         />
                     </Link>
                 ) : (

@@ -30,7 +30,6 @@ export default function ImageGallery({ authorized, images, onDeleted }: ImageGal
                     <div
                         key={img.id}
                         className="relative rounded-lg overflow-hidden shadow w-full h-48"
-                        onClick={() => setSelectedImage(img)}
                     >
                         {medium?.url ? (
                             <>
@@ -40,6 +39,7 @@ export default function ImageGallery({ authorized, images, onDeleted }: ImageGal
                                     fill
                                     style={{ objectFit: "cover" }}
                                     sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                                    onClick={() => setSelectedImage(img)}
                                 />
                                 {authorized && (
                                     <AvatarButton

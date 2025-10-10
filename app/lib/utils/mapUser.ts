@@ -19,11 +19,7 @@ export function mapUserDocumentToAppUser(user: UserDocument): AppUser {
         width: v.width,
         height: v.height,
         url: `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/users/${a.username}/${v.filename}`,
-      })),
-      likes: (a.likes ?? []).map((l) => l.toString()),
-      likedByCurrentUser: false,
-      createdAt: a.createdAt?.toISOString() ?? new Date().toISOString(),
-      updatedAt: a.updatedAt?.toISOString() ?? new Date().toISOString(),
+      }))
     };
   }
 
