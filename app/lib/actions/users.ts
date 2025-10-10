@@ -14,7 +14,7 @@ export async function getUsers() {
     const session = await auth()
     try {
         await connectToDatabase();
-        const users = await UserModel.find({});
+        const users = await UserModel.find({})
         const otherUsers = users.filter(user => user.id !== session?.user.id)
         return normalizeUsers(otherUsers);
     } catch (e) {
@@ -26,7 +26,8 @@ export async function getUsers() {
 export async function fetchUserByUsername(username: string) {
     await connectToDatabase();
     const user = await UserModel.findOne({ username }).lean();
-    if (!user) return null
-    const normalizedUser = normalizeUser(user)
-    return normalizedUser ?? null;
+    return user
+    // if (!user) return null
+    // const normalizedUser = normalizeUser(user)
+    // return normalizedUser ?? null;
 }
