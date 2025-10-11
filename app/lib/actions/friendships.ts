@@ -316,16 +316,16 @@ export async function getFriendshipStatus(userId: string): Promise<{
 	await connectToDatabase()
 
 	const friendship = await Friendship.findOne({
-		$or: [
-			{ requester: session.user.id, recipient: userId },
-			{ requester: userId, recipient: session.user.id }
-		]
-	}).lean()
+        $or: [
+          { requester: session.user.id, recipient: userId },
+          { requester: userId, recipient: session.user.id }
+        ]
+    });
 
 	if (!friendship) {
 		return { status: 'none' }
 	}
-
+    console.log('friendship', friendship)
 	if (friendship.status === 'accepted') {
 		return {
 			status: 'accepted',
