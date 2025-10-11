@@ -3,7 +3,7 @@
 "use client";
 
 import { useUser } from "../lib/providers/user-provider";
-import Avatar from "../ui/avatar";
+import Avatar from "@/app/ui/user/avatar";
 import BioForm from "./bio-form";
 
 export default function ProfileInfo() {

@@ -28,12 +28,12 @@ export default function Avatar({ avatar, size = 40, className }: AvatarProps) {
   }, avatar.variants[0]);
 
   return (
-    <img
-      src={bestVariant.url}
-      alt="User Avatar"
-      className={`rounded-full ${className}`}
-      width={size}
-      height={size}
-    />
+        <img
+            src={bestVariant.url}
+            alt="User Avatar"
+            className={`rounded-full border-1 h-[${size}] ${className}`}
+            width={size}
+            height={size}
+        />
   );
 }
