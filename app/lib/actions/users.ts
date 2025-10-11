@@ -5,7 +5,7 @@
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "../models/user";
 import { normalizeUser, normalizeUsers } from "../utils/normalizeUser";
-import { auth } from "@/app/api/auth/[...nextauth]/route";
+import { auth } from "@/app/lib/auth";
 
 // ------------------------------
 // Server-side: fetch all users

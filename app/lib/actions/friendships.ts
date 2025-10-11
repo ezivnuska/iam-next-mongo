@@ -4,7 +4,7 @@
 
 import { connectToDatabase } from "@/app/lib/mongoose"
 import Friendship from "@/app/lib/models/friendship"
-import { auth } from "@/app/api/auth/[...nextauth]/route"
+import { auth } from "@/app/lib/auth"
 import type { Friendship as FriendshipType, Friend } from "@/app/lib/definitions/friendship"
 import {
 	emitFriendRequest,

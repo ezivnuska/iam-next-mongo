@@ -3,7 +3,7 @@
 import '@/app/ui/global.css';
 import { inter } from '@/app/ui/fonts';
 import Header from '@/app/ui/header/header';
-import { auth } from "@/app/api/auth/[...nextauth]/route";
+import { auth } from "@/app/lib/auth";
 import { UserProvider } from "@/app/lib/providers/user-provider";
 import { SocketProvider } from './lib/providers/socket-provider';
 

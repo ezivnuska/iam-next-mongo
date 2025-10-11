@@ -6,7 +6,7 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import ImageModel from "@/app/lib/models/image";
 import Post from "@/app/lib/models/post";
 import Memory from "@/app/lib/models/memory";
-import { auth } from "@/app/api/auth/[...nextauth]/route";
+import { auth } from "@/app/lib/auth";
 
 type LikeableType = 'Image' | 'Post' | 'Memory';
 

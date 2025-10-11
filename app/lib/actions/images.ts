@@ -6,7 +6,7 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import ImageModel from "@/app/lib/models/image";
 import { Image } from "@/app/lib/definitions/image";
 import { deleteS3File } from "@/app/lib/aws/s3";
-import { auth } from "@/app/api/auth/[...nextauth]/route";
+import { auth } from "@/app/lib/auth";
 import { getCommentCounts } from "@/app/lib/actions/comments";
 /**
  * Fetch images from the database
