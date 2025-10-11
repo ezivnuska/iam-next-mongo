@@ -1,31 +1,16 @@
-## Example app using MongoDB
+## A Next.js App with MongoDB and Socket.IO
 
-[MongoDB](https://www.mongodb.com/) is a general purpose, document-based, distributed database built for modern application developers and for the cloud era. This example will show you how to connect to and use MongoDB as your backend for your Next.js app.
+A Next.js application that uses MongoDB and Socket.IO.
 
-If you want to learn more about MongoDB, visit the following pages:
+### Key Technologies:
+- **Next.js 14** (App Router)
+- **MongoDB** with Mongoose ODM
+- **Socket.IO** for real-time communication
+- **NextAuth.js** for authentication
+- **Custom Node.js server** for Socket.IO integration
 
 - [MongoDB Atlas](https://mongodb.com/atlas)
 - [MongoDB Documentation](https://docs.mongodb.com/)
-
-## Deploy your own
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?project-name=with-mongodb&repository-name=with-mongodb&repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-mongodb&integration-ids=oac_jnzmjqM10gllKmSrG0SGrHOH)
-
-## How to use
-
-Execute [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app) with [npm](https://docs.npmjs.com/cli/init), [Yarn](https://yarnpkg.com/lang/en/docs/cli/create/), or [pnpm](https://pnpm.io) to bootstrap the example:
-
-```bash
-npx create-next-app --example with-mongodb with-mongodb-app
-```
-
-```bash
-yarn create next-app --example with-mongodb with-mongodb-app
-```
-
-```bash
-pnpm create next-app --example with-mongodb with-mongodb-app
-```
 
 ## Configuration
 
@@ -35,47 +20,115 @@ Set up a MongoDB database either locally or with [MongoDB Atlas for free](https:
 
 ### Set up environment variables
 
-Copy the `env.local.example` file in this directory to `.env.local` (which will be ignored by Git):
-
-```bash
-cp .env.local.example .env.local
-```
-
-Set each variable on `.env.local`:
+Set each variable on `.env`:
 
 - `MONGODB_URI` - Your MongoDB connection string. If you are using [MongoDB Atlas](https://mongodb.com/atlas) you can find this by clicking the "Connect" button for your cluster.
 
-### Run Next.js in development mode
+### Install dependencies and run
 
 ```bash
-npm install
-npm run dev
-# or
-yarn install
-yarn dev
-# or
 pnpm install
 pnpm dev
 ```
 
-Your app should be up and running on [http://localhost:3000](http://localhost:3000)! If it doesn't work, post on [GitHub discussions](https://github.com/vercel/next.js/discussions).
+Your app should be up and running on [http://localhost:3000](http://localhost:3000)!
 
-You will either see a message stating "You are connected to MongoDB" or "You are NOT connected to MongoDB". Ensure that you have provided the correct `MONGODB_URI` environment variable.
+**Note:** This app uses a custom server (`server.js`) to run Socket.IO alongside Next.js. The `pnpm dev` command runs `node server.js` instead of the standard `next dev`.
 
-When you are successfully connected, you can refer to the [MongoDB Node.js Driver docs](https://mongodb.github.io/node-mongodb-native/3.4/tutorials/collections/) for further instructions on how to query your database.
+When you are successfully connected to MongoDB, you can refer to the [MongoDB Node.js Driver docs](https://mongodb.github.io/node-mongodb-native/3.4/tutorials/collections/) for further instructions.
 
-## Deploy on Vercel
+---
 
-You can deploy this app to the cloud with [Vercel](https://vercel.com?utm_source=github&utm_medium=readme&utm_campaign=next-example) ([Documentation](https://nextjs.org/docs/deployment)).
+## Custom Server with Socket.IO
 
-#### Deploy Your Local Project
+This app uses a **custom Node.js server** (`server.js`) that runs both Next.js and Socket.IO on the same port.
 
-To deploy your local project to Vercel, push it to GitHub/GitLab/Bitbucket and [import to Vercel](https://vercel.com/new?utm_source=github&utm_medium=readme&utm_campaign=next-example).
+### How It Works
 
-**Important**: When you import your project on Vercel, make sure to click on **Environment Variables** and set them to match your `.env.local` file.
+1. `server.js` creates an HTTP server
+2. Next.js handles all HTTP requests (pages, API routes, etc.)
+3. Socket.IO attaches to the same server for WebSocket connections
+4. The `io` instance is stored globally for use in server actions
 
-#### Deploy from Our Template
+### Running the App
 
-Alternatively, you can deploy using our template by clicking on the Deploy button below.
+```bash
+# Development (runs custom server)
+pnpm dev
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?project-name=with-mongodb&repository-name=with-mongodb&repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-mongodb&integration-ids=oac_jnzmjqM10gllKmSrG0SGrHOH)
+# Production
+pnpm build
+pnpm start
+
+# Standard Next.js dev (without Socket.IO)
+pnpm next:dev
+```
+
+### Pros of Custom Server
+
+✅ **Full Socket.IO functionality** - All features work (rooms, namespaces, middleware)
+✅ **Single port/process** - Simpler architecture, no CORS issues
+✅ **Shared state** - Socket.IO accessible from server actions
+✅ **Production ready** - Works with PM2, Docker, Kubernetes
+✅ **No external dependencies** - No separate Socket.IO service needed
+
+### Cons of Custom Server
+
+❌ **Manual server management** - Need PM2, monitoring, health checks
+❌ **Scaling complexity** - Requires Redis adapter for horizontal scaling
+❌ **HMR limitations** - Changes to `server.js` require full restart
+
+### When to Use Custom Server
+
+**Use if:**
+- You need real-time bidirectional communication
+- Deploying to your own infrastructure (not Vercel)
+- Want low-latency real-time features (chat, live updates)
+- Have moderate traffic levels
+
+**Don't use if:**
+- Must deploy to Vercel
+- Want zero server management (prefer serverless)
+- Building a simple app without real-time needs
+- Prefer polling or Server-Sent Events
+
+### Alternative Approaches
+
+**Option 1: Separate Socket.IO Service**
+Deploy Next.js to Vercel, Socket.IO separately. More complex but scalable.
+
+**Option 2: Server-Sent Events (SSE)**
+One-way server→client communication. Works with Vercel but limited functionality.
+
+**Option 3: Polling**
+Simple but high latency and server overhead.
+
+### Recommendation for This App
+
+Custom server is the right choice because:
+- Friendship requests, comments, and likes benefit from instant updates
+- Likely deploying to VPS/cloud (not Vercel)
+- Monolithic architecture
+- Simplest real-time implementation
+
+**Trade-off:** Manual server management in exchange for full real-time capabilities.
+
+---
+
+## Deployment
+
+**This app cannot be deployed to Vercel** due to the custom server requirement.
+
+### Recommended Deployment Options:
+
+1. **Railway** - Easiest for custom servers
+2. **Render** - Free tier available
+3. **DigitalOcean App Platform**
+4. **AWS EC2 / Lightsail**
+5. **Heroku** (with Procfile)
+
+For all deployments, ensure you:
+- Set environment variables (MongoDB URI, NextAuth secrets, etc.)
+- Use PM2 or similar for process management
+- Configure health checks
+- Set up SSL/HTTPS
