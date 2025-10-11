@@ -3,11 +3,13 @@
 'use client'
 
 import { useState } from 'react'
+import type { CommentRefType } from '@/app/lib/definitions/comment'
 
 type CommentFormProps = {
 	refId: string
-	refType: 'Memory' | 'Post' | 'Image'
+	refType: CommentRefType
 	onSubmit?: (content: string) => void | Promise<void>
+	onError?: (error: Error) => void
 	placeholder?: string
 	submitButtonText?: string
 }
@@ -16,11 +18,13 @@ export default function CommentForm({
 	refId,
 	refType,
 	onSubmit,
+	onError,
 	placeholder = 'Write a comment...',
 	submitButtonText = 'Post',
 }: CommentFormProps) {
 	const [content, setContent] = useState('')
 	const [isSubmitting, setIsSubmitting] = useState(false)
+	const [error, setError] = useState<string | null>(null)
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
@@ -28,13 +32,17 @@ export default function CommentForm({
 		if (!content.trim()) return
 
 		setIsSubmitting(true)
+		setError(null)
 		try {
 			if (onSubmit) {
 				await onSubmit(content)
 			}
 			setContent('')
-		} catch (error) {
+		} catch (err) {
+			const error = err instanceof Error ? err : new Error('Failed to submit comment')
 			console.error('Error submitting comment:', error)
+			setError(error.message)
+			onError?.(error)
 		} finally {
 			setIsSubmitting(false)
 		}
@@ -42,6 +50,11 @@ export default function CommentForm({
 
 	return (
 		<form onSubmit={handleSubmit} className="w-full">
+			{error && (
+				<div className="mb-3 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+					{error}
+				</div>
+			)}
 			<div className="flex gap-2">
 				<textarea
 					value={content}

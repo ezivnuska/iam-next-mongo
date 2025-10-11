@@ -5,10 +5,12 @@
 import { connectToDatabase } from "@/app/lib/mongoose";
 import { Comment } from "@/app/lib/models/comment";
 import { auth } from "@/app/api/auth/[...nextauth]/route";
+import type { CommentRefType } from "@/app/lib/definitions/comment";
+import { Types } from "mongoose";
 
 export async function createComment(
 	refId: string,
-	refType: 'Memory' | 'Post' | 'Image',
+	refType: CommentRefType,
 	content: string
 ) {
 	const session = await auth();
@@ -16,12 +18,9 @@ export async function createComment(
 		throw new Error("Unauthorized");
 	}
 
-	if (!refId || !refType || !content) {
+	const trimmedContent = content.trim();
+	if (!refId || !refType || !trimmedContent) {
 		throw new Error("Missing required fields");
-	}
-
-	if (!content.trim()) {
-		throw new Error("Content cannot be empty");
 	}
 
 	await connectToDatabase();
@@ -30,7 +29,7 @@ export async function createComment(
 		refId,
 		refType,
 		author: session.user.id,
-		content: content.trim(),
+		content: trimmedContent,
 	});
 
 	return {
@@ -43,7 +42,23 @@ export async function createComment(
 	};
 }
 
-export async function getComments(refId: string, refType: 'Memory' | 'Post' | 'Image') {
+interface CommentDocument {
+	_id: any;
+	refId: any;
+	refType: string;
+	author: {
+		_id: any;
+		username: string;
+		avatar?: {
+			_id: any;
+			variants: any[];
+		} | null;
+	};
+	content: string;
+	createdAt?: Date;
+}
+
+export async function getComments(refId: string, refType: CommentRefType) {
 	await connectToDatabase();
 
 	const comments = await Comment.find({ refId, refType })
@@ -56,12 +71,12 @@ export async function getComments(refId: string, refType: 'Memory' | 'Post' | 'I
 			}
 		})
 		.sort({ createdAt: -1 })
-		.lean();
+		.lean<CommentDocument[]>();
 
-	return comments.map((comment: any) => ({
+	return comments.map((comment) => ({
 		id: comment._id.toString(),
 		refId: comment.refId.toString(),
-		refType: comment.refType,
+		refType: comment.refType as CommentRefType,
 		author: {
 			id: comment.author._id.toString(),
 			username: comment.author.username,
@@ -73,4 +88,57 @@ export async function getComments(refId: string, refType: 'Memory' | 'Post' | 'I
 		content: comment.content,
 		createdAt: comment.createdAt?.toISOString() ?? new Date().toISOString(),
 	}));
+}
+
+export async function deleteComment(commentId: string) {
+	const session = await auth();
+	if (!session?.user?.id) {
+		throw new Error("Unauthorized");
+	}
+
+	await connectToDatabase();
+
+	const comment = await Comment.findById(commentId);
+	if (!comment) {
+		throw new Error("Comment not found");
+	}
+
+	// Only allow author or admin to delete comment
+	const isAuthor = comment.author.toString() === session.user.id;
+	const isAdmin = session.user.role === 'admin';
+
+	if (!isAuthor && !isAdmin) {
+		throw new Error("Unauthorized to delete this comment");
+	}
+
+	await Comment.findByIdAndDelete(commentId);
+
+	return { success: true };
+}
+
+export async function getCommentCounts(refIds: string[], refType: CommentRefType) {
+	await connectToDatabase();
+
+	const counts = await Comment.aggregate([
+		{
+			$match: {
+				refId: { $in: refIds.map(id => new Types.ObjectId(id)) },
+				refType
+			}
+		},
+		{
+			$group: {
+				_id: '$refId',
+				count: { $sum: 1 }
+			}
+		}
+	]);
+
+	// Convert to map for easy lookup
+	const countMap: Record<string, number> = {};
+	counts.forEach((item: any) => {
+		countMap[item._id.toString()] = item.count;
+	});
+
+	return countMap;
 }

@@ -34,6 +34,9 @@ export interface Image {
     width: number;
     height: number;
   }[];
+  likes?: string[];
+  likedByCurrentUser?: boolean;
+  commentCount?: number;
 }
 
 export interface UploadedImage {

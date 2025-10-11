@@ -6,22 +6,49 @@ import { ReactNode } from "react";
 
 interface ModalProps {
   children: ReactNode;
-  isOpen: boolean;
+  isOpen?: boolean;
   onClose: () => void;
+  className?: string;
+  contentClassName?: string;
+  showCloseButton?: boolean;
+  position?: 'fixed' | 'absolute';
 }
 
-export default function Modal({ children, isOpen, onClose }: ModalProps) {
+export default function Modal({
+  children,
+  isOpen = true,
+  onClose,
+  className = 'bg-black/50',
+  contentClassName = 'relative w-full max-w-md rounded-lg bg-white p-6 shadow-lg',
+  showCloseButton = false,
+  position = 'fixed',
+}: ModalProps) {
   if (!isOpen) return null;
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onClose();
+  };
+
+  const handleContentClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-      onClick={onClose}
+      className={`${position} inset-0 z-50 flex items-center justify-center ${className}`}
+      onClick={handleBackdropClick}
     >
-      <div
-        className="relative w-full max-w-md rounded-lg bg-white p-6 shadow-lg"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className={contentClassName} onClick={handleContentClick}>
+        {showCloseButton && (
+          <button
+            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl leading-none"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        )}
         {children}
       </div>
     </div>

@@ -1,10 +1,10 @@
 // app/lib/models/memory.ts
 
-import { Schema, model } from 'mongoose'
+import mongoose, { Schema } from 'mongoose'
 
 const memorySchema = new Schema({
     author: {
-        type: Schema.Types.ObjectId, 
+        type: Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },
@@ -26,6 +26,7 @@ const memorySchema = new Schema({
         ref: 'Image',
         required: false
     },
+    likes: [{ type: Schema.Types.ObjectId, ref: 'User', default: [] }],
 },
 {
     timestamps: true
@@ -36,4 +37,4 @@ memorySchema.pre('save', function(next) {
     next()
 })
 
-export default model('Memory', memorySchema)
+export default mongoose.models.Memory || mongoose.model('Memory', memorySchema)

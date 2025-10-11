@@ -7,6 +7,7 @@ import ImageModel from "@/app/lib/models/image";
 import { Image } from "@/app/lib/definitions/image";
 import { deleteS3File } from "@/app/lib/aws/s3";
 import { auth } from "@/app/api/auth/[...nextauth]/route";
+import { getCommentCounts } from "@/app/lib/actions/comments";
 /**
  * Fetch images from the database
  * @param userId Optional filter to get images for a specific user
@@ -21,18 +22,23 @@ export async function getImages(
     await connectToDatabase();
 
     const query = userId ? { userId } : { userId: session?.user.id };
-    console.log('query', query)
     const images = await ImageModel.find(query)
       .sort({ createdAt: -1 })
       .lean({ virtuals: true });
 
+    // Get comment counts for all images
+    const imageIds = images.map((img: any) => img._id.toString());
+    const commentCounts = await getCommentCounts(imageIds, 'Image');
+
+    const activeUserId = currentUserId || session?.user?.id;
     return images.map((img: any) => {
-      const likedByCurrentUser = currentUserId
-        ? (img.likes ?? []).some((id: string) => id.toString() === currentUserId)
+      const imgId = img._id.toString();
+      const likedByCurrentUser = activeUserId
+        ? (img.likes ?? []).some((id: string) => id.toString() === activeUserId)
         : false;
 
       return {
-        id: img._id.toString(),
+        id: imgId,
         userId: img.userId.toString(),
         username: img.username,
         filename: img.filename,
@@ -47,6 +53,7 @@ export async function getImages(
         })),
         likes: (img.likes ?? []).map((id: any) => id.toString()),
         likedByCurrentUser,
+        commentCount: commentCounts[imgId] || 0,
         createdAt: img.createdAt?.toISOString() ?? new Date().toISOString(),
         updatedAt: img.updatedAt?.toISOString() ?? new Date().toISOString(),
       };
