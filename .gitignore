@@ -10,6 +10,9 @@
 !.yarn/releases
 !.yarn/versions
 
+# lock
+pnpm-lock.yaml
+
 # testing
 /coverage
 
@@ -32,9 +35,6 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
-
-# vercel
-.vercel
 
 # typescript
 *.tsbuildinfo
