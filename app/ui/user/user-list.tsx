@@ -3,8 +3,8 @@
 'use client'
 
 import Link from 'next/link'
-import Avatar from '@/app/ui/avatar'
-import FriendshipButton from '@/app/ui/friendship-button'
+import Avatar from '@/app/ui/user/avatar'
+import FriendshipButton from '@/app/ui/friendship/friendship-button'
 import { useUser } from '@/app/lib/providers/user-provider'
 import type { User } from '@/app/lib/definitions/user'
 

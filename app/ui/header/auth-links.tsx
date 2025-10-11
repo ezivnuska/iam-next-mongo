@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { useUser } from "../lib/providers/user-provider";
+import { useUser } from "@/app/lib/providers/user-provider";
 import { ArrowRightIcon, PowerIcon } from "@heroicons/react/24/outline";
 
 export default function AuthLinks() {

@@ -2,9 +2,9 @@
 
 import { lusitana } from "@/app/ui/fonts";
 import { getPosts } from "@/app/lib/actions/posts";
-import ProtectedRoute from "@/app/ui/protected-route";
+import ProtectedRoute from "@/app/ui/auth/protected-route";
 import type { Post } from "@/app/lib/definitions/post";
-import Main from "../ui/main";
+import Main from "@/app/ui/layout/main";
 
 export default async function Page() {
   const posts: Post[] = await getPosts();

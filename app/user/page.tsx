@@ -3,9 +3,9 @@
 "use server";
 
 import { lusitana } from '@/app/ui/fonts';
-import ProtectedRoute from '@/app/ui/protected-route';
+import ProtectedRoute from '@/app/ui/auth/protected-route';
 import { getUsers } from '@/app/lib/actions';
-import Main from '../../ui/main';
+import Main from '@/app/ui/layout/main';
 
 export default async function Page() {
   const users = await getUsers(); // runs on server, safe to call mongoose here

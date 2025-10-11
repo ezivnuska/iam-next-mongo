@@ -3,7 +3,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import FriendsMenu from '@/app/ui/friends-menu'
+import FriendsMenu from '@/app/ui/friendship/friends-menu'
 import Modal from '@/app/ui/modal'
 import { useSocket } from '@/app/lib/providers/socket-provider'
 import { SOCKET_EVENTS } from '@/app/lib/socket/events'

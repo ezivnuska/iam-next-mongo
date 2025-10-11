@@ -1,6 +1,6 @@
 // app/login/page.tsx
 
-import LoginForm from '@/app/ui/login-form';
+import LoginForm from '@/app/ui/auth/login-form';
 import { Suspense } from 'react';
  
 export default function Page() {

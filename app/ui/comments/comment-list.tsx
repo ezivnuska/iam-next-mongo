@@ -1,7 +1,7 @@
 'use client'
 
 import { TrashIcon } from '@/app/ui/icons'
-import UserAvatar from '@/app/ui/user-avatar'
+import UserAvatar from '@/app/ui/user/user-avatar'
 import { formatRelativeTime } from '@/app/lib/utils/format-date'
 import { canDeleteComment } from '@/app/lib/utils/permissions'
 import type { Comment } from '@/app/lib/definitions/comment'

@@ -1,9 +1,9 @@
 // app/users/[username]/page.tsx
 
-import ProtectedRoute from '@/app/ui/protected-route';
-import Main from '@/app/ui/main';
-import UserProfileCard from '@/app/ui/user-profile-card';
-import Breadcrumbs from '@/app/ui/breadcrumbs';
+import ProtectedRoute from '@/app/ui/auth/protected-route';
+import Main from '@/app/ui/layout/main';
+import UserProfileCard from '@/app/ui/user/user-profile-card';
+import Breadcrumbs from '@/app/ui/layout/breadcrumbs';
 
 interface Props {
   params: { username: string };

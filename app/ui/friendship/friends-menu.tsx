@@ -3,7 +3,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import UserAvatar from '@/app/ui/user-avatar'
+import UserAvatar from '@/app/ui/user/user-avatar'
 import { getFriends, getPendingRequests, removeFriend, acceptFriendRequest, rejectFriendRequest } from '@/app/lib/actions/friendships'
 import { useSocket } from '@/app/lib/providers/socket-provider'
 import { SOCKET_EVENTS } from '@/app/lib/socket/events'

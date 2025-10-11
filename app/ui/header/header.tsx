@@ -3,7 +3,7 @@
 "use client";
 
 import Link from "next/link";
-import NavLinks from "@/app/ui/nav-links";
+import NavLinks from "@/app/ui/header/nav-links";
 import AuthLinks from "./auth-links";
 import { useUser } from "@/app/lib/providers/user-provider";
 

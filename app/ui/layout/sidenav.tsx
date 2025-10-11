@@ -1,5 +1,5 @@
 // import Link from 'next/link';
-// import NavLinks from '@/app/ui/nav-links';
+// import NavLinks from '@/app/ui/header/nav-links';
 // import { PowerIcon } from '@heroicons/react/24/outline';
 // // import { signOut } from '@/auth';
 

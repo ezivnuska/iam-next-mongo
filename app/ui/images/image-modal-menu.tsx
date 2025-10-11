@@ -3,7 +3,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react'
-import CommentList from '@/app/ui/comment-list'
+import CommentList from '@/app/ui/comments/comment-list'
 import LikeButton from '@/app/ui/like-button'
 import { CommentIcon, ChevronUpIcon } from '@/app/ui/icons'
 import { getComments, deleteComment } from '@/app/lib/actions/comments'

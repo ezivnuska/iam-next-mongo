@@ -10,8 +10,8 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
-import { useUser } from '../lib/providers/user-provider';
-import Avatar from './avatar';
+import { useUser } from '@/app/lib/providers/user-provider';
+import Avatar from '@/app/ui/user/avatar';
 
 const links = [
     {

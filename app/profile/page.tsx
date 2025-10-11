@@ -1,8 +1,8 @@
 // app/profile/page.tsx
 
-import Breadcrumbs from "../ui/breadcrumbs";
-import Main from "../ui/main";
-import ProtectedRoute from "../ui/protected-route";
+import Breadcrumbs from "@/app/ui/layout/breadcrumbs";
+import Main from "@/app/ui/layout/main";
+import ProtectedRoute from "@/app/ui/auth/protected-route";
 import ProfileInfo from "./profile-info";
 
 export default function ProfilePage() {

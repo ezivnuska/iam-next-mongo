@@ -3,7 +3,7 @@
 "use client";
 
 import { ReactNode, useEffect, useState } from "react";
-import { useUser } from "../lib/providers/user-provider";
+import { useUser } from "@/app/lib/providers/user-provider";
 
 interface ProtectedRouteProps {
     children: ReactNode;

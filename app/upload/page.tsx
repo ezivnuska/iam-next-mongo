@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 import Modal from "@/app/ui/modal";
-import UploadForm from "@/app/ui/upload-form";
+import UploadForm from "@/app/ui/images/upload-form";
 
 export const metadata = {
   title: "Upload File",

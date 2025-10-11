@@ -1,9 +1,9 @@
-import Header from '@/app/ui/header'
+import Header from '@/app/ui/header/header'
 import Link from 'next/link';
 import Image from 'next/image';
 import styles from '@/app/ui/home.module.css';
 import { lusitana } from '@/app/ui/fonts';
-import Main from './ui/main';
+import Main from '@/app/ui/layout/main';
 
 export default function Page() {
   return (
