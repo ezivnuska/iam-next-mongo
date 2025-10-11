@@ -7,7 +7,7 @@ import Main from "@/app/ui/layout/main";
 import { fetchUserByUsername } from "@/app/lib/actions";
 
 interface Props {
-    params: { username: string };
+    params: Promise<{ username: string }>;
 }
 
 export default async function Page({ params }: Props) {

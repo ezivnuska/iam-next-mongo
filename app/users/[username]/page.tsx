@@ -6,7 +6,7 @@ import UserProfileCard from '@/app/ui/user/user-profile-card';
 import Breadcrumbs from '@/app/ui/layout/breadcrumbs';
 
 interface Props {
-  params: { username: string };
+  params: Promise<{ username: string }>;
 }
 
 export default async function UserProfilePage({ params }: Props) {
