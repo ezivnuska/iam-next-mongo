@@ -5,10 +5,10 @@ import { UserRole } from "@/app/lib/definitions/user";
 
 declare module "next-auth" {
   interface User {
-    id: string;
-    username: string;
-    email: string;
-    role: UserRole;
+    id?: string;
+    username?: string;
+    email?: string | null;
+    role?: UserRole;
     emailVerified?: Date | null;
   }
 
@@ -25,10 +25,10 @@ declare module "next-auth" {
 
 declare module "next-auth/jwt" {
   interface JWT {
-    id: string;
-    username: string;
+    id?: string;
+    username?: string;
     email?: string | null;
-    role: UserRole;
+    role?: UserRole;
     emailVerified?: Date | null;
   }
 }
