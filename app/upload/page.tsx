@@ -1,7 +1,5 @@
 // app/upload/page.tsx
 
-"use client";
-
 import { useState } from "react";
 import Modal from "@/app/ui/modal";
 import UploadForm from "@/app/ui/images/upload-form";
