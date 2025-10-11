@@ -2,7 +2,7 @@
   "private": true,
   "scripts": {
     "dev": "node server.js",
-    "build": "next build --turbopack",
+    "build": "next build",
     "start": "NODE_ENV=production node server.js",
     "next:dev": "next dev",
     "lint": "next lint"
@@ -14,7 +14,7 @@
     "clsx": "^2.1.1",
     "mongodb": "^6.19.0",
     "mongoose": "^8.18.2",
-    "next": "latest",
+    "next": "^15.1.6",
     "next-auth": "5.0.0-beta.25",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
