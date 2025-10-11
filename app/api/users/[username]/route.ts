@@ -5,7 +5,7 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
 import { normalizeUser } from "@/app/lib/utils/normalizeUser";
 
-export async function GET(req: Request, { params }: { params: { username: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ username: string }> }) {
   try {
     const { username } = await params;
     if (!username) return NextResponse.json({ error: "Username is required" }, { status: 400 });
