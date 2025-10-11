@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react";
 import Modal from "@/app/ui/modal";
-import UploadForm from "@/app/ui/upload-form";
+import UploadForm from "@/app/ui/images/upload-form";
 import ImageGallery from "./image-gallery";
 import type { Image } from "@/app/lib/definitions/image";
 import { Button } from "@/app/ui/button";

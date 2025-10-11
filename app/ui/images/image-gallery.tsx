@@ -5,11 +5,11 @@
 import { useState, useCallback, useRef } from "react";
 import Image from "next/image";
 import { useUser } from "@/app/lib/providers/user-provider";
-import DeleteButton from "@/app/ui/delete-image-button";
-import AvatarButton from "@/app/ui/set-avatar-button";
-import CommentForm from "@/app/ui/comment-form";
+import DeleteButton from "@/app/ui/images/delete-image-button";
+import AvatarButton from "@/app/ui/user/set-avatar-button";
+import CommentForm from "@/app/ui/comments/comment-form";
 import Modal from "@/app/ui/modal";
-import ImageModalMenu from "@/app/ui/image-modal-menu";
+import ImageModalMenu from "@/app/ui/images/image-modal-menu";
 import LikeButton from "@/app/ui/like-button";
 import { createComment } from "@/app/lib/actions/comments";
 import type { Image as ImageType } from "@/app/lib/definitions/image";

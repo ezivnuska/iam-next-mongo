@@ -5,7 +5,7 @@
 import { useState } from "react";
 import { Button } from '@/app/ui/button'
 import { setAvatar } from "@/app/lib/actions/profile";
-import { useUser } from "../lib/providers/user-provider";
+import { useUser } from "@/app/lib/providers/user-provider";
 
 interface AvatarButtonProps {
     imageId: string;

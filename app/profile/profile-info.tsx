@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useUser } from "../lib/providers/user-provider";
+import { useUser } from "@/app/lib/providers/user-provider";
 import Avatar from "@/app/ui/user/avatar";
 import BioForm from "./bio-form";
 

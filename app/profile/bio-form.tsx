@@ -3,8 +3,8 @@
 "use client";
 
 import { useState } from "react";
-import { updateBio } from "../lib/actions/profile";
-import { useUser } from "../lib/providers/user-provider";
+import { updateBio } from "@/app/lib/actions/profile";
+import { useUser } from "@/app/lib/providers/user-provider";
 
 export default function BioForm() {
     const { user, setUser } = useUser();

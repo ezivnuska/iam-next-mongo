@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useUser } from "../lib/providers/user-provider";
+import { useUser } from "@/app/lib/providers/user-provider";
 import { uploadFile } from "@/app/lib/actions/upload";
 import type { Image } from "@/app/lib/definitions/image";
 
