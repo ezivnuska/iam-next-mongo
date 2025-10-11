@@ -35,7 +35,7 @@ export async function toggleLike(itemId: string, itemType: LikeableType) {
 	const userId = session.user.id;
 
 	// Check if user already liked the item
-	const item = await Model.findById(itemId).select('likes').lean();
+	const item = await (Model.findById(itemId).select('likes').lean() as Promise<{ likes?: any[] } | null>);
 	if (!item) {
 		throw new Error(`${itemType} not found`);
 	}
@@ -59,7 +59,7 @@ export async function getLikeStatus(itemId: string, itemType: LikeableType, user
 	await connectToDatabase();
 
 	const Model = getModel(itemType);
-	const item = await Model.findById(itemId).select('likes').lean();
+	const item = await (Model.findById(itemId).select('likes').lean() as Promise<{ likes?: any[] } | null>);
 
 	if (!item) {
 		return { liked: false, likeCount: 0 };
