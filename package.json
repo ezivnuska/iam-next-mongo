@@ -15,7 +15,7 @@
     "mongodb": "^6.19.0",
     "mongoose": "^8.18.2",
     "next": "^15.1.6",
-    "next-auth": "^5.0.0-beta.25",
+    "next-auth": "5.0.0-beta.25",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "sharp": "^0.34.4",
@@ -45,6 +45,9 @@
       "bcrypt",
       "sharp",
       "unrs-resolver"
-    ]
+    ],
+    "overrides": {
+      "@auth/core": "0.37.2"
+    }
   }
 }
