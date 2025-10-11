@@ -320,7 +320,12 @@ export async function getFriendshipStatus(userId: string): Promise<{
 			{ requester: session.user.id, recipient: userId },
 			{ requester: userId, recipient: session.user.id }
 		]
-	}).lean()
+	}).lean<{
+		_id: any
+		requester: any
+		recipient: any
+		status: 'pending' | 'accepted' | 'rejected'
+	}>()
 
 	if (!friendship) {
 		return { status: 'none' }
