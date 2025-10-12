@@ -330,7 +330,7 @@ export async function getFriendshipStatus(userId: string): Promise<{
 	if (!friendship) {
 		return { status: 'none' }
 	}
-
+    
 	if (friendship.status === 'accepted') {
 		return {
 			status: 'accepted',
