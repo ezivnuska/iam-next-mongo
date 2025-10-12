@@ -13,7 +13,21 @@ const nextConfig: NextConfig = {
                 net: false,
                 tls: false,
                 crypto: false,
+                child_process: false,
             };
+
+            // Completely exclude bcrypt and node-pre-gyp from client bundle
+            config.externals = config.externals || [];
+            config.externals.push({
+                bcrypt: 'bcrypt',
+                '@mapbox/node-pre-gyp': '@mapbox/node-pre-gyp',
+            });
+
+            // Ignore HTML files from node-pre-gyp
+            config.module.rules.push({
+                test: /\.html$/,
+                loader: 'ignore-loader',
+            });
         }
         return config;
     },
