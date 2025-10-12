@@ -21,18 +21,18 @@ export async function register(formData: FormData): Promise<string | undefined> 
     const password = formData.get("password") as string;
     const redirectTo = (formData.get("redirectTo") as string) || "/";
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: true,
-      callbackUrl: redirectTo,
-    });
-
-    if (result?.error) {
-      return result.error;
+    try {
+      await signIn("credentials", {
+        email,
+        password,
+        redirect: true,
+        callbackUrl: redirectTo,
+      });
+      return undefined; // success
+    } catch (error) {
+      console.error("Sign in after registration failed:", error);
+      return "Registration successful, but auto-login failed. Please sign in manually.";
     }
-
-    return undefined; // success
   } catch (err) {
     console.error("Registration error:", err);
     return "Failed to register. Please try again later.";

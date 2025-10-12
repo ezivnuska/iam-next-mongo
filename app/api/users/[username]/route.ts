@@ -5,10 +5,7 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
 import { normalizeUser } from "@/app/lib/utils/normalizeUser";
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ username: string }> }
-) {
+export async function GET(req: Request, { params }: { params: Promise<{ username: string }> }) {
   try {
     const { username } = await params;
     if (!username) {

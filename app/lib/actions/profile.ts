@@ -4,7 +4,7 @@
 
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "../models/user";
-import { auth } from "@/app/api/auth/[...nextauth]/route";
+import { auth } from "@/app/lib/auth";
 import { normalizeUser } from "../utils/normalizeUser";
 
 export async function getProfile() {

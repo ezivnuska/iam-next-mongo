@@ -1,7 +1,7 @@
 // app/api/users/me/route.ts
 
 import { NextResponse } from "next/server";
-import { auth } from "@/app/api/auth/[...nextauth]/route";
+import { auth } from "@/app/lib/auth";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
 import { normalizeUser } from "@/app/lib/utils/normalizeUser";

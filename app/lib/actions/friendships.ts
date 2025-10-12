@@ -4,7 +4,7 @@
 
 import { connectToDatabase } from "@/app/lib/mongoose"
 import Friendship from "@/app/lib/models/friendship"
-import { auth } from "@/app/api/auth/[...nextauth]/route"
+import { auth } from "@/app/lib/auth"
 import type { Friendship as FriendshipType, Friend } from "@/app/lib/definitions/friendship"
 import {
 	emitFriendRequest,
@@ -316,11 +316,16 @@ export async function getFriendshipStatus(userId: string): Promise<{
 	await connectToDatabase()
 
 	const friendship = await Friendship.findOne({
-        $or: [
-          { requester: session.user.id, recipient: userId },
-          { requester: userId, recipient: session.user.id }
-        ]
-    });
+		$or: [
+			{ requester: session.user.id, recipient: userId },
+			{ requester: userId, recipient: session.user.id }
+		]
+	}).lean<{
+		_id: any
+		requester: any
+		recipient: any
+		status: 'pending' | 'accepted' | 'rejected'
+	}>()
 
 	if (!friendship) {
 		return { status: 'none' }

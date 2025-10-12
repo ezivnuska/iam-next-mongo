@@ -4,27 +4,9 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import ImageModel from "@/app/lib/models/image";
 import Post from "@/app/lib/models/post";
 import Memory from "@/app/lib/models/memory";
-import type { Model, Document } from "mongoose";
-import { auth } from "@/app/api/auth/[...nextauth]/route";
+import { auth } from "@/app/lib/auth";
 
-type LikeableType = "Image" | "Post" | "Memory";
-
-interface LikeableDoc extends Document {
-  likes: string[];
-}
-
-const getModel = (type: LikeableType): Model<LikeableDoc> => {
-  switch (type) {
-    case "Image":
-      return ImageModel as unknown as Model<LikeableDoc>;
-    case "Post":
-      return Post as unknown as Model<LikeableDoc>;
-    case "Memory":
-      return Memory as unknown as Model<LikeableDoc>;
-    default:
-      throw new Error("Invalid likeable type");
-  }
-};
+type LikeableType = 'Image' | 'Post' | 'Memory';
 
 export async function toggleLike(itemId: string, itemType: LikeableType) {
   const session = await auth();
@@ -32,31 +14,81 @@ export async function toggleLike(itemId: string, itemType: LikeableType) {
 
   await connectToDatabase();
 
-  const Model = getModel(itemType);
-  const userId = session.user.id;
+	const userId = session.user.id;
+	let item: any;
+	let updated: any;
 
-  const item = await Model.findById(itemId).select("likes").lean();
-  if (!item) throw new Error(`${itemType} not found`);
+	// Handle each type separately to avoid TypeScript union issues
+	switch (itemType) {
+		case 'Image':
+			item = await ImageModel.findById(itemId).select('likes').lean();
+			if (!item) throw new Error(`${itemType} not found`);
 
-  const isLiked = (item.likes || []).some((id: any) => id.toString() === userId);
+			const isLikedImage = (item.likes || []).some((id: any) => id.toString() === userId);
+			updated = await ImageModel.findByIdAndUpdate(
+				itemId,
+				isLikedImage ? { $pull: { likes: userId } } : { $addToSet: { likes: userId } },
+				{ new: true, select: 'likes' }
+			);
+			return {
+				liked: !isLikedImage,
+				likeCount: updated?.likes?.length || 0
+			};
 
-  const updated = await Model.findByIdAndUpdate(
-    itemId,
-    isLiked ? { $pull: { likes: userId } } : { $addToSet: { likes: userId } },
-    { new: true, select: "likes" }
-  );
+		case 'Post':
+			item = await Post.findById(itemId).select('likes').lean();
+			if (!item) throw new Error(`${itemType} not found`);
 
-  return {
-    liked: !isLiked,
-    likeCount: updated?.likes?.length || 0,
-  };
+			const isLikedPost = (item.likes || []).some((id: any) => id.toString() === userId);
+			updated = await Post.findByIdAndUpdate(
+				itemId,
+				isLikedPost ? { $pull: { likes: userId } } : { $addToSet: { likes: userId } },
+				{ new: true, select: 'likes' }
+			);
+			return {
+				liked: !isLikedPost,
+				likeCount: updated?.likes?.length || 0
+			};
+
+		case 'Memory':
+			item = await Memory.findById(itemId).select('likes').lean();
+			if (!item) throw new Error(`${itemType} not found`);
+
+			const isLikedMemory = (item.likes || []).some((id: any) => id.toString() === userId);
+			updated = await Memory.findByIdAndUpdate(
+				itemId,
+				isLikedMemory ? { $pull: { likes: userId } } : { $addToSet: { likes: userId } },
+				{ new: true, select: 'likes' }
+			);
+			return {
+				liked: !isLikedMemory,
+				likeCount: updated?.likes?.length || 0
+			};
+
+		default:
+			throw new Error('Invalid likeable type');
+	}
 }
 
 export async function getLikeStatus(itemId: string, itemType: LikeableType, userId?: string) {
 	await connectToDatabase();
 
-	const Model = getModel(itemType);
-	const item = await Model.findById(itemId).select('likes').lean();
+	let item: any;
+
+	// Handle each type separately to avoid TypeScript union issues
+	switch (itemType) {
+		case 'Image':
+			item = await ImageModel.findById(itemId).select('likes').lean();
+			break;
+		case 'Post':
+			item = await Post.findById(itemId).select('likes').lean();
+			break;
+		case 'Memory':
+			item = await Memory.findById(itemId).select('likes').lean();
+			break;
+		default:
+			throw new Error('Invalid likeable type');
+	}
 
 	if (!item) {
 		return { liked: false, likeCount: 0 };
