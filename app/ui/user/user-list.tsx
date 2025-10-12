@@ -20,7 +20,7 @@ export default function UserList({ users }: UserListProps) {
 	}
 
 	return (
-		<div className="space-y-3">
+		<div className="space-y-1">
 			{users.map((user) => {
 				const isCurrentUser = currentUser?.id === user.id
 
@@ -29,22 +29,22 @@ export default function UserList({ users }: UserListProps) {
 						key={user.id}
 						className="flex items-center justify-between p-3 bg-white rounded-lg shadow hover:shadow-md transition-shadow"
 					>
-						<div className="flex items-center gap-3 flex-1">
-							<Avatar
-								avatar={user.avatar}
-								size={40}
-								className="flex-shrink-0"
-							/>
-							<Link
-								href={`/users/${user.username}`}
-								className="flex-1 hover:text-blue-600 transition-colors"
-							>
+                        <Link
+                            href={`/users/${user.username}`}
+                            className="flex items-center gap-3 flex-1 hover:text-blue-600 transition-colors"
+                        >
+                            <Avatar
+                                avatar={user.avatar}
+                                size={40}
+                                className="flex-shrink-0"
+                            />
+                            <div className="flex flex-col flex-1">
 								<p className="font-semibold">{user.username}</p>
 								{user.bio && (
 									<p className="text-sm text-gray-500 truncate">{user.bio}</p>
 								)}
-							</Link>
-						</div>
+                            </div>
+                        </Link>
 
 						<div className="flex-shrink-0 ml-3">
 							<FriendshipButton
