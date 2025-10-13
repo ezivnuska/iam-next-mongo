@@ -6,6 +6,7 @@ import { Button } from "@/app/ui/button";
 import { useState } from "react";
 import { TrashIcon } from '@/app/ui/icons'
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import { useUser } from "@/app/lib/providers/user-provider";
 
 interface DeleteButtonProps {
   imageId: string;
@@ -15,12 +16,18 @@ interface DeleteButtonProps {
 export default function DeleteButton({ imageId, onDeleted }: DeleteButtonProps) {
   const [loading, setLoading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const { user, setUser } = useUser();
 
   const handleDelete = async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/images/${imageId}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete image");
+
+      // If this was the user's avatar, update user context
+      if (user?.avatar?.id === imageId) {
+        setUser({ ...user, avatar: null });
+      }
 
       onDeleted();
     } catch (err) {

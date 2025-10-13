@@ -4,6 +4,7 @@
 
 import { connectToDatabase } from "@/app/lib/mongoose";
 import ImageModel from "@/app/lib/models/image";
+import UserModel from "@/app/lib/models/user";
 import Comment from "@/app/lib/models/comment";
 import { Image } from "@/app/lib/definitions/image";
 import { deleteS3File } from "@/app/lib/aws/s3";
@@ -67,6 +68,9 @@ export async function getImages(
 }
 
 export async function deleteImage(imageId: string) {
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
     await connectToDatabase();
 
     const image = await ImageModel.findById(imageId);
@@ -76,6 +80,14 @@ export async function deleteImage(imageId: string) {
     const objectId = new Types.ObjectId(imageId);
     const result = await Comment.deleteMany({ refId: objectId, refType: 'Image' });
     console.log(`Deleted ${result.deletedCount} comments for image ${imageId}`);
+
+    // Check if this image is the current user's avatar and set to null
+    const user = await UserModel.findById(session.user.id);
+    if (user && user.avatar && user.avatar.toString() === imageId) {
+      user.avatar = null;
+      await user.save();
+      console.log(`Removed avatar reference from user ${session.user.id}`);
+    }
 
     // Delete each variant from S3
     for (const v of image.variants) {

@@ -44,9 +44,9 @@ export async function uploadFile(file: File): Promise<Image> {
     for (const { name, width } of VARIANT_DEFINITIONS) {
         let outputBuffer: Buffer;
         let resized = { width: 0, height: 0 };
-      
+
         if (width) {
-          const sharpImg = sharp(buffer).resize({ width, withoutEnlargement: true });
+          const sharpImg = sharp(buffer).rotate().resize({ width, withoutEnlargement: true });
           outputBuffer = await sharpImg.toBuffer();
           const metadata = await sharpImg.metadata();
           resized = {
@@ -54,12 +54,13 @@ export async function uploadFile(file: File): Promise<Image> {
             height: metadata.height ?? 0,
           };
         } else {
-          const metadata = await sharp(buffer).metadata();
+          const sharpImg = sharp(buffer).rotate();
+          outputBuffer = await sharpImg.toBuffer();
+          const metadata = await sharpImg.metadata();
           resized = {
             width: metadata.width ?? 0,
             height: metadata.height ?? 0,
           };
-          outputBuffer = buffer;
         }
       
         const filename = `${baseFilename}_${name}.${extension}`;
