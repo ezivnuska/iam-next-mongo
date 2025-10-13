@@ -12,6 +12,7 @@ type LikeButtonProps = {
 	initialLiked?: boolean
 	initialLikeCount?: number
 	variant?: 'default' | 'overlay'
+	onLikeChange?: (newLiked: boolean, newCount: number) => void
 }
 
 type LikeState = {
@@ -25,6 +26,7 @@ export default function LikeButton({
 	initialLiked = false,
 	initialLikeCount = 0,
 	variant = 'default',
+	onLikeChange,
 }: LikeButtonProps) {
 	const { data, isLoading, mutate } = useOptimisticMutation<LikeState>({
 		liked: initialLiked,
@@ -43,6 +45,8 @@ export default function LikeButton({
 			{ liked: newLiked, likeCount: newCount },
 			async () => {
 				const result = await toggleLike(itemId, itemType)
+				// Notify parent of the change
+				onLikeChange?.(result.liked, result.likeCount)
 				return { liked: result.liked, likeCount: result.likeCount }
 			}
 		)

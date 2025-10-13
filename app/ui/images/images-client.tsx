@@ -36,6 +36,12 @@ export default function ImagesClient({ userId }: ImagesClientProps) {
         setModalOpen(false);
     };
 
+    const handleImageUpdate = (imageId: string, updates: Partial<Image>) => {
+        setImages(prev => prev.map(img =>
+            img.id === imageId ? { ...img, ...updates } : img
+        ));
+    };
+
     return (
         <div className="mt-4">
             {!userId && (
@@ -52,6 +58,7 @@ export default function ImagesClient({ userId }: ImagesClientProps) {
                     <ImageGallery
                         images={images}
                         onDeleted={(deletedId) => setImages(prev => prev.filter(img => img.id !== deletedId))}
+                        onImageUpdate={handleImageUpdate}
                         authorized={!userId}
                     />
                 )

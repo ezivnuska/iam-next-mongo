@@ -24,6 +24,8 @@ type ImageModalMenuProps = {
 	authorized?: boolean
 	isAvatar?: boolean
 	onDeleted?: () => void
+	onLikeChange?: (newLiked: boolean, newCount: number) => void
+	onCommentCountChange?: (newCount: number) => void
 }
 
 export type ImageModalMenuHandle = {
@@ -43,11 +45,20 @@ const ImageModalMenu = forwardRef<ImageModalMenuHandle, ImageModalMenuProps>(({
 	authorized = false,
 	isAvatar = false,
 	onDeleted,
+	onLikeChange,
+	onCommentCountChange,
 }, ref) => {
 	const [comments, setComments] = useState<Comment[]>([])
 	const [commentCount, setCommentCount] = useState(initialCommentCount)
 	const [loadingComments, setLoadingComments] = useState(false)
 	const [commentsLoaded, setCommentsLoaded] = useState(false)
+
+	// Notify parent when comment count changes
+	useEffect(() => {
+		if (commentCount !== initialCommentCount) {
+			onCommentCountChange?.(commentCount)
+		}
+	}, [commentCount])
 
 	const loadComments = useCallback(async () => {
 		if (!imageId) return
@@ -109,6 +120,7 @@ const ImageModalMenu = forwardRef<ImageModalMenuHandle, ImageModalMenuProps>(({
 				isExpanded ? 'h-[60vh]' : 'h-auto'
 			}`}
 			style={{ display: 'flex', flexDirection: 'column' }}
+			onClick={(e) => e.stopPropagation()}
 		>
 			{/* Header Bar */}
 			<div className="flex items-center justify-between px-2 bg-gray-50 border-b border-gray-200 rounded-t-lg">
@@ -119,6 +131,7 @@ const ImageModalMenu = forwardRef<ImageModalMenuHandle, ImageModalMenuProps>(({
                         initialLiked={initialLiked}
                         initialLikeCount={initialLikeCount}
                         variant="default"
+                        onLikeChange={onLikeChange}
                     />
                     <div className='flex flex-row'>
                         <button

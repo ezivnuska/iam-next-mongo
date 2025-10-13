@@ -16,9 +16,10 @@ interface ImageGalleryProps {
   authorized?: boolean;
   images: ImageType[];
   onDeleted?: (deletedId: string) => void;
+  onImageUpdate?: (imageId: string, updates: Partial<ImageType>) => void;
 }
 
-export default function ImageGallery({ authorized, images, onDeleted }: ImageGalleryProps) {
+export default function ImageGallery({ authorized, images, onDeleted, onImageUpdate }: ImageGalleryProps) {
   const { user } = useUser();
   const [selectedImage, setSelectedImage] = useState<ImageType | null>(null);
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
@@ -30,6 +31,13 @@ export default function ImageGallery({ authorized, images, onDeleted }: ImageGal
     setIsMenuExpanded(false);
     setShowCommentForm(false);
   }, []);
+
+  const handleImageClick = useCallback((e: React.MouseEvent) => {
+    if (isMenuExpanded) {
+      e.stopPropagation();
+      setIsMenuExpanded(false);
+    }
+  }, [isMenuExpanded]);
 
   const toggleMenuExpanded = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -77,6 +85,25 @@ export default function ImageGallery({ authorized, images, onDeleted }: ImageGal
     closeModal();
   }
 
+  const handleLikeChange = useCallback((newLiked: boolean, newCount: number) => {
+    if (!selectedImage || !onImageUpdate) return;
+
+    onImageUpdate(selectedImage.id, {
+      likedByCurrentUser: newLiked,
+      likes: newLiked
+        ? [...(selectedImage.likes || []), user?.id || '']
+        : (selectedImage.likes || []).filter(id => id !== user?.id)
+    });
+  }, [selectedImage, onImageUpdate, user?.id]);
+
+  const handleCommentCountChange = useCallback((newCount: number) => {
+    if (!selectedImage || !onImageUpdate) return;
+
+    onImageUpdate(selectedImage.id, {
+      commentCount: newCount
+    });
+  }, [selectedImage, onImageUpdate]);
+
   return (
     <>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -115,7 +142,7 @@ export default function ImageGallery({ authorized, images, onDeleted }: ImageGal
                 className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"
                 onClick={closeModal}
             >
-                <div className="relative max-w-5xl w-full h-full flex items-center justify-center p-4">
+                <div className="relative max-w-5xl w-full h-full flex items-center justify-center p-4" onClick={handleImageClick}>
                     <Image
                         src={
                             selectedImage.variants.find((v) => v.size === "original")?.url ||
@@ -147,6 +174,8 @@ export default function ImageGallery({ authorized, images, onDeleted }: ImageGal
                         authorized={authorized}
                         isAvatar={user?.avatar?.id === selectedImage.id}
                         onDeleted={handleDeletion}
+                        onLikeChange={handleLikeChange}
+                        onCommentCountChange={handleCommentCountChange}
                     />
 
                     {/* Comment Form Modal */}
