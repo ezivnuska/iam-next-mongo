@@ -1,20 +1,7 @@
 // app/lib/models/post.ts
 
-import mongoose, { Schema, Types, Document, Model } from 'mongoose'
-
-export interface IPost extends Document {
-  author: Types.ObjectId
-  content?: string
-  image?: Types.ObjectId
-  linkUrl?: string
-  linkPreview?: {
-    title?: string
-    description?: string
-    image?: string
-    siteName?: string
-  }
-  likes?: Types.ObjectId[]
-}
+import mongoose, { Schema, Model } from 'mongoose'
+import { IPost } from '@/app/lib/definitions/post'
 
 const postSchema = new Schema<IPost>(
   {

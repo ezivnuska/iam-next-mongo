@@ -5,7 +5,36 @@ import { auth } from "@/app/lib/auth";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import Post from "@/app/lib/models/post";
 import UserModel from "@/app/lib/models/user";
-import type { ImageVariant } from "@/app/lib/definitions/image";
+import type { ImageVariant as ImageVariantDef } from "@/app/lib/definitions/image";
+import type { ImageVariant } from "@/app/lib/models/image";
+import type { Types, Document } from "mongoose";
+import type { UserDocument } from "@/app/lib/definitions/user";
+import type { ImageDocument } from "@/app/lib/models/image";
+
+interface PopulatedPostObj {
+  _id: Types.ObjectId;
+  author: {
+    _id: Types.ObjectId;
+    username: string;
+    avatar?: Types.ObjectId | {
+      _id: Types.ObjectId;
+      userId: Types.ObjectId;
+      username: string;
+      alt?: string;
+      variants: ImageVariant[];
+    };
+  };
+  content?: string;
+  image?: {
+    _id: Types.ObjectId;
+    userId: Types.ObjectId;
+    username: string;
+    alt?: string;
+    variants: ImageVariant[];
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export async function POST(req: Request) {
   try {
@@ -30,7 +59,7 @@ export async function POST(req: Request) {
     });
 
     // Populate author and image for response
-    const populatedPost = await newPost.populate([
+    await newPost.populate([
       {
         path: "author",
         populate: { path: "avatar" }
@@ -38,25 +67,25 @@ export async function POST(req: Request) {
       { path: "image" }
     ]);
 
-    const postDoc = populatedPost.toObject();
-    const author = postDoc.author as any;
-    const image = postDoc.image as any;
+    const populatedPost = newPost.toObject() as unknown as PopulatedPostObj;
+    const author = populatedPost.author;
+    const image = populatedPost.image;
 
     return NextResponse.json({
-      id: postDoc._id.toString(),
-      content: postDoc.content,
-      createdAt: postDoc.createdAt.toISOString(),
-      updatedAt: postDoc.updatedAt.toISOString(),
+      id: populatedPost._id.toString(),
+      content: populatedPost.content,
+      createdAt: populatedPost.createdAt.toISOString(),
+      updatedAt: populatedPost.updatedAt.toISOString(),
       author: {
         id: author._id.toString(),
         username: author.username,
-        ...(author.avatar && typeof author.avatar === 'object' && '_id' in author.avatar && {
+        ...(author.avatar && typeof author.avatar === 'object' && 'userId' in author.avatar && {
           avatar: {
             id: author.avatar._id.toString(),
             userId: author.avatar.userId.toString(),
             username: author.avatar.username,
             alt: author.avatar.alt ?? "",
-            variants: (author.avatar.variants || []).map((v: ImageVariant) => ({
+            variants: (author.avatar.variants || []).map((v) => ({
               size: v.size,
               filename: v.filename,
               width: v.width,
@@ -72,7 +101,7 @@ export async function POST(req: Request) {
           userId: image.userId.toString(),
           username: image.username,
           alt: image.alt ?? "",
-          variants: (image.variants || []).map((v: ImageVariant) => ({
+          variants: (image.variants || []).map((v) => ({
             size: v.size,
             filename: v.filename,
             width: v.width,
