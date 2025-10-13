@@ -6,6 +6,7 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import Post from "@/app/lib/models/post";
 import UserModel from "@/app/lib/models/user";
 import type { Types, Document } from "mongoose";
+import type { ImageVariant } from "@/app/lib/definitions/image";
 import { transformPopulatedImage, transformPopulatedAuthor } from "@/app/lib/utils/transformers";
 
 interface PopulatedPostObj {
