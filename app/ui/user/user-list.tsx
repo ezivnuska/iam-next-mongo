@@ -27,7 +27,7 @@ export default function UserList({ users }: UserListProps) {
 				return (
 					<div
 						key={user.id}
-						className="flex items-center justify-between p-3 bg-white rounded-lg shadow hover:shadow-md transition-shadow"
+						className="flex items-center justify-between p-3 bg-white hover:bg-amber-100 rounded-lg shadow hover:shadow-md transition-shadow"
 					>
                         <Link
                             href={`/users/${user.username}`}
@@ -36,7 +36,7 @@ export default function UserList({ users }: UserListProps) {
                             <Avatar
                                 avatar={user.avatar}
                                 size={40}
-                                className="flex-shrink-0"
+                                className="flex-shrink-0 h-[40px]"
                             />
                             <div className="flex flex-col flex-1">
 								<p className="font-semibold">{user.username}</p>

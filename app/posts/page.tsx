@@ -1,10 +1,10 @@
 // app/posts/page.tsx
 
-import { lusitana } from "@/app/ui/fonts";
 import { getPosts } from "@/app/lib/actions/posts";
 import ProtectedRoute from "@/app/ui/auth/protected-route";
 import type { Post } from "@/app/lib/definitions/post";
 import Main from "@/app/ui/layout/main";
+import Breadcrumbs from "../ui/layout/breadcrumbs";
 
 export default async function Page() {
   const posts: Post[] = await getPosts();
@@ -12,9 +12,12 @@ export default async function Page() {
   return (
     <ProtectedRoute>
       <Main>
-        <p className={`${lusitana.className} text-xl text-gray-800 md:text-3xl md:leading-normal`}>
-          <strong>Posts</strong>
-        </p>
+        <Breadcrumbs
+            breadcrumbs={[
+                { label: "Posts", href: "/posts", active: true },
+                // { label: "[Post]", href: "/posts/[post]" },
+            ]}
+        />
         <div>
           {posts.length ? (
             posts.map((post) => {

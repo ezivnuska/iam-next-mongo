@@ -2,7 +2,7 @@
 
 "use client";
 
-import { lusitana } from "@/app/ui/fonts";
+import { ubuntu } from "@/app/ui/fonts";
 import { AtSymbolIcon, KeyIcon, ExclamationCircleIcon } from "@heroicons/react/24/outline";
 import { ArrowRightIcon } from "@heroicons/react/20/solid";
 import { Button } from "@/app/ui/button";
@@ -31,7 +31,7 @@ export default function LoginForm() {
   return (
     <form action={formAction} className="space-y-3">
       <div className="flex-1 rounded-lg bg-gray-50 px-6 pb-4 pt-8">
-        <h1 className={`${lusitana.className} mb-3 text-2xl`}>
+        <h1 className={`${ubuntu.className} mb-3 text-2xl`}>
           Please log in to continue.
         </h1>
 
