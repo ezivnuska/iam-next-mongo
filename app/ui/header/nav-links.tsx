@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { useUser } from '@/app/lib/providers/user-provider';
-import Avatar from '@/app/ui/user/avatar';
+import UserAvatar from '@/app/ui/user/user-avatar';
 
 const links = [
     {
@@ -33,16 +33,17 @@ export default function NavLinks() {
     const avatar = user?.avatar
     return (
         <div className='flex flex-row w-full items-center gap-2'>
-            {avatar
+            {avatar && user
                 ? (
                     <Link
                         href='/profile'
                         // className='border-1'
                     >
-                        <Avatar
+                        <UserAvatar
+                            username={user.username}
                             avatar={avatar}
                             size={30}
-                            className='h-[30px] border-1 mr-2'
+                            className='border-1 mr-2'
                         />
                     </Link>
                 ) : (

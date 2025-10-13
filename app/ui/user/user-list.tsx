@@ -3,7 +3,7 @@
 'use client'
 
 import Link from 'next/link'
-import Avatar from '@/app/ui/user/avatar'
+import UserAvatar from '@/app/ui/user/user-avatar'
 import FriendshipButton from '@/app/ui/friendship/friendship-button'
 import { useUser } from '@/app/lib/providers/user-provider'
 import type { User } from '@/app/lib/definitions/user'
@@ -33,10 +33,10 @@ export default function UserList({ users }: UserListProps) {
                             href={`/users/${user.username}`}
                             className="flex items-center gap-3 flex-1 hover:text-blue-600 transition-colors"
                         >
-                            <Avatar
+                            <UserAvatar
+                                username={user.username}
                                 avatar={user.avatar}
                                 size={40}
-                                className="flex-shrink-0 h-[40px]"
                             />
                             <div className="flex flex-col flex-1">
 								<p className="font-semibold">{user.username}</p>
