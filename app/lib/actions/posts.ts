@@ -3,13 +3,19 @@
 import Post from "@/app/lib/models/post";
 import type { Post as PostType } from "@/app/lib/definitions/post";
 import type { PartialUser } from "@/app/lib/definitions/user";
-import type { Image } from "@/app/lib/definitions/image";
+import type { Image, ImageVariant } from "@/app/lib/definitions/image";
 import { connectToDatabase } from "../mongoose";
 
 export async function getPosts(): Promise<PostType[]> {
   await connectToDatabase()
   const postsFromDb = await Post.find()
-    .populate("author")
+    .sort({ createdAt: -1 })
+    .populate({
+      path: "author",
+      populate: {
+        path: "avatar"
+      }
+    })
     .populate("image")
     .exec();
   
@@ -20,7 +26,13 @@ export async function getPosts(): Promise<PostType[]> {
           userId: p.image.userId.toString(),
           username: p.image.username,
           alt: p.image.alt,
-          variants: p.image.variants,
+          variants: (p.image.variants || []).map((v: ImageVariant) => ({
+            size: v.size,
+            filename: v.filename,
+            width: v.width,
+            height: v.height,
+            url: v.url,
+          })),
         }
       : undefined;
 
@@ -28,17 +40,21 @@ export async function getPosts(): Promise<PostType[]> {
       ? {
           id: p.author._id.toString(),
           username: p.author.username,
-          avatar: p.author.avatar ?? null,
-            // ? {
-            //     id: p.author.avatar._id.toString(),
-            //     userId: p.author.avatar.userId.toString(),
-            //     username: p.author.avatar.username,
-            //     alt: p.author.avatar.alt ?? "",
-            //     variants: p.author.avatar.variants,
-            //     createdAt: p.author.avatar.createdAt.toISOString(),
-            //     updatedAt: p.author.avatar.updatedAt.toISOString(),
-            //   }
-            // : undefined,
+          ...(p.author.avatar && typeof p.author.avatar === 'object' && '_id' in p.author.avatar && {
+            avatar: {
+              id: p.author.avatar._id.toString(),
+              userId: p.author.avatar.userId.toString(),
+              username: p.author.avatar.username,
+              alt: p.author.avatar.alt ?? "",
+              variants: (p.author.avatar.variants || []).map((v: ImageVariant) => ({
+                size: v.size,
+                filename: v.filename,
+                width: v.width,
+                height: v.height,
+                url: v.url,
+              })),
+            }
+          })
         }
       : {
           id: "unknown",
@@ -51,9 +67,15 @@ export async function getPosts(): Promise<PostType[]> {
       createdAt: p.createdAt.toISOString(),
       updatedAt: p.updatedAt.toISOString(),
       author,
-      image: simpleImage,
-      linkUrl: p.linkUrl,
-      linkPreview: p.linkPreview,
+      ...(simpleImage && { image: simpleImage }),
+      ...(p.linkUrl && { linkUrl: p.linkUrl }),
+      ...(p.linkPreview && {
+        linkPreview: {
+          ...(p.linkPreview.title && { title: p.linkPreview.title }),
+          ...(p.linkPreview.description && { description: p.linkPreview.description }),
+          ...(p.linkPreview.image && { image: p.linkPreview.image }),
+        }
+      }),
     };
   });
 }

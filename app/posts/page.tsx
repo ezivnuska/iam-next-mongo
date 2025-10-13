@@ -2,42 +2,21 @@
 
 import { getPosts } from "@/app/lib/actions/posts";
 import ProtectedRoute from "@/app/ui/auth/protected-route";
-import type { Post } from "@/app/lib/definitions/post";
 import Main from "@/app/ui/layout/main";
 import Breadcrumbs from "../ui/layout/breadcrumbs";
+import PostsClient from "@/app/ui/posts/posts-client";
 
 export default async function Page() {
-  const posts: Post[] = await getPosts();
-
+  const posts = await getPosts();
   return (
     <ProtectedRoute>
       <Main>
         <Breadcrumbs
             breadcrumbs={[
                 { label: "Posts", href: "/posts", active: true },
-                // { label: "[Post]", href: "/posts/[post]" },
             ]}
         />
-        <div>
-          {posts.length ? (
-            posts.map((post) => {
-              const medium = post.image?.variants.find((v) => v.size === "medium");
-              return (
-                <div key={post.id} className="mb-2 p-2 border rounded">
-                    <p className="font-semibold">{post.author.username}</p>
-                    <p>{post.content}</p>
-                    {post.image && <img src={medium?.url} alt="Post image" className="max-h-40 mt-2" />}
-                    {post.linkUrl && (
-                    <a href={post.linkUrl} target="_blank" className="text-blue-500 underline">
-                        {post.linkPreview?.title || post.linkUrl}
-                    </a>
-                    )}
-                </div>
-              )})
-          ) : (
-            <p>No posts</p>
-          )}
-        </div>
+        <PostsClient initialPosts={posts} />
       </Main>
     </ProtectedRoute>
   );

@@ -20,10 +20,11 @@ export function normalizeUser(doc: UserDocument): User {
             username: doc.avatar.username,
             alt: doc.avatar.alt,
             variants: doc.avatar.variants.map(v => ({
-              url: v.url,
               size: v.size,
+              filename: v.filename,
               width: v.width,
               height: v.height,
+              url: v.url,
             })),
           }
         : null,

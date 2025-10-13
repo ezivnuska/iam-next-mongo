@@ -6,6 +6,7 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import ImageModel from "@/app/lib/models/image";
 import UserModel from "@/app/lib/models/user";
 import Comment from "@/app/lib/models/comment";
+import Post from "@/app/lib/models/post";
 import { Image } from "@/app/lib/definitions/image";
 import { deleteS3File } from "@/app/lib/aws/s3";
 import { auth } from "@/app/lib/auth";
@@ -87,6 +88,28 @@ export async function deleteImage(imageId: string) {
       user.avatar = null;
       await user.save();
       console.log(`Removed avatar reference from user ${session.user.id}`);
+    }
+
+    // Find posts that reference this image
+    const postsWithImage = await Post.find({ image: objectId });
+
+    // Delete posts that have no content (only the image)
+    const postsToDelete = postsWithImage.filter(p => !p.content || !p.content.trim());
+    if (postsToDelete.length > 0) {
+      const postIdsToDelete = postsToDelete.map(p => p._id);
+      await Post.deleteMany({ _id: { $in: postIdsToDelete } });
+      console.log(`Deleted ${postsToDelete.length} posts with no content after image removal`);
+    }
+
+    // Remove image reference from posts that have content
+    const postsToUpdate = postsWithImage.filter(p => p.content && p.content.trim());
+    if (postsToUpdate.length > 0) {
+      const postIdsToUpdate = postsToUpdate.map(p => p._id);
+      await Post.updateMany(
+        { _id: { $in: postIdsToUpdate } },
+        { $unset: { image: "" } }
+      );
+      console.log(`Removed image reference from ${postsToUpdate.length} posts`);
     }
 
     // Delete each variant from S3
