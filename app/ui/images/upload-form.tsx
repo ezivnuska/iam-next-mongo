@@ -57,37 +57,15 @@ export default function UploadForm({ onUploadSuccess, onClose }: UploadFormProps
     };      
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={(e) => {
-          console.log('File input changed', e.target.files);
-          setFile(e.target.files?.[0] || null);
-        }}
-        className="hidden"
-      />
-
-      <div className="relative">
-        <button
-          type="button"
-          onMouseDown={(e) => {
-            console.log('Mouse down on button');
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onClick={(e) => {
-            console.log('Button clicked - handler executing');
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('fileInputRef.current:', fileInputRef.current);
-            fileInputRef.current?.click();
-          }}
-          className="relative z-20 flex h-10 w-full cursor-pointer items-center justify-center rounded-lg bg-blue-500 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-400 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-blue-500 active:bg-blue-600"
-        >
-          {file?.name ? file.name : 'Select file'}
-        </button>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <input
+          id="file-upload"
+          type="file"
+          accept="image/*"
+          onChange={(e) => setFile(e.target.files?.[0] || null)}
+          className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-500 file:text-white hover:file:bg-blue-600 file:cursor-pointer"
+        />
       </div>
 
       {preview && (
