@@ -48,13 +48,12 @@ export default function UserAvatar({
 			</div>
 		)
 	}
-
 	return (
 		<div
-			className={`rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold flex-shrink-0 ${className}`}
+			className={`rounded-full bg-gray-400 flex items-center justify-center text-gray-600 font-semibold flex-shrink-0 ${className}`}
 			style={{ width: size, height: size }}
 		>
-			{username?.[0]?.toUpperCase() || '?'}
+			<p className={`text-[30px] text-white`}>{username?.[0]?.toUpperCase() || '?'}</p>
 		</div>
 	)
 }

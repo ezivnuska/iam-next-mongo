@@ -3,7 +3,7 @@
 import Breadcrumbs from "@/app/ui/layout/breadcrumbs";
 import Main from "@/app/ui/layout/main";
 import ProtectedRoute from "@/app/ui/auth/protected-route";
-import ProfileInfo from "./profile-info";
+import UserProfileCard from "@/app/ui/user/user-profile-card";
 
 export default function ProfilePage() {
 
@@ -16,7 +16,7 @@ export default function ProfilePage() {
                         { label: "Images", href: "/profile/images" },
                     ]}
                 />
-                <ProfileInfo />
+                <UserProfileCard />
             </Main>
         </ProtectedRoute>
     );
