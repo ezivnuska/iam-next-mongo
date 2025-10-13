@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from "uuid";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import type { Image, ImageVariant } from "@/app/lib/definitions/image";
 import sharp from "sharp";
-import { AppUser } from "../definitions";
+import { auth } from "@/app/lib/auth";
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION!,
@@ -24,12 +24,13 @@ const VARIANT_DEFINITIONS: { name: string; width: number | null }[] = [
     { name: "small", width: 300 },
 ];
 
-export async function uploadFile(file: File, user: AppUser | null): Promise<Image> {
-    if (!user) {
+export async function uploadFile(file: File): Promise<Image> {
+    const session = await auth();
+    if (!session?.user?.id || !session?.user?.username) {
       throw new Error("Unauthorized");
     }
-  
-    const { id, username} = user;
+
+    const { id, username } = session.user;
   
     await connectToDatabase();
   

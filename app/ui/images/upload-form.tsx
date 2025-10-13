@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useUser } from "@/app/lib/providers/user-provider";
 import { uploadFile } from "@/app/lib/actions/upload";
 import type { Image } from "@/app/lib/definitions/image";
@@ -14,6 +14,7 @@ interface UploadFormProps {
 
 export default function UploadForm({ onUploadSuccess, onClose }: UploadFormProps) {
     const { user } = useUser();
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
@@ -29,17 +30,17 @@ export default function UploadForm({ onUploadSuccess, onClose }: UploadFormProps
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!file) return;
-      
+
         if (!user) {
           setError("You must be signed in to upload");
           return;
         }
-      
+
         setIsUploading(true);
         setError(null);
-      
+
         try {
-          const uploaded: Image = await uploadFile(file, user);
+          const uploaded: Image = await uploadFile(file);
           if (uploaded) {
             onUploadSuccess?.(uploaded);
             onClose?.();
@@ -56,23 +57,38 @@ export default function UploadForm({ onUploadSuccess, onClose }: UploadFormProps
     };      
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
       <input
-        id="file"
+        ref={fileInputRef}
         type="file"
         accept="image/*"
-        onChange={(e) => setFile(e.target.files?.[0] || null)}
-        style={{ display: 'none' }}
+        onChange={(e) => {
+          console.log('File input changed', e.target.files);
+          setFile(e.target.files?.[0] || null);
+        }}
+        className="hidden"
       />
-      
-        <div
-            style={{ display: 'flex' }}
-            className='border-1 flex flex-row h-10 items-center rounded-lg bg-blue-500 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 active:bg-blue-600 aria-disabled:cursor-not-allowed aria-disabled:opacity-50'
+
+      <div className="relative">
+        <button
+          type="button"
+          onMouseDown={(e) => {
+            console.log('Mouse down on button');
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onClick={(e) => {
+            console.log('Button clicked - handler executing');
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('fileInputRef.current:', fileInputRef.current);
+            fileInputRef.current?.click();
+          }}
+          className="relative z-20 flex h-10 w-full cursor-pointer items-center justify-center rounded-lg bg-blue-500 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-400 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-blue-500 active:bg-blue-600"
         >
-            <label htmlFor="file">
-                {file?.name ? file.name : 'Select file'}
-            </label>
-        </div>
+          {file?.name ? file.name : 'Select file'}
+        </button>
+      </div>
 
       {preview && (
         <div className="mb-2">
