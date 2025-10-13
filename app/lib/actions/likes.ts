@@ -1,5 +1,7 @@
 // app/lib/actions/likes.ts
 
+"use server";
+
 import { connectToDatabase } from "@/app/lib/mongoose";
 import ImageModel from "@/app/lib/models/image";
 import Post from "@/app/lib/models/post";
