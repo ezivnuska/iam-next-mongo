@@ -20,7 +20,7 @@ export interface IPost extends Document {
 
 export interface Post {
   id: string
-  content: string
+  content?: string
   createdAt: string
   updatedAt: string
   author: PartialUser

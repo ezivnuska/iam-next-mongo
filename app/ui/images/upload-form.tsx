@@ -2,9 +2,10 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useUser } from "@/app/lib/providers/user-provider";
 import { uploadFile } from "@/app/lib/actions/upload";
+import { useFilePreview } from "@/app/lib/hooks/useFilePreview";
 import type { Image } from "@/app/lib/definitions/image";
 
 interface UploadFormProps {
@@ -15,19 +16,9 @@ interface UploadFormProps {
 export default function UploadForm({ onUploadSuccess, onClose }: UploadFormProps) {
     const { user } = useUser();
     const [file, setFile] = useState<File | null>(null);
-    const [preview, setPreview] = useState<string | null>(null);
+    const preview = useFilePreview(file);
     const [isUploading, setIsUploading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-      if (!file) {
-        setPreview(null);
-        return;
-      }
-      const objectUrl = URL.createObjectURL(file);
-      setPreview(objectUrl);
-      return () => URL.revokeObjectURL(objectUrl);
-    }, [file]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

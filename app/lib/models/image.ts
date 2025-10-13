@@ -1,14 +1,7 @@
 // app/lib/models/image.ts
 
 import mongoose, { Schema, model, Model, Types, Document } from "mongoose";
-
-export interface ImageVariant {
-  size: string;
-  filename: string;
-  width: number;
-  height: number;
-  url?: string;
-}
+import { ImageVariant } from "@/app/lib/definitions/image";
 
 export interface ImageDocument extends Document {
     _id: Types.ObjectId;
@@ -19,7 +12,7 @@ export interface ImageDocument extends Document {
     likes: Types.ObjectId[];
     createdAt: Date;
     updatedAt: Date;
-}  
+}
 
 const VariantSchema = new Schema<ImageVariant>(
   {
@@ -27,7 +20,7 @@ const VariantSchema = new Schema<ImageVariant>(
     filename: { type: String, required: true },
     width: { type: Number, required: true },
     height: { type: Number, required: true },
-    url: { type: String },
+    url: { type: String, required: true },
   },
   { _id: false }
 );

@@ -5,11 +5,8 @@ import { auth } from "@/app/lib/auth";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import Post from "@/app/lib/models/post";
 import UserModel from "@/app/lib/models/user";
-import type { ImageVariant as ImageVariantDef } from "@/app/lib/definitions/image";
-import type { ImageVariant } from "@/app/lib/models/image";
 import type { Types, Document } from "mongoose";
-import type { UserDocument } from "@/app/lib/definitions/user";
-import type { ImageDocument } from "@/app/lib/models/image";
+import { transformPopulatedImage, transformPopulatedAuthor } from "@/app/lib/utils/transformers";
 
 interface PopulatedPostObj {
   _id: Types.ObjectId;
@@ -68,48 +65,14 @@ export async function POST(req: Request) {
     ]);
 
     const populatedPost = newPost.toObject() as unknown as PopulatedPostObj;
-    const author = populatedPost.author;
-    const image = populatedPost.image;
 
     return NextResponse.json({
       id: populatedPost._id.toString(),
       content: populatedPost.content,
       createdAt: populatedPost.createdAt.toISOString(),
       updatedAt: populatedPost.updatedAt.toISOString(),
-      author: {
-        id: author._id.toString(),
-        username: author.username,
-        ...(author.avatar && typeof author.avatar === 'object' && 'userId' in author.avatar && {
-          avatar: {
-            id: author.avatar._id.toString(),
-            userId: author.avatar.userId.toString(),
-            username: author.avatar.username,
-            alt: author.avatar.alt ?? "",
-            variants: (author.avatar.variants || []).map((v) => ({
-              size: v.size,
-              filename: v.filename,
-              width: v.width,
-              height: v.height,
-              url: v.url,
-            })),
-          }
-        })
-      },
-      ...(image && {
-        image: {
-          id: image._id.toString(),
-          userId: image.userId.toString(),
-          username: image.username,
-          alt: image.alt ?? "",
-          variants: (image.variants || []).map((v) => ({
-            size: v.size,
-            filename: v.filename,
-            width: v.width,
-            height: v.height,
-            url: v.url,
-          })),
-        }
-      }),
+      author: transformPopulatedAuthor(populatedPost.author),
+      ...(populatedPost.image && { image: transformPopulatedImage(populatedPost.image) }),
     });
   } catch (err: any) {
     console.error("Error creating post:", err);

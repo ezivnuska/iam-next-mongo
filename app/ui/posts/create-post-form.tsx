@@ -5,6 +5,7 @@
 import { useState } from "react";
 import { Button } from "@/app/ui/button";
 import { uploadFile } from "@/app/lib/actions/upload";
+import { useFilePreview } from "@/app/lib/hooks/useFilePreview";
 import type { Post } from "@/app/lib/definitions/post";
 
 interface CreatePostFormProps {
@@ -15,6 +16,7 @@ interface CreatePostFormProps {
 export default function CreatePostForm({ onSuccess, onClose }: CreatePostFormProps) {
   const [content, setContent] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const preview = useFilePreview(file);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,7 +28,6 @@ export default function CreatePostForm({ onSuccess, onClose }: CreatePostFormPro
     try {
       let imageId: string | undefined;
 
-      // Upload image first if present
       if (file) {
         const uploadedImage = await uploadFile(file);
         imageId = uploadedImage.id;
@@ -83,12 +84,29 @@ export default function CreatePostForm({ onSuccess, onClose }: CreatePostFormPro
           type="file"
           accept="image/*"
           onChange={(e) => setFile(e.target.files?.[0] || null)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="hidden"
         />
-        {file && (
-          <p className="text-sm text-gray-600 mt-1">
-            Selected: {file.name}
-          </p>
+        <label
+          htmlFor="image"
+          className="flex h-10 cursor-pointer items-center justify-center rounded-lg bg-blue-500 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-400"
+        >
+          {file?.name || 'Select image'}
+        </label>
+        {preview && (
+          <div className="mt-2">
+            <img
+              src={preview}
+              alt="Preview"
+              className="max-h-48 rounded-md border"
+            />
+            <button
+              type="button"
+              onClick={() => setFile(null)}
+              className="mt-2 text-sm text-red-600 hover:text-red-700"
+            >
+              Remove image
+            </button>
+          </div>
         )}
       </div>
 
