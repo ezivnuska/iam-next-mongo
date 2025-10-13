@@ -1,40 +1,25 @@
 // app/lib/models/memory.ts
 
-import mongoose, { Schema } from 'mongoose'
+import mongoose, { Schema, Model } from 'mongoose'
+import { IMemory } from '@/app/lib/definitions/memory'
 
-const memorySchema = new Schema({
-    author: {
-        type: Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
-    },
+const memorySchema = new Schema<IMemory>(
+  {
+    author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     date: { type: Date, required: true },
-    title: {
-        type: String,
-        required: false
-    },
-    content: {
-        type: String,
-        required: true
-    },
-    shared: {
-        type: Boolean,
-        default: false
-    },
-    image: {
-        type: Schema.Types.ObjectId,
-        ref: 'Image',
-        required: false
-    },
+    title: { type: String },
+    content: { type: String, required: true },
+    shared: { type: Boolean, default: false },
+    image: { type: Schema.Types.ObjectId, ref: 'Image' },
     likes: [{ type: Schema.Types.ObjectId, ref: 'User', default: [] }],
-},
-{
-    timestamps: true
-})
+  },
+  { timestamps: true }
+)
 
 memorySchema.pre('save', function(next) {
-    this.title = this.title || 'Untitled'
-    next()
+  this.title = this.title || 'Untitled'
+  next()
 })
 
-export default mongoose.models.Memory || mongoose.model('Memory', memorySchema)
+const Memory: Model<IMemory> = mongoose.models.Memory || mongoose.model<IMemory>('Memory', memorySchema)
+export default Memory

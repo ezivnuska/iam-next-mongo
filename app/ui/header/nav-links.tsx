@@ -6,6 +6,7 @@ import {
   UserGroupIcon,
   NewspaperIcon,
   UserCircleIcon,
+  CloudIcon,
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -23,6 +24,11 @@ const links = [
         name: 'Posts',
         href: '/posts',
         icon: NewspaperIcon,
+    },
+    {
+        name: 'Memories',
+        href: '/memories',
+        icon: CloudIcon,
     },
 ];
 
