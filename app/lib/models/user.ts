@@ -9,7 +9,7 @@ const UserSchema = new Schema<UserDocument>(
     email: { type: String, required: true, unique: true },
     role: { type: String, enum: Object.values(UserRole), default: UserRole.User },
     bio: { type: String, default: "" },
-    avatar: { type: Schema.Types.ObjectId, ref: "Image" },
+    avatar: { type: Schema.Types.ObjectId, ref: "Image", default: null },
     password: { type: String, required: true },
     verified: { type: Boolean, default: false },
     verifyToken: String,

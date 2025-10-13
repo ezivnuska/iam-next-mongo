@@ -22,7 +22,7 @@ export interface UserDocument extends Document {
   email: string;
   role: UserRole;
   bio: string;
-  avatar?: Types.ObjectId | ImageDocument;
+  avatar?: Types.ObjectId | ImageDocument | null;
   password: string;
   verified: boolean;
   verifyToken?: string;
