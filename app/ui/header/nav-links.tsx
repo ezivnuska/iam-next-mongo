@@ -38,7 +38,7 @@ export default function NavLinks() {
     const pathname = usePathname();
     const avatar = user?.avatar
     return (
-        <div className='flex flex-row w-full items-center gap-2'>
+        <div className='flex flex-row w-full items-center gap-2 min-[375px]:gap-1'>
             {avatar && user
                 ? (
                     <Link
@@ -49,7 +49,7 @@ export default function NavLinks() {
                             username={user.username}
                             avatar={avatar}
                             size={30}
-                            className='border-1 mr-2'
+                            className='border-1 mr-2 min-[375px]:mr-1'
                         />
                     </Link>
                 ) : (
