@@ -49,11 +49,14 @@ export default function CreateMemoryForm({ onSuccess, onClose, editMemory }: Cre
       const url = editMemory ? `/api/memories/${editMemory.id}` : "/api/memories";
       const method = editMemory ? "PUT" : "POST";
 
+      // Create date at noon local time to avoid timezone issues
+      const localDate = new Date(date + 'T12:00:00');
+
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          date,
+          date: localDate.toISOString(),
           title,
           content,
           shared,
