@@ -41,7 +41,6 @@ export default function ImagesClient({ userId }: ImagesClientProps) {
             {!userId && (
                 <Button
                     onClick={() => setModalOpen(true)}
-                    // className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-400"
                     className='mb-4'
                 >
                     Upload File

@@ -32,17 +32,12 @@ export default function Modal({
     }
   };
 
-  const handleContentClick = (e: React.MouseEvent) => {
-    // Prevent clicks inside content from closing modal
-    e.stopPropagation();
-  };
-
   return (
     <div
       className={`${position} inset-0 z-50 flex items-center justify-center ${className}`}
       onClick={handleBackdropClick}
     >
-      <div className={contentClassName} onClick={handleContentClick}>
+      <div className={contentClassName}>
         {showCloseButton && (
           <button
             className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl leading-none"
