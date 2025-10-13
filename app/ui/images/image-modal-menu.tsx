@@ -26,6 +26,7 @@ type ImageModalMenuProps = {
 	onDeleted?: () => void
 	onLikeChange?: (newLiked: boolean, newCount: number) => void
 	onCommentCountChange?: (newCount: number) => void
+	onAvatarChange?: (newAvatarId: string | null) => void
 }
 
 export type ImageModalMenuHandle = {
@@ -47,6 +48,7 @@ const ImageModalMenu = forwardRef<ImageModalMenuHandle, ImageModalMenuProps>(({
 	onDeleted,
 	onLikeChange,
 	onCommentCountChange,
+	onAvatarChange,
 }, ref) => {
 	const [comments, setComments] = useState<Comment[]>([])
 	const [commentCount, setCommentCount] = useState(initialCommentCount)
@@ -158,8 +160,8 @@ const ImageModalMenu = forwardRef<ImageModalMenuHandle, ImageModalMenuProps>(({
 				</div>
 
 				{authorized && (
-					<div className="flex items-center gap-2">
-						<AvatarButton imageId={imageId} isAvatar={isAvatar} />
+					<div className="flex items-center gap-4">
+						<AvatarButton imageId={imageId} isAvatar={isAvatar} onAvatarChange={onAvatarChange} />
 						{onDeleted && <DeleteButton imageId={imageId} onDeleted={onDeleted} />}
 					</div>
 				)}

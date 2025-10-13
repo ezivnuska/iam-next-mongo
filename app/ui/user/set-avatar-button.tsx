@@ -6,24 +6,28 @@ import { useState } from "react";
 import { Button } from '@/app/ui/button'
 import { setAvatar } from "@/app/lib/actions/profile";
 import { useUser } from "@/app/lib/providers/user-provider";
+import { UserCircleIcon } from "@heroicons/react/20/solid";
+import clsx from "clsx";
 
 interface AvatarButtonProps {
     imageId: string;
     isAvatar: boolean;
+    onAvatarChange?: (newAvatarId: string | null) => void;
 }
 
-export default function AvatarButton({ imageId, isAvatar }: AvatarButtonProps) {
+export default function AvatarButton({ imageId, isAvatar, onAvatarChange }: AvatarButtonProps) {
     const [loading, setLoading] = useState(false);
     const { setUser } = useUser();
 
     const handleChange = async () => {
-
         setLoading(true);
         try {
-            const res = await setAvatar(isAvatar ? null : imageId)
+            const newAvatarId = isAvatar ? null : imageId;
+            const res = await setAvatar(newAvatarId);
             if (!res.success || !res.user) throw new Error("Failed to update avatar");
-            
+
             setUser(res.user);
+            onAvatarChange?.(newAvatarId);
         } catch (err) {
             console.error(err);
             alert("Failed to update avatar");
@@ -34,13 +38,15 @@ export default function AvatarButton({ imageId, isAvatar }: AvatarButtonProps) {
 
     return (
         <Button
-            size="sm"
-            disabled={loading}
-            variant={isAvatar ? "default" : "secondary"}
+            size='sm'
             onClick={handleChange}
-            className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-500"
+            disabled={loading}
+            variant={isAvatar ? 'active' : 'outline'}
         >
-            {loading ? 'Loading...' : isAvatar ? "Unset Avatar" : "Set Avatar"}
+            <UserCircleIcon
+                className="w-5 h-5"
+                strokeWidth={2}
+            />
         </Button>
     );
 }

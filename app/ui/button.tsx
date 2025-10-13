@@ -3,7 +3,7 @@
 import clsx from 'clsx';
 
 type ButtonSize = 'sm' | 'md' | 'lg';
-type ButtonVariant = 'default' | 'outline' | 'ghost' | 'secondary';
+type ButtonVariant = 'default' | 'outline' | 'ghost' | 'secondary' | 'active';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
@@ -29,6 +29,7 @@ export function Button({
     secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300 active:bg-gray-400',
     outline: 'border border-blue-500 text-blue-500 hover:bg-blue-50',
     ghost: 'bg-transparent text-blue-500 hover:bg-blue-50',
+    active: 'bg-blue-500 text-white hover:bg-blue-600',
   };
 
   return (

@@ -26,6 +26,9 @@ export default function ImageGallery({ authorized, images, onDeleted, onImageUpd
   const [showCommentForm, setShowCommentForm] = useState(false);
   const menuRef = useRef<{ addComment: (comment: Comment) => void }>(null);
 
+  // Recalculate isAvatar whenever user or selectedImage changes
+  const isAvatar = selectedImage && user?.avatar?.id === selectedImage.id;
+
   const closeModal = useCallback(() => {
     setSelectedImage(null);
     setIsMenuExpanded(false);
@@ -172,7 +175,7 @@ export default function ImageGallery({ authorized, images, onDeleted, onImageUpd
                         initialLikeCount={selectedImage.likes?.length || 0}
                         initialCommentCount={selectedImage.commentCount || 0}
                         authorized={authorized}
-                        isAvatar={user?.avatar?.id === selectedImage.id}
+                        isAvatar={isAvatar || false}
                         onDeleted={handleDeletion}
                         onLikeChange={handleLikeChange}
                         onCommentCountChange={handleCommentCountChange}
