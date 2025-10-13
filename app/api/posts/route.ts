@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     });
 
     // Populate author and image for response
-    await newPost.populate([
+    const populatedPost = await newPost.populate([
       {
         path: "author",
         populate: { path: "avatar" }
@@ -38,14 +38,15 @@ export async function POST(req: Request) {
       { path: "image" }
     ]);
 
-    const author = newPost.author as any;
-    const image = newPost.image as any;
+    const postDoc = populatedPost.toObject();
+    const author = postDoc.author as any;
+    const image = postDoc.image as any;
 
     return NextResponse.json({
-      id: newPost._id.toString(),
-      content: newPost.content,
-      createdAt: newPost.createdAt.toISOString(),
-      updatedAt: newPost.updatedAt.toISOString(),
+      id: postDoc._id.toString(),
+      content: postDoc.content,
+      createdAt: postDoc.createdAt.toISOString(),
+      updatedAt: postDoc.updatedAt.toISOString(),
       author: {
         id: author._id.toString(),
         username: author.username,
