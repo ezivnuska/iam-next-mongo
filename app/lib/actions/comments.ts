@@ -3,7 +3,7 @@
 "use server";
 
 import { connectToDatabase } from "@/app/lib/mongoose";
-import { Comment } from "@/app/lib/models/comment";
+import Comment from "@/app/lib/models/comment";
 import { auth } from "@/app/lib/auth";
 import type { CommentRefType } from "@/app/lib/definitions/comment";
 import { Types } from "mongoose";

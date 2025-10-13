@@ -35,7 +35,7 @@ export default function DeleteButton({ imageId, onDeleted }: DeleteButtonProps) 
       size='sm'
       onClick={handleDelete}
       disabled={loading}
-      className="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded text-xs z-10 hover:bg-red-500"
+      className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-500"
     >
       {loading ? "Deleting..." : "Delete"}
     </Button>

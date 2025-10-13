@@ -5,12 +5,9 @@
 import { useState, useCallback, useRef } from "react";
 import Image from "next/image";
 import { useUser } from "@/app/lib/providers/user-provider";
-import DeleteButton from "@/app/ui/images/delete-image-button";
-import AvatarButton from "@/app/ui/user/set-avatar-button";
 import CommentForm from "@/app/ui/comments/comment-form";
 import Modal from "@/app/ui/modal";
 import ImageModalMenu from "@/app/ui/images/image-modal-menu";
-import LikeButton from "@/app/ui/like-button";
 import { createComment } from "@/app/lib/actions/comments";
 import type { Image as ImageType } from "@/app/lib/definitions/image";
 import type { Comment } from "@/app/lib/definitions/comment";
@@ -75,41 +72,31 @@ export default function ImageGallery({ authorized, images, onDeleted }: ImageGal
     }
   }, [selectedImage, user, isMenuExpanded]);
 
+  const handleDeletion = () => {
+    if (onDeleted && selectedImage) onDeleted(selectedImage.id);
+    closeModal();
+  }
+
   return (
     <>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {images.length
             ? images.map((img) => {
                 const medium = img.variants.find((v) => v.size === "medium");
-                const isAvatar = user?.avatar?.id === img.id;
                 return (
                     <div
                         key={img.id}
-                        className="relative rounded-lg overflow-hidden shadow w-full h-48"
+                        className="relative rounded-lg overflow-hidden shadow w-full h-48 cursor-pointer"
+                        onClick={() => setSelectedImage(img)}
                     >
                         {medium?.url ? (
-                            <>
-                                <Image
-                                    src={medium.url}
-                                    alt={img.alt || "Uploaded image"}
-                                    fill
-                                    style={{ objectFit: "cover" }}
-                                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                                    onClick={() => setSelectedImage(img)}
-                                />
-                                {authorized && (
-                                    <AvatarButton
-                                        imageId={img.id}
-                                        isAvatar={isAvatar}
-                                    />
-                                )}
-                                {authorized && (
-                                    <DeleteButton
-                                        imageId={img.id}
-                                        onDeleted={() => onDeleted?.(img.id)}
-                                    />
-                                )}
-                            </>
+                            <Image
+                                src={medium.url}
+                                alt={img.alt || "Uploaded image"}
+                                fill
+                                style={{ objectFit: "cover" }}
+                                sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                            />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-500 text-sm">
                                 No preview
@@ -157,6 +144,9 @@ export default function ImageGallery({ authorized, images, onDeleted }: ImageGal
                         initialLiked={selectedImage.likedByCurrentUser}
                         initialLikeCount={selectedImage.likes?.length || 0}
                         initialCommentCount={selectedImage.commentCount || 0}
+                        authorized={authorized}
+                        isAvatar={user?.avatar?.id === selectedImage.id}
+                        onDeleted={handleDeletion}
                     />
 
                     {/* Comment Form Modal */}

@@ -5,6 +5,8 @@
 import { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react'
 import CommentList from '@/app/ui/comments/comment-list'
 import LikeButton from '@/app/ui/like-button'
+import DeleteButton from '@/app/ui/images/delete-image-button'
+import AvatarButton from '@/app/ui/user/set-avatar-button'
 import { CommentIcon, ChevronUpIcon } from '@/app/ui/icons'
 import { getComments, deleteComment } from '@/app/lib/actions/comments'
 import type { Comment } from '@/app/lib/definitions/comment'
@@ -19,6 +21,9 @@ type ImageModalMenuProps = {
 	initialLiked?: boolean
 	initialLikeCount?: number
 	initialCommentCount?: number
+	authorized?: boolean
+	isAvatar?: boolean
+	onDeleted?: () => void
 }
 
 export type ImageModalMenuHandle = {
@@ -35,6 +40,9 @@ const ImageModalMenu = forwardRef<ImageModalMenuHandle, ImageModalMenuProps>(({
 	initialLiked = false,
 	initialLikeCount = 0,
 	initialCommentCount = 0,
+	authorized = false,
+	isAvatar = false,
+	onDeleted,
 }, ref) => {
 	const [comments, setComments] = useState<Comment[]>([])
 	const [commentCount, setCommentCount] = useState(initialCommentCount)
@@ -135,6 +143,13 @@ const ImageModalMenu = forwardRef<ImageModalMenuHandle, ImageModalMenuProps>(({
                         )}
                     </div>
 				</div>
+
+				{authorized && (
+					<div className="flex items-center gap-2">
+						<AvatarButton imageId={imageId} isAvatar={isAvatar} />
+						{onDeleted && <DeleteButton imageId={imageId} onDeleted={onDeleted} />}
+					</div>
+				)}
 			</div>
 
 			{/* Expandable Content */}

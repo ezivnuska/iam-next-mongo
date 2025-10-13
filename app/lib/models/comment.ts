@@ -25,4 +25,6 @@ const commentSchema = new mongoose.Schema({
 
 commentSchema.index({ refId: 1, refType: 1 })
 
-export const Comment = mongoose.models.Comment || mongoose.model('Comment', commentSchema)
+const Comment = mongoose.models.Comment || mongoose.model('Comment', commentSchema)
+
+export default Comment

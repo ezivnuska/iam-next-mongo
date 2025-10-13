@@ -4,10 +4,12 @@
 
 import { connectToDatabase } from "@/app/lib/mongoose";
 import ImageModel from "@/app/lib/models/image";
+import Comment from "@/app/lib/models/comment";
 import { Image } from "@/app/lib/definitions/image";
 import { deleteS3File } from "@/app/lib/aws/s3";
 import { auth } from "@/app/lib/auth";
 import { getCommentCounts } from "@/app/lib/actions/comments";
+import { Types } from "mongoose";
 /**
  * Fetch images from the database
  * @param userId Optional filter to get images for a specific user
@@ -66,10 +68,15 @@ export async function getImages(
 
 export async function deleteImage(imageId: string) {
     await connectToDatabase();
-  
+
     const image = await ImageModel.findById(imageId);
     if (!image) throw new Error("Image not found");
-  
+
+    // Delete all comments related to this image
+    const objectId = new Types.ObjectId(imageId);
+    const result = await Comment.deleteMany({ refId: objectId, refType: 'Image' });
+    console.log(`Deleted ${result.deletedCount} comments for image ${imageId}`);
+
     // Delete each variant from S3
     for (const v of image.variants) {
       if (v.url) {
@@ -78,9 +85,9 @@ export async function deleteImage(imageId: string) {
         if (key) await deleteS3File(key);
       }
     }
-  
-    // Delete image document from MongoDB
+
+    // Delete image document from MongoDB (this also removes likes since they're on the image document)
     await ImageModel.findByIdAndDelete(imageId);
-  
+
     return true;
   }

@@ -1,11 +1,11 @@
 // app/lib/models/like.ts
 
-import { Schema, model } from 'mongoose'
+import mongoose from 'mongoose'
 
-const LikeSchema = new Schema(
+const LikeSchema = new mongoose.Schema(
 	{
-		user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-		refId: { type: Schema.Types.ObjectId, required: true },
+		user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+		refId: { type: mongoose.Schema.Types.ObjectId, required: true },
 		refType: { type: String, enum: ['Memory', 'Post', 'Image'], required: true },
 	},
 	{ timestamps: true }
@@ -13,4 +13,6 @@ const LikeSchema = new Schema(
 
 LikeSchema.index({ user: 1, refId: 1, refType: 1 }, { unique: true })
 
-export const LikeModel = model('Like', LikeSchema)
+const Like = mongoose.models.Like || mongoose.model('Like', LikeSchema)
+
+export default Like
