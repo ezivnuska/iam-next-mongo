@@ -15,9 +15,16 @@ interface CreateMemoryFormProps {
 }
 
 export default function CreateMemoryForm({ onSuccess, onClose, editMemory }: CreateMemoryFormProps) {
-  const [date, setDate] = useState(
-    editMemory?.date ? new Date(editMemory.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
-  );
+  // Helper to get local date string in YYYY-MM-DD format
+  const getLocalDateString = (dateString?: string) => {
+    const d = dateString ? new Date(dateString) : new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const [date, setDate] = useState(getLocalDateString(editMemory?.date));
   const [title, setTitle] = useState(editMemory?.title || "");
   const [content, setContent] = useState(editMemory?.content || "");
   const [shared, setShared] = useState(editMemory?.shared || false);
