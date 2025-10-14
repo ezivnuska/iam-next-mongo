@@ -71,14 +71,12 @@ app.prepare().then(() => {
 		})
 
 		socket.on('disconnect', () => {
-			console.log('Socket disconnecting:', socket.id, 'userId:', socket.userId)
 			if (socket.userId) {
 				const userId = socket.userId
 				const userSockets = onlineUsers.get(userId)
 
 				if (userSockets) {
 					userSockets.delete(socket.id)
-					console.log('Removed socket', socket.id, 'from user', userId, 'remaining sockets:', userSockets.size)
 					// If user has no more active connections, mark as offline
 					if (userSockets.size === 0) {
 						onlineUsers.delete(userId)
@@ -86,7 +84,6 @@ app.prepare().then(() => {
 						io.emit('user:offline', { userId })
 					}
 				}
-				console.log('Online users after disconnect:', Array.from(onlineUsers.keys()))
 			}
 		})
 	})
