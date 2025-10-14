@@ -5,7 +5,7 @@
 import { useState } from "react";
 import { Button } from "@/app/ui/button";
 import { uploadFile } from "@/app/lib/actions/upload";
-import { useFilePreview } from "@/app/lib/hooks/useFilePreview";
+import ImageUploadInput from "@/app/ui/image-upload-input";
 import type { Memory } from "@/app/lib/definitions/memory";
 
 interface CreateMemoryFormProps {
@@ -29,7 +29,6 @@ export default function CreateMemoryForm({ onSuccess, onClose, editMemory }: Cre
   const [content, setContent] = useState(editMemory?.content || "");
   const [shared, setShared] = useState(editMemory?.shared || false);
   const [file, setFile] = useState<File | null>(null);
-  const preview = useFilePreview(file);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -140,40 +139,7 @@ export default function CreateMemoryForm({ onSuccess, onClose, editMemory }: Cre
         </label>
       </div>
 
-      <div>
-        <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-2">
-          Attach Image (optional)
-        </label>
-        <input
-          id="image"
-          type="file"
-          accept="image/*"
-          onChange={(e) => setFile(e.target.files?.[0] || null)}
-          className="hidden"
-        />
-        <label
-          htmlFor="image"
-          className="flex h-10 cursor-pointer items-center justify-center rounded-lg bg-blue-500 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-400"
-        >
-          {file?.name || 'Select image'}
-        </label>
-        {preview && (
-          <div className="mt-2">
-            <img
-              src={preview}
-              alt="Preview"
-              className="max-h-48 rounded-md border"
-            />
-            <button
-              type="button"
-              onClick={() => setFile(null)}
-              className="mt-2 text-sm text-red-600 hover:text-red-700"
-            >
-              Remove image
-            </button>
-          </div>
-        )}
-      </div>
+      <ImageUploadInput file={file} onFileChange={setFile} />
 
       {error && (
         <p className="text-sm text-red-600">{error}</p>
@@ -181,18 +147,18 @@ export default function CreateMemoryForm({ onSuccess, onClose, editMemory }: Cre
 
       <div className="flex gap-2 justify-end">
         <Button
+          type="submit"
+          disabled={loading || !(content.trim() || file)}
+        >
+          {loading ? "Saving..." : (editMemory ? "Update Memory" : "Save Memory")}
+        </Button>
+        <Button
           type="button"
           onClick={onClose}
           disabled={loading}
           variant="secondary"
         >
           Cancel
-        </Button>
-        <Button
-          type="submit"
-          disabled={loading || !content.trim()}
-        >
-          {loading ? "Saving..." : (editMemory ? "Update Memory" : "Save Memory")}
         </Button>
       </div>
     </form>
