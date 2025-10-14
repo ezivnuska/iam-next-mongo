@@ -5,7 +5,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useUser } from "@/app/lib/providers/user-provider";
-import DeleteButton from "@/app/ui/images/delete-image-button";
+import DeleteButtonWithConfirm from "@/app/ui/delete-button-with-confirm";
 import AvatarButton from "@/app/ui/user/set-avatar-button";
 import type { Image as ImageType } from "@/app/lib/definitions/image";
 
@@ -16,7 +16,7 @@ interface ImageGalleryProps {
 }
 
 export default function ImageGallery({ authorized, images, onDeleted }: ImageGalleryProps) {
-  const { user } = useUser();
+  const { user, setUser } = useUser();
   const [selectedImage, setSelectedImage] = useState<ImageType | null>(null);
 
   return (
@@ -48,9 +48,18 @@ export default function ImageGallery({ authorized, images, onDeleted }: ImageGal
                                     />
                                 )}
                                 {authorized && (
-                                    <DeleteButton
-                                        imageId={img.id}
-                                        onDeleted={() => onDeleted?.(img.id)}
+                                    <DeleteButtonWithConfirm
+                                        onDelete={async () => {
+                                            const res = await fetch(`/api/images/${img.id}`, { method: "DELETE" });
+                                            if (!res.ok) throw new Error("Failed to delete image");
+
+                                            // If this was the user's avatar, update user context
+                                            if (user?.avatar?.id === img.id) {
+                                                setUser({ ...user, avatar: null });
+                                            }
+
+                                            onDeleted?.(img.id);
+                                        }}
                                     />
                                 )}
                             </>

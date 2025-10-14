@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge'
 
 type ButtonSize = 'sm' | 'md' | 'lg';
-type ButtonVariant = 'default' | 'outline' | 'ghost' | 'secondary' | 'active';
+type ButtonVariant = 'default' | 'outline' | 'ghost' | 'secondary' | 'active' | 'warn' | 'confirm';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
@@ -22,8 +22,8 @@ export function Button({
   ...rest
 }: ButtonProps) {
   const sizeClasses = {
-    sm: 'h-8 px-3 text-sm',
-    md: 'h-10 px-4 text-sm',
+    sm: 'h-8 px-3 text-lg',
+    md: 'h-10 px-4 text-lg',
     lg: 'h-12 px-6 text-base',
   };
 
@@ -33,6 +33,8 @@ export function Button({
     outline: 'border border-blue-500 text-blue-500 hover:bg-blue-50',
     ghost: 'bg-transparent text-blue-500 hover:bg-blue-50',
     active: 'bg-blue-500 text-white hover:bg-blue-600',
+    warn: 'bg-white text-red-500 hover:bg-red-200',
+    confirm: 'text-red-500 border-1 border-red-500 hover:bg-red-500 hover:text-white',
   };
 
   const buttonClass = clsx(

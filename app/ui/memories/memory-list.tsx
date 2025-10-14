@@ -2,7 +2,7 @@
 
 "use client";
 
-import DeleteMemoryButton from "@/app/ui/memories/delete-memory-button";
+import DeleteButtonWithConfirm from "@/app/ui/delete-button-with-confirm";
 import EditMemoryButton from "@/app/ui/memories/edit-memory-button";
 import UserAvatar from "@/app/ui/user/user-avatar";
 import { useUser } from "@/app/lib/providers/user-provider";
@@ -19,7 +19,7 @@ export default function MemoryList({ memories, onDeleted, onEdit }: MemoryListPr
   const { user } = useUser();
 
   if (memories.length === 0) {
-    return <p>No memories yet</p>;
+    return <p>No memories</p>;
   }
 
   return (
@@ -68,14 +68,17 @@ export default function MemoryList({ memories, onDeleted, onEdit }: MemoryListPr
                 <p className="whitespace-pre-wrap">{memory.content}</p>
               </div>
               <div className="flex flex-col gap-2">
+                {canDelete && (
+                    <DeleteButtonWithConfirm
+                        onDelete={async () => {
+                            const res = await fetch(`/api/memories/${memory.id}`, { method: "DELETE" });
+                            if (!res.ok) throw new Error("Failed to delete memory");
+                            onDeleted(memory.id);
+                        }}
+                    />
+                )}
                 {canEdit && (
                   <EditMemoryButton onEdit={() => onEdit(memory)} />
-                )}
-                {canDelete && (
-                  <DeleteMemoryButton
-                    memoryId={memory.id}
-                    onDeleted={() => onDeleted(memory.id)}
-                  />
                 )}
               </div>
             </div>

@@ -2,7 +2,7 @@
 
 "use client";
 
-import DeletePostButton from "@/app/ui/posts/delete-post-button";
+import DeleteButtonWithConfirm from "@/app/ui/delete-button-with-confirm";
 import UserAvatar from "@/app/ui/user/user-avatar";
 import { useUser } from "@/app/lib/providers/user-provider";
 import { formatRelativeTime } from "@/app/lib/utils/format-date";
@@ -56,9 +56,12 @@ export default function PostList({ posts, onDeleted }: PostListProps) {
                 )}
               </div>
               {canDelete && (
-                <DeletePostButton
-                  postId={post.id}
-                  onDeleted={() => onDeleted(post.id)}
+                <DeleteButtonWithConfirm
+                  onDelete={async () => {
+                    const res = await fetch(`/api/posts/${post.id}`, { method: "DELETE" });
+                    if (!res.ok) throw new Error("Failed to delete post");
+                    onDeleted(post.id);
+                  }}
                 />
               )}
             </div>

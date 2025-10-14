@@ -5,10 +5,11 @@
 import { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react'
 import CommentList from '@/app/ui/comments/comment-list'
 import LikeButton from '@/app/ui/like-button'
-import DeleteButton from '@/app/ui/images/delete-image-button'
+import DeleteButtonWithConfirm from '@/app/ui/delete-button-with-confirm'
 import AvatarButton from '@/app/ui/user/set-avatar-button'
 import { CommentIcon, ChevronUpIcon } from '@/app/ui/icons'
 import { getComments, deleteComment } from '@/app/lib/actions/comments'
+import { useUser } from '@/app/lib/providers/user-provider'
 import type { Comment } from '@/app/lib/definitions/comment'
 
 type ImageModalMenuProps = {
@@ -54,6 +55,7 @@ const ImageModalMenu = forwardRef<ImageModalMenuHandle, ImageModalMenuProps>(({
 	const [commentCount, setCommentCount] = useState(initialCommentCount)
 	const [loadingComments, setLoadingComments] = useState(false)
 	const [commentsLoaded, setCommentsLoaded] = useState(false)
+	const { user, setUser } = useUser()
 
 	// Notify parent when comment count changes
 	useEffect(() => {
@@ -160,9 +162,23 @@ const ImageModalMenu = forwardRef<ImageModalMenuHandle, ImageModalMenuProps>(({
 				</div>
 
 				{authorized && (
-					<div className="flex items-center gap-4">
+					<div className="flex items-center gap-2">
 						<AvatarButton imageId={imageId} isAvatar={isAvatar} onAvatarChange={onAvatarChange} />
-						{onDeleted && <DeleteButton imageId={imageId} onDeleted={onDeleted} />}
+						{onDeleted && (
+							<DeleteButtonWithConfirm
+								onDelete={async () => {
+									const res = await fetch(`/api/images/${imageId}`, { method: "DELETE" });
+									if (!res.ok) throw new Error("Failed to delete image");
+
+									// If this was the user's avatar, update user context
+									if (user?.avatar?.id === imageId) {
+										setUser({ ...user, avatar: null });
+									}
+
+									onDeleted();
+								}}
+							/>
+						)}
 					</div>
 				)}
 			</div>
