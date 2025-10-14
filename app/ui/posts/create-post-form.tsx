@@ -11,10 +11,11 @@ import type { Post } from "@/app/lib/definitions/post";
 interface CreatePostFormProps {
   onSuccess: (post: Post) => void;
   onClose: () => void;
+  editItem?: Post;
 }
 
-export default function CreatePostForm({ onSuccess, onClose }: CreatePostFormProps) {
-  const [content, setContent] = useState("");
+export default function CreatePostForm({ onSuccess, onClose, editItem }: CreatePostFormProps) {
+  const [content, setContent] = useState(editItem?.content || "");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,17 +33,20 @@ export default function CreatePostForm({ onSuccess, onClose }: CreatePostFormPro
         imageId = uploadedImage.id;
       }
 
-      const response = await fetch("/api/posts", {
-        method: "POST",
+      const url = editItem ? `/api/posts/${editItem.id}` : "/api/posts";
+      const method = editItem ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           content,
           imageId,
         }),
       });
-
+      
       if (!response.ok) {
-        throw new Error("Failed to create post");
+        throw new Error(editItem ? "Failed to update post" : "Failed to create post");
       }
 
       const newPost = await response.json();
@@ -83,9 +87,9 @@ export default function CreatePostForm({ onSuccess, onClose }: CreatePostFormPro
       <div className="flex gap-2 justify-end">
         <Button
           type="submit"
-          disabled={loading || (!content.trim() && !file)}
+          disabled={loading || !(content.trim() || file)}
         >
-          {loading ? "Posting..." : "Post"}
+          {loading ? "Saving..." : (editItem ? " Update Post" : "Save Post")}
         </Button>
         <Button
           type="button"

@@ -19,8 +19,7 @@ export default function Modal({
   isOpen = true,
   onClose,
   className = 'bg-black/50',
-  contentClassName = 'relative w-full max-w-md rounded-lg bg-white p-6 shadow-lg',
-  showCloseButton = false,
+  contentClassName = 'relative w-full max-w-md rounded-lg bg-white p-6 pt-4 shadow-lg',
   position = 'fixed',
 }: ModalProps) {
   if (!isOpen) return null;
@@ -43,15 +42,6 @@ export default function Modal({
       onClick={handleBackdropClick}
     >
       <div className={`${contentClassName} my-auto`} onClick={handleContentClick}>
-        {showCloseButton && (
-          <button
-            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl leading-none"
-            onClick={onClose}
-            aria-label="Close"
-          >
-            ✕
-          </button>
-        )}
         {children}
       </div>
     </div>

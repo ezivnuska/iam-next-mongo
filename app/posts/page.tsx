@@ -4,7 +4,9 @@ import { getPosts } from "@/app/lib/actions/posts";
 import ProtectedRoute from "@/app/ui/auth/protected-route";
 import Main from "@/app/ui/layout/main";
 import Breadcrumbs from "../ui/layout/breadcrumbs";
-import PostsClient from "@/app/ui/posts/posts-client";
+import ContentClient from "../ui/content-client";
+import PostList from "../ui/posts/post-list";
+import CreatePostForm from "../ui/posts/create-post-form";
 
 export default async function Page() {
   const posts = await getPosts();
@@ -16,7 +18,14 @@ export default async function Page() {
                 { label: "Posts", href: "/posts", active: true },
             ]}
         />
-        <PostsClient initialPosts={posts} />
+        <ContentClient
+            initialItems={posts}
+            addButtonText="Add Post"
+            createModalTitle="Create a Post"
+            editModalTitle="Edit Post"
+            ListComponent={PostList}
+            FormComponent={CreatePostForm}
+        />
       </Main>
     </ProtectedRoute>
   );

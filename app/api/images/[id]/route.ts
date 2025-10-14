@@ -13,7 +13,7 @@ export async function DELETE(req: Request) {
 
     await deleteImage(id);
 
-    return NextResponse.json({ success: true }, { status: 200 });
+    return NextResponse.json({ ok: true }, { status: 200 });
   } catch (err: any) {
     console.error(err);
     return NextResponse.json({ error: err.message }, { status: 500 });

@@ -3,33 +3,36 @@
 "use client";
 
 import DeleteButtonWithConfirm from "@/app/ui/delete-button-with-confirm";
-import EditMemoryButton from "@/app/ui/memories/edit-memory-button";
 import UserAvatar from "@/app/ui/user/user-avatar";
 import { useUser } from "@/app/lib/providers/user-provider";
 import { formatRelativeTime } from "@/app/lib/utils/format-date";
 import type { Memory } from "@/app/lib/definitions/memory";
+import EditContentButton from "../edit-content-button";
+import FlagContentButton from "../flag-content-button";
 
 interface MemoryListProps {
-  memories: Memory[];
+  items: Memory[];
   onDeleted: (memoryId: string) => void;
   onEdit: (memory: Memory) => void;
+onFlag: (memory: Memory) => void;
 }
 
-export default function MemoryList({ memories, onDeleted, onEdit }: MemoryListProps) {
+export default function MemoryList({ items, onDeleted, onEdit, onFlag }: MemoryListProps) {
   const { user } = useUser();
 
-  if (memories.length === 0) {
+  if (items.length === 0) {
     return <p>No memories</p>;
   }
 
   return (
     <div>
-      {memories.map((memory) => {
+      {items.map((memory) => {
         const medium = memory.image?.variants.find((v) => v.size === "medium");
         const isAuthor = user?.id === memory.author.id;
         const isAdmin = user?.role === "admin";
         const canDelete = isAuthor || isAdmin;
         const canEdit = isAuthor;
+
         const memoryDate = new Date(memory.date).toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',
@@ -67,20 +70,22 @@ export default function MemoryList({ memories, onDeleted, onEdit }: MemoryListPr
                 )}
                 <p className="whitespace-pre-wrap">{memory.content}</p>
               </div>
-              <div className="flex flex-col gap-2">
-                {canDelete && (
-                    <DeleteButtonWithConfirm
-                        onDelete={async () => {
-                            const res = await fetch(`/api/memories/${memory.id}`, { method: "DELETE" });
-                            if (!res.ok) throw new Error("Failed to delete memory");
-                            onDeleted(memory.id);
-                        }}
-                    />
-                )}
-                {canEdit && (
-                  <EditMemoryButton onEdit={() => onEdit(memory)} />
-                )}
-              </div>
+
+                <div className="flex flex-col items-end gap-2">
+                    {canDelete && (
+                        <DeleteButtonWithConfirm
+                            onDelete={async () => {
+                                const res = await fetch(`/api/memories/${memory.id}`, { method: "DELETE" });
+                                if (!res.ok) throw new Error("Failed to delete memory");
+                                onDeleted(memory.id);
+                            }}
+                        />
+                    )}
+                    {canEdit && (
+                        <EditContentButton onEdit={() => onEdit(memory)} />
+                    )}
+                    <FlagContentButton onFlag={() => onFlag(memory)} />
+                </div>
             </div>
           </div>
         );

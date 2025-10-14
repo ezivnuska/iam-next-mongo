@@ -1,15 +1,15 @@
-// app/ui/memories/edit-memory-button.tsx
+// app/ui/edit-content-button.tsx
 
 "use client";
 
 import { Button } from "@/app/ui/button";
 import { PencilIcon } from "@heroicons/react/24/outline";
 
-interface EditMemoryButtonProps {
+interface EditContentButtonProps {
   onEdit: () => void;
 }
 
-export default function EditMemoryButton({ onEdit }: EditMemoryButtonProps) {
+export default function EditContentButton({ onEdit }: EditContentButtonProps) {
   return (
     <Button
       size='sm'
