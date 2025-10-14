@@ -42,38 +42,45 @@ export default function PostList({ items, onDeleted, onEdit, onFlag }: PostListP
                         size={40}
                     />
                     <div className="flex-1 min-w-0">
-                        <div className="flex flex-col mb-2">
-                            <p className="font-semibold">{post.author.username}</p>
-                            <span className="text-xs text-gray-500">{formatRelativeTime(post.createdAt)}</span>
+                        <div className="flex flex-row items-center justify-between mb-2">
+                            <div className="flex flex-col">
+                                <p className="font-semibold">{post.author.username}</p>
+                                <span className="text-xs text-gray-500">{formatRelativeTime(post.createdAt)}</span>
+                            </div>
+                            {canDelete && (
+                                <DeleteButtonWithConfirm
+                                    onDelete={async () => {
+                                        const res = await fetch(`/api/posts/${post.id}`, { method: "DELETE" });
+                                        if (!res.ok) throw new Error("Failed to delete post");
+                                        onDeleted(post.id);
+                                    }}
+                                />
+                            )}
                         </div>
-                        {post.image && (
-                            <img
-                                src={medium?.url}
-                                alt="Post image"
-                                className="max-w-full max-h-96 rounded mb-2 object-cover"
-                            />
-                        )}
-                        <p>{post.content}</p>
-                        {post.linkUrl && (
-                            <a href={post.linkUrl} target="_blank" className="text-blue-500 underline mt-2 block">
-                                {post.linkPreview?.title || post.linkUrl}
-                            </a>
-                        )}
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                        {canDelete && (
-                            <DeleteButtonWithConfirm
-                                onDelete={async () => {
-                                    const res = await fetch(`/api/posts/${post.id}`, { method: "DELETE" });
-                                    if (!res.ok) throw new Error("Failed to delete post");
-                                    onDeleted(post.id);
-                                }}
-                            />
-                        )}
-                        {canEdit && (
-                            <EditContentButton onEdit={() => onEdit(post)} />
-                        )}
-                        <FlagContentButton onFlag={() => onFlag(post)} />
+                        <div className="flex flex-row items-start grow gap-2">
+                            <div className="flex flex-col grow gap-2 overflow-hidden">
+                                {post.image && (
+                                    <img
+                                        src={medium?.url}
+                                        alt="Post image"
+                                        className="max-w-full max-h-96 rounded mb-2 object-cover"
+                                    />
+                                )}
+                                <p>{post.content}</p>
+                                {post.linkUrl && (
+                                    <a href={post.linkUrl} target="_blank" className="text-blue-500 underline mt-2">
+                                        [source]
+                                        {/* {post.linkPreview?.title || post.linkUrl} */}
+                                    </a>
+                                )}
+                            </div>
+                            <div className='shrink'>
+                                {canEdit && (
+                                    <EditContentButton onEdit={() => onEdit(post)} />
+                                )}
+                                <FlagContentButton onFlag={() => onFlag(post)} />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

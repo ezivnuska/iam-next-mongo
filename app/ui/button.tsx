@@ -22,7 +22,7 @@ export function Button({
   ...rest
 }: ButtonProps) {
   const sizeClasses = {
-    sm: 'h-8 px-3 text-lg',
+    sm: 'h-8 px-2 text-lg',
     md: 'h-10 px-4 text-lg',
     lg: 'h-12 px-6 text-base',
   };

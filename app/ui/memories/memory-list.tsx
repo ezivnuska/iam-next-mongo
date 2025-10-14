@@ -40,7 +40,7 @@ export default function MemoryList({ items, onDeleted, onEdit, onFlag }: MemoryL
         });
 
         return (
-          <div key={memory.id} className="mb-4 p-4 border rounded-lg bg-white shadow-sm">
+          <div key={memory.id} className="mb-4 py-3 px-2 border rounded-lg bg-white shadow-sm">
             <div className="flex items-start gap-3">
               <UserAvatar
                 username={memory.author.username}
@@ -48,30 +48,11 @@ export default function MemoryList({ items, onDeleted, onEdit, onFlag }: MemoryL
                 size={40}
               />
               <div className="flex-1 min-w-0">
-                <div className="flex flex-col mb-2">
-                  <p className="font-semibold">{memory.author.username}</p>
-                  <span className="text-xs text-gray-500">{formatRelativeTime(memory.createdAt)}</span>
-                </div>
-                <div className="mb-2">
-                  <p className="text-lg font-medium text-gray-700">{memory.title || "Untitled"}</p>
-                  <p className="text-sm text-gray-500">{memoryDate}</p>
-                  {memory.shared && (
-                    <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded mt-1">
-                      Shared
-                    </span>
-                  )}
-                </div>
-                {memory.image && (
-                  <img
-                    src={medium?.url}
-                    alt="Memory image"
-                    className="max-w-full max-h-96 rounded mb-2 object-cover"
-                  />
-                )}
-                <p className="whitespace-pre-wrap">{memory.content}</p>
-              </div>
-
-                <div className="flex flex-col items-end gap-2">
+                <div className="flex flex-row items-center justify-between mb-2">
+                    <div className="flex flex-col">
+                        <p className="font-semibold">{memory.author.username}</p>
+                        <span className="text-xs text-gray-500">{formatRelativeTime(memory.createdAt)}</span>
+                    </div>
                     {canDelete && (
                         <DeleteButtonWithConfirm
                             onDelete={async () => {
@@ -81,11 +62,37 @@ export default function MemoryList({ items, onDeleted, onEdit, onFlag }: MemoryL
                             }}
                         />
                     )}
-                    {canEdit && (
-                        <EditContentButton onEdit={() => onEdit(memory)} />
-                    )}
-                    <FlagContentButton onFlag={() => onFlag(memory)} />
                 </div>
+                <div className="flex flex-row items-start grow gap-2">
+                    <div className="flex flex-col grow gap-2 overflow-hidden">
+                        <div className="flex flex-col mb-1 gap-2">
+                            <div>
+                                <p className="text-lg font-medium text-gray-700">{memory.title || "Untitled"}</p>
+                                <p className="text-sm text-gray-500">{memoryDate}</p>
+                                {memory.shared && (
+                                    <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded mt-1">
+                                        Shared
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                        {memory.image && (
+                            <img
+                                src={medium?.url}
+                                alt="Memory image"
+                                className="max-w-full max-h-96 rounded mb-2 object-cover"
+                            />
+                        )}
+                        <p className="whitespace-pre-wrap">{memory.content}</p>
+                    </div>
+                    <div className='shrink'>
+                        {canEdit && (
+                            <EditContentButton onEdit={() => onEdit(memory)} />
+                        )}
+                        <FlagContentButton onFlag={() => onFlag(memory)} />
+                    </div>
+                </div>
+              </div>
             </div>
           </div>
         );
