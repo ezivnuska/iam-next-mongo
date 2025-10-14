@@ -110,7 +110,7 @@ export function UserProvider({ children, initialUser }: UserProviderProps) {
         fetchUserByUsername,
       }}
     >
-      {status === 'loading' ? null : children}
+      {["authenticated", "unauthenticated"].includes(status) ? children : null}
     </UserContext.Provider>
   );
 }

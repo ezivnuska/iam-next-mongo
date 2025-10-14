@@ -35,7 +35,7 @@ export default function UserAvatar({
 	if (imageUrl) {
 		return (
 			<div
-				className={`rounded-full overflow-hidden flex-shrink-0 ${className}`}
+				className={`rounded-full overflow-hidden flex-shrink-0 border-1 ${className}`}
 				style={{ width: size, height: size }}
 			>
 				<Image

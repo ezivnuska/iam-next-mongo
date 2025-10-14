@@ -48,8 +48,8 @@ export default function NavLinks() {
                         <UserAvatar
                             username={user.username}
                             avatar={avatar}
-                            size={30}
-                            className='border-1 mr-2 min-[375px]:mr-1'
+                            size={36}
+                            className='mr-2 min-[375px]:mr-1'
                         />
                     </Link>
                 ) : (
