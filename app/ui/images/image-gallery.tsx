@@ -9,6 +9,7 @@ import CommentForm from "@/app/ui/comments/comment-form";
 import Modal from "@/app/ui/modal";
 import ImageModalMenu from "@/app/ui/images/image-modal-menu";
 import { createComment } from "@/app/lib/actions/comments";
+import { handleError } from "@/app/lib/utils/error-handler";
 import type { Image as ImageType } from "@/app/lib/definitions/image";
 import type { Comment } from "@/app/lib/definitions/comment";
 
@@ -78,7 +79,7 @@ export default function ImageGallery({ authorized, images, onDeleted, onImageUpd
 
       menuRef.current?.addComment(optimisticComment);
     } catch (error) {
-      console.error('Failed to create comment:', error);
+      handleError(error, 'Failed to create comment');
       throw error; // Re-throw so CommentForm can handle it
     }
   }, [selectedImage, user, isMenuExpanded]);

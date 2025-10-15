@@ -3,12 +3,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import UserAvatar from '@/app/ui/user/user-avatar'
-import { getFriends, getPendingRequests, removeFriend, acceptFriendRequest, rejectFriendRequest } from '@/app/lib/actions/friendships'
-import { useSocket } from '@/app/lib/providers/socket-provider'
-import { SOCKET_EVENTS } from '@/app/lib/socket/events'
+import { getFriends, getPendingRequests } from '@/app/lib/actions/friendships'
+import { useFriendshipSocketEvents } from '@/app/lib/hooks/useFriendshipSocketEvents'
+import { useFriendshipActions } from '@/app/lib/hooks/useFriendshipActions'
+import { showError } from '@/app/lib/utils/error-handler'
 import type { Friend, Friendship } from '@/app/lib/definitions/friendship'
 import type { FriendRequestPayload, FriendshipStatusPayload } from '@/app/lib/socket/events'
+import { Button } from '../button'
+import FriendCard from './friend-card'
 
 type Tab = 'friends' | 'requests'
 
@@ -21,18 +23,16 @@ export default function FriendsMenu({ onUpdate }: FriendsMenuProps) {
 	const [friends, setFriends] = useState<Friend[]>([])
 	const [pendingRequests, setPendingRequests] = useState<Friendship[]>([])
 	const [loading, setLoading] = useState(true)
-	const { socket } = useSocket()
+	const { actionLoading, handleAcceptRequest, handleRejectRequest, handleRemoveFriend } = useFriendshipActions()
 
 	useEffect(() => {
 		loadData()
 	}, [])
 
-	// Listen for socket events - only for events that affect the menu lists
-	useEffect(() => {
-		if (!socket) return
-
-		const handleFriendRequestSent = (payload: FriendRequestPayload) => {
-			// Add new request to pending list
+	// Listen for socket events
+	useFriendshipSocketEvents({
+		isCurrentUser: true,
+		onFriendRequestSent: (payload: FriendRequestPayload) => {
 			setPendingRequests(prev => [{
 				id: payload.friendshipId,
 				requester: payload.requester,
@@ -41,21 +41,11 @@ export default function FriendsMenu({ onUpdate }: FriendsMenuProps) {
 				createdAt: new Date().toISOString(),
 				updatedAt: new Date().toISOString(),
 			}, ...prev])
-		}
-
-		const handleFriendshipRemoved = (payload: FriendshipStatusPayload) => {
-			// Remove from friends list
+		},
+		onFriendshipRemoved: (payload: FriendshipStatusPayload) => {
 			setFriends(prev => prev.filter(f => f.friendshipId !== payload.friendshipId))
-		}
-
-		socket.on(SOCKET_EVENTS.FRIEND_REQUEST_SENT, handleFriendRequestSent)
-		socket.on(SOCKET_EVENTS.FRIENDSHIP_REMOVED, handleFriendshipRemoved)
-
-		return () => {
-			socket.off(SOCKET_EVENTS.FRIEND_REQUEST_SENT, handleFriendRequestSent)
-			socket.off(SOCKET_EVENTS.FRIENDSHIP_REMOVED, handleFriendshipRemoved)
-		}
-	}, [socket])
+		},
+	})
 
 	const loadData = async () => {
 		setLoading(true)
@@ -73,37 +63,34 @@ export default function FriendsMenu({ onUpdate }: FriendsMenuProps) {
 		}
 	}
 
-	const handleRemoveFriend = async (friendshipId: string) => {
+	const handleRemove = async (friendshipId: string) => {
 		if (!confirm('Are you sure you want to remove this friend?')) return
 
 		try {
-			await removeFriend(friendshipId)
+			await handleRemoveFriend(friendshipId)
 			setFriends(prev => prev.filter(f => f.friendshipId !== friendshipId))
 		} catch (error) {
-			console.error('Failed to remove friend:', error)
-			alert('Failed to remove friend')
+			showError(error, 'Failed to remove friend')
 		}
 	}
 
-	const handleAcceptRequest = async (friendshipId: string) => {
+	const handleAccept = async (friendshipId: string) => {
 		try {
-			await acceptFriendRequest(friendshipId)
+			await handleAcceptRequest(friendshipId)
 			setPendingRequests(prev => prev.filter(r => r.id !== friendshipId))
-			await loadData() // Reload to show new friend in friends list
-			onUpdate?.() // Notify parent component
+			await loadData()
+			onUpdate?.()
 		} catch (error) {
-			console.error('Failed to accept request:', error)
-			alert('Failed to accept friend request')
+			showError(error, 'Failed to accept friend request')
 		}
 	}
 
-	const handleRejectRequest = async (friendshipId: string) => {
+	const handleReject = async (friendshipId: string) => {
 		try {
-			await rejectFriendRequest(friendshipId)
+			await handleRejectRequest(friendshipId)
 			setPendingRequests(prev => prev.filter(r => r.id !== friendshipId))
 		} catch (error) {
-			console.error('Failed to reject request:', error)
-			alert('Failed to reject friend request')
+			showError(error, 'Failed to reject friend request')
 		}
 	}
 
@@ -113,7 +100,7 @@ export default function FriendsMenu({ onUpdate }: FriendsMenuProps) {
 
 			{/* Tabs */}
 			<div className="flex gap-2 mb-4 border-b">
-				<button
+				<Button
 					className={`px-4 py-2 font-medium transition-colors ${
 						activeTab === 'friends'
 							? 'border-b-2 border-blue-600 text-blue-600'
@@ -122,8 +109,8 @@ export default function FriendsMenu({ onUpdate }: FriendsMenuProps) {
 					onClick={() => setActiveTab('friends')}
 				>
 					Friends ({friends.length})
-				</button>
-				<button
+				</Button>
+				<Button
 					className={`px-4 py-2 font-medium transition-colors relative ${
 						activeTab === 'requests'
 							? 'border-b-2 border-blue-600 text-blue-600'
@@ -137,7 +124,7 @@ export default function FriendsMenu({ onUpdate }: FriendsMenuProps) {
 							{pendingRequests.length}
 						</span>
 					)}
-				</button>
+				</Button>
 			</div>
 
 			{/* Content */}
@@ -145,12 +132,13 @@ export default function FriendsMenu({ onUpdate }: FriendsMenuProps) {
 				{loading ? (
 					<div className="text-center py-8 text-gray-500">Loading...</div>
 				) : activeTab === 'friends' ? (
-					<FriendsList friends={friends} onRemove={handleRemoveFriend} />
+					<FriendsList friends={friends} onRemove={handleRemove} loading={!!actionLoading} />
 				) : (
 					<RequestsList
 						requests={pendingRequests}
-						onAccept={handleAcceptRequest}
-						onReject={handleRejectRequest}
+						onAccept={handleAccept}
+						onReject={handleReject}
+						loading={!!actionLoading}
 					/>
 				)}
 			</div>
@@ -158,7 +146,7 @@ export default function FriendsMenu({ onUpdate }: FriendsMenuProps) {
 	)
 }
 
-function FriendsList({ friends, onRemove }: { friends: Friend[]; onRemove: (id: string) => void }) {
+function FriendsList({ friends, onRemove, loading }: { friends: Friend[]; onRemove: (id: string) => void; loading: boolean }) {
 	if (friends.length === 0) {
 		return (
 			<div className="text-center py-8 text-gray-500">
@@ -172,27 +160,23 @@ function FriendsList({ friends, onRemove }: { friends: Friend[]; onRemove: (id: 
 			{friends.map((friend) => {
 				const avatarUrl = friend.avatar?.variants.find(v => v.size === 'small')?.url
 				return (
-					<div key={friend.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-						<div className="flex items-center gap-3">
-							<UserAvatar
-								username={friend.username}
-								avatarUrl={avatarUrl}
-								size={40}
-							/>
-							<div>
-								<p className="font-semibold text-sm">{friend.username}</p>
-								<p className="text-xs text-gray-500">
-									Friends since {new Date(friend.friendsSince).toLocaleDateString()}
-								</p>
-							</div>
-						</div>
-						<button
-							onClick={() => onRemove(friend.friendshipId)}
-							className="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded transition-colors"
-						>
-							Remove
-						</button>
-					</div>
+					<FriendCard
+						key={friend.id}
+						id={friend.id}
+						username={friend.username}
+						avatarUrl={avatarUrl}
+						subtitle={`Friends since ${new Date(friend.friendsSince).toLocaleDateString()}`}
+						actions={
+							<Button
+								size="sm"
+								variant="warn"
+								onClick={() => onRemove(friend.friendshipId)}
+								disabled={loading}
+							>
+								Remove
+							</Button>
+						}
+					/>
 				)
 			})}
 		</div>
@@ -202,11 +186,13 @@ function FriendsList({ friends, onRemove }: { friends: Friend[]; onRemove: (id: 
 function RequestsList({
 	requests,
 	onAccept,
-	onReject
+	onReject,
+	loading
 }: {
 	requests: Friendship[]
 	onAccept: (id: string) => void
 	onReject: (id: string) => void
+	loading: boolean
 }) {
 	if (requests.length === 0) {
 		return (
@@ -221,35 +207,33 @@ function RequestsList({
 			{requests.map((request) => {
 				const avatarUrl = request.requester.avatar?.variants.find(v => v.size === 'small')?.url
 				return (
-					<div key={request.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-						<div className="flex items-center gap-3">
-							<UserAvatar
-								username={request.requester.username}
-								avatarUrl={avatarUrl}
-								size={40}
-							/>
-							<div>
-								<p className="font-semibold text-sm">{request.requester.username}</p>
-								<p className="text-xs text-gray-500">
-									{new Date(request.createdAt).toLocaleDateString()}
-								</p>
-							</div>
-						</div>
-						<div className="flex gap-2">
-							<button
-								onClick={() => onAccept(request.id)}
-								className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-							>
-								Accept
-							</button>
-							<button
-								onClick={() => onReject(request.id)}
-								className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-200 rounded transition-colors"
-							>
-								Reject
-							</button>
-						</div>
-					</div>
+					<FriendCard
+						key={request.id}
+						id={request.id}
+						username={request.requester.username}
+						avatarUrl={avatarUrl}
+						subtitle={new Date(request.createdAt).toLocaleDateString()}
+						actions={
+							<>
+								<Button
+									size="sm"
+									variant="default"
+									onClick={() => onAccept(request.id)}
+									disabled={loading}
+								>
+									Accept
+								</Button>
+								<Button
+									size="sm"
+									variant="secondary"
+									onClick={() => onReject(request.id)}
+									disabled={loading}
+								>
+									Reject
+								</Button>
+							</>
+						}
+					/>
 				)
 			})}
 		</div>

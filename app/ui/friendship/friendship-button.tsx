@@ -5,10 +5,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import FriendsMenu from '@/app/ui/friendship/friends-menu'
 import Modal from '@/app/ui/modal'
-import { useSocket } from '@/app/lib/providers/socket-provider'
-import { SOCKET_EVENTS } from '@/app/lib/socket/events'
+import { getFriendshipStatus } from '@/app/lib/actions/friendships'
+import { useFriendshipSocketEvents } from '@/app/lib/hooks/useFriendshipSocketEvents'
+import { useFriendshipActions } from '@/app/lib/hooks/useFriendshipActions'
+import { showError } from '@/app/lib/utils/error-handler'
 import type { FriendshipStatusPayload, FriendRequestPayload } from '@/app/lib/socket/events'
-import { sendFriendRequest, removeFriend, getFriendshipStatus, acceptFriendRequest, rejectFriendRequest } from '@/app/lib/actions/friendships'
+import { Button } from '../button'
 
 type FriendshipButtonProps = {
 	userId: string
@@ -21,9 +23,9 @@ export default function FriendshipButton({ userId, username, isCurrentUser }: Fr
 	const [status, setStatus] = useState<'none' | 'pending_sent' | 'pending_received' | 'accepted'>('none')
 	const [friendshipId, setFriendshipId] = useState<string | undefined>()
 	const [loading, setLoading] = useState(true)
-	const [actionLoading, setActionLoading] = useState(false)
 	const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
-	const { socket } = useSocket()
+	const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
+	const { actionLoading, handleSendRequest, handleAcceptRequest, handleRejectRequest, handleRemoveFriend } = useFriendshipActions()
 
 	// Load friendship status
 	useEffect(() => {
@@ -34,52 +36,30 @@ export default function FriendshipButton({ userId, username, isCurrentUser }: Fr
 		}
 	}, [userId, isCurrentUser])
 
-	// Socket event listeners - consolidated from both components
-	useEffect(() => {
-		if (!socket) return
-
-		// Handle friend request accepted (for AddFriendButton)
-		const handleFriendRequestAccepted = (payload: FriendshipStatusPayload) => {
-			if (payload.otherUserId === userId || payload.friendshipId === friendshipId) {
-				setStatus('accepted')
-				if (payload.friendshipId) {
-					setFriendshipId(payload.friendshipId)
-				}
+	// Socket event listeners
+	useFriendshipSocketEvents({
+		userId,
+		friendshipId,
+		isCurrentUser,
+		onFriendRequestAccepted: (payload: FriendshipStatusPayload) => {
+			setStatus('accepted')
+			if (payload.friendshipId) {
+				setFriendshipId(payload.friendshipId)
 			}
-		}
-
-		// Handle friendship ended (rejected or removed)
-		const handleFriendshipEnded = (payload: FriendshipStatusPayload) => {
-			if (payload.otherUserId === userId || payload.friendshipId === friendshipId) {
-				setStatus('none')
-				setFriendshipId(undefined)
-			}
-		}
-
-		// Handle friend request sent (for FriendsMenu badge count)
-		const handleFriendRequestSent = (payload: FriendRequestPayload) => {
+		},
+		onFriendshipEnded: () => {
+			setStatus('none')
+			setFriendshipId(undefined)
+		},
+		onFriendRequestSent: (payload: FriendRequestPayload) => {
 			if (isCurrentUser) {
-				// If viewing own profile, increment badge
 				setPendingRequestsCount(prev => prev + 1)
 			} else if (payload.requester.id === userId) {
-				// If viewing the sender's profile, update button to show "Accept Request"
 				setStatus('pending_received')
 				setFriendshipId(payload.friendshipId)
 			}
-		}
-
-		socket.on(SOCKET_EVENTS.FRIEND_REQUEST_ACCEPTED, handleFriendRequestAccepted)
-		socket.on(SOCKET_EVENTS.FRIEND_REQUEST_REJECTED, handleFriendshipEnded)
-		socket.on(SOCKET_EVENTS.FRIENDSHIP_REMOVED, handleFriendshipEnded)
-		socket.on(SOCKET_EVENTS.FRIEND_REQUEST_SENT, handleFriendRequestSent)
-
-		return () => {
-			socket.off(SOCKET_EVENTS.FRIEND_REQUEST_ACCEPTED, handleFriendRequestAccepted)
-			socket.off(SOCKET_EVENTS.FRIEND_REQUEST_REJECTED, handleFriendshipEnded)
-			socket.off(SOCKET_EVENTS.FRIENDSHIP_REMOVED, handleFriendshipEnded)
-			socket.off(SOCKET_EVENTS.FRIEND_REQUEST_SENT, handleFriendRequestSent)
-		}
-	}, [socket, userId, friendshipId, isCurrentUser])
+		},
+	})
 
 	const loadStatus = async () => {
 		setLoading(true)
@@ -94,83 +74,57 @@ export default function FriendshipButton({ userId, username, isCurrentUser }: Fr
 		}
 	}
 
-	const handleSendRequest = async () => {
-		setActionLoading(true)
+	const handleSend = async () => {
 		try {
-			const result = await sendFriendRequest(userId)
+			const result = await handleSendRequest(userId)
 			setStatus('pending_sent')
 			setFriendshipId(result.friendshipId)
 		} catch (error: any) {
-			console.error('Failed to send friend request:', error)
-			alert(error.message || 'Failed to send friend request')
-		} finally {
-			setActionLoading(false)
+			showError(error, 'Failed to send friend request')
 		}
 	}
 
-	const handleAcceptRequest = async () => {
+	const handleAccept = async () => {
 		if (!friendshipId) return
-
-		setActionLoading(true)
 		try {
-			await acceptFriendRequest(friendshipId)
+			await handleAcceptRequest(friendshipId)
 			setStatus('accepted')
 		} catch (error: any) {
-			console.error('Failed to accept friend request:', error)
-			alert(error.message || 'Failed to accept friend request')
-		} finally {
-			setActionLoading(false)
+			showError(error, 'Failed to accept friend request')
 		}
 	}
 
-	const handleRejectRequest = async () => {
+	const handleReject = async () => {
 		if (!friendshipId) return
-
-		setActionLoading(true)
 		try {
-			await rejectFriendRequest(friendshipId)
+			await handleRejectRequest(friendshipId)
 			setStatus('none')
 			setFriendshipId(undefined)
 		} catch (error: any) {
-			console.error('Failed to reject friend request:', error)
-			alert(error.message || 'Failed to reject friend request')
-		} finally {
-			setActionLoading(false)
+			showError(error, 'Failed to reject friend request')
 		}
 	}
 
-	const handleCancelRequest = async () => {
-		await handleFriendshipAction(
-			() => removeFriend(friendshipId!),
-			'Failed to cancel friend request'
-		)
-	}
-
-	const handleRemoveFriend = async () => {
-		if (!confirm(`Remove ${username} from friends?`)) return
-		await handleFriendshipAction(
-			() => removeFriend(friendshipId!),
-			'Failed to remove friend'
-		)
-	}
-
-	// Shared handler for actions that reset friendship status
-	const handleFriendshipAction = async (
-		action: () => Promise<any>,
-		errorMessage: string
-	) => {
+	const handleCancel = async () => {
 		if (!friendshipId) return
-
-		setActionLoading(true)
 		try {
-			await action()
+			await handleRemoveFriend(friendshipId)
 			setStatus('none')
 			setFriendshipId(undefined)
 		} catch (error) {
-			console.error(errorMessage, error)
-			alert(errorMessage)
-		} finally {
-			setActionLoading(false)
+			showError(error, 'Failed to cancel friend request')
+		}
+	}
+
+	const handleRemove = async () => {
+		if (!friendshipId) return
+		try {
+			await handleRemoveFriend(friendshipId)
+			setStatus('none')
+			setFriendshipId(undefined)
+			setShowRemoveConfirm(false)
+		} catch (error) {
+			showError(error, 'Failed to remove friend')
 		}
 	}
 
@@ -183,9 +137,10 @@ export default function FriendshipButton({ userId, username, isCurrentUser }: Fr
 	if (isCurrentUser) {
 		return (
 			<>
-				<button
+				<Button
+                    variant='secondary'
 					onClick={() => setShowFriendsMenu(true)}
-					className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors relative"
+					// className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors relative"
 				>
 					My Friends
 					{pendingRequestsCount > 0 && (
@@ -193,7 +148,7 @@ export default function FriendshipButton({ userId, username, isCurrentUser }: Fr
 							{pendingRequestsCount}
 						</span>
 					)}
-				</button>
+				</Button>
 
 				{showFriendsMenu && (
 					<Modal
@@ -210,66 +165,91 @@ export default function FriendshipButton({ userId, username, isCurrentUser }: Fr
 	// Otherwise, show the add friend button with different states
 	if (loading) {
 		return (
-			<button className="px-4 py-2 bg-gray-200 text-gray-500 rounded-lg" disabled>
+			<Button variant="secondary" disabled>
 				Loading...
-			</button>
+			</Button>
 		)
 	}
 
 	if (status === 'none') {
 		return (
-			<button
-				onClick={handleSendRequest}
-				disabled={actionLoading}
-				className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+			<Button
+				onClick={handleSend}
+				disabled={!!actionLoading}
+				variant="default"
 			>
-				{actionLoading ? 'Sending...' : 'Add Friend'}
-			</button>
+				{actionLoading === 'send' ? 'Sending...' : 'Add Friend'}
+			</Button>
 		)
 	}
 
 	if (status === 'pending_sent') {
 		return (
-			<button
-				onClick={handleCancelRequest}
-				disabled={actionLoading}
-				className="px-4 py-2 bg-gray-300 text-gray-600 rounded-lg hover:bg-red-100 hover:text-red-600 transition-colors disabled:opacity-50"
+			<Button
+				onClick={handleCancel}
+				disabled={!!actionLoading}
+				variant="secondary"
 			>
-				{actionLoading ? 'Canceling...' : 'Cancel Request'}
-			</button>
+				{actionLoading === 'remove' ? 'Canceling...' : 'Cancel Request'}
+			</Button>
 		)
 	}
 
 	if (status === 'pending_received') {
 		return (
 			<div className="flex gap-2">
-				<button
-					onClick={handleAcceptRequest}
-					disabled={actionLoading}
-					className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
-				>
-					{actionLoading ? 'Accepting...' : 'Accept'}
-				</button>
-				<button
-					onClick={handleRejectRequest}
-					disabled={actionLoading}
-					className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-red-100 hover:text-red-600 transition-colors disabled:opacity-50"
-				>
-					{actionLoading ? 'Declining...' : 'Decline'}
-				</button>
+				{actionLoading !== 'reject' && (
+                    <Button
+                        onClick={handleAccept}
+                        disabled={!!actionLoading}
+                        variant="confirm"
+                    >
+                        {actionLoading === 'accept' ? 'Accepting...' : 'Accept'}
+                    </Button>
+                )}
+				{actionLoading !== 'accept' && (
+                    <Button
+                        onClick={handleReject}
+                        disabled={!!actionLoading}
+                        variant="secondary"
+                    >
+                        {actionLoading === 'reject' ? 'Declining...' : 'Decline'}
+                    </Button>
+                )}
 			</div>
 		)
 	}
 
 	if (status === 'accepted') {
+		if (showRemoveConfirm) {
+			return (
+				<div className="flex gap-2">
+					<Button
+						onClick={handleRemove}
+						disabled={!!actionLoading}
+						variant="warn"
+					>
+						{actionLoading === 'remove' ? 'Removing...' : 'Remove'}
+					</Button>
+					{!actionLoading && (
+						<Button
+							onClick={() => setShowRemoveConfirm(false)}
+							variant="secondary"
+						>
+							Cancel
+						</Button>
+					)}
+				</div>
+			)
+		}
+
 		return (
-			<button
-				onClick={handleRemoveFriend}
-				disabled={actionLoading}
-				className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
+			<Button
+				onClick={() => setShowRemoveConfirm(true)}
+				variant="ghost"
 			>
-				{actionLoading ? 'Removing...' : '✓ Friends'}
-			</button>
+				✓ Friends
+			</Button>
 		)
 	}
 

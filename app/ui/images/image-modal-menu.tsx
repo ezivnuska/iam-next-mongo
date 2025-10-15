@@ -10,6 +10,7 @@ import AvatarButton from '@/app/ui/user/set-avatar-button'
 import { CommentIcon, ChevronUpIcon } from '@/app/ui/icons'
 import { getComments, deleteComment } from '@/app/lib/actions/comments'
 import { useUser } from '@/app/lib/providers/user-provider'
+import { handleError } from '@/app/lib/utils/error-handler'
 import type { Comment } from '@/app/lib/definitions/comment'
 
 type ImageModalMenuProps = {
@@ -73,7 +74,7 @@ const ImageModalMenu = forwardRef<ImageModalMenuHandle, ImageModalMenuProps>(({
 			setCommentCount(fetchedComments.length)
 			setCommentsLoaded(true)
 		} catch (error) {
-			console.error('Failed to load comments:', error)
+			handleError(error, 'Failed to load comments')
 		} finally {
 			setLoadingComments(false)
 		}
@@ -108,7 +109,7 @@ const ImageModalMenu = forwardRef<ImageModalMenuHandle, ImageModalMenuProps>(({
 			await deleteComment(commentId)
 		} catch (error) {
 			// Rollback on error
-			console.error('Failed to delete comment:', error)
+			handleError(error, 'Failed to delete comment')
 			setComments(previousComments)
 			setCommentCount(previousCount)
 		}

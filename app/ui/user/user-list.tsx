@@ -41,10 +41,10 @@ export default function UserList({ users }: UserListProps) {
                                 <UserAvatar
                                     username={user.username}
                                     avatar={user.avatar}
-                                    size={40}
+                                    size={36}
                                 />
-                                <div className="absolute bottom-0 right-0 z-100">
-                                    <OnlineStatusIndicator size={20} isOnline={isOnline} />
+                                <div className="absolute bottom-0 -right-1 z-100">
+                                    <OnlineStatusIndicator size={14} isOnline={isOnline} />
                                 </div>
                             </div>
                             <div className="flex flex-col flex-1">
