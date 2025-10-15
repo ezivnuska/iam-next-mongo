@@ -111,7 +111,7 @@ export async function getUserContent(username?: string): Promise<ContentItem[]> 
 
   // Combine and sort by createdAt
   const allContent = [...transformedMemories, ...transformedPosts, ...transformedImages];
-  allContent.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  allContent.sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
 
   return allContent;
 }
