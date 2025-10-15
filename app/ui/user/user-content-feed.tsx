@@ -77,10 +77,10 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
         : content.filter(item => item.contentType === filter);
 
     return (
-        <div className="mt-6">
+        <div className="mt-4">
             {/* Add Buttons - only show when editable */}
             {editable && (
-                <div className="flex gap-2 mb-4">
+                <div className="flex justify-between gap-2 mb-4">
                     <Button onClick={() => setModalType('memory')}>
                         + Memory
                     </Button>
@@ -94,30 +94,34 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
             )}
 
             {/* Filter Tabs */}
-            <div className="flex gap-2 mb-4">
+            <div className="flex justify-between gap-2 mb-4">
                 <Button
                     variant={filter === 'all' ? 'active' : 'ghost'}
                     onClick={() => setFilter('all')}
                 >
-                    All ({content.length})
+                    All
+                    {/* ({content.length}) */}
                 </Button>
                 <Button
                     variant={filter === 'memory' ? 'active' : 'ghost'}
                     onClick={() => setFilter('memory')}
                 >
-                    Memories ({content.filter(i => i.contentType === 'memory').length})
+                    Memories
+                    {/* ({content.filter(i => i.contentType === 'memory').length}) */}
                 </Button>
                 <Button
                     variant={filter === 'post' ? 'active' : 'ghost'}
                     onClick={() => setFilter('post')}
                 >
-                    Posts ({content.filter(i => i.contentType === 'post').length})
+                    Posts
+                    {/* ({content.filter(i => i.contentType === 'post').length}) */}
                 </Button>
                 <Button
                     variant={filter === 'image' ? 'active' : 'ghost'}
                     onClick={() => setFilter('image')}
                 >
-                    Images ({content.filter(i => i.contentType === 'image').length})
+                    Images
+                    {/* ({content.filter(i => i.contentType === 'image').length}) */}
                 </Button>
             </div>
 

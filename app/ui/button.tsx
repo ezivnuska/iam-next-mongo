@@ -3,7 +3,7 @@
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge'
 
-type ButtonSize = 'sm' | 'md' | 'lg';
+type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
 type ButtonVariant = 'default' | 'outline' | 'ghost' | 'secondary' | 'active' | 'warn' | 'confirm';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -22,8 +22,9 @@ export function Button({
   ...rest
 }: ButtonProps) {
   const sizeClasses = {
-    sm: 'h-8 px-2 text-lg',
-    md: 'h-10 px-4 text-lg',
+    xs: 'h-8 px-2 text-xs',
+    sm: 'h-8 px-2 text-md',
+    md: 'h-10 px-4 text-lg max-[376px]:text-sm',
     lg: 'h-12 px-6 text-base',
   };
 
@@ -38,7 +39,7 @@ export function Button({
   };
 
   const buttonClass = clsx(
-    'flex items-center cursor-pointer rounded-lg font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 min-[375px]:text-xs',
+    'flex items-center cursor-pointer rounded-lg font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 aria-disabled:cursor-not-allowed aria-disabled:opacity-50',
     sizeClasses[size],
     variantClasses[variant],
     {
