@@ -37,11 +37,15 @@ export default function ImageGallery({ authorized, images, onDeleted, onImageUpd
   }, []);
 
   const handleImageClick = useCallback((e: React.MouseEvent) => {
+    // Don't close menu or modal if comment form is open
+    if (showCommentForm) {
+      return;
+    }
     if (isMenuExpanded) {
       e.stopPropagation();
       setIsMenuExpanded(false);
     }
-  }, [isMenuExpanded]);
+  }, [isMenuExpanded, showCommentForm]);
 
   const toggleMenuExpanded = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -144,7 +148,12 @@ export default function ImageGallery({ authorized, images, onDeleted, onImageUpd
         {selectedImage && (
             <div
                 className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"
-                onClick={closeModal}
+                onClick={(e) => {
+                  // Only close if comment form is not open
+                  if (!showCommentForm) {
+                    closeModal();
+                  }
+                }}
             >
                 <div className="relative max-w-5xl w-full h-full flex items-center justify-center p-4" onClick={handleImageClick}>
                     <Image
