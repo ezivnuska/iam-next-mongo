@@ -27,44 +27,24 @@ export default function PublicContentFeed({ initialContent }: PublicContentFeedP
       <div className="flex gap-2 mb-4">
         <Button
           variant={filter === 'all' ? 'active' : 'ghost'}
-        //   className={`px-4 py-2 font-medium transition-colors cursor-pointer hover:bg-blue-100 ${
-        //     filter === 'all'
-        //       ? 'border-b-2 border-blue-600 text-blue-600'
-        //       : 'text-gray-600 hover:text-gray-900'
-        //   }`}
           onClick={() => setFilter('all')}
         >
           All ({content.length})
         </Button>
         <Button
           variant={filter === 'memory' ? 'active' : 'ghost'}
-        //   className={`px-4 py-2 font-medium transition-colors ${
-        //     filter === 'memory'
-        //       ? 'border-b-2 border-blue-600 text-blue-600'
-        //       : 'text-gray-600 hover:text-gray-900'
-        //   }`}
           onClick={() => setFilter('memory')}
         >
           Memories ({content.filter(i => i.contentType === 'memory').length})
         </Button>
         <Button
           variant={filter === 'post' ? 'active' : 'ghost'}
-        //   className={`px-4 py-2 font-medium transition-colors ${
-        //     filter === 'post'
-        //       ? 'border-b-2 border-blue-600 text-blue-600'
-        //       : 'text-gray-600 hover:text-gray-900'
-        //   }`}
           onClick={() => setFilter('post')}
         >
           Posts ({content.filter(i => i.contentType === 'post').length})
         </Button>
         <Button
           variant={filter === 'image' ? 'active' : 'ghost'}
-        //   className={`px-4 py-2 font-medium transition-colors ${
-        //     filter === 'image'
-        //       ? 'border-b-2 border-blue-600 text-blue-600'
-        //       : 'text-gray-600 hover:text-gray-900'
-        //   }`}
           onClick={() => setFilter('image')}
         >
           Images ({content.filter(i => i.contentType === 'image').length})

@@ -3,7 +3,7 @@
 "use server";
 
 import { connectToDatabase } from "@/app/lib/mongoose";
-import { auth } from "@/app/lib/auth";
+// import { auth } from "@/app/lib/auth";
 import Memory from "@/app/lib/models/memory";
 import Post from "@/app/lib/models/post";
 import Image from "@/app/lib/models/image";
@@ -18,10 +18,10 @@ export type PublicContentItem =
   | (ImageType & { contentType: 'image' });
 
 export async function getPublicContent(): Promise<PublicContentItem[]> {
-  const session = await auth();
-  if (!session?.user?.id) {
-    throw new Error("Unauthorized");
-  }
+//   const session = await auth();
+//   if (!session?.user?.id) {
+//     throw new Error("Unauthorized");
+//   }
 
   await connectToDatabase();
 

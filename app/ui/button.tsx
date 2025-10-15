@@ -38,7 +38,7 @@ export function Button({
   };
 
   const buttonClass = clsx(
-    'flex items-center cursor-pointer rounded-lg font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 aria-disabled:cursor-not-allowed aria-disabled:opacity-50',
+    'flex items-center cursor-pointer rounded-lg font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 min-[375px]:text-xs',
     sizeClasses[size],
     variantClasses[variant],
     {

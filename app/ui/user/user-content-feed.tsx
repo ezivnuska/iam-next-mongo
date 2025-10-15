@@ -82,13 +82,13 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
             {editable && (
                 <div className="flex gap-2 mb-4">
                     <Button onClick={() => setModalType('memory')}>
-                        + Add Memory
+                        + Memory
                     </Button>
                     <Button onClick={() => setModalType('post')}>
-                        + Add Post
+                        + Post
                     </Button>
                     <Button onClick={() => setModalType('image')}>
-                        + Upload Image
+                        + Image
                     </Button>
                 </div>
             )}
