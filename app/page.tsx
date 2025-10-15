@@ -1,16 +1,13 @@
-import Header from '@/app/ui/header/header'
-import Link from 'next/link';
-import Image from 'next/image';
-import styles from '@/app/ui/home.module.css';
-import { ubuntu } from '@/app/ui/fonts';
-import Main from '@/app/ui/layout/main';
+// app/page.tsx
 
-export default function Page() {
-  return (
-    <Main>
-        <p className={`${ubuntu.className} text-xl text-gray-800 md:text-3xl md:leading-normal`}>
-            <strong>Welcome.</strong> This is my site.
-        </p>
-    </Main>
-  );
+import { getPublicContent } from "@/app/lib/actions/public-content";
+import PublicContentFeed from "@/app/ui/public-content-feed";
+
+export default async function Page() {
+    const content = await getPublicContent();
+    return (
+        // <div className='flex flex-col grow'>
+            <PublicContentFeed initialContent={content} />
+        // </div>
+    );
 }

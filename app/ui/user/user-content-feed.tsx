@@ -3,21 +3,74 @@
 "use client";
 
 import { useState } from "react";
-import { formatRelativeTime } from "@/app/lib/utils/format-date";
-import UserAvatar from "@/app/ui/user/user-avatar";
-import Image from "next/image";
 import type { ContentItem } from "@/app/lib/actions/user-content";
+import type { Memory } from "@/app/lib/definitions/memory";
+import type { Post } from "@/app/lib/definitions/post";
+import type { Image } from "@/app/lib/definitions/image";
 import { Button } from "@/app/ui/button";
+import ContentItemCard from "@/app/ui/content-item-card";
+import UserContentItemCard from "@/app/ui/user-content-item-card";
+import Modal from "@/app/ui/modal";
+import CreateMemoryForm from "@/app/ui/memories/create-memory-form";
+import CreatePostForm from "@/app/ui/posts/create-post-form";
+import UploadForm from "@/app/ui/images/upload-form";
 
 interface UserContentFeedProps {
   initialContent: ContentItem[];
+  editable?: boolean;
 }
 
 type FilterType = 'all' | 'memory' | 'post' | 'image';
+type ModalType = 'memory' | 'post' | 'image' | null;
 
-export default function UserContentFeed({ initialContent }: UserContentFeedProps) {
-  const [content] = useState<ContentItem[]>(initialContent);
+export default function UserContentFeed({ initialContent, editable = false }: UserContentFeedProps) {
+  const [content, setContent] = useState<ContentItem[]>(initialContent);
   const [filter, setFilter] = useState<FilterType>('all');
+  const [modalType, setModalType] = useState<ModalType>(null);
+  const [editingItem, setEditingItem] = useState<Memory | Post | undefined>(undefined);
+
+  const handleDeleted = (id: string) => {
+    setContent(prev => prev.filter(item => item.id !== id));
+  };
+
+  const handleEdit = (item: ContentItem) => {
+    if (item.contentType === 'image') return; // Images don't support editing yet
+    setEditingItem(item);
+    setModalType(item.contentType);
+  };
+
+  const handleFlag = (item: Memory | Post) => {
+    // TODO: Implement flag functionality
+    console.log('Flag item:', item);
+  };
+
+  const handleCloseModal = () => {
+    setModalType(null);
+    setEditingItem(undefined);
+  };
+
+  const handleMemorySuccess = (memory: Memory) => {
+    if (editingItem) {
+      setContent((prev) => prev.map(item => item.id === memory.id ? { ...memory, contentType: 'memory' as const } : item));
+    } else {
+      setContent((prev) => [{ ...memory, contentType: 'memory' as const }, ...prev]);
+    }
+    handleCloseModal();
+  };
+
+  const handlePostSuccess = (post: Post) => {
+    if (editingItem) {
+      setContent((prev) => prev.map(item => item.id === post.id ? { ...post, contentType: 'post' as const } : item));
+    } else {
+      setContent((prev) => [{ ...post, contentType: 'post' as const }, ...prev]);
+    }
+    handleCloseModal();
+  };
+
+  const handleImageSuccess = (image: Image) => {
+    setContent((prev) => [{ ...image, contentType: 'image' as const }, ...prev]);
+    handleCloseModal();
+  };
 
   const filteredContent = filter === 'all'
     ? content
@@ -25,48 +78,63 @@ export default function UserContentFeed({ initialContent }: UserContentFeedProps
 
   return (
     <div className="mt-6">
+      {/* Add Buttons - only show when editable */}
+      {editable && (
+        <div className="flex gap-2 mb-4">
+          <Button onClick={() => setModalType('memory')}>
+            + Add Memory
+          </Button>
+          <Button onClick={() => setModalType('post')}>
+            + Add Post
+          </Button>
+          <Button onClick={() => setModalType('image')}>
+            + Upload Image
+          </Button>
+        </div>
+      )}
+
       {/* Filter Tabs */}
       <div className="flex gap-2 mb-4">
         <Button
-          variant="ghost"
-          className={`px-4 py-2 font-medium transition-colors ${
-            filter === 'all'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
+          variant={filter === 'all' ? 'active' : 'ghost'}
+        //   className={`px-4 py-2 font-medium transition-colors ${
+        //     filter === 'all'
+        //       ? 'border-b-2 border-blue-600 text-blue-600'
+        //       : 'text-gray-600 hover:text-gray-900'
+        //   }`}
           onClick={() => setFilter('all')}
         >
           All ({content.length})
         </Button>
         <Button
-          variant="ghost"
-          className={`px-4 py-2 font-medium transition-colors ${
-            filter === 'memory'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
+          variant={filter === 'memory' ? 'active' : 'ghost'}
+        //   className={`px-4 py-2 font-medium transition-colors ${
+        //     filter === 'memory'
+        //       ? 'border-b-2 border-blue-600 text-blue-600'
+        //       : 'text-gray-600 hover:text-gray-900'
+        //   }`}
           onClick={() => setFilter('memory')}
         >
           Memories ({content.filter(i => i.contentType === 'memory').length})
         </Button>
         <Button
-          variant="ghost"
-          className={`px-4 py-2 font-medium transition-colors ${
-            filter === 'post'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
+          variant={filter === 'post' ? 'active' : 'ghost'}
+        //   className={`px-4 py-2 font-medium transition-colors ${
+        //     filter === 'post'
+        //       ? 'border-b-2 border-blue-600 text-blue-600'
+        //       : 'text-gray-600 hover:text-gray-900'
+        //   }`}
           onClick={() => setFilter('post')}
         >
           Posts ({content.filter(i => i.contentType === 'post').length})
         </Button>
         <Button
-          variant="ghost"
-          className={`px-4 py-2 font-medium transition-colors ${
-            filter === 'image'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
+          variant={filter === 'image' ? 'active' : 'ghost'}
+        //   className={`px-4 py-2 font-medium transition-colors ${
+        //     filter === 'image'
+        //       ? 'border-b-2 border-blue-600 text-blue-600'
+        //       : 'text-gray-600 hover:text-gray-900'
+        //   }`}
           onClick={() => setFilter('image')}
         >
           Images ({content.filter(i => i.contentType === 'image').length})
@@ -79,138 +147,88 @@ export default function UserContentFeed({ initialContent }: UserContentFeedProps
           <p className="text-center text-gray-500 py-8">No content to display</p>
         ) : (
           filteredContent.map((item) => (
-            <ContentItemCard key={`${item.contentType}-${item.id}`} item={item} />
+            editable ? (
+              <UserContentItemCard
+                key={`${item.contentType}-${item.id}`}
+                item={item}
+                onDeleted={handleDeleted}
+                onEdit={handleEdit}
+                onFlag={handleFlag}
+              />
+            ) : (
+              <ContentItemCard key={`${item.contentType}-${item.id}`} item={item} />
+            )
           ))
         )}
       </div>
+
+      {/* Memory Modal */}
+      {modalType === 'memory' && (
+        <Modal isOpen={true} onClose={handleCloseModal}>
+          <div className='flex flex-row items-center justify-between mb-4'>
+            <h1 className="text-2xl font-semibold">
+              {editingItem ? 'Edit Memory' : 'Create Memory'}
+            </h1>
+            <button
+              className="text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer"
+              onClick={handleCloseModal}
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </div>
+          <CreateMemoryForm
+            onSuccess={handleMemorySuccess}
+            onClose={handleCloseModal}
+            editItem={editingItem as Memory | undefined}
+          />
+        </Modal>
+      )}
+
+      {/* Post Modal */}
+      {modalType === 'post' && (
+        <Modal isOpen={true} onClose={handleCloseModal}>
+          <div className='flex flex-row items-center justify-between mb-4'>
+            <h1 className="text-2xl font-semibold">
+              {editingItem ? 'Edit Post' : 'Create Post'}
+            </h1>
+            <button
+              className="text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer"
+              onClick={handleCloseModal}
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </div>
+          <CreatePostForm
+            onSuccess={handlePostSuccess}
+            onClose={handleCloseModal}
+            editItem={editingItem as Post | undefined}
+          />
+        </Modal>
+      )}
+
+      {/* Image Upload Modal */}
+      {modalType === 'image' && (
+        <Modal isOpen={true} onClose={handleCloseModal}>
+          <div className='flex flex-row items-center justify-between mb-4'>
+            <h1 className="text-2xl font-semibold">
+              Upload Image
+            </h1>
+            <button
+              className="text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer"
+              onClick={handleCloseModal}
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </div>
+          <UploadForm
+            onUploadSuccess={handleImageSuccess}
+            onClose={handleCloseModal}
+          />
+        </Modal>
+      )}
     </div>
   );
-}
-
-function ContentItemCard({ item }: { item: ContentItem }) {
-  if (item.contentType === 'memory') {
-    const memory = item;
-    const medium = memory.image?.variants.find((v) => v.size === "medium");
-    const memoryDate = new Date(memory.date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-
-    return (
-      <div className="mb-4 py-3 px-2 border rounded-lg bg-white shadow-sm">
-        <div className="flex items-start gap-3">
-          <UserAvatar
-            username={memory.author.username}
-            avatar={memory.author.avatar}
-            size={40}
-          />
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-row items-center justify-between mb-2">
-              <div className="flex flex-col">
-                <p className="font-semibold">{memory.author.username}</p>
-                <span className="text-xs text-gray-500">{formatRelativeTime(memory.createdAt)}</span>
-              </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <div className="flex flex-col mb-1 gap-2">
-                <div>
-                  <p className="text-lg font-medium text-gray-700">{memory.title || "Untitled"}</p>
-                  <p className="text-sm text-gray-500">{memoryDate}</p>
-                  {/* {memory.shared && (
-                    <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded mt-1">
-                      Shared
-                    </span>
-                  )} */}
-                </div>
-              </div>
-              {memory.image && (
-                <img
-                  src={medium?.url}
-                  alt="Memory image"
-                  className="max-w-full max-h-96 rounded mb-2 object-cover"
-                />
-              )}
-              <p className="whitespace-pre-wrap">{memory.content}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (item.contentType === 'post') {
-    const post = item;
-    const medium = post.image?.variants.find((v) => v.size === "medium");
-
-    return (
-      <div className="mb-2 p-2 border rounded bg-white shadow-sm">
-        <div className="flex items-start gap-3">
-          <UserAvatar
-            username={post.author.username}
-            avatar={post.author.avatar}
-            size={40}
-          />
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-col mb-2">
-              <p className="font-semibold">{post.author.username}</p>
-              <span className="text-xs text-gray-500">{formatRelativeTime(post.createdAt)}</span>
-            </div>
-            {post.image && (
-              <img
-                src={medium?.url}
-                alt="Post image"
-                className="max-w-full max-h-96 rounded mb-2 object-cover"
-              />
-            )}
-            <p>{post.content}</p>
-            {post.linkUrl && (
-              <a href={post.linkUrl} target="_blank" className="text-blue-500 underline mt-2 block">
-                [source]
-              </a>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (item.contentType === 'image') {
-    const image = item;
-    const medium = image.variants.find((v) => v.size === "medium");
-    
-    return (
-      <div className="mb-2 p-2 border rounded bg-white shadow-sm">
-        <div className="flex items-start gap-3">
-          <UserAvatar
-            username={image.username}
-            size={40}
-          />
-          <div className="flex-1 flex-col min-w-0">
-            <div className="flex flex-col mb-2">
-              <p className="font-semibold">{image.username}</p>
-              <span className="text-xs text-gray-500">{formatRelativeTime(image.createdAt || new Date().toISOString())}</span>
-            </div>
-            {medium?.url && (
-                <div className="relative w-full h-64 border-1 mb-2">
-                    <Image
-                        src={medium.url}
-                        alt={image.alt || "Image"}
-                        fill
-                        style={{ objectFit: "cover" }}
-                        className="rounded"
-                    />
-                </div>
-            )}
-            <div className="flex gap-4 text-sm text-gray-600">
-                <span>❤️ {image.likes?.length || 0}</span>
-                <span>💬 {image.commentCount || 0}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return null;
 }

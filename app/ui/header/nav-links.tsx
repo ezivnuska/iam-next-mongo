@@ -5,9 +5,10 @@
 import {
   UserGroupIcon,
   NewspaperIcon,
+  PuzzlePieceIcon,
   UserCircleIcon,
   CloudIcon,
-} from '@heroicons/react/24/outline';
+} from '@heroicons/react/24/solid';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
@@ -21,15 +22,20 @@ const links = [
         icon: UserGroupIcon,
     },
     {
-        name: 'Posts',
-        href: '/posts',
-        icon: NewspaperIcon,
+        name: 'Tiles',
+        href: '/tiles',
+        icon: PuzzlePieceIcon,
     },
-    {
-        name: 'Memories',
-        href: '/memories',
-        icon: CloudIcon,
-    },
+    // {
+    //     name: 'Posts',
+    //     href: '/posts',
+    //     icon: NewspaperIcon,
+    // },
+    // {
+    //     name: 'Memories',
+    //     href: '/memories',
+    //     icon: CloudIcon,
+    // },
 ];
 
 export default function NavLinks() {
@@ -75,7 +81,7 @@ export default function NavLinks() {
                         key={link.name}
                         href={link.href}
                         className={clsx(
-                            'flex flex-col items-center justify-center rounded-md bg-gray-50 text-sm font-medium m-1 p-1 hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start',
+                            'flex flex-col items-center justify-center rounded-md bg-gray-50 text-sm font-medium m-1 py-1 px-3 hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start',
                             {
                                 'bg-sky-100 text-blue-600': pathname === link.href,
                             },
