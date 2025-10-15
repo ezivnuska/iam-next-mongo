@@ -34,7 +34,7 @@ export interface Image {
     width: number;
     height: number;
   }[];
-  createdAt: string;
+  createdAt?: string;
   likes?: string[];
   likedByCurrentUser?: boolean;
   commentCount?: number;
