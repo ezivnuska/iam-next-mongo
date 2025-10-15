@@ -5,7 +5,6 @@
 import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import { Direction, GameStatus, TileType } from '@/app/lib/definitions/tiles'
 import { useTiles } from '@/app/lib/providers/tile-provider'
-import clsx from 'clsx';
 
 export type Dimensions = {
     width: number
@@ -201,26 +200,14 @@ export default function TileGame() {
     const renderSquare = (tile: TileType) => {
         return itemSize && (
             <div
+                className='flex flex-row items-center justify-center rounded-lg overflow-hidden border-1 border-white'
                 style={{
                     height: itemSize,
                     width: itemSize,
-                    // display: 'flex',
-                    // alignItems: 'center',
-                    // justifyContent: 'center',
-                    // border: '1px solid #fff',
                     backgroundColor: getTileColor(tile),
-                    // userSelect: 'none',
                 }}
-                className='flex flex-row items-center justify-center rounded-lg overflow-hidden border-1 border-white'
             >
-                <span
-                    className='text-lg text-white font-bold cursor-default'
-                    // style={{
-                    //     fontSize: 24,
-                    //     color: '#fff',
-                    //     fontWeight: 'bold',
-                    // }}
-                >
+                <span className='text-lg text-white font-bold cursor-default'>
                     {tile.id + 1}
                 </span>
             </div>
@@ -229,17 +216,15 @@ export default function TileGame() {
 
     const renderTiles = () => {
         return tiles.map((tile) => {
-            const coords = getTileCoords(tile)
-            if (!coords) return null
-            const draggable = status === GameStatus.PLAYING && tile.direction !== Direction.NONE
-            console.log('status', status)
-            console.log('direction', tile.direction)
-            const dragging = isTileDragging(tile)
-            const { x, y } = coords
+            const coords = getTileCoords(tile);
+            if (!coords) return null;
+            const draggable = status === GameStatus.PLAYING && tile.direction !== Direction.NONE;
+            const dragging = isTileDragging(tile);
+            const { x, y } = coords;
 
             const transform = dragging
                 ? `translate(${offset.x}px, ${offset.y}px)`
-                : 'translate(0, 0)'
+                : 'translate(0, 0)';
 
             return (
                 <div
@@ -270,13 +255,7 @@ export default function TileGame() {
         <div ref={containerRef} className='flex grow'>
             {tiles && (
                 <div className="relative flex grow rounded-md">
-                {/* <div
-                    // 
-                    className='relative flex grow items-center justify-center mb-1 border-1 bg-yellow-200'
-                > */}
-                    {/* {dims && ( */}
-                            {renderTiles()}
-                    {/* )} */}
+                    {renderTiles()}
                 </div>
             )}
         </div>

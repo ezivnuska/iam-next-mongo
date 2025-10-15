@@ -3,11 +3,9 @@
 'use client';
 
 import {
-  UserGroupIcon,
-  NewspaperIcon,
-  PuzzlePieceIcon,
-  UserCircleIcon,
-  CloudIcon,
+    UserGroupIcon,
+    PuzzlePieceIcon,
+    UserCircleIcon,
 } from '@heroicons/react/24/solid';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -26,16 +24,6 @@ const links = [
         href: '/tiles',
         icon: PuzzlePieceIcon,
     },
-    // {
-    //     name: 'Posts',
-    //     href: '/posts',
-    //     icon: NewspaperIcon,
-    // },
-    // {
-    //     name: 'Memories',
-    //     href: '/memories',
-    //     icon: CloudIcon,
-    // },
 ];
 
 export default function NavLinks() {
