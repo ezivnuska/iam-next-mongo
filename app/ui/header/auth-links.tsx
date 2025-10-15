@@ -32,7 +32,7 @@ export default function AuthLinks() {
         <button
           onClick={handleSignOut}
           disabled={isSigningOut}
-          className={`flex items-center gap-2 self-start rounded-lg px-3 py-2 m-1 text-sm font-medium text-white transition-colors md:text-base ${
+          className={`flex items-center gap-2 self-start cursor-pointer rounded-lg px-3 py-2 m-1 text-sm font-medium text-white transition-colors md:text-base ${
             isSigningOut
               ? "bg-gray-400 cursor-not-allowed"
               : "bg-blue-500 hover:bg-blue-400"
