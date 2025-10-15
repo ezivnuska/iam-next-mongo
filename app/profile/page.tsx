@@ -4,8 +4,11 @@ import Breadcrumbs from "@/app/ui/layout/breadcrumbs";
 import Main from "@/app/ui/layout/main";
 import ProtectedRoute from "@/app/ui/auth/protected-route";
 import UserProfileCard from "@/app/ui/user/user-profile-card";
+import UserContentFeed from "@/app/ui/user/user-content-feed";
+import { getUserContent } from "@/app/lib/actions/user-content";
 
-export default function ProfilePage() {
+export default async function ProfilePage() {
+    const content = await getUserContent();
 
     return (
         <ProtectedRoute>
@@ -17,6 +20,7 @@ export default function ProfilePage() {
                     ]}
                 />
                 <UserProfileCard />
+                <UserContentFeed initialContent={content} />
             </Main>
         </ProtectedRoute>
     );

@@ -18,7 +18,7 @@ export interface ImageDocument {
   username: string;
   alt?: string;
   variants: ImageVariant[];
-  createdAt: Date;
+  createdAt: string;
   updatedAt: Date;
 }
 
@@ -34,6 +34,7 @@ export interface Image {
     width: number;
     height: number;
   }[];
+  createdAt: string;
   likes?: string[];
   likedByCurrentUser?: boolean;
   commentCount?: number;

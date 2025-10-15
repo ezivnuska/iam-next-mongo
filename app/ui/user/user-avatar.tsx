@@ -1,5 +1,8 @@
 // app/ui/user-avatar.tsx
 
+"use client";
+
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import type { Image as ImageType } from '@/app/lib/definitions/image'
 
@@ -18,17 +21,37 @@ export default function UserAvatar({
 	size = 40,
 	className = ''
 }: UserAvatarProps) {
+	const [fetchedAvatar, setFetchedAvatar] = useState<ImageType | null>(null)
+	const [loading, setLoading] = useState(false)
+
+	// Fetch avatar by username if not provided
+	useEffect(() => {
+		if (!avatar && !avatarUrl && username && !fetchedAvatar && !loading) {
+			setLoading(true)
+			fetch(`/api/users/${username}/avatar`)
+				.then(res => res.ok ? res.json() : null)
+				.then(data => {
+					if (data?.avatar) {
+						setFetchedAvatar(data.avatar)
+					}
+				})
+				.catch(() => {})
+				.finally(() => setLoading(false))
+		}
+	}, [username, avatar, avatarUrl, fetchedAvatar, loading])
+
 	// Determine the best avatar URL to use
+	const avatarToUse = avatar || fetchedAvatar
 	let imageUrl = avatarUrl
 
 	// If avatar object is provided, select best variant
-	if (!imageUrl && avatar?.variants?.length) {
-		const bestVariant = avatar.variants.reduce((closest, current) => {
+	if (!imageUrl && avatarToUse?.variants?.length) {
+		const bestVariant = avatarToUse.variants.reduce((closest, current) => {
 			if (!current.width) return closest
 			return Math.abs(current.width - size) < Math.abs((closest.width ?? 0) - size)
 				? current
 				: closest
-		}, avatar.variants[0])
+		}, avatarToUse.variants[0])
 		imageUrl = bestVariant.url
 	}
 
