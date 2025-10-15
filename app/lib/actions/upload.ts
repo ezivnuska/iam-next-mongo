@@ -95,6 +95,9 @@ export async function uploadFile(file: File): Promise<Image> {
       username: newImage.username,
       alt: newImage.alt,
       variants,
+      likes: [],
+      commentCount: 0,
+      createdAt: newImage.createdAt?.toISOString() || new Date().toISOString(),
     };
 }
   

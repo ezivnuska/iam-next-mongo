@@ -189,7 +189,7 @@ function ContentItemCard({ item }: { item: ContentItem }) {
           <div className="flex-1 flex-col min-w-0">
             <div className="flex flex-col mb-2">
               <p className="font-semibold">{image.username}</p>
-              <span className="text-xs text-gray-500">{formatRelativeTime(image.createdAt)}</span>
+              <span className="text-xs text-gray-500">{formatRelativeTime(image.createdAt || new Date().toISOString())}</span>
             </div>
             {medium?.url && (
                 <div className="relative w-full h-64 border-1 mb-2">
