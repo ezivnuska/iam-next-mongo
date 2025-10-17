@@ -44,13 +44,14 @@ export async function logActivity({
 
     // Emit socket event for real-time updates
     try {
+      const activityDoc = activity.toObject();
       await emitActivityCreated({
-        activityId: activity._id.toString(),
+        activityId: activityDoc._id.toString(),
         userId: userId.toString(),
         action,
         entityType,
         entityId: entityId.toString(),
-        createdAt: activity.createdAt?.toISOString() || new Date().toISOString()
+        createdAt: activityDoc.createdAt?.toISOString() || new Date().toISOString()
       });
     } catch (emitError) {
       console.error('Failed to emit activity socket event:', emitError);
