@@ -17,6 +17,8 @@ export interface IActivity extends Document {
     userAgent?: string;
     [key: string]: any;
   };
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface Activity {
