@@ -1,4 +1,4 @@
-// app/ui/activities/activity-feed.tsx
+// app/ui/activity/activity-feed.tsx
 
 "use client";
 
@@ -40,7 +40,7 @@ export default function ActivityFeed({ initialActivities }: ActivityFeedProps) {
         }
       }
 
-      const response = await fetch(`/api/activities?${params.toString()}`);
+      const response = await fetch(`/api/activity?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch activities');
 
       const data = await response.json();

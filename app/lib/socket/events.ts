@@ -22,6 +22,9 @@ export const SOCKET_EVENTS = {
 	// Like events
 	LIKE_ADDED: 'like:added',
 	LIKE_REMOVED: 'like:removed',
+
+	// Activity events
+	ACTIVITY_CREATED: 'activity:created',
 } as const
 
 export type SocketEventType = typeof SOCKET_EVENTS[keyof typeof SOCKET_EVENTS]
@@ -61,4 +64,13 @@ export interface LikePayload {
 	itemType: 'Image' | 'Post' | 'Memory'
 	userId: string
 	username: string
+}
+
+export interface ActivityPayload {
+	activityId: string
+	userId: string
+	action: 'create' | 'update' | 'delete'
+	entityType: 'post' | 'memory' | 'image' | 'comment' | 'like' | 'friendship'
+	entityId: string
+	createdAt: string
 }

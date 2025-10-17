@@ -12,6 +12,7 @@ import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { useUser } from '@/app/lib/providers/user-provider';
 import UserAvatar from '@/app/ui/user/user-avatar';
+import NotificationsButton from '@/app/ui/header/notifications-button';
 
 const links = [
     {
@@ -80,6 +81,7 @@ export default function NavLinks() {
                     </Link>
                 );
             })}
+            <NotificationsButton />
         </div>
     );
 }

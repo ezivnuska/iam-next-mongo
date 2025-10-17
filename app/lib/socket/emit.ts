@@ -7,6 +7,7 @@ import type {
 	FriendshipStatusPayload,
 	CommentPayload,
 	LikePayload,
+	ActivityPayload,
 } from './events'
 
 export async function emitFriendRequest(payload: FriendRequestPayload) {
@@ -39,4 +40,8 @@ export async function emitLikeAdded(payload: LikePayload) {
 
 export async function emitLikeRemoved(payload: LikePayload) {
 	await emitViaAPI(SOCKET_EVENTS.LIKE_REMOVED, payload)
+}
+
+export async function emitActivityCreated(payload: ActivityPayload) {
+	await emitViaAPI(SOCKET_EVENTS.ACTIVITY_CREATED, payload)
 }

@@ -1,4 +1,4 @@
-// app/ui/activities/activity-list.tsx
+// app/ui/activity/activity-list.tsx
 
 "use client";
 

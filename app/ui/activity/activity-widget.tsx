@@ -1,4 +1,4 @@
-// app/ui/activities/activity-widget.tsx
+// app/ui/activity/activity-widget.tsx
 
 "use client";
 
@@ -43,7 +43,7 @@ export default function ActivityWidget({ activities, limit = 5 }: ActivityWidget
         <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
         <Button
           variant="ghost"
-          onClick={() => router.push('/activities')}
+          onClick={() => router.push('/activity')}
         >
           View All
         </Button>
