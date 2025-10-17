@@ -6,12 +6,33 @@ import { useState } from "react";
 import type { Activity, ActivityAction, ActivityEntityType } from "@/app/lib/definitions/activity";
 import { Button } from "@/app/ui/button";
 import ActivityList from "./activity-list";
+import { ACTION_FILTERS, ENTITY_TYPE_FILTERS } from "@/app/lib/constants/activity";
 
 interface ActivityFeedProps {
   initialActivities: Activity[];
 }
 
 type FilterType = 'all' | ActivityAction | ActivityEntityType;
+
+interface FilterButtonProps {
+  filterValue: FilterType;
+  currentFilter: FilterType;
+  label: string;
+  onClick: (filter: FilterType) => void;
+  disabled?: boolean;
+}
+
+function FilterButton({ filterValue, currentFilter, label, onClick, disabled }: FilterButtonProps) {
+  return (
+    <Button
+      variant={currentFilter === filterValue ? 'active' : 'ghost'}
+      onClick={() => onClick(filterValue)}
+      disabled={disabled}
+    >
+      {label}
+    </Button>
+  );
+}
 
 export default function ActivityFeed({ initialActivities }: ActivityFeedProps) {
   const [activities, setActivities] = useState<Activity[]>(initialActivities);
@@ -63,80 +84,30 @@ export default function ActivityFeed({ initialActivities }: ActivityFeedProps) {
       <div className="mb-4">
         <div className="flex flex-wrap gap-2 mb-3">
           <p className="text-sm font-medium text-gray-700 w-full mb-1">Filter by Action:</p>
-          <Button
-            variant={filter === 'all' ? 'active' : 'ghost'}
-            onClick={() => handleFilterChange('all')}
-            disabled={loading}
-          >
-            All
-          </Button>
-          <Button
-            variant={filter === 'create' ? 'active' : 'ghost'}
-            onClick={() => handleFilterChange('create')}
-            disabled={loading}
-          >
-            Created
-          </Button>
-          <Button
-            variant={filter === 'update' ? 'active' : 'ghost'}
-            onClick={() => handleFilterChange('update')}
-            disabled={loading}
-          >
-            Updated
-          </Button>
-          <Button
-            variant={filter === 'delete' ? 'active' : 'ghost'}
-            onClick={() => handleFilterChange('delete')}
-            disabled={loading}
-          >
-            Deleted
-          </Button>
+          {ACTION_FILTERS.map(({ value, label }) => (
+            <FilterButton
+              key={value}
+              filterValue={value}
+              currentFilter={filter}
+              label={label}
+              onClick={handleFilterChange}
+              disabled={loading}
+            />
+          ))}
         </div>
 
         <div className="flex flex-wrap gap-2">
           <p className="text-sm font-medium text-gray-700 w-full mb-1">Filter by Type:</p>
-          <Button
-            variant={filter === 'memory' ? 'active' : 'ghost'}
-            onClick={() => handleFilterChange('memory')}
-            disabled={loading}
-          >
-            Memories
-          </Button>
-          <Button
-            variant={filter === 'post' ? 'active' : 'ghost'}
-            onClick={() => handleFilterChange('post')}
-            disabled={loading}
-          >
-            Posts
-          </Button>
-          <Button
-            variant={filter === 'image' ? 'active' : 'ghost'}
-            onClick={() => handleFilterChange('image')}
-            disabled={loading}
-          >
-            Images
-          </Button>
-          <Button
-            variant={filter === 'comment' ? 'active' : 'ghost'}
-            onClick={() => handleFilterChange('comment')}
-            disabled={loading}
-          >
-            Comments
-          </Button>
-          <Button
-            variant={filter === 'like' ? 'active' : 'ghost'}
-            onClick={() => handleFilterChange('like')}
-            disabled={loading}
-          >
-            Likes
-          </Button>
-          <Button
-            variant={filter === 'friendship' ? 'active' : 'ghost'}
-            onClick={() => handleFilterChange('friendship')}
-            disabled={loading}
-          >
-            Friendships
-          </Button>
+          {ENTITY_TYPE_FILTERS.map(({ value, label }) => (
+            <FilterButton
+              key={value}
+              filterValue={value}
+              currentFilter={filter}
+              label={label}
+              onClick={handleFilterChange}
+              disabled={loading}
+            />
+          ))}
         </div>
       </div>
 

@@ -6,32 +6,12 @@ import { useRouter } from "next/navigation";
 import type { Activity } from "@/app/lib/definitions/activity";
 import { formatRelativeTime } from "@/app/lib/utils/format-date";
 import { Button } from "@/app/ui/button";
+import { actionIcons, actionColors, entityTypeLabels } from "@/app/lib/constants/activity";
 
 interface ActivityWidgetProps {
   activities: Activity[];
   limit?: number;
 }
-
-const actionIcons: Record<string, string> = {
-  create: "➕",
-  update: "✏️",
-  delete: "🗑️"
-};
-
-const actionColors: Record<string, string> = {
-  create: "text-green-600",
-  update: "text-blue-600",
-  delete: "text-red-600"
-};
-
-const entityTypeLabels: Record<string, string> = {
-  memory: "Memory",
-  post: "Post",
-  image: "Image",
-  comment: "Comment",
-  like: "Like",
-  friendship: "Friendship"
-};
 
 export default function ActivityWidget({ activities, limit = 5 }: ActivityWidgetProps) {
   const router = useRouter();

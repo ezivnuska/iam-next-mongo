@@ -2,41 +2,17 @@
 
 "use client";
 
-import { useState } from "react";
-import type { Activity, ActivityAction, ActivityEntityType } from "@/app/lib/definitions/activity";
+import type { Activity } from "@/app/lib/definitions/activity";
 import { formatRelativeTime } from "@/app/lib/utils/format-date";
 import UserAvatar from "@/app/ui/user/user-avatar";
+import { actionIcons, actionColors, entityTypeLabels } from "@/app/lib/constants/activity";
 
 interface ActivityListProps {
   initialActivities: Activity[];
 }
 
-// Icon mapping for different actions
-const actionIcons: Record<ActivityAction, string> = {
-  create: "➕",
-  update: "✏️",
-  delete: "🗑️"
-};
-
-// Color mapping for different actions
-const actionColors: Record<ActivityAction, string> = {
-  create: "text-green-600",
-  update: "text-blue-600",
-  delete: "text-red-600"
-};
-
-// Label mapping for entity types
-const entityTypeLabels: Record<ActivityEntityType, string> = {
-  memory: "Memory",
-  post: "Post",
-  image: "Image",
-  comment: "Comment",
-  like: "Like",
-  friendship: "Friendship"
-};
-
 export default function ActivityList({ initialActivities }: ActivityListProps) {
-  const [activities] = useState<Activity[]>(initialActivities);
+  const activities = initialActivities;
 
   if (activities.length === 0) {
     return (
