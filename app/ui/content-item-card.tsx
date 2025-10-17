@@ -6,6 +6,7 @@ import Image from "next/image";
 import type { ContentItem } from "@/app/lib/actions/user-content";
 import type { PublicContentItem } from "@/app/lib/actions/public-content";
 import ContentCardWrapper from "@/app/ui/content-card-wrapper";
+import LikeButton from "@/app/ui/like-button";
 
 type ContentItemCardProps = {
   item: ContentItem | PublicContentItem;
@@ -96,7 +97,12 @@ export default function ContentItemCard({ item }: ContentItemCardProps) {
           </div>
         )}
         <div className="flex gap-4 text-sm text-gray-600">
-          <span>❤️ {image.likes?.length || 0}</span>
+          <LikeButton
+            itemId={image.id}
+            itemType="Image"
+            initialLiked={image.likedByCurrentUser}
+            initialLikeCount={image.likes?.length || 0}
+          />
           <span>💬 {image.commentCount || 0}</span>
         </div>
       </ContentCardWrapper>
