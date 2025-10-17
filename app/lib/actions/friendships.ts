@@ -12,6 +12,7 @@ import {
 	emitFriendRequestRejected,
 	emitFriendshipRemoved,
 } from "@/app/lib/socket/emit"
+import { logActivity } from "@/app/lib/utils/activity-logger"
 
 export async function sendFriendRequest(recipientId: string) {
 	const session = await auth()
@@ -70,6 +71,18 @@ export async function sendFriendRequest(recipientId: string) {
 		status: 'pending',
 	})
 
+	// Log activity
+	await logActivity({
+		userId: session.user.id,
+		action: 'create',
+		entityType: 'friendship',
+		entityId: friendship._id,
+		entityData: {
+			recipientId,
+			status: 'pending'
+		}
+	})
+
 	// Emit socket event (don't fail action if socket emit fails)
 	try {
 		await emitFriendRequest({
@@ -115,6 +128,18 @@ export async function acceptFriendRequest(friendshipId: string) {
 	friendship.status = 'accepted'
 	await friendship.save()
 
+	// Log activity
+	await logActivity({
+		userId: session.user.id,
+		action: 'update',
+		entityType: 'friendship',
+		entityId: friendshipId,
+		entityData: {
+			status: 'accepted',
+			requesterId: friendship.requester.toString()
+		}
+	})
+
 	// Emit socket event to requester (they need to know their request was accepted)
 	emitFriendRequestAccepted({
 		friendshipId: friendship._id.toString(),
@@ -146,6 +171,18 @@ export async function rejectFriendRequest(friendshipId: string) {
 
 	friendship.status = 'rejected'
 	await friendship.save()
+
+	// Log activity
+	await logActivity({
+		userId: session.user.id,
+		action: 'update',
+		entityType: 'friendship',
+		entityId: friendshipId,
+		entityData: {
+			status: 'rejected',
+			requesterId: friendship.requester.toString()
+		}
+	})
 
 	// Emit socket event to requester
 	emitFriendRequestRejected({
@@ -182,7 +219,23 @@ export async function removeFriend(friendshipId: string) {
 	// Determine the other user to notify
 	const otherUserId = isRequester ? friendship.recipient.toString() : friendship.requester.toString()
 
+	// Save friendship data before deletion for activity log
+	const friendshipData = {
+		requesterId: friendship.requester.toString(),
+		recipientId: friendship.recipient.toString(),
+		status: friendship.status
+	}
+
 	await Friendship.findByIdAndDelete(friendshipId)
+
+	// Log activity
+	await logActivity({
+		userId: session.user.id,
+		action: 'delete',
+		entityType: 'friendship',
+		entityId: friendshipId,
+		entityData: friendshipData
+	})
 
 	// Emit socket event to the other user
 	emitFriendshipRemoved({

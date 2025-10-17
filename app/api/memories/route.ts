@@ -7,6 +7,7 @@ import Memory from "@/app/lib/models/memory";
 import type { Types } from "mongoose";
 import type { ImageVariant } from "@/app/lib/definitions/image";
 import { transformPopulatedImage, transformPopulatedAuthor } from "@/app/lib/utils/transformers";
+import { logActivity, getRequestMetadata } from "@/app/lib/utils/activity-logger";
 
 interface PopulatedMemoryObj {
   _id: Types.ObjectId;
@@ -75,6 +76,21 @@ export async function POST(req: Request) {
     ]);
 
     const populatedMemory = newMemory.toObject() as unknown as PopulatedMemoryObj;
+
+    // Log activity
+    await logActivity({
+      userId: session.user.id,
+      action: 'create',
+      entityType: 'memory',
+      entityId: populatedMemory._id,
+      entityData: {
+        title: populatedMemory.title,
+        content: populatedMemory.content,
+        shared: populatedMemory.shared,
+        hasImage: !!populatedMemory.image
+      },
+      metadata: getRequestMetadata(req)
+    });
 
     return NextResponse.json({
       id: populatedMemory._id.toString(),

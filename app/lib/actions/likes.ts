@@ -7,6 +7,7 @@ import ImageModel from "@/app/lib/models/image";
 import Post from "@/app/lib/models/post";
 import Memory from "@/app/lib/models/memory";
 import { auth } from "@/app/lib/auth";
+import { logActivity } from "@/app/lib/utils/activity-logger";
 
 type LikeableType = 'Image' | 'Post' | 'Memory';
 
@@ -32,6 +33,19 @@ export async function toggleLike(itemId: string, itemType: LikeableType) {
 				isLikedImage ? { $pull: { likes: userId } } : { $addToSet: { likes: userId } },
 				{ new: true, select: 'likes' }
 			);
+
+			// Log activity
+			await logActivity({
+				userId,
+				action: isLikedImage ? 'delete' : 'create',
+				entityType: 'like',
+				entityId: itemId,
+				entityData: {
+					itemType: 'Image',
+					isUnlike: isLikedImage
+				}
+			});
+
 			return {
 				liked: !isLikedImage,
 				likeCount: updated?.likes?.length || 0
@@ -47,6 +61,19 @@ export async function toggleLike(itemId: string, itemType: LikeableType) {
 				isLikedPost ? { $pull: { likes: userId } } : { $addToSet: { likes: userId } },
 				{ new: true, select: 'likes' }
 			);
+
+			// Log activity
+			await logActivity({
+				userId,
+				action: isLikedPost ? 'delete' : 'create',
+				entityType: 'like',
+				entityId: itemId,
+				entityData: {
+					itemType: 'Post',
+					isUnlike: isLikedPost
+				}
+			});
+
 			return {
 				liked: !isLikedPost,
 				likeCount: updated?.likes?.length || 0
@@ -62,6 +89,19 @@ export async function toggleLike(itemId: string, itemType: LikeableType) {
 				isLikedMemory ? { $pull: { likes: userId } } : { $addToSet: { likes: userId } },
 				{ new: true, select: 'likes' }
 			);
+
+			// Log activity
+			await logActivity({
+				userId,
+				action: isLikedMemory ? 'delete' : 'create',
+				entityType: 'like',
+				entityId: itemId,
+				entityData: {
+					itemType: 'Memory',
+					isUnlike: isLikedMemory
+				}
+			});
+
 			return {
 				liked: !isLikedMemory,
 				likeCount: updated?.likes?.length || 0

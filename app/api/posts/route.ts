@@ -8,6 +8,7 @@ import UserModel from "@/app/lib/models/user";
 import type { Types, Document } from "mongoose";
 import type { ImageVariant } from "@/app/lib/definitions/image";
 import { transformPopulatedImage, transformPopulatedAuthor } from "@/app/lib/utils/transformers";
+import { logActivity, getRequestMetadata } from "@/app/lib/utils/activity-logger";
 
 interface PopulatedPostObj {
   _id: Types.ObjectId;
@@ -66,6 +67,19 @@ export async function POST(req: Request) {
     ]);
 
     const populatedPost = newPost.toObject() as unknown as PopulatedPostObj;
+
+    // Log activity
+    await logActivity({
+      userId: session.user.id,
+      action: 'create',
+      entityType: 'post',
+      entityId: populatedPost._id,
+      entityData: {
+        content: populatedPost.content,
+        hasImage: !!populatedPost.image
+      },
+      metadata: getRequestMetadata(req)
+    });
 
     return NextResponse.json({
       id: populatedPost._id.toString(),

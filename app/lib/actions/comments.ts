@@ -7,6 +7,7 @@ import Comment from "@/app/lib/models/comment";
 import { auth } from "@/app/lib/auth";
 import type { CommentRefType } from "@/app/lib/definitions/comment";
 import { Types } from "mongoose";
+import { logActivity } from "@/app/lib/utils/activity-logger";
 
 export async function createComment(
 	refId: string,
@@ -30,6 +31,19 @@ export async function createComment(
 		refType,
 		author: session.user.id,
 		content: trimmedContent,
+	});
+
+	// Log activity
+	await logActivity({
+		userId: session.user.id,
+		action: 'create',
+		entityType: 'comment',
+		entityId: comment._id,
+		entityData: {
+			content: trimmedContent,
+			refType: refType,
+			refId: refId
+		}
 	});
 
 	return {
@@ -111,7 +125,24 @@ export async function deleteComment(commentId: string) {
 		throw new Error("Unauthorized to delete this comment");
 	}
 
+	// Save comment data before deletion for activity log
+	const commentData = {
+		content: comment.content,
+		refType: comment.refType,
+		refId: comment.refId.toString(),
+		authorId: comment.author.toString()
+	};
+
 	await Comment.findByIdAndDelete(commentId);
+
+	// Log activity
+	await logActivity({
+		userId: session.user.id,
+		action: 'delete',
+		entityType: 'comment',
+		entityId: commentId,
+		entityData: commentData
+	});
 
 	return { success: true };
 }

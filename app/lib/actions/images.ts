@@ -12,6 +12,7 @@ import { deleteS3File } from "@/app/lib/aws/s3";
 import { auth } from "@/app/lib/auth";
 import { getCommentCounts } from "@/app/lib/actions/comments";
 import { Types } from "mongoose";
+import { logActivity } from "@/app/lib/utils/activity-logger";
 /**
  * Fetch images from the database
  * @param userId Optional filter to get images for a specific user
@@ -77,6 +78,14 @@ export async function deleteImage(imageId: string) {
     const image = await ImageModel.findById(imageId);
     if (!image) throw new Error("Image not found");
 
+    // Save image data before deletion for activity log
+    const imageData = {
+      alt: image.alt,
+      username: image.username,
+      userId: image.userId.toString(),
+      variantCount: image.variants.length
+    };
+
     // Delete all comments related to this image
     const objectId = new Types.ObjectId(imageId);
     const result = await Comment.deleteMany({ refId: objectId, refType: 'Image' });
@@ -123,6 +132,15 @@ export async function deleteImage(imageId: string) {
 
     // Delete image document from MongoDB (this also removes likes since they're on the image document)
     await ImageModel.findByIdAndDelete(imageId);
+
+    // Log activity
+    await logActivity({
+      userId: session.user.id,
+      action: 'delete',
+      entityType: 'image',
+      entityId: imageId,
+      entityData: imageData
+    });
 
     return true;
   }

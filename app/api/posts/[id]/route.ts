@@ -7,6 +7,7 @@ import Post from "@/app/lib/models/post";
 import type { Types } from "mongoose";
 import type { ImageVariant } from "@/app/lib/definitions/image";
 import { transformPopulatedImage, transformPopulatedAuthor } from "@/app/lib/utils/transformers";
+import { logActivity, getRequestMetadata } from "@/app/lib/utils/activity-logger";
 
 interface PopulatedPostObj {
   _id: Types.ObjectId;
@@ -90,6 +91,19 @@ export async function PUT(req: Request) {
 
     const populatedPost = post.toObject() as unknown as PopulatedPostObj;
 
+    // Log activity
+    await logActivity({
+      userId: session.user.id,
+      action: 'update',
+      entityType: 'post',
+      entityId: populatedPost._id,
+      entityData: {
+        content: populatedPost.content,
+        hasImage: !!populatedPost.image
+      },
+      metadata: getRequestMetadata(req)
+    });
+
     return NextResponse.json({
       id: populatedPost._id.toString(),
       content: populatedPost.content,
@@ -134,7 +148,23 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // Save post data before deletion for activity log
+    const postData = {
+      content: post.content,
+      authorId: post.author.toString()
+    };
+
     await Post.findByIdAndDelete(id);
+
+    // Log activity
+    await logActivity({
+      userId: session.user.id,
+      action: 'delete',
+      entityType: 'post',
+      entityId: id,
+      entityData: postData,
+      metadata: getRequestMetadata(req)
+    });
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (err: any) {

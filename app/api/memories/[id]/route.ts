@@ -7,6 +7,7 @@ import Memory from "@/app/lib/models/memory";
 import type { Types } from "mongoose";
 import type { ImageVariant } from "@/app/lib/definitions/image";
 import { transformPopulatedImage, transformPopulatedAuthor } from "@/app/lib/utils/transformers";
+import { logActivity, getRequestMetadata } from "@/app/lib/utils/activity-logger";
 
 interface PopulatedMemoryObj {
   _id: Types.ObjectId;
@@ -94,6 +95,21 @@ export async function PUT(req: Request) {
 
     const populatedMemory = memory.toObject() as unknown as PopulatedMemoryObj;
 
+    // Log activity
+    await logActivity({
+      userId: session.user.id,
+      action: 'update',
+      entityType: 'memory',
+      entityId: populatedMemory._id,
+      entityData: {
+        title: populatedMemory.title,
+        content: populatedMemory.content,
+        shared: populatedMemory.shared,
+        hasImage: !!populatedMemory.image
+      },
+      metadata: getRequestMetadata(req)
+    });
+
     return NextResponse.json({
       id: populatedMemory._id.toString(),
       date: populatedMemory.date.toISOString(),
@@ -139,7 +155,25 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // Save memory data before deletion for activity log
+    const memoryData = {
+      title: memory.title,
+      content: memory.content,
+      shared: memory.shared,
+      authorId: memory.author.toString()
+    };
+
     await Memory.findByIdAndDelete(id);
+
+    // Log activity
+    await logActivity({
+      userId: session.user.id,
+      action: 'delete',
+      entityType: 'memory',
+      entityId: id,
+      entityData: memoryData,
+      metadata: getRequestMetadata(req)
+    });
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (err: any) {

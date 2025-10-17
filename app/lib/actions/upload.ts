@@ -9,6 +9,7 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import type { Image, ImageVariant } from "@/app/lib/definitions/image";
 import sharp from "sharp";
 import { auth } from "@/app/lib/auth";
+import { logActivity } from "@/app/lib/utils/activity-logger";
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION!,
@@ -88,7 +89,19 @@ export async function uploadFile(file: File): Promise<Image> {
       variants,
       likes: [],
     });
-  
+
+    // Log activity
+    await logActivity({
+      userId: id,
+      action: 'create',
+      entityType: 'image',
+      entityId: newImage._id,
+      entityData: {
+        alt: newImage.alt,
+        variantCount: variants.length
+      }
+    });
+
     return {
       id: newImage._id.toString(),
       userId: newImage.userId.toString(),

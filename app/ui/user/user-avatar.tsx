@@ -26,7 +26,7 @@ export default function UserAvatar({
 
 	// Fetch avatar by username if not provided
 	useEffect(() => {
-		if (!avatar && !avatarUrl && username && !fetchedAvatar && !loading) {
+		if (!avatar && !avatarUrl && username && !fetchedAvatar) {
 			setLoading(true)
 			fetch(`/api/users/${username}/avatar`)
 				.then(res => res.ok ? res.json() : null)
@@ -34,11 +34,13 @@ export default function UserAvatar({
 					if (data?.avatar) {
 						setFetchedAvatar(data.avatar)
 					}
+					setLoading(false)
 				})
-				.catch(() => {})
-				.finally(() => setLoading(false))
+				.catch(() => {
+					setLoading(false)
+				})
 		}
-	}, [username, avatar, avatarUrl, fetchedAvatar, loading])
+	}, [username, avatar, avatarUrl, fetchedAvatar])
 
 	// Determine the best avatar URL to use
 	const avatarToUse = avatar || fetchedAvatar
