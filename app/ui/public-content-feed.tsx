@@ -3,18 +3,18 @@
 "use client";
 
 import { useState } from "react";
-import type { PublicContentItem } from "@/app/lib/actions/public-content";
+import type { ContentItem } from "@/app/lib/definitions/content";
 import ContentItemCard from "@/app/ui/content-item-card";
 import { Button } from "@/app/ui/button";
 
 interface PublicContentFeedProps {
-  initialContent: PublicContentItem[];
+  initialContent: ContentItem[];
 }
 
 type FilterType = 'all' | 'memory' | 'post' | 'image';
 
 export default function PublicContentFeed({ initialContent }: PublicContentFeedProps) {
-  const [content] = useState<PublicContentItem[]>(initialContent);
+  const [content] = useState<ContentItem[]>(initialContent);
   const [filter, setFilter] = useState<FilterType>('all');
 
   const filteredContent = filter === 'all'

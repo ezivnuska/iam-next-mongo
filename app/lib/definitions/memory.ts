@@ -24,4 +24,7 @@ export interface Memory {
   updatedAt: string
   author: PartialUser
   image?: Image
+  likes?: string[]
+  likedByCurrentUser?: boolean
+  commentCount?: number
 }

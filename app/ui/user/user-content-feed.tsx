@@ -3,7 +3,7 @@
 "use client";
 
 import { useState } from "react";
-import type { ContentItem } from "@/app/lib/actions/user-content";
+import type { ContentItem } from "@/app/lib/definitions/content";
 import type { Memory } from "@/app/lib/definitions/memory";
 import type { Post } from "@/app/lib/definitions/post";
 import type { Image } from "@/app/lib/definitions/image";

@@ -3,13 +3,12 @@
 "use client";
 
 import Image from "next/image";
-import type { ContentItem } from "@/app/lib/actions/user-content";
-import type { PublicContentItem } from "@/app/lib/actions/public-content";
+import type { ContentItem } from "@/app/lib/definitions/content";
 import ContentCardWrapper from "@/app/ui/content-card-wrapper";
-import LikeButton from "@/app/ui/like-button";
+import ContentInteractions from "@/app/ui/content-interactions";
 
 type ContentItemCardProps = {
-  item: ContentItem | PublicContentItem;
+  item: ContentItem;
 }
 
 export default function ContentItemCard({ item }: ContentItemCardProps) {
@@ -44,6 +43,13 @@ export default function ContentItemCard({ item }: ContentItemCardProps) {
           )}
           <p className="whitespace-pre-wrap">{memory.content}</p>
         </div>
+        <ContentInteractions
+          itemId={memory.id}
+          itemType="Memory"
+          initialLiked={memory.likedByCurrentUser}
+          initialLikeCount={memory.likes?.length || 0}
+          initialCommentCount={memory.commentCount || 0}
+        />
       </ContentCardWrapper>
     );
   }
@@ -71,6 +77,13 @@ export default function ContentItemCard({ item }: ContentItemCardProps) {
             [source]
           </a>
         )}
+        <ContentInteractions
+          itemId={post.id}
+          itemType="Post"
+          initialLiked={post.likedByCurrentUser}
+          initialLikeCount={post.likes?.length || 0}
+          initialCommentCount={post.commentCount || 0}
+        />
       </ContentCardWrapper>
     );
   }
@@ -96,15 +109,13 @@ export default function ContentItemCard({ item }: ContentItemCardProps) {
             />
           </div>
         )}
-        <div className="flex gap-4 text-sm text-gray-600">
-          <LikeButton
-            itemId={image.id}
-            itemType="Image"
-            initialLiked={image.likedByCurrentUser}
-            initialLikeCount={image.likes?.length || 0}
-          />
-          <span>💬 {image.commentCount || 0}</span>
-        </div>
+        <ContentInteractions
+          itemId={image.id}
+          itemType="Image"
+          initialLiked={image.likedByCurrentUser}
+          initialLikeCount={image.likes?.length || 0}
+          initialCommentCount={image.commentCount || 0}
+        />
       </ContentCardWrapper>
     );
   }

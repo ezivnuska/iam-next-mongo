@@ -2,8 +2,7 @@
 
 "use client";
 
-import type { ContentItem } from "@/app/lib/actions/user-content";
-import type { PublicContentItem } from "@/app/lib/actions/public-content";
+import type { ContentItem } from "@/app/lib/definitions/content";
 import UserMemory from "@/app/ui/memories/user-memory";
 import UserPost from "@/app/ui/posts/user-post";
 import type { Memory } from "@/app/lib/definitions/memory";
@@ -11,9 +10,9 @@ import type { Post } from "@/app/lib/definitions/post";
 import ContentItemCard from "./content-item-card";
 
 type UserContentItemCardProps = {
-    item: ContentItem | PublicContentItem;
+    item: ContentItem;
     onDeleted: (id: string) => void;
-    onEdit: (item: ContentItem | PublicContentItem) => void;
+    onEdit: (item: ContentItem) => void;
     onFlag: (item: Memory | Post) => void;
 }
 

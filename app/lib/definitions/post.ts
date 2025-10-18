@@ -31,4 +31,7 @@ export interface Post {
     description?: string
     image?: string
   }
+  likes?: string[]
+  likedByCurrentUser?: boolean
+  commentCount?: number
 }

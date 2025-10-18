@@ -46,13 +46,36 @@ export async function createComment(
 		}
 	});
 
+	// Populate author with avatar to match getComments return type
+	const populatedComment = await Comment.findById(comment._id)
+		.populate({
+			path: 'author',
+			select: 'username avatar',
+			populate: {
+				path: 'avatar',
+				select: '_id variants'
+			}
+		})
+		.lean<CommentDocument>();
+
+	if (!populatedComment) {
+		throw new Error("Failed to retrieve created comment");
+	}
+
 	return {
-		id: comment._id.toString(),
-		refId: comment.refId.toString(),
-		refType: comment.refType,
-		author: comment.author.toString(),
-		content: comment.content,
-		createdAt: comment.createdAt?.toISOString() ?? new Date().toISOString(),
+		id: populatedComment._id.toString(),
+		refId: populatedComment.refId.toString(),
+		refType: populatedComment.refType as CommentRefType,
+		author: {
+			id: populatedComment.author._id.toString(),
+			username: populatedComment.author.username,
+			avatar: populatedComment.author.avatar ? {
+				id: populatedComment.author.avatar._id?.toString(),
+				variants: populatedComment.author.avatar.variants,
+			} : null,
+		},
+		content: populatedComment.content,
+		createdAt: populatedComment.createdAt?.toISOString() ?? new Date().toISOString(),
 	};
 }
 
