@@ -52,7 +52,7 @@ export default function LikeButton({
 		)
 	}
 
-	const baseClasses = "my-1 flex items-center gap-1 hover:bg-gray-200 rounded transition-all"
+	const baseClasses = "my-1 flex items-center gap-1 cursor-pointer hover:bg-gray-200 rounded transition-all"
 	const variantClasses = variant === 'overlay'
 		? "bg-white bg-opacity-90 rounded-full px-3 py-2 shadow-lg hover:bg-opacity-100"
 		: "px-1 py-2 rounded-lg hover:bg-gray-100"
