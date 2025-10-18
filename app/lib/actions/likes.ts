@@ -21,6 +21,7 @@ export async function toggleLike(itemId: string, itemType: LikeableType) {
 	const userId = session.user.id;
 	let item: any;
 	let updated: any;
+	let likePayload: any;
 
 	// Handle each type separately to avoid TypeScript union issues
 	switch (itemType) {
@@ -48,7 +49,7 @@ export async function toggleLike(itemId: string, itemType: LikeableType) {
 			});
 
 			// Emit socket event
-			const likePayload = {
+			likePayload = {
 				itemId,
 				itemType: 'Image' as const,
 				userId,
@@ -86,7 +87,7 @@ export async function toggleLike(itemId: string, itemType: LikeableType) {
 			});
 
 			// Emit socket event
-			const likePayload = {
+			likePayload = {
 				itemId,
 				itemType: 'Post' as const,
 				userId,
@@ -124,7 +125,7 @@ export async function toggleLike(itemId: string, itemType: LikeableType) {
 			});
 
 			// Emit socket event
-			const likePayload = {
+			likePayload = {
 				itemId,
 				itemType: 'Memory' as const,
 				userId,

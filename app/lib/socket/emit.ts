@@ -8,6 +8,12 @@ import type {
 	CommentPayload,
 	LikePayload,
 	ActivityPayload,
+	PokerPlayerPayload,
+	PokerDealPayload,
+	PokerBetPayload,
+	PokerRaisePayload,
+	PokerFoldPayload,
+	PokerTurnPayload,
 } from './events'
 
 export async function emitFriendRequest(payload: FriendRequestPayload) {
@@ -44,4 +50,37 @@ export async function emitLikeRemoved(payload: LikePayload) {
 
 export async function emitActivityCreated(payload: ActivityPayload) {
 	await emitViaAPI(SOCKET_EVENTS.ACTIVITY_CREATED, payload)
+}
+
+// Poker event emitters
+export async function emitPokerPlayerJoined(payload: PokerPlayerPayload) {
+	await emitViaAPI(SOCKET_EVENTS.POKER_PLAYER_JOINED, payload)
+}
+
+export async function emitPokerPlayerLeft(payload: PokerPlayerPayload) {
+	await emitViaAPI(SOCKET_EVENTS.POKER_PLAYER_LEFT, payload)
+}
+
+export async function emitPokerDeal(payload: PokerDealPayload) {
+	await emitViaAPI(SOCKET_EVENTS.POKER_DEAL, payload)
+}
+
+export async function emitPokerBet(payload: PokerBetPayload) {
+	await emitViaAPI(SOCKET_EVENTS.POKER_BET, payload)
+}
+
+export async function emitPokerRaise(payload: PokerRaisePayload) {
+	await emitViaAPI(SOCKET_EVENTS.POKER_RAISE, payload)
+}
+
+export async function emitPokerFold(payload: PokerFoldPayload) {
+	await emitViaAPI(SOCKET_EVENTS.POKER_FOLD, payload)
+}
+
+export async function emitPokerTurnChanged(payload: PokerTurnPayload) {
+	await emitViaAPI(SOCKET_EVENTS.POKER_TURN_CHANGED, payload)
+}
+
+export async function emitPokerGameRestarted() {
+	await emitViaAPI(SOCKET_EVENTS.POKER_GAME_RESTARTED, {})
 }
