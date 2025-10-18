@@ -64,7 +64,7 @@ export default function ContentInteractions({
 
   return (
     <>
-      <div className="flex gap-4 text-sm text-gray-600">
+      <div className="flex gap-2 text-sm text-gray-600">
         <LikeButton
           itemId={itemId}
           itemType={itemType}
@@ -88,7 +88,7 @@ export default function ContentInteractions({
       />
 
       {commentsExpanded && (
-        <div className="mt-4 border-t border-gray-200 pt-4">
+        <div className="border-t border-gray-200 pt-4">
           <CommentSection
             comments={comments}
             loading={loadingComments}

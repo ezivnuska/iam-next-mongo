@@ -8,6 +8,7 @@ import Post from "@/app/lib/models/post";
 import Memory from "@/app/lib/models/memory";
 import { auth } from "@/app/lib/auth";
 import { logActivity } from "@/app/lib/utils/activity-logger";
+import { emitLikeAdded, emitLikeRemoved } from "@/app/lib/socket/emit";
 
 type LikeableType = 'Image' | 'Post' | 'Memory';
 
@@ -23,7 +24,7 @@ export async function toggleLike(itemId: string, itemType: LikeableType) {
 
 	// Handle each type separately to avoid TypeScript union issues
 	switch (itemType) {
-		case 'Image':
+		case 'Image': {
 			item = await ImageModel.findById(itemId).select('likes').lean();
 			if (!item) throw new Error(`${itemType} not found`);
 
@@ -46,12 +47,22 @@ export async function toggleLike(itemId: string, itemType: LikeableType) {
 				}
 			});
 
+			// Emit socket event
+			const likePayload = {
+				itemId,
+				itemType: 'Image' as const,
+				userId,
+				username: session.user.name || session.user.email || 'Unknown'
+			};
+			await (isLikedImage ? emitLikeRemoved(likePayload) : emitLikeAdded(likePayload));
+
 			return {
 				liked: !isLikedImage,
 				likeCount: updated?.likes?.length || 0
 			};
+		}
 
-		case 'Post':
+		case 'Post': {
 			item = await Post.findById(itemId).select('likes').lean();
 			if (!item) throw new Error(`${itemType} not found`);
 
@@ -74,12 +85,22 @@ export async function toggleLike(itemId: string, itemType: LikeableType) {
 				}
 			});
 
+			// Emit socket event
+			const likePayload = {
+				itemId,
+				itemType: 'Post' as const,
+				userId,
+				username: session.user.name || session.user.email || 'Unknown'
+			};
+			await (isLikedPost ? emitLikeRemoved(likePayload) : emitLikeAdded(likePayload));
+
 			return {
 				liked: !isLikedPost,
 				likeCount: updated?.likes?.length || 0
 			};
+		}
 
-		case 'Memory':
+		case 'Memory': {
 			item = await Memory.findById(itemId).select('likes').lean();
 			if (!item) throw new Error(`${itemType} not found`);
 
@@ -102,10 +123,20 @@ export async function toggleLike(itemId: string, itemType: LikeableType) {
 				}
 			});
 
+			// Emit socket event
+			const likePayload = {
+				itemId,
+				itemType: 'Memory' as const,
+				userId,
+				username: session.user.name || session.user.email || 'Unknown'
+			};
+			await (isLikedMemory ? emitLikeRemoved(likePayload) : emitLikeAdded(likePayload));
+
 			return {
 				liked: !isLikedMemory,
 				likeCount: updated?.likes?.length || 0
 			};
+		}
 
 		default:
 			throw new Error('Invalid likeable type');

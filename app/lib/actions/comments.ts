@@ -8,6 +8,7 @@ import { auth } from "@/app/lib/auth";
 import type { CommentRefType } from "@/app/lib/definitions/comment";
 import { Types } from "mongoose";
 import { logActivity } from "@/app/lib/utils/activity-logger";
+import { emitCommentAdded, emitCommentDeleted } from "@/app/lib/socket/emit";
 
 export async function createComment(
 	refId: string,
@@ -61,6 +62,17 @@ export async function createComment(
 	if (!populatedComment) {
 		throw new Error("Failed to retrieve created comment");
 	}
+
+	// Emit socket event
+	await emitCommentAdded({
+		commentId: populatedComment._id.toString(),
+		refId: populatedComment.refId.toString(),
+		refType: refType,
+		author: {
+			id: populatedComment.author._id.toString(),
+			username: populatedComment.author.username,
+		}
+	});
 
 	return {
 		id: populatedComment._id.toString(),
@@ -165,6 +177,17 @@ export async function deleteComment(commentId: string) {
 		entityType: 'comment',
 		entityId: commentId,
 		entityData: commentData
+	});
+
+	// Emit socket event
+	await emitCommentDeleted({
+		commentId,
+		refId: commentData.refId,
+		refType: commentData.refType as CommentRefType,
+		author: {
+			id: session.user.id,
+			username: session.user.name || session.user.email || 'Unknown',
+		}
 	});
 
 	return { success: true };

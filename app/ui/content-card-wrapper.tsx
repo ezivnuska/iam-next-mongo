@@ -35,7 +35,7 @@ export default function ContentCardWrapper({ username, avatar, createdAt, childr
           avatar={avatar}
           size={40}
         />
-        <div className="flex w-full flex-col gap-3">
+        <div className="flex w-full flex-col gap-2">
           <div className="flex flex-col">
             <p
               className="font-semibold cursor-pointer hover:underline"

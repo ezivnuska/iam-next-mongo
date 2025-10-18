@@ -3,6 +3,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import { getComments, deleteComment as deleteCommentAction, createComment as createCommentAction } from '@/app/lib/actions/comments';
 import { handleError } from '@/app/lib/utils/error-handler';
+import { useSocket } from '@/app/lib/providers/socket-provider';
+import { SOCKET_EVENTS } from '@/app/lib/socket/events';
+import type { CommentPayload } from '@/app/lib/socket/events';
 import type { Comment } from '@/app/lib/definitions/comment';
 import type { CommentRefType } from '@/app/lib/definitions/comment';
 
@@ -33,6 +36,7 @@ export function useComments({
   onCommentCountChange,
   autoLoad = false,
 }: UseCommentsOptions): UseCommentsResult {
+  const { socket } = useSocket();
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentCount, setCommentCount] = useState(initialCommentCount);
   const [loadingComments, setLoadingComments] = useState(false);
@@ -106,6 +110,38 @@ export function useComments({
     setLoadingComments(false);
     onCommentCountChange?.(initialCommentCount);
   }, [initialCommentCount, onCommentCountChange]);
+
+  // Listen for socket events to update comments in real-time
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleCommentAdded = (payload: CommentPayload) => {
+      if (payload.refId === itemId && payload.refType === itemType) {
+        // Only update count if comments are not loaded (to avoid duplication)
+        if (!commentsLoaded) {
+          updateCommentCount(commentCount + 1);
+        }
+      }
+    };
+
+    const handleCommentDeleted = (payload: CommentPayload) => {
+      if (payload.refId === itemId && payload.refType === itemType) {
+        // Remove from comments list if loaded
+        if (commentsLoaded) {
+          setComments(prev => prev.filter(c => c.id !== payload.commentId));
+        }
+        updateCommentCount(Math.max(0, commentCount - 1));
+      }
+    };
+
+    socket.on(SOCKET_EVENTS.COMMENT_ADDED, handleCommentAdded);
+    socket.on(SOCKET_EVENTS.COMMENT_DELETED, handleCommentDeleted);
+
+    return () => {
+      socket.off(SOCKET_EVENTS.COMMENT_ADDED, handleCommentAdded);
+      socket.off(SOCKET_EVENTS.COMMENT_DELETED, handleCommentDeleted);
+    };
+  }, [socket, itemId, itemType, commentsLoaded, commentCount, updateCommentCount]);
 
   // Auto-load on mount if requested
   useEffect(() => {

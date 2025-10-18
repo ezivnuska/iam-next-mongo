@@ -2,8 +2,12 @@
 
 'use client'
 
+import { useEffect } from 'react'
 import { useOptimisticMutation } from '@/app/lib/hooks/use-optimistic-mutation'
 import { toggleLike } from '@/app/lib/actions/likes'
+import { useSocket } from '@/app/lib/providers/socket-provider'
+import { SOCKET_EVENTS } from '@/app/lib/socket/events'
+import type { LikePayload } from '@/app/lib/socket/events'
 import { HeartIcon } from '@/app/ui/icons'
 
 type LikeButtonProps = {
@@ -28,10 +32,44 @@ export default function LikeButton({
 	variant = 'default',
 	onLikeChange,
 }: LikeButtonProps) {
-	const { data, isLoading, mutate } = useOptimisticMutation<LikeState>({
+	const { socket } = useSocket()
+	const { data, isLoading, mutate, setData } = useOptimisticMutation<LikeState>({
 		liked: initialLiked,
 		likeCount: initialLikeCount,
 	})
+
+	// Listen for socket events to update like count in real-time
+	useEffect(() => {
+		if (!socket) return
+
+		const handleLikeAdded = (payload: LikePayload) => {
+			if (payload.itemId === itemId && payload.itemType === itemType) {
+				setData(prev => ({
+					liked: prev.liked,
+					likeCount: prev.likeCount + 1
+				}))
+				onLikeChange?.(data.liked, data.likeCount + 1)
+			}
+		}
+
+		const handleLikeRemoved = (payload: LikePayload) => {
+			if (payload.itemId === itemId && payload.itemType === itemType) {
+				setData(prev => ({
+					liked: prev.liked,
+					likeCount: Math.max(0, prev.likeCount - 1)
+				}))
+				onLikeChange?.(data.liked, Math.max(0, data.likeCount - 1))
+			}
+		}
+
+		socket.on(SOCKET_EVENTS.LIKE_ADDED, handleLikeAdded)
+		socket.on(SOCKET_EVENTS.LIKE_REMOVED, handleLikeRemoved)
+
+		return () => {
+			socket.off(SOCKET_EVENTS.LIKE_ADDED, handleLikeAdded)
+			socket.off(SOCKET_EVENTS.LIKE_REMOVED, handleLikeRemoved)
+		}
+	}, [socket, itemId, itemType, data.liked, data.likeCount, onLikeChange, setData])
 
 	const handleToggleLike = async (e: React.MouseEvent) => {
 		e.stopPropagation()
