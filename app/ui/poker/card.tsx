@@ -10,8 +10,8 @@ interface CardProps {
 
 export default function Card({ card }: CardProps) {
   return (
-    <li className="card">
-      {card.label} of{' '}
+    <li className='flex flex-row items-center gap-1 rounded-md overflow-hidden px-1 py-2 border-1'>
+      <span>{card.label}</span>
       <span style={{ color: card.color }}>{card.symbol}</span>
     </li>
   );

@@ -43,4 +43,5 @@ export interface GameState {
   stage: number;
   stages: GameStage[];
   playing: boolean;
+  playerBets: number[];
 }

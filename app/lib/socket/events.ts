@@ -36,7 +36,8 @@ export const SOCKET_EVENTS = {
 	POKER_TURN_CHANGED: 'poker:turn_changed',
 	POKER_GAME_RESTARTED: 'poker:game_restarted',
 	POKER_STATE_UPDATE: 'poker:state_update',
-    POKER_GAME_CREATED: 'poker:game_created',
+	POKER_GAME_CREATED: 'poker:game_created',
+	POKER_GAME_DELETED: 'poker:game_deleted',
 } as const
 
 export type SocketEventType = typeof SOCKET_EVENTS[keyof typeof SOCKET_EVENTS]
@@ -126,4 +127,16 @@ export interface PokerStateUpdatePayload {
 	stage: number
 	playing: boolean
 	currentPlayerIndex: number
+	playerBets: number[]
+	winner?: {
+		winnerId: string
+		winnerName: string
+		handRank: string
+		isTie: boolean
+		tiedPlayers?: string[]
+	}
+}
+
+export interface PokerGameDeletedPayload {
+	gameId: string
 }

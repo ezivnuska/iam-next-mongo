@@ -1,13 +1,27 @@
 // app/lib/server/poker-game-controller.ts
 
 import { PokerGame } from '@/app/lib/models/poker-game';
-import { createDeck, shuffleDeck, createChips } from '@/app/lib/utils/poker';
+import { PokerBalance } from '@/app/lib/models/poker-balance';
+import { createDeck, shuffleDeck, createChips, determineWinner, getChipTotal } from '@/app/lib/utils/poker';
 import type { Bet, Card, Player } from '@/app/lib/definitions/poker';
 import { GameStage } from '@/app/lib/definitions/poker';
 import { randomBytes } from 'crypto';
 
 export async function getGame(gameId: string) {
   return await PokerGame.findById(gameId);
+}
+
+async function savePlayerBalances(players: Player[]) {
+  // Save all players' chip balances to the database
+  const balanceUpdates = players.map(player =>
+    PokerBalance.findOneAndUpdate(
+      { userId: player.id },
+      { chips: player.chips },
+      { upsert: true, new: true }
+    )
+  );
+
+  await Promise.all(balanceUpdates);
 }
 
 export async function createGame() {
@@ -40,12 +54,67 @@ export async function addPlayer(
   const alreadyIn = game.players.some((p: Player) => p.id === user.id);
   if (alreadyIn) return game.toObject();
 
+  // Get user's saved chip balance or create default
+  let balance = await PokerBalance.findOne({ userId: user.id });
+
+  let playerChips = createChips(100); // Default starting chips
+
+  if (balance && balance.chips.length > 0) {
+    // Use their saved balance
+    playerChips = balance.chips;
+  } else {
+    // Create new balance record with starting chips
+    await PokerBalance.create({
+      userId: user.id,
+      chips: playerChips,
+    });
+  }
+
   game.players.push({
     id: user.id,
     username: user.username,
     hand: [],
-    chips: createChips(100),
+    chips: playerChips,
   });
+
+  await game.save();
+  return game.toObject();
+}
+
+export async function removePlayer(
+  gameId: string,
+  user: { id: string }
+) {
+  const game = await PokerGame.findById(gameId);
+  if (!game) throw new Error('Game not found');
+
+  const isPlayer = game.players.some((p: Player) => p.id === user.id);
+  if (!isPlayer) return game.toObject();
+
+  // Get user's saved chip balance or create default
+  let balance = await PokerBalance.findOne({ userId: user.id });
+
+  let playerChips = createChips(100); // Default starting chips
+
+  if (balance && balance.chips.length > 0) {
+    // Use their saved balance
+    playerChips = balance.chips;
+  } else {
+    // Create new balance record with starting chips
+    await PokerBalance.create({
+      userId: user.id,
+      chips: playerChips,
+    });
+  }
+
+  game.players = game.players.filter((p: Player) => p.id !== user.id);
+  
+//   game.players.push({
+//     id: user.id,
+//     username: user.username,
+//     hand: [],
+//     chips: playerChips,
+//   });
 
   await game.save();
   return game.toObject();
@@ -62,7 +131,7 @@ export async function deal(gameId: string) {
       // Convert stage to number to avoid string concatenation
       const currentStage = Number(game.stage);
 
-      if (currentStage > GameStage.River) return game.toObject();
+      if (currentStage >= GameStage.River) return game.toObject();
 
       const deck = [...game.deck];
       const communal = [...game.communalCards];
@@ -146,9 +215,59 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
   const allPlayersMatched = game.playerBets.every((bet: number) => bet === game.currentBet);
 
   if (allPlayersMatched) {
-    // All players matched - advance to next stage and deal cards
     const currentStage = Number(game.stage);
-    if (currentStage < GameStage.River) {
+
+    // Check if we're at River - time for showdown
+    if (currentStage === GameStage.River) {
+      // Determine winner
+      const winnerInfo = determineWinner(
+        game.players.map((p: Player) => ({
+          id: p.id,
+          username: p.username,
+          hand: p.hand,
+        })),
+        game.communalCards
+      );
+
+      // Store winner information
+      game.winner = winnerInfo;
+
+      // Award pot to winner(s)
+      const potChips = game.pot.flatMap((bet: Bet) => bet.chips);
+
+      if (winnerInfo.isTie && winnerInfo.tiedPlayers) {
+        // Split pot among tied players
+        const chipsPerWinner = Math.floor(potChips.length / winnerInfo.tiedPlayers.length);
+        winnerInfo.tiedPlayers.forEach((username: string) => {
+          const player = game.players.find((p: Player) => p.username === username);
+          if (player) {
+            player.chips.push(...potChips.splice(0, chipsPerWinner));
+          }
+        });
+        // Any remaining chips go to first tied player
+        if (potChips.length > 0) {
+          const firstWinner = game.players.find((p: Player) => p.username === winnerInfo.tiedPlayers![0]);
+          if (firstWinner) {
+            firstWinner.chips.push(...potChips);
+          }
+        }
+      } else {
+        // Single winner gets entire pot
+        const winner = game.players.find((p: Player) => p.id === winnerInfo.winnerId);
+        if (winner) {
+          winner.chips.push(...potChips);
+        }
+      }
+
+      // Clear pot
+      game.pot = [];
+      game.playing = false;
+
+      // Save all players' chip balances
+      await savePlayerBalances(game.players);
+
+    } else if (currentStage < GameStage.River) {
+      // Advance to next stage and deal cards
       game.stage = currentStage + 1;
 
       // Deal cards for the new stage
@@ -164,6 +283,7 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
       game.deck = deck;
       game.communalCards = communal;
     }
+
     // Reset betting round
     game.currentBet = 0;
     game.playerBets = new Array(game.players.length).fill(0);
@@ -191,6 +311,44 @@ export async function finishTurn(gameId: string, playerId: string) {
   return game.toObject();
 }
 
+export async function fold(gameId: string, playerId: string) {
+  const game = await PokerGame.findById(gameId);
+  if (!game) throw new Error('Game not found');
+
+  const playerIndex = game.players.findIndex((p: Player) => p.id === playerId);
+  if (playerIndex === -1) throw new Error('Player not found');
+
+  // Find the other player (winner)
+  const otherPlayerIndex = game.players.findIndex((p: Player) => p.id !== playerId);
+  if (otherPlayerIndex === -1) throw new Error('No other player found');
+
+  const winner = game.players[otherPlayerIndex];
+
+  // Award all pot chips to the winner
+  const potChips = game.pot.flatMap((bet: Bet) => bet.chips);
+  winner.chips.push(...potChips);
+
+  // Set winner information
+  game.winner = {
+    winnerId: winner.id,
+    winnerName: winner.username,
+    handRank: 'Win by fold',
+    isTie: false,
+  };
+
+  // Clear pot and end game
+  game.pot = [];
+  game.playing = false;
+
+  game.players[otherPlayerIndex] = winner;
+
+  // Save all players' chip balances
+  await savePlayerBalances(game.players);
+
+  await game.save();
+  return game.toObject();
+}
+
 export async function restart(gameId: string) {
   const game = await PokerGame.findById(gameId);
   if (!game) throw new Error('Game not found');
@@ -209,6 +367,7 @@ export async function restart(gameId: string) {
   game.currentPlayerIndex = 0; // Reset to first player
   game.currentBet = 0; // Reset betting
   game.playerBets = new Array(game.players.length).fill(0);
+  game.winner = undefined; // Clear winner info
 
   game.players = game.players.map((p: Player) => ({
     ...p,
@@ -217,4 +376,10 @@ export async function restart(gameId: string) {
 
   await game.save();
   return game.toObject();
+}
+
+export async function deleteGame(gameId: string) {
+  const result = await PokerGame.findByIdAndDelete(gameId);
+  if (!result) throw new Error('Game not found');
+  return { success: true };
 }

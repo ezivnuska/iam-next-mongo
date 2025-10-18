@@ -18,6 +18,13 @@ export interface PokerGameDocument extends Document {
   currentPlayerIndex: number; // Index of current player in players array
   currentBet: number; // Highest bet in current betting round
   playerBets: number[]; // Each player's total bet in current round
+  winner?: {
+    winnerId: string;
+    winnerName: string;
+    handRank: string;
+    isTie: boolean;
+    tiedPlayers?: string[];
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -81,6 +88,16 @@ const PokerGameSchema = new Schema<PokerGameDocument>(
     currentPlayerIndex: { type: Number, default: 0 },
     currentBet: { type: Number, default: 0 },
     playerBets: { type: [Number], default: [] },
+    winner: {
+      type: {
+        winnerId: String,
+        winnerName: String,
+        handRank: String,
+        isTie: Boolean,
+        tiedPlayers: [String],
+      },
+      required: false,
+    },
   },
   { timestamps: true }
 );

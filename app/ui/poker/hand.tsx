@@ -11,7 +11,7 @@ interface HandProps {
 
 export default function Hand({ cards }: HandProps) {
   return (
-    <ul className="hand">
+    <ul className='flex flex-row items-center gap-1'>
       {cards.map((card, index) => (
         <Card key={`${card.id}-${index}`} card={card} />
       ))}
