@@ -16,8 +16,10 @@ export async function POST(request: NextRequest) {
 
 		// Emit the event
 		if (room) {
+			console.log(`[Socket Emit] ${event} to room ${room}:`, data)
 			io.to(room).emit(event, data)
 		} else {
+			console.log(`[Socket Emit] ${event} (broadcast):`, data)
 			io.emit(event, data)
 		}
 

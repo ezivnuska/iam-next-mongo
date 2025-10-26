@@ -10,19 +10,19 @@ export async function GET() {
   }
 
   try {
-    // Fetch all active games (games that are either waiting for players or currently playing)
+    // Fetch all active games (games that are either waiting for players or currently in progress)
     const games = await PokerGame.find({
       $or: [
-        { playing: false, 'players.0': { $exists: true } }, // Games waiting for players
-        { playing: true } // Active games
+        { locked: false, 'players.0': { $exists: true } }, // Games waiting for players
+        { locked: true } // Active games
       ]
-    }).select('_id code players playing');
+    }).select('_id code players locked');
 
     const gameList = games.map(game => ({
       id: game._id.toString(),
       code: game.code,
       playerCount: game.players.length,
-      playing: game.playing,
+      locked: game.locked,
       creatorId: game.players.length > 0 ? game.players[0].id : null
     }));
 

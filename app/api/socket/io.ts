@@ -15,7 +15,7 @@ export function getIO(): SocketIOServer | null {
 }
 
 // Helper function to emit events via internal API route
-// This works around the issue where server actions run in a different process
+// This works around the issue where API routes run in a different process
 export async function emitViaAPI(event: string, data: any, room?: string) {
 	try {
 		const response = await fetch('http://localhost:3000/api/socket/emit', {
