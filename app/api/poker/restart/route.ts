@@ -1,21 +1,17 @@
 // app/api/poker/restart/route.ts
 
-import { auth } from '@/app/lib/auth';
+import { withAuth } from '@/app/lib/api/with-auth';
 import { restart } from '@/app/lib/server/poker-game-controller';
-import { emitViaAPI } from '@/app/api/socket/io';
-import { SOCKET_EVENTS } from '@/app/lib/socket/events';
+import { serializeGame } from '@/app/lib/utils/game-serialization';
+import { PokerSocketEmitter } from '@/app/lib/utils/socket-helper';
 
-export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+export const POST = withAuth(async (request, context, session) => {
   const { gameId } = await request.json();
   const id = gameId || process.env.DEFAULT_GAME_ID!;
 
   const gameState = await restart(id);
+  const serialized = serializeGame(gameState);
 
-  await emitViaAPI(SOCKET_EVENTS.POKER_STATE_UPDATE, gameState);
-  return Response.json({ success: true, gameState });
-}
+  await PokerSocketEmitter.emitStateUpdate(gameState);
+  return Response.json({ success: true, gameState: serialized });
+});
