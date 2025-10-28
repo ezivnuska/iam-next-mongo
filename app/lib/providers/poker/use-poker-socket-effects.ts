@@ -41,6 +41,8 @@ export interface PokerSocketEffectsDeps {
   setWinner: (winner: any) => void;
   setActionTimer: React.Dispatch<React.SetStateAction<any>>;
   setActionHistory: (history: any[]) => void;
+  setIsActionProcessing: (processing: boolean) => void;
+  setPendingAction: (action: { type: 'bet' | 'fold' | 'call' | 'raise'; playerId: string } | null) => void;
 }
 
 /**
@@ -89,6 +91,8 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
     setWinner,
     setActionTimer,
     setActionHistory,
+    setIsActionProcessing,
+    setPendingAction,
   } = deps;
 
   useEffect(() => {
@@ -114,6 +118,8 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
       setWinner,
       setActionTimer,
       setActionHistory,
+      setIsActionProcessing,
+      setPendingAction,
     });
 
     const handleGameCreated = createGameCreatedHandler(setAvailableGames);
@@ -121,7 +127,7 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
     const handlePlayerJoined = createPlayerJoinedHandler(updaters.updatePlayers, setActionHistory, updaters.updateGameStatus);
     const handlePlayerLeft = createPlayerLeftHandler(updaters.updatePlayers, updaters.updateGameStatus, setActionHistory);
     const handleGameLocked = createGameLockedHandler(updaters.updatePlayers, updaters.updateGameStatus, setStage);
-    const handleBetPlaced = createBetPlacedHandler(updaters.updateBettingState, setActionHistory);
+    const handleBetPlaced = createBetPlacedHandler(updaters.updateBettingState, setActionHistory, setIsActionProcessing, setPendingAction);
     const handleCardsDealt = createCardsDealtHandler(setStage, setCommunalCards);
     const handleRoundComplete = createRoundCompleteHandler(setWinner, updaters.updatePlayers);
     const handleTimerStarted = createTimerStartedHandler(setActionTimer);
@@ -165,5 +171,7 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
     setWinner,
     setActionTimer,
     setActionHistory,
+    setIsActionProcessing,
+    setPendingAction,
   ]);
 }

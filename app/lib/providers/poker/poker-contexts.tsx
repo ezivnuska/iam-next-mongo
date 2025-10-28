@@ -68,6 +68,14 @@ export interface ActionsContextValue {
   forceLockGame: () => Promise<void>;
 }
 
+export interface ProcessingContextValue {
+  isActionProcessing: boolean;
+  pendingAction: {
+    type: 'bet' | 'fold' | 'call' | 'raise';
+    playerId: string;
+  } | null;
+}
+
 // ============= Create Contexts =============
 
 export const GameStateContext = createContext<GameStateContextValue | undefined>(undefined);
@@ -75,3 +83,4 @@ export const PotContext = createContext<PotContextValue | undefined>(undefined);
 export const PlayersContext = createContext<PlayersContextValue | undefined>(undefined);
 export const ViewersContext = createContext<ViewersContextValue | undefined>(undefined);
 export const ActionsContext = createContext<ActionsContextValue | undefined>(undefined);
+export const ProcessingContext = createContext<ProcessingContextValue | undefined>(undefined);

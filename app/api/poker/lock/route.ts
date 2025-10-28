@@ -15,8 +15,6 @@ export const POST = withAuth(async (request, context, session) => {
 
   try {
     const result = await withRetry(async () => {
-      console.log('[Force Lock API] Attempting to acquire lock...');
-
       // ATOMIC LOCK ACQUISITION
       // Don't use the returned document - just check if lock was acquired
       const lockResult = await PokerGame.findOneAndUpdate(
@@ -33,11 +31,8 @@ export const POST = withAuth(async (request, context, session) => {
         }
 
         // Game is currently being processed by another operation
-        console.log('[Force Lock API] Game is currently being processed, will retry...');
         throw new Error('Game is currently being processed');
       }
-
-      console.log('[Force Lock API] Lock acquired! Fetching game state...');
 
       // Small delay to ensure write propagation (eventual consistency)
       await new Promise(resolve => setTimeout(resolve, 10));
@@ -46,15 +41,9 @@ export const POST = withAuth(async (request, context, session) => {
       const game = await PokerGame.findById(id);
       if (!game) throw new Error('Game not found after lock acquisition');
 
-      console.log('[Force Lock API] Got game state', {
-        version: game.__v,
-        processing: game.processing
-      });
-
       try {
         // Check if game is already locked - if so, return success (idempotent operation)
         if (game.locked) {
-          console.log('[Force Lock API] Game already locked, returning success (idempotent)');
           game.processing = false; // Release lock
           await game.save();
 
@@ -69,8 +58,6 @@ export const POST = withAuth(async (request, context, session) => {
         if (game.players.length < 2) {
           throw new Error('Need at least 2 players to start game');
         }
-
-        console.log('[Force Lock API] Locking game immediately with', game.players.length, 'players');
 
         // Clear the lockTime and lock the game
         game.lockTime = undefined;
@@ -92,8 +79,6 @@ export const POST = withAuth(async (request, context, session) => {
         game.processing = false;
         await game.save();
 
-        console.log('[Force Lock API] Lock released, game locked successfully');
-
         // Emit game locked event to all clients
         const gameState = game.toObject();
         await PokerSocketEmitter.emitGameLocked({
@@ -111,10 +96,8 @@ export const POST = withAuth(async (request, context, session) => {
         };
       } catch (error) {
         // Release lock on error using atomic update (bypasses version check)
-        console.log('[Force Lock API] Error occurred, releasing lock...');
         try {
           await PokerGame.findByIdAndUpdate(id, { processing: false });
-          console.log('[Force Lock API] Lock released successfully after error');
         } catch (unlockError) {
           console.error('[Force Lock API] Failed to release lock:', unlockError);
         }

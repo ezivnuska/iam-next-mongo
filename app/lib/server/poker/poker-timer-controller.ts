@@ -17,8 +17,6 @@ export async function startActionTimer(
   const game = await PokerGame.findById(gameId);
   if (!game) throw new Error('Game not found');
 
-  console.log('[Poker] Starting timer for player:', targetPlayerId, '- Stage:', game.stage);
-
   // Calculate total actions (1 for deal + number of players for bets)
   const totalActions = 1 + game.players.length;
   const currentActionIndex = game.actionTimer?.currentActionIndex ?? 0;
@@ -78,8 +76,6 @@ async function executeScheduledAction(gameId: string) {
     return;
   }
 
-  console.log('[Poker] Timer expired - executing', actionType, 'for player:', targetPlayerId);
-
   if (actionType === GameActionType.PLAYER_BET && targetPlayerId) {
     try {
       // Auto-bet always bets 1 chip (simplified logic)
@@ -89,10 +85,8 @@ async function executeScheduledAction(gameId: string) {
       // (both server setTimeout and client fallback might trigger)
       game.actionTimer = undefined;
       await game.save();
-      console.log('[Poker] Timer cleared before auto-bet execution');
 
       const autoBetAmount = 1; // Always 1 chip
-      console.log('[Poker] Auto-betting', autoBetAmount, 'chip');
 
       // Import placeBet from main controller to avoid circular dependency issues
       const { placeBet } = await import('../poker-game-controller');
@@ -110,7 +104,6 @@ async function executeScheduledAction(gameId: string) {
     }
   } else if (actionType === 'DEAL_CARDS') {
     // Cards are dealt automatically by betting round completion
-    console.log('[Timer] Deal cards action - handled by betting round logic');
   }
 }
 

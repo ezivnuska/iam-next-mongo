@@ -28,7 +28,14 @@ export default function Player({ player, locked, index, currentPlayerIndex, potC
   const isWinner = player.id === winner?.winnerId;
 
   return (
-    <li className='rounded-xl overflow-hidden bg-green-800'>
+    <li
+        className={clsx(
+            'rounded-xl overflow-hidden bg-green-800',
+            {
+              'border-2 border-white': isCurrentPlayer,
+            },
+          )}
+    >
       <div
         className={clsx(
           'flex flex-row sm:flex-col gap-2 sm:justify-between px-2 py-1',

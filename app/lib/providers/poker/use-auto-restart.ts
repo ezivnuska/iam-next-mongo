@@ -67,13 +67,11 @@ export function useAutoRestart({
 }: UseAutoRestartOptions) {
   useEffect(() => {
     if (winner) {
-        // console.log('WINNER STILL IN GAME')
       // Check if winner is still in the game
       const winnerStillInGame = players.some(p => p.id === winner.winnerId);
 
       if (!winnerStillInGame) {
         // Winner has left - cancel auto-restart
-        console.log('[Auto-restart] Winner has left the game - auto-restart cancelled');
         setCountdown(null);
         return;
       }
@@ -84,14 +82,12 @@ export function useAutoRestart({
       setCountdown(currentCountdown);
 
       const isWinner = currentUserId === winner.winnerId;
-      console.log(`[Auto-restart] ${isWinner ? 'This client (winner) will trigger' : 'This client will wait for'} restart in ${countdownSeconds} seconds`);
 
       // Countdown timer - decrement every second and check if winner is still in game
       const countdownInterval = setInterval(() => {
         // Check if winner has left during countdown
         const winnerStillPresent = players.some(p => p.id === winner.winnerId);
         if (!winnerStillPresent) {
-          console.log('[Auto-restart] Winner left during countdown - cancelling restart');
           setCountdown(null);
           clearInterval(countdownInterval);
           return;
@@ -113,11 +109,9 @@ export function useAutoRestart({
           // Double-check winner is still in game before restarting
           const stillInGame = players.some(p => p.id === winner.winnerId);
           if (stillInGame) {
-            console.log('[Auto-restart] Winner client triggering restart...');
             setCountdown(null);
             await onRestart();
           } else {
-            console.log('[Auto-restart] Winner left before restart could trigger');
             setCountdown(null);
           }
         }, duration);

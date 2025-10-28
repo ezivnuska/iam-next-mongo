@@ -5,8 +5,6 @@ import { getUserCurrentGame } from '@/app/lib/server/poker-game-controller';
 import { serializeGame } from '@/app/lib/utils/game-serialization';
 
 export const GET = withAuth(async (request, context, session) => {
-  console.log('Fetching current game for user:', session.user.id, session.user.username);
-
   try {
     const game = await getUserCurrentGame(session.user.id);
 

@@ -9,6 +9,7 @@ import {
   PlayersContext,
   ViewersContext,
   ActionsContext,
+  ProcessingContext,
 } from './poker-contexts';
 
 // ============= Hooks =============
@@ -53,6 +54,14 @@ export function usePokerActions() {
   return context;
 }
 
+export function useProcessing() {
+  const context = useContext(ProcessingContext);
+  if (!context) {
+    throw new Error('useProcessing must be used within a PokerProvider');
+  }
+  return context;
+}
+
 // ============= Backward Compatibility Hook =============
 
 export function usePoker() {
@@ -61,6 +70,7 @@ export function usePoker() {
   const players = usePlayers();
   const viewers = useViewers();
   const actions = usePokerActions();
+  const processing = useProcessing();
 
   return {
     ...gameState,
@@ -68,5 +78,6 @@ export function usePoker() {
     ...players,
     ...viewers,
     ...actions,
+    ...processing,
   };
 }

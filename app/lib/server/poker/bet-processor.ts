@@ -19,15 +19,7 @@ export function processBetTransaction(
   player: Player,
   chipCount: number
 ): { player: Player; chipsToAdd: Bet } {
-  console.log('[Bet Processor] Processing bet for player:', player.username);
-  console.log('[Bet Processor] chipCount parameter:', chipCount);
-  console.log('[Bet Processor] Player chips before splice:', player.chips.length, 'chips');
-
   const chipsToRemove = player.chips.splice(0, chipCount);
-
-  console.log('[Bet Processor] Chips removed from player:', chipsToRemove.length, 'chips');
-  console.log('[Bet Processor] Chip values:', chipsToRemove.map(c => c.value));
-  console.log('[Bet Processor] Player chips after splice:', player.chips.length, 'chips');
 
   return {
     player,
@@ -48,18 +40,8 @@ export function updateGameAfterBet(
   updatedPlayer: Player,
   betToAdd: Bet
 ): void {
-  console.log('[Update Game] Adding bet to pot:', {
-    player: betToAdd.player,
-    chipsInBet: betToAdd.chips.length,
-    chipValues: betToAdd.chips.map(c => c.value),
-    currentPotSize: game.pot.length
-  });
-
   // Add chips to pot
   game.pot.push(betToAdd);
-
-  console.log('[Update Game] Pot after adding bet:', game.pot.length, 'bets');
-  console.log('[Update Game] Total chips in pot:', game.pot.reduce((sum: number, bet: Bet) => sum + bet.chips.length, 0));
 
   // Update player's total bet for this round
   game.playerBets[playerIndex] += chipCount;

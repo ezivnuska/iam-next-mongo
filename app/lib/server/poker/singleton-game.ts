@@ -18,8 +18,6 @@ export async function getOrCreateSingletonGame() {
   // Create if it doesn't exist
   if (!game) {
     try {
-      console.log('[Singleton] Creating persistent poker game with code:', SINGLETON_CODE);
-
       const deck = initializeDeck();
 
       game = await PokerGame.create({
@@ -33,12 +31,9 @@ export async function getOrCreateSingletonGame() {
         currentPlayerIndex: 0,
         playerBets: [],
       });
-
-      console.log('[Singleton] Persistent game created with ID:', game._id.toString());
     } catch (error: any) {
       // Handle race condition: another request created the game between our check and create
       if (error.code === 11000) {
-        console.log('[Singleton] Game already exists (race condition), fetching existing game');
         game = await PokerGame.findOne({ code: SINGLETON_CODE });
         if (!game) {
           throw new Error('Failed to fetch singleton game after duplicate key error');
@@ -59,8 +54,6 @@ export async function getOrCreateSingletonGame() {
 export async function resetSingletonGame(gameId: string) {
   const game = await PokerGame.findById(gameId);
   if (!game) throw new Error('Singleton game not found');
-
-  console.log('[Singleton] Resetting game to initial state');
 
   // Reset all game state
   game.deck = initializeDeck();

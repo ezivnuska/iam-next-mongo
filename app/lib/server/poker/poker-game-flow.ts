@@ -96,8 +96,6 @@ export function dealCommunalCards(game: PokerGameDoc, currentStage: GameStage): 
  * Reset betting state for a new betting round
  */
 export function resetBettingRound(game: PokerGameDoc): void {
-  console.log('[Poker] Resetting betting round for stage', game.stage);
-
   game.playerBets = new Array(game.players.length).fill(0);
   game.currentPlayerIndex = 0;
 
@@ -117,8 +115,6 @@ export async function completeRoundAndAdvanceStage(game: PokerGameDoc): Promise<
 }> {
   const currentStage = Number(game.stage);
 
-  console.log('[Poker] Advancing from stage', currentStage, '- Cards:', game.communalCards?.length || 0, 'Bets:', game.playerBets);
-
   // Store stage history (optional for analytics)
   const stageData: GameStageProps = {
     players: game.players.map((p: Player) => ({ ...p })),
@@ -134,8 +130,6 @@ export async function completeRoundAndAdvanceStage(game: PokerGameDoc): Promise<
   const playersNeedCards = game.players.length > 0 && game.players.every((p: Player) => p.hand.length === 0);
 
   if (playersNeedCards) {
-    console.log('[Poker] Blind betting complete - dealing 2 cards to each player');
-
     // Deal 2 cards to each player (one at a time in rotation)
     dealPlayerCards(game.deck, game.players, 2);
     game.markModified('players');
@@ -154,9 +148,7 @@ export async function completeRoundAndAdvanceStage(game: PokerGameDoc): Promise<
     game.markModified('actionHistory');
 
     // Don't advance stage - stay at Preflop for normal Preflop betting with cards
-    console.log('[Poker] Players now have cards - continuing Preflop betting');
   } else if (currentStage === GameStage.River) {
-    console.log('[Poker] River complete - determining winner');
 
     // Safety check: Ensure we have all 5 communal cards before determining winner
     ensureCommunalCardsComplete(game.deck, game.communalCards, 5);

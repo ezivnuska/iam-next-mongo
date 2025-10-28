@@ -16,8 +16,6 @@ export function initializeDeck(): Card[] {
  * Cards are dealt in rotation: P1 gets 1 card, P2 gets 1 card, P1 gets 2nd card, P2 gets 2nd card
  */
 export function dealPlayerCards(deck: Card[], players: Player[], cardsPerPlayer: number = 2): void {
-  console.log(`[Dealer] Dealing ${cardsPerPlayer} card(s) to ${players.length} player(s) in rotation`);
-
   // Deal one card at a time, rotating through players
   for (let round = 0; round < cardsPerPlayer; round++) {
     for (let player of players) {
@@ -43,7 +41,6 @@ export function dealCommunalCards(
   currentStage: GameStage
 ): { numCards: number; stageName: string; newStage: GameStage } | null {
   if (currentStage >= GameStage.River) {
-    console.log('[Dealer] Skipping deal - already at River stage');
     return null;
   }
 
@@ -60,8 +57,6 @@ export function dealCommunalCards(
     numCards = 1; // River
     stageName = 'RIVER';
   }
-
-  console.log(`[Dealer] Dealing ${numCards} card(s) for ${stageName}`);
 
   // Deal cards from deck to communal cards
   communalCards.push(...deck.splice(0, numCards));
@@ -85,7 +80,6 @@ export function collectAllCards(
     ...players.flatMap((p: Player) => p.hand),
   ];
 
-  console.log(`[Dealer] Collected ${allCards.length} cards from game`);
   return allCards;
 }
 
@@ -101,7 +95,6 @@ export function reshuffleAllCards(
   const allCards = collectAllCards(deck, communalCards, players);
   const shuffled = shuffleDeck(allCards);
 
-  console.log(`[Dealer] Reshuffled ${shuffled.length} cards for new game`);
   return shuffled;
 }
 

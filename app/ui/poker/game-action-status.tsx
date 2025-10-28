@@ -35,17 +35,13 @@ function GameActionStatus() {
     }
 
     try {
-      console.log('[Timer Check] Executing action via client fallback, gameId:', gameId || 'null (will use session)');
       const response = await fetch('/api/poker/timer/check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ gameId }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log('[Timer Check] Success:', data.message);
-      } else {
+      if (!response.ok) {
         const errorData = await response.json();
         console.error('[Timer Check] Failed:', errorData.error);
       }
@@ -55,16 +51,16 @@ function GameActionStatus() {
   }, [gameId, actionTimer]);
 
   // Show restart countdown if game has ended
-  if (winner && restartCountdown !== null) {
-    return (
-      <div className="w-full max-w-2xl mx-auto p-4 bg-purple-50 border-2 border-purple-300 rounded-lg">
-        <div className="flex flex-col items-center justify-center gap-3">
-          <WinnerDisplay winner={winner} />
-          <span className="text-sm text-purple-600">Restarting in {restartCountdown} seconds</span>
-        </div>
-      </div>
-    );
-  }
+//   if (winner && restartCountdown !== null) {
+//     return (
+//       <div className="w-full max-w-2xl mx-auto p-4 bg-purple-50 border-2 border-purple-300 rounded-lg">
+//         <div className="flex flex-col items-center justify-center gap-3">
+//           <WinnerDisplay winner={winner} />
+//           <span className="text-sm text-purple-600">Restarting in {restartCountdown} seconds</span>
+//         </div>
+//       </div>
+//     );
+//   }
 
   // Don't show if no active timer
   if (!actionTimer) {

@@ -20,7 +20,6 @@ export const createRestartAction = (
       if (response.ok) {
         const data = await response.json();
         if (data.gameState) {
-          console.log('[Restart Action] Updating local state with restart response');
           // Immediately update local state with response
           // This ensures the client who initiated restart sees updates immediately
           updateGameState(data.gameState);
@@ -106,10 +105,8 @@ export const createLeaveGameAction = (
 ) => {
   return async () => {
     if (!gameId) {
-      console.log('[Leave Game] No gameId, cannot leave');
       return;
     }
-    console.log('[Leave Game] Leaving game:', gameId);
     try {
       const response = await fetch('/api/poker/leave', {
         method: 'POST',
@@ -118,17 +115,11 @@ export const createLeaveGameAction = (
       });
       if (response.ok) {
         const data = await response.json();
-        console.log('[Leave Game] Response:', data);
 
         // If game was deleted (no players left), reset state and return to lobby
         if (data.gameState?.deleted) {
-          console.log('[Leave Game] Game deleted - resetting state');
           resetGameState();
           setAvailableGames(prev => prev.filter(g => g.id !== gameId));
-        } else {
-          // Game still exists with remaining players - state will be updated via socket
-          console.log('[Leave Game] Player left, game still active. Remaining players:', data.gameState?.players?.map((p: any) => p.username));
-          console.log('[Leave Game] Waiting for POKER_STATE_UPDATE socket event to update other clients...');
         }
       } else {
         console.error('Failed to leave game');

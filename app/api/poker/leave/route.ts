@@ -19,11 +19,8 @@ export const POST = withAuth(async (request, context, session) => {
     username: session.user.username,
   });
 
-  console.log('[Poker] Player left - Players remaining:', gameState.players?.length);
-
   // If timer was cleared due to insufficient players, notify clients
   if (hadTimer && !gameState.actionTimer && gameState.players.length < 2) {
-    console.log('[Poker] Timer cleared - not enough players remaining');
     await PokerSocketEmitter.emitTimerCleared();
   }
 

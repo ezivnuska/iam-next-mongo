@@ -11,8 +11,6 @@ export const POST = withAuth(async (request, context, session) => {
   const { gameId } = await request.json();
   const id = gameId || process.env.DEFAULT_GAME_ID!;
 
-  console.log('[Poker] Player joining:', session.user.username, 'Game:', id);
-
   const gameState = await addPlayer(id, {
     id: session.user.id,
     username: session.user.username || session.user.email || 'Guest',

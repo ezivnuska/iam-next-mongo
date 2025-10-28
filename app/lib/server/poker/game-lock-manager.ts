@@ -15,8 +15,6 @@ import { withRetry } from '@/app/lib/utils/retry';
 async function initializeGameAtLock(gameId: string): Promise<void> {
   try {
     await withRetry(async () => {
-      console.log('[Auto Lock] Attempting to acquire lock...');
-
       // ATOMIC LOCK ACQUISITION
       const lockResult = await PokerGame.findOneAndUpdate(
         { _id: gameId, processing: false },
@@ -27,14 +25,10 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
       if (!lockResult) {
         const existingGame = await PokerGame.findById(gameId).lean();
         if (!existingGame) {
-          console.log('[Auto Lock] Game not found, aborting');
           return; // Game was deleted
         }
-        console.log('[Auto Lock] Game is currently being processed, will retry...');
         throw new Error('Game is currently being processed');
       }
-
-      console.log('[Auto Lock] Lock acquired! Fetching game state...');
 
       // Small delay to ensure write propagation
       await new Promise(resolve => setTimeout(resolve, 10));
@@ -42,14 +36,12 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
       // Fetch fresh document for processing
       const gameToLock = await PokerGame.findById(gameId);
       if (!gameToLock) {
-        console.log('[Auto Lock] Game not found after lock acquisition');
         return;
       }
 
       try {
         // Check if game is already locked - if so, operation already succeeded (idempotent)
         if (gameToLock.locked) {
-          console.log('[Auto Lock] Game already locked, skipping (idempotent)');
           gameToLock.processing = false;
           await gameToLock.save();
           return;
@@ -62,8 +54,6 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
         gameToLock.currentPlayerIndex = 0;
 
         // Players start with empty hands - cards will be dealt after first blind betting round
-        console.log('[Auto Lock] Game locked - blind betting begins (no cards dealt yet)');
-
         // Add action history directly to document (avoid separate save)
         gameToLock.actionHistory.push({
           id: randomBytes(8).toString('hex'),
@@ -76,8 +66,6 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
         // Release lock before save
         gameToLock.processing = false;
         await gameToLock.save();
-
-        console.log('[Auto Lock] Lock released, game locked successfully');
 
         // Emit granular game locked event to all clients
         const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
@@ -94,10 +82,8 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
         // Auto-start disabled per user request
       } catch (error) {
         // Release lock on error
-        console.log('[Auto Lock] Error occurred, releasing lock...');
         try {
           await PokerGame.findByIdAndUpdate(gameId, { processing: false });
-          console.log('[Auto Lock] Lock released successfully after error');
         } catch (unlockError) {
           console.error('[Auto Lock] Failed to release lock:', unlockError);
         }

@@ -47,7 +47,6 @@ export default function Countdown({
       if (elapsed >= duration && !hasCompletedRef.current && onComplete) {
         // Timer expired - trigger callback once
         hasCompletedRef.current = true;
-        console.log('[Countdown] Timer expired, executing callback');
         onComplete();
       }
     };

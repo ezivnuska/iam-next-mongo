@@ -84,16 +84,12 @@ export async function addPlayer(
     });
   }
 
-  console.log('[Poker] Before adding player - current players:', game.players.length, game.players.map((p: Player) => p.username));
-
   game.players.push({
     id: user.id,
     username: user.username,
     hand: [],
     chips: playerChips,
   });
-
-  console.log('[Poker] After adding player - current players:', game.players.length, game.players.map((p: Player) => p.username));
 
   // Explicitly mark players array as modified for Mongoose
   game.markModified('players');
@@ -107,10 +103,7 @@ export async function addPlayer(
 
   await game.save();
 
-  const savedGame = game.toObject();
-  console.log('[Poker] After save - players in returned state:', savedGame.players.length, savedGame.players.map((p: any) => p.username));
-
-  return savedGame;
+  return game.toObject();
 }
 
 export async function removePlayer(
@@ -130,7 +123,6 @@ export async function removePlayer(
 
   // If 0 players remain, reset game state (don't delete - singleton game persists)
   if (game.players.length === 0) {
-    console.log('[Poker] All players left - resetting singleton game');
     const { resetSingletonGame } = await import('./poker/singleton-game');
     const resetGame = await resetSingletonGame(gameId);
     return resetGame.toObject();
@@ -170,13 +162,9 @@ export async function removePlayer(
 }
 
 export async function placeBet(gameId: string, playerId: string, chipCount = 1) {
-  console.log('[PlaceBet] === NEW BET STARTING ===');
-  console.log('[PlaceBet] Input parameters:', { gameId, playerId, chipCount });
-
   // Retry with fresh state fetch on each attempt to avoid double-betting
   // Use more retries for high-contention scenarios (concurrent bets, round completion)
   return withRetry(async () => {
-    console.log('[PlaceBet] Attempting to acquire lock...');
 
     // ATOMIC LOCK ACQUISITION
     // Don't use the returned document - just check if lock was acquired
@@ -194,11 +182,8 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
       }
 
       // Game is currently being processed by another operation
-      console.log('[PlaceBet] Game is currently being processed, will retry...');
       throw new Error('Game is currently being processed');
     }
-
-    console.log('[PlaceBet] Lock acquired! Fetching game state...');
 
     // Small delay to ensure write propagation (eventual consistency)
     await new Promise(resolve => setTimeout(resolve, 10));
@@ -207,21 +192,9 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
     const game = await PokerGame.findById(gameId);
     if (!game) throw new Error('Game not found after lock acquisition');
 
-    console.log('[PlaceBet] Got game state', {
-      version: game.__v,
-      processing: game.processing
-    });
-
     try {
       // Validate player and get index
       const playerIndex = validatePlayerExists(game.players, playerId);
-    console.log('[PlaceBet] Player index:', playerIndex);
-    console.log('[PlaceBet] Current game state:', {
-      playerBets: game.playerBets,
-      currentPlayerIndex: game.currentPlayerIndex,
-      potSize: game.pot.length,
-      potBets: game.pot.map((b: any) => ({ player: b.player, chips: b.chips.length }))
-    });
 
     // CRITICAL FIX: Check if this bet was already processed in a previous retry attempt
     // This prevents double-betting when MongoDB version conflicts trigger retries
@@ -237,28 +210,11 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
     // If player's bet amount already includes this chipCount, skip processing
     const betAlreadyProcessed = currentPlayerBetAmount >= expectedNewBetAmount;
 
-    console.log('[PlaceBet] Idempotency check:', {
-      currentPlayerBetAmount,
-      expectedNewBetAmount,
-      betAlreadyProcessed,
-      stage: game.stage
-    });
-
-    if (betAlreadyProcessed) {
-      console.log('[PlaceBet] ⚠️  Bet already processed in previous retry attempt!');
-      console.log('[PlaceBet] Player', player.username, 'already has sufficient chips bet');
-      console.log('[PlaceBet] Skipping duplicate bet processing, but checking round completion...');
-    } else {
+    if (!betAlreadyProcessed) {
       // Ensure player bets are initialized
       ensurePlayerBetsInitialized(game);
 
       // Process the bet transaction
-      console.log('[PlaceBet] Player before bet:', {
-        username: player.username,
-        chipCount: player.chips.length,
-        chipValues: player.chips.map((c: any) => c.value).slice(0, 5) // First 5 chip values
-      });
-
       const { player: updatedPlayer, chipsToAdd } = processBetTransaction(player, chipCount);
 
       // Update game state
@@ -279,7 +235,6 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
 
     // Only log if this bet hasn't been logged yet for this player at this stage
     if (recentBetActions.length === 0) {
-      console.log('[PlaceBet] Logging bet action to history');
       game.actionHistory.push({
         id: randomBytes(8).toString('hex'),
         timestamp: new Date(),
@@ -290,8 +245,6 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
         chipAmount: chipCount,
       });
       game.markModified('actionHistory');
-    } else {
-      console.log('[PlaceBet] Bet action already logged, skipping duplicate');
     }
 
     // Check if betting round is complete BEFORE saving
@@ -307,16 +260,9 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
 
     const allContributionsEqual = areAllPotContributionsEqual(game.pot, activePlayers);
 
-    console.log('[Poker] Player', playerIndex, 'bet', chipCount, 'chips');
-    console.log('[Poker] Stage:', game.stage, 'Bets:', game.playerBets, 'Round complete:', allContributionsEqual);
-    console.log('[Poker] Active players:', activePlayers);
-    console.log('[Poker] Player contributions:', playerContributions);
-    console.log('[Poker] Pot contributions check:', { allContributionsEqual });
-
     let roundInfo = { roundComplete: false, cardsDealt: false, gameComplete: false };
 
     if (allContributionsEqual) {
-      console.log('[Poker] Betting round complete! Advancing stage...');
       roundInfo = await completeRoundAndAdvanceStage(game);
       // Timer must be started manually via /api/poker/timer/start
       // Auto-start disabled per user request
@@ -329,8 +275,6 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
       // Release lock before save to prevent lock timeout issues
       game.processing = false;
       await game.save();
-
-      console.log('[PlaceBet] Lock released, bet processing complete');
 
       return {
         game: game.toObject(),
@@ -360,10 +304,8 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
       };
     } catch (error) {
       // Release lock on error using atomic update (bypasses version check)
-      console.log('[PlaceBet] Error occurred, releasing lock...');
       try {
         await PokerGame.findByIdAndUpdate(gameId, { processing: false });
-        console.log('[PlaceBet] Lock released successfully after error');
       } catch (unlockError) {
         console.error('[PlaceBet] Failed to release lock:', unlockError);
       }
@@ -384,8 +326,6 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
 
 export async function fold(gameId: string, playerId: string) {
   return withRetry(async () => {
-    console.log('[Fold] Attempting to acquire lock...');
-
     // ATOMIC LOCK ACQUISITION
     const lockResult = await PokerGame.findOneAndUpdate(
       { _id: gameId, processing: false },
@@ -398,11 +338,8 @@ export async function fold(gameId: string, playerId: string) {
       if (!existingGame) {
         throw new Error('Game not found');
       }
-      console.log('[Fold] Game is currently being processed, will retry...');
       throw new Error('Game is currently being processed');
     }
-
-    console.log('[Fold] Lock acquired! Fetching game state...');
 
     // Small delay to ensure write propagation
     await new Promise(resolve => setTimeout(resolve, 10));
@@ -466,15 +403,11 @@ export async function fold(gameId: string, playerId: string) {
       game.processing = false;
       await game.save();
 
-      console.log('[Fold] Lock released, fold processing complete');
-
       return game.toObject();
     } catch (error) {
       // Release lock on error
-      console.log('[Fold] Error occurred, releasing lock...');
       try {
         await PokerGame.findByIdAndUpdate(gameId, { processing: false });
-        console.log('[Fold] Lock released successfully after error');
       } catch (unlockError) {
         console.error('[Fold] Failed to release lock:', unlockError);
       }
@@ -494,8 +427,6 @@ export async function fold(gameId: string, playerId: string) {
 
 export async function restart(gameId: string) {
   return withRetry(async () => {
-    console.log('[Restart] Attempting to acquire lock...');
-
     // ATOMIC LOCK ACQUISITION
     const lockResult = await PokerGame.findOneAndUpdate(
       { _id: gameId, processing: false },
@@ -508,11 +439,8 @@ export async function restart(gameId: string) {
       if (!existingGame) {
         throw new Error('Game not found');
       }
-      console.log('[Restart] Game is currently being processed, will retry...');
       throw new Error('Game is currently being processed');
     }
-
-    console.log('[Restart] Lock acquired! Fetching game state...');
 
     // Small delay to ensure write propagation
     await new Promise(resolve => setTimeout(resolve, 10));
@@ -533,8 +461,6 @@ export async function restart(gameId: string) {
 
       // Don't deal cards yet - players should do blind betting first
       // Cards will be dealt automatically after first betting round completes
-      console.log('[Restart] Players start with empty hands - blind betting will occur first');
-
       game.communalCards = [];
       game.pot = [];
       game.stage = 0; // Start at Preflop
@@ -564,15 +490,11 @@ export async function restart(gameId: string) {
 
       await game.save();
 
-      console.log('[Restart] Lock released, restart complete');
-
       return game.toObject();
     } catch (error) {
       // Release lock on error
-      console.log('[Restart] Error occurred, releasing lock...');
       try {
         await PokerGame.findByIdAndUpdate(gameId, { processing: false });
-        console.log('[Restart] Lock released successfully after error');
       } catch (unlockError) {
         console.error('[Restart] Failed to release lock:', unlockError);
       }

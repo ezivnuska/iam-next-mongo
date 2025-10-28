@@ -17,6 +17,7 @@ import {
   PlayersContext,
   ViewersContext,
   ActionsContext,
+  ProcessingContext,
 } from './poker/poker-contexts';
 
 import {
@@ -88,6 +89,13 @@ export function PokerProvider({ children }: { children: ReactNode }) {
   const [restartCountdown, setRestartCountdown] = useState<number | null>(null);
   const [actionHistory, setActionHistory] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // --- Action processing state ---
+  const [isActionProcessing, setIsActionProcessing] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{
+    type: 'bet' | 'fold' | 'call' | 'raise';
+    playerId: string;
+  } | null>(null);
 
   // --- Computed values ---
   // Calculate how much the current player needs to bet to call
@@ -173,8 +181,57 @@ export function PokerProvider({ children }: { children: ReactNode }) {
     [gameId, updateGameState]
   );
   const joinGame = useCallback(createJoinGameAction(setGameId), []);
-  const placeBet = useCallback(createPlaceBetAction(gameId), [gameId]);
-  const fold = useCallback(createFoldAction(gameId), [gameId]);
+
+  // Wrap placeBet to set processing state
+  const placeBetOriginal = useCallback(createPlaceBetAction(gameId), [gameId]);
+  const placeBet = useCallback(async (chipCount: number) => {
+    if (isActionProcessing || !user?.id) return;
+
+    const actionType = currentBet === 0 ? 'bet' : (chipCount > currentBet ? 'raise' : 'call');
+    setIsActionProcessing(true);
+    setPendingAction({ type: actionType, playerId: user.id });
+
+    // Set timeout to clear processing state if no response after 5 seconds
+    const timeoutId = setTimeout(() => {
+      setIsActionProcessing(false);
+      setPendingAction(null);
+      console.warn('Action timeout: No response from server');
+    }, 5000);
+
+    try {
+      await placeBetOriginal(chipCount);
+    } catch (error) {
+      clearTimeout(timeoutId);
+      setIsActionProcessing(false);
+      setPendingAction(null);
+      console.error('Error placing bet:', error);
+    }
+  }, [placeBetOriginal, isActionProcessing, user, currentBet]);
+
+  // Wrap fold to set processing state
+  const foldOriginal = useCallback(createFoldAction(gameId), [gameId]);
+  const fold = useCallback(async () => {
+    if (isActionProcessing || !user?.id) return;
+
+    setIsActionProcessing(true);
+    setPendingAction({ type: 'fold', playerId: user.id });
+
+    // Set timeout to clear processing state if no response after 5 seconds
+    const timeoutId = setTimeout(() => {
+      setIsActionProcessing(false);
+      setPendingAction(null);
+      console.warn('Action timeout: No response from server');
+    }, 5000);
+
+    try {
+      await foldOriginal();
+    } catch (error) {
+      clearTimeout(timeoutId);
+      setIsActionProcessing(false);
+      setPendingAction(null);
+      console.error('Error folding:', error);
+    }
+  }, [foldOriginal, isActionProcessing, user]);
   const leaveGame = useCallback(
     createLeaveGameAction(gameId, resetGameState, setAvailableGames),
     [gameId, resetGameState]
@@ -232,6 +289,8 @@ export function PokerProvider({ children }: { children: ReactNode }) {
     setWinner,
     setActionTimer,
     setActionHistory,
+    setIsActionProcessing,
+    setPendingAction,
   });
 
   // --- Memoized context values ---
@@ -296,13 +355,20 @@ export function PokerProvider({ children }: { children: ReactNode }) {
     forceLockGame,
   }), [joinGame, restart, placeBet, fold, leaveGame, deleteGameFromLobby, startTimer, pauseTimer, resumeTimer, forceLockGame]);
 
+  const processingValue = useMemo(() => ({
+    isActionProcessing,
+    pendingAction,
+  }), [isActionProcessing, pendingAction]);
+
   return (
     <GameStateContext.Provider value={gameStateValue}>
       <PotContext.Provider value={potValue}>
         <PlayersContext.Provider value={playersValue}>
           <ViewersContext.Provider value={viewersValue}>
             <ActionsContext.Provider value={actionsValue}>
-              {children}
+              <ProcessingContext.Provider value={processingValue}>
+                {children}
+              </ProcessingContext.Provider>
             </ActionsContext.Provider>
           </ViewersContext.Provider>
         </PlayersContext.Provider>
@@ -318,5 +384,6 @@ export {
   usePlayers,
   useViewers,
   usePokerActions,
+  useProcessing,
   usePoker,
 } from './poker/poker-hooks';

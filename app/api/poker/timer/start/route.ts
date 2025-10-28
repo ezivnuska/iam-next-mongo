@@ -35,8 +35,6 @@ export const POST = withAuth(async (request, context, session) => {
       return Response.json({ error: 'No valid player to start timer for' }, { status: 400 });
     }
 
-    console.log('[Start Timer API] Starting timer for player:', currentPlayer.username, 'at index:', currentPlayerIndex);
-
     // Start timer for current player
     const updatedGame = await startActionTimer(
       id,

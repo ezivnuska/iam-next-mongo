@@ -162,33 +162,6 @@ const PokerGameSchema = new Schema<PokerGameDocument>(
   }
 );
 
-// Add middleware to log all saves for debugging concurrent modifications
-PokerGameSchema.pre('save', function(next) {
-  const stack = new Error().stack;
-  const callerLine = stack?.split('\n')[3]?.trim() || 'unknown';
-
-  console.log('[Mongoose Save] Document being saved:', {
-    id: this._id,
-    version: this.__v,
-    potSize: this.pot.length,
-    playerBets: this.playerBets,
-    stage: this.stage,
-    caller: callerLine,
-  });
-
-  next();
-});
-
-PokerGameSchema.post('save', function(doc, next) {
-  console.log('[Mongoose Save] Save completed:', {
-    id: doc._id,
-    newVersion: doc.__v,
-    potSize: doc.pot.length,
-    playerBets: doc.playerBets,
-  });
-
-  next();
-});
 
 export const PokerGame =
   models.PokerGame || model<PokerGameDocument>('PokerGame', PokerGameSchema);
