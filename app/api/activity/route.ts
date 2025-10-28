@@ -1,10 +1,10 @@
 // app/api/activities/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/app/lib/auth";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import { getActivities } from "@/app/lib/actions/activities";
 import type { ActivityAction, ActivityEntityType } from "@/app/lib/definitions/activity";
+import { requireAuth } from "@/app/lib/utils/auth-utils";
 
 /**
  * GET /api/activities
@@ -17,10 +17,7 @@ import type { ActivityAction, ActivityEntityType } from "@/app/lib/definitions/a
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    await requireAuth();
 
     await connectToDatabase();
 
@@ -42,6 +39,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(activities);
   } catch (error: any) {
     console.error('Error fetching activities:', error);
+    if (error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     return NextResponse.json(
       { error: error.message || "Failed to fetch activities" },
       { status: 500 }

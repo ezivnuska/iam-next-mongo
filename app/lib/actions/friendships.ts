@@ -4,7 +4,6 @@
 
 import { connectToDatabase } from "@/app/lib/mongoose"
 import Friendship from "@/app/lib/models/friendship"
-import { auth } from "@/app/lib/auth"
 import type { Friendship as FriendshipType, Friend } from "@/app/lib/definitions/friendship"
 import {
 	emitFriendRequest,
@@ -13,14 +12,12 @@ import {
 	emitFriendshipRemoved,
 } from "@/app/lib/socket/emit"
 import { logActivity } from "@/app/lib/utils/activity-logger"
+import { requireAuth } from "@/app/lib/utils/auth-utils"
 
 export async function sendFriendRequest(recipientId: string) {
-	const session = await auth()
-	if (!session?.user?.id) {
-		throw new Error("Unauthorized")
-	}
+	const user = await requireAuth()
 
-	if (session.user.id === recipientId) {
+	if (user.id === recipientId) {
 		throw new Error("Cannot send friend request to yourself")
 	}
 
@@ -29,8 +26,8 @@ export async function sendFriendRequest(recipientId: string) {
 	// Check if friendship already exists
 	const existing = await Friendship.findOne({
 		$or: [
-			{ requester: session.user.id, recipient: recipientId },
-			{ requester: recipientId, recipient: session.user.id }
+			{ requester: user.id, recipient: recipientId },
+			{ requester: recipientId, recipient: user.id }
 		]
 	})
 
@@ -44,7 +41,7 @@ export async function sendFriendRequest(recipientId: string) {
 		if (existing.status === 'rejected') {
 			// Allow re-sending after rejection
 			existing.status = 'pending'
-			existing.requester = session.user.id
+			existing.requester = user.id
 			existing.recipient = recipientId
 			await existing.save()
 
@@ -52,8 +49,8 @@ export async function sendFriendRequest(recipientId: string) {
 			await emitFriendRequest({
 				friendshipId: existing._id.toString(),
 				requester: {
-					id: session.user.id,
-					username: session.user.username || '',
+					id: user.id,
+					username: user.username || '',
 				},
 				recipient: {
 					id: recipientId,
@@ -66,14 +63,14 @@ export async function sendFriendRequest(recipientId: string) {
 	}
 
 	const friendship = await Friendship.create({
-		requester: session.user.id,
+		requester: user.id,
 		recipient: recipientId,
 		status: 'pending',
 	})
 
 	// Log activity
 	await logActivity({
-		userId: session.user.id,
+		userId: user.id,
 		action: 'create',
 		entityType: 'friendship',
 		entityId: friendship._id,
@@ -88,8 +85,8 @@ export async function sendFriendRequest(recipientId: string) {
 		await emitFriendRequest({
 			friendshipId: friendship._id.toString(),
 			requester: {
-				id: session.user.id,
-				username: session.user.username || '',
+				id: user.id,
+				username: user.username || '',
 			},
 			recipient: {
 				id: recipientId,
@@ -104,10 +101,7 @@ export async function sendFriendRequest(recipientId: string) {
 }
 
 export async function acceptFriendRequest(friendshipId: string) {
-	const session = await auth()
-	if (!session?.user?.id) {
-		throw new Error("Unauthorized")
-	}
+	const user = await requireAuth()
 
 	await connectToDatabase()
 
@@ -117,7 +111,7 @@ export async function acceptFriendRequest(friendshipId: string) {
 	}
 
 	// Only the recipient can accept
-	if (friendship.recipient.toString() !== session.user.id) {
+	if (friendship.recipient.toString() !== user.id) {
 		throw new Error("Unauthorized to accept this request")
 	}
 
@@ -130,7 +124,7 @@ export async function acceptFriendRequest(friendshipId: string) {
 
 	// Log activity
 	await logActivity({
-		userId: session.user.id,
+		userId: user.id,
 		action: 'update',
 		entityType: 'friendship',
 		entityId: friendshipId,
@@ -145,17 +139,14 @@ export async function acceptFriendRequest(friendshipId: string) {
 		friendshipId: friendship._id.toString(),
 		userId: friendship.requester.toString(),
 		username: session.user.username || '',
-		otherUserId: session.user.id, // The user who accepted (recipient)
+		otherUserId: user.id, // The user who accepted (recipient)
 	})
 
 	return { success: true }
 }
 
 export async function rejectFriendRequest(friendshipId: string) {
-	const session = await auth()
-	if (!session?.user?.id) {
-		throw new Error("Unauthorized")
-	}
+	const user = await requireAuth()
 
 	await connectToDatabase()
 
@@ -165,7 +156,7 @@ export async function rejectFriendRequest(friendshipId: string) {
 	}
 
 	// Only the recipient can reject
-	if (friendship.recipient.toString() !== session.user.id) {
+	if (friendship.recipient.toString() !== user.id) {
 		throw new Error("Unauthorized to reject this request")
 	}
 
@@ -174,7 +165,7 @@ export async function rejectFriendRequest(friendshipId: string) {
 
 	// Log activity
 	await logActivity({
-		userId: session.user.id,
+		userId: user.id,
 		action: 'update',
 		entityType: 'friendship',
 		entityId: friendshipId,
@@ -189,17 +180,14 @@ export async function rejectFriendRequest(friendshipId: string) {
 		friendshipId: friendship._id.toString(),
 		userId: friendship.requester.toString(),
 		username: session.user.username || '',
-		otherUserId: session.user.id, // The user who rejected (recipient)
+		otherUserId: user.id, // The user who rejected (recipient)
 	})
 
 	return { success: true }
 }
 
 export async function removeFriend(friendshipId: string) {
-	const session = await auth()
-	if (!session?.user?.id) {
-		throw new Error("Unauthorized")
-	}
+	const user = await requireAuth()
 
 	await connectToDatabase()
 
@@ -209,8 +197,8 @@ export async function removeFriend(friendshipId: string) {
 	}
 
 	// Either party can remove the friendship
-	const isRequester = friendship.requester.toString() === session.user.id
-	const isRecipient = friendship.recipient.toString() === session.user.id
+	const isRequester = friendship.requester.toString() === user.id
+	const isRecipient = friendship.recipient.toString() === user.id
 
 	if (!isRequester && !isRecipient) {
 		throw new Error("Unauthorized to remove this friendship")
@@ -230,7 +218,7 @@ export async function removeFriend(friendshipId: string) {
 
 	// Log activity
 	await logActivity({
-		userId: session.user.id,
+		userId: user.id,
 		action: 'delete',
 		entityType: 'friendship',
 		entityId: friendshipId,
@@ -242,7 +230,7 @@ export async function removeFriend(friendshipId: string) {
 		friendshipId: friendshipId,
 		userId: otherUserId,
 		username: session.user.username || '',
-		otherUserId: session.user.id, // The user who removed the friendship
+		otherUserId: user.id, // The user who removed the friendship
 	})
 
 	return { success: true }
@@ -258,8 +246,8 @@ export async function getFriends(): Promise<Friend[]> {
 
 	const friendships = await Friendship.find({
 		$or: [
-			{ requester: session.user.id, status: 'accepted' },
-			{ recipient: session.user.id, status: 'accepted' }
+			{ requester: user.id, status: 'accepted' },
+			{ recipient: user.id, status: 'accepted' }
 		]
 	})
 		.populate({
@@ -282,7 +270,7 @@ export async function getFriends(): Promise<Friend[]> {
 		.lean()
 
 	return friendships.map((f: any) => {
-		const isRequester = f.requester._id.toString() === session.user.id
+		const isRequester = f.requester._id.toString() === user.id
 		const friend = isRequester ? f.recipient : f.requester
 
 		return {
@@ -307,7 +295,7 @@ export async function getPendingRequests(): Promise<FriendshipType[]> {
 	await connectToDatabase()
 
 	const requests = await Friendship.find({
-		recipient: session.user.id,
+		recipient: user.id,
 		status: 'pending'
 	})
 		.populate({
@@ -362,7 +350,7 @@ export async function getFriendshipStatus(userId: string): Promise<{
 		return { status: 'none' }
 	}
 
-	if (session.user.id === userId) {
+	if (user.id === userId) {
 		return { status: 'none' }
 	}
 
@@ -370,8 +358,8 @@ export async function getFriendshipStatus(userId: string): Promise<{
 
 	const friendship = await Friendship.findOne({
 		$or: [
-			{ requester: session.user.id, recipient: userId },
-			{ requester: userId, recipient: session.user.id }
+			{ requester: user.id, recipient: userId },
+			{ requester: userId, recipient: user.id }
 		]
 	}).lean<{
 		_id: any
@@ -392,7 +380,7 @@ export async function getFriendshipStatus(userId: string): Promise<{
 	}
 
 	if (friendship.status === 'pending') {
-		const isSender = friendship.requester.toString() === session.user.id
+		const isSender = friendship.requester.toString() === user.id
 		return {
 			status: isSender ? 'pending_sent' : 'pending_received',
 			friendshipId: friendship._id.toString()

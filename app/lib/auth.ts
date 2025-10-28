@@ -7,7 +7,6 @@ import type { User } from "next-auth";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
 import bcrypt from "bcrypt";
-import { mapUserDocumentToAppUser } from "@/app/lib/utils/mapUser";
 import { UserRole } from "@/app/lib/definitions/user";
 
 export const authOptions: NextAuthConfig = {
@@ -32,7 +31,13 @@ export const authOptions: NextAuthConfig = {
         const isValid = await bcrypt.compare(password, userDoc.password);
         if (!isValid) return null;
 
-        return mapUserDocumentToAppUser(userDoc);
+        return {
+          id: userDoc._id.toString(),
+          username: userDoc.username,
+          email: userDoc.email,
+          role: userDoc.role,
+          emailVerified: userDoc.emailVerified ?? null,
+        };
       },
     }),
   ],

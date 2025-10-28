@@ -3,7 +3,6 @@
 "use server";
 
 import { connectToDatabase } from "@/app/lib/mongoose";
-import { auth } from "@/app/lib/auth";
 import Memory from "@/app/lib/models/memory";
 import Post from "@/app/lib/models/post";
 import Image from "@/app/lib/models/image";
@@ -16,14 +15,12 @@ import {
   sortContentByDate
 } from "@/app/lib/utils/content-transformers";
 import type { ContentItem } from "@/app/lib/definitions/content";
+import { requireAuth } from "@/app/lib/utils/auth-utils";
 
 export type { ContentItem };
 
 export async function getUserContent(username?: string): Promise<ContentItem[]> {
-  const session = await auth();
-  if (!session?.user?.id) {
-    throw new Error("Unauthorized");
-  }
+  const { id: userId } = await requireAuth();
 
   await connectToDatabase();
 
@@ -36,7 +33,7 @@ export async function getUserContent(username?: string): Promise<ContentItem[]> 
     }
     targetUserId = user._id.toString();
   } else {
-    targetUserId = session.user.id;
+    targetUserId = userId;
   }
 
   // Fetch memories

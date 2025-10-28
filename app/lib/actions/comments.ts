@@ -4,21 +4,18 @@
 
 import { connectToDatabase } from "@/app/lib/mongoose";
 import Comment from "@/app/lib/models/comment";
-import { auth } from "@/app/lib/auth";
 import type { CommentRefType } from "@/app/lib/definitions/comment";
 import { Types } from "mongoose";
 import { logActivity } from "@/app/lib/utils/activity-logger";
 import { emitCommentAdded, emitCommentDeleted } from "@/app/lib/socket/emit";
+import { requireAuth } from "@/app/lib/utils/auth-utils";
 
 export async function createComment(
 	refId: string,
 	refType: CommentRefType,
 	content: string
 ) {
-	const session = await auth();
-	if (!session?.user?.id) {
-		throw new Error("Unauthorized");
-	}
+	const { id: userId } = await requireAuth();
 
 	const trimmedContent = content.trim();
 	if (!refId || !refType || !trimmedContent) {
@@ -30,13 +27,13 @@ export async function createComment(
 	const comment = await Comment.create({
 		refId,
 		refType,
-		author: session.user.id,
+		author: userId,
 		content: trimmedContent,
 	});
 
 	// Log activity
 	await logActivity({
-		userId: session.user.id,
+		userId,
 		action: 'create',
 		entityType: 'comment',
 		entityId: comment._id,
@@ -140,10 +137,7 @@ export async function getComments(refId: string, refType: CommentRefType) {
 }
 
 export async function deleteComment(commentId: string) {
-	const session = await auth();
-	if (!session?.user?.id) {
-		throw new Error("Unauthorized");
-	}
+	const user = await requireAuth();
 
 	await connectToDatabase();
 
@@ -153,8 +147,8 @@ export async function deleteComment(commentId: string) {
 	}
 
 	// Only allow author or admin to delete comment
-	const isAuthor = comment.author.toString() === session.user.id;
-	const isAdmin = session.user.role === 'admin';
+	const isAuthor = comment.author.toString() === user.id;
+	const isAdmin = user.role === 'admin';
 
 	if (!isAuthor && !isAdmin) {
 		throw new Error("Unauthorized to delete this comment");
@@ -172,7 +166,7 @@ export async function deleteComment(commentId: string) {
 
 	// Log activity
 	await logActivity({
-		userId: session.user.id,
+		userId: user.id,
 		action: 'delete',
 		entityType: 'comment',
 		entityId: commentId,
@@ -185,8 +179,8 @@ export async function deleteComment(commentId: string) {
 		refId: commentData.refId,
 		refType: commentData.refType as CommentRefType,
 		author: {
-			id: session.user.id,
-			username: session.user.name || session.user.email || 'Unknown',
+			id: user.id,
+			username: user.name || user.email || 'Unknown',
 		}
 	});
 

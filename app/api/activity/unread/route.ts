@@ -1,16 +1,13 @@
 // app/api/activities/unread/route.ts
 
 import { NextResponse } from "next/server";
-import { auth } from "@/app/lib/auth";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import Activity from "@/app/lib/models/activity";
+import { requireAuth } from "@/app/lib/utils/auth-utils";
 
 export async function GET(req: Request) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    await requireAuth();
 
     const { searchParams } = new URL(req.url);
     const since = searchParams.get('since');
@@ -28,6 +25,9 @@ export async function GET(req: Request) {
     return NextResponse.json({ count });
   } catch (err: any) {
     console.error("Error fetching unread activities count:", err);
+    if (err.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

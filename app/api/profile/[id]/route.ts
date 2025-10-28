@@ -5,20 +5,11 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
 import bcrypt from "bcrypt";
 import ImageModel from "@/app/lib/models/image";
-import { auth } from "@/app/lib/auth";
+import { requireAuth } from "@/app/lib/utils/auth-utils";
 
 export async function POST(req: NextRequest) {
-  
-    // console.log('REQ', req)
-    // console.log('BODY', req.body)
-
-    const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
     try {
-    
-        const userId = session.user.id;
+        const { id: userId } = await requireAuth();
         console.log('userId', userId)
         const url = new URL(req.url);
         // console.log('url', url)
@@ -39,6 +30,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ user });
     } catch (err) {
         console.error("Profile update error:", err);
+        if (err instanceof Error && err.message === "Unauthorized") {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
         return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
     }
 }

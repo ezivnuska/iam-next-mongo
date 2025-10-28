@@ -1,13 +1,13 @@
 // app/api/posts/route.ts
 
 import { NextResponse } from "next/server";
-import { auth } from "@/app/lib/auth";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import Post from "@/app/lib/models/post";
 import type { Types } from "mongoose";
 import type { ImageVariant } from "@/app/lib/definitions/image";
 import { transformPopulatedImage, transformPopulatedAuthor } from "@/app/lib/utils/transformers";
 import { logActivity, getRequestMetadata } from "@/app/lib/utils/activity-logger";
+import { requireAuth } from "@/app/lib/utils/auth-utils";
 
 interface PopulatedPostObj {
   _id: Types.ObjectId;
@@ -36,10 +36,7 @@ interface PopulatedPostObj {
 
 export async function POST(req: Request) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { id: userId } = await requireAuth();
 
     const { content, imageId } = await req.json();
 
@@ -51,7 +48,7 @@ export async function POST(req: Request) {
 
     // Create the post
     const newPost = await Post.create({
-      author: session.user.id,
+      author: userId,
       content: content?.trim() || "",
       ...(imageId && { image: imageId }),
     });
@@ -69,7 +66,7 @@ export async function POST(req: Request) {
 
     // Log activity
     await logActivity({
-      userId: session.user.id,
+      userId,
       action: 'create',
       entityType: 'post',
       entityId: populatedPost._id,
@@ -90,6 +87,9 @@ export async function POST(req: Request) {
     });
   } catch (err: any) {
     console.error("Error creating post:", err);
+    if (err.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

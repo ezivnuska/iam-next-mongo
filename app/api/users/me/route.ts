@@ -1,21 +1,18 @@
 // app/api/users/me/route.ts
 
 import { NextResponse } from "next/server";
-import { auth } from "@/app/lib/auth";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
 import { normalizeUser } from "@/app/lib/utils/normalizeUser";
+import { requireAuth } from "@/app/lib/utils/auth-utils";
 
 export async function GET() {
     try {
-        const session = await auth();
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const { id: userId } = await requireAuth();
 
         await connectToDatabase();
 
-        const userDoc = await UserModel.findById(session.user.id).populate(
+        const userDoc = await UserModel.findById(userId).populate(
             "avatar",
             "_id variants"
         );
@@ -27,6 +24,9 @@ export async function GET() {
         return NextResponse.json(normalizeUser(userDoc));
     } catch (err) {
         console.error("Failed to fetch full user:", err);
+        if (err instanceof Error && err.message === "Unauthorized") {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
         return NextResponse.json(
             { error: "Internal server error" },
             { status: 500 }

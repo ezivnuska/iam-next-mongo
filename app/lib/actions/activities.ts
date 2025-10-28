@@ -3,10 +3,10 @@
 "use server";
 
 import { connectToDatabase } from "@/app/lib/mongoose";
-import { auth } from "@/app/lib/auth";
 import Activity from "@/app/lib/models/activity";
 import { transformPopulatedAuthor } from "@/app/lib/utils/transformers";
 import type { Activity as ActivityType, ActivityAction, ActivityEntityType } from "@/app/lib/definitions/activity";
+import { requireAuth } from "@/app/lib/utils/auth-utils";
 
 interface GetActivitiesParams {
   userId?: string;
@@ -26,10 +26,7 @@ export async function getActivities({
   limit = 50,
   offset = 0
 }: GetActivitiesParams = {}): Promise<ActivityType[]> {
-  const session = await auth();
-  if (!session?.user?.id) {
-    throw new Error("Unauthorized");
-  }
+  await requireAuth();
 
   await connectToDatabase();
 
@@ -62,10 +59,7 @@ export async function getActivities({
  * Get activities for the current user
  */
 export async function getUserActivities(limit = 50, offset = 0): Promise<ActivityType[]> {
-  const session = await auth();
-  if (!session?.user?.id) {
-    throw new Error("Unauthorized");
-  }
+  await requireAuth();
 
   return getActivities({
     userId: session.user.id,
@@ -82,10 +76,7 @@ export async function getActivitiesByEntityType(
   limit = 50,
   offset = 0
 ): Promise<ActivityType[]> {
-  const session = await auth();
-  if (!session?.user?.id) {
-    throw new Error("Unauthorized");
-  }
+  await requireAuth();
 
   return getActivities({
     entityType,
@@ -101,10 +92,7 @@ export async function getEntityActivities(
   entityType: ActivityEntityType,
   entityId: string
 ): Promise<ActivityType[]> {
-  const session = await auth();
-  if (!session?.user?.id) {
-    throw new Error("Unauthorized");
-  }
+  await requireAuth();
 
   await connectToDatabase();
 
@@ -132,10 +120,7 @@ export async function getEntityActivities(
  * Get activity stats for a user
  */
 export async function getUserActivityStats(userId?: string) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    throw new Error("Unauthorized");
-  }
+  await requireAuth();
 
   const targetUserId = userId || session.user.id;
 

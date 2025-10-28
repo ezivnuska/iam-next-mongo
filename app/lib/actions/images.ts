@@ -13,6 +13,8 @@ import { auth } from "@/app/lib/auth";
 import { getCommentCounts } from "@/app/lib/actions/comments";
 import { Types } from "mongoose";
 import { logActivity } from "@/app/lib/utils/activity-logger";
+import { getS3ImageUrl } from "@/app/lib/utils/image-url";
+import { requireAuth } from "@/app/lib/utils/auth-utils";
 /**
  * Fetch images from the database
  * @param userId Optional filter to get images for a specific user
@@ -54,7 +56,7 @@ export async function getImages(
           filename: v.filename,
           width: v.width,
           height: v.height,
-          url: `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/users/${img.username}/${v.filename}`,
+          url: getS3ImageUrl(img.username, v.filename),
         })),
         likes: (img.likes ?? []).map((id: any) => id.toString()),
         likedByCurrentUser,
@@ -70,8 +72,7 @@ export async function getImages(
 }
 
 export async function deleteImage(imageId: string) {
-    const session = await auth();
-    if (!session?.user?.id) throw new Error("Unauthorized");
+    const { id: userId } = await requireAuth();
 
     await connectToDatabase();
 
@@ -92,11 +93,11 @@ export async function deleteImage(imageId: string) {
     console.log(`Deleted ${result.deletedCount} comments for image ${imageId}`);
 
     // Check if this image is the current user's avatar and set to null
-    const user = await UserModel.findById(session.user.id);
+    const user = await UserModel.findById(userId);
     if (user && user.avatar && user.avatar.toString() === imageId) {
       user.avatar = null;
       await user.save();
-      console.log(`Removed avatar reference from user ${session.user.id}`);
+      console.log(`Removed avatar reference from user ${userId}`);
     }
 
     // Find posts that reference this image
@@ -135,7 +136,7 @@ export async function deleteImage(imageId: string) {
 
     // Log activity
     await logActivity({
-      userId: session.user.id,
+      userId,
       action: 'delete',
       entityType: 'image',
       entityId: imageId,

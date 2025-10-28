@@ -4,15 +4,14 @@
 
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "../models/user";
-import { auth } from "@/app/lib/auth";
 import { normalizeUser } from "../utils/normalizeUser";
+import { requireAuth } from "@/app/lib/utils/auth-utils";
 
 export async function getProfile() {
-    const session = await auth();
-    if (!session?.user?.id) throw new Error("Unauthorized");
+    const { id: userId } = await requireAuth();
     await connectToDatabase()
     try {
-        const user = await UserModel.findById(session.user.id).populate('avatar', '_id, variants');
+        const user = await UserModel.findById(userId).populate('avatar', '_id, variants');
         console.log('profile', user);
         return user;
     } catch (e) {
@@ -22,14 +21,13 @@ export async function getProfile() {
 }
 
 export async function setAvatar(imageId: string | null) {
-    const session = await auth();
-    if (!session?.user?.id) throw new Error("Unauthorized");
+    const { id: userId } = await requireAuth();
 
     await connectToDatabase();
 
     try {
       const user = await UserModel.findByIdAndUpdate(
-        session.user.id,
+        userId,
         { avatar: imageId },
         { new: true }
       )
@@ -45,14 +43,13 @@ export async function setAvatar(imageId: string | null) {
 }
 
 export async function updateBio(bio: string) {
-    const session = await auth();
-    if (!session?.user?.id) throw new Error("Unauthorized");
+    const { id: userId } = await requireAuth();
 
     await connectToDatabase();
 
     try {
       const user = await UserModel.findByIdAndUpdate(
-        session.user.id,
+        userId,
         { bio },
         { new: true }
       )

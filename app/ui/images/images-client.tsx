@@ -1,4 +1,4 @@
-// app/ui/images-client.tsx
+// app/ui/images/images-client.tsx
 
 "use client";
 

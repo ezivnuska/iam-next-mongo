@@ -1,13 +1,13 @@
 // app/api/posts/[id]/route.ts
 
 import { NextResponse } from "next/server";
-import { auth } from "@/app/lib/auth";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import Post from "@/app/lib/models/post";
 import type { Types } from "mongoose";
 import type { ImageVariant } from "@/app/lib/definitions/image";
 import { transformPopulatedImage, transformPopulatedAuthor } from "@/app/lib/utils/transformers";
 import { logActivity, getRequestMetadata } from "@/app/lib/utils/activity-logger";
+import { requireAuth } from "@/app/lib/utils/auth-utils";
 
 interface PopulatedPostObj {
   _id: Types.ObjectId;
@@ -42,10 +42,7 @@ interface PopulatedPostObj {
 
 export async function PUT(req: Request) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const user = await requireAuth();
 
     const url = new URL(req.url);
     const id = url.pathname.split("/").pop();
@@ -67,7 +64,7 @@ export async function PUT(req: Request) {
     }
 
     // Check if the current user is the author
-    const isAuthor = post.author.toString() === session.user.id;
+    const isAuthor = post.author.toString() === user.id;
     if (!isAuthor) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -93,7 +90,7 @@ export async function PUT(req: Request) {
 
     // Log activity
     await logActivity({
-      userId: session.user.id,
+      userId: user.id,
       action: 'update',
       entityType: 'post',
       entityId: populatedPost._id,
@@ -116,16 +113,16 @@ export async function PUT(req: Request) {
     });
   } catch (err: any) {
     console.error("Error updating post:", err);
+    if (err.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
 export async function DELETE(req: Request) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const user = await requireAuth();
 
     const url = new URL(req.url);
     const id = url.pathname.split("/").pop();
@@ -141,8 +138,8 @@ export async function DELETE(req: Request) {
     }
 
     // Check if the current user is the author or an admin
-    const isAuthor = post.author.toString() === session.user.id;
-    const isAdmin = session.user.role === "admin";
+    const isAuthor = post.author.toString() === user.id;
+    const isAdmin = user.role === "admin";
 
     if (!isAuthor && !isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -158,7 +155,7 @@ export async function DELETE(req: Request) {
 
     // Log activity
     await logActivity({
-      userId: session.user.id,
+      userId: user.id,
       action: 'delete',
       entityType: 'post',
       entityId: id,
@@ -169,6 +166,9 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (err: any) {
     console.error("Error deleting post:", err);
+    if (err.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

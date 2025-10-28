@@ -1,13 +1,13 @@
 // app/api/memories/route.ts
 
 import { NextResponse } from "next/server";
-import { auth } from "@/app/lib/auth";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import Memory from "@/app/lib/models/memory";
 import type { Types } from "mongoose";
 import type { ImageVariant } from "@/app/lib/definitions/image";
 import { transformPopulatedImage, transformPopulatedAuthor } from "@/app/lib/utils/transformers";
 import { logActivity, getRequestMetadata } from "@/app/lib/utils/activity-logger";
+import { requireAuth } from "@/app/lib/utils/auth-utils";
 
 interface PopulatedMemoryObj {
   _id: Types.ObjectId;
@@ -39,10 +39,7 @@ interface PopulatedMemoryObj {
 
 export async function POST(req: Request) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { id: userId } = await requireAuth();
 
     const { date, title, content, shared, imageId } = await req.json();
 
@@ -58,7 +55,7 @@ export async function POST(req: Request) {
 
     // Create the memory
     const newMemory = await Memory.create({
-      author: session.user.id,
+      author: userId,
       date: new Date(date),
       title: title?.trim() || "Untitled",
       content: content.trim(),
@@ -79,7 +76,7 @@ export async function POST(req: Request) {
 
     // Log activity
     await logActivity({
-      userId: session.user.id,
+      userId,
       action: 'create',
       entityType: 'memory',
       entityId: populatedMemory._id,
@@ -105,6 +102,9 @@ export async function POST(req: Request) {
     });
   } catch (err: any) {
     console.error("Error creating memory:", err);
+    if (err.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

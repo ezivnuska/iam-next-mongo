@@ -1,15 +1,11 @@
 // app/api/poker/games/route.ts
 
-import { auth } from '@/app/lib/auth';
 import { PokerGame } from '@/app/lib/models/poker-game';
+import { requireAuth } from '@/app/lib/utils/auth-utils';
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   try {
+    await requireAuth();
     // Fetch all active games (games that are either waiting for players or currently in progress)
     const games = await PokerGame.find({
       $or: [
@@ -29,6 +25,9 @@ export async function GET() {
     return Response.json({ games: gameList });
   } catch (error) {
     console.error('Error fetching games:', error);
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     return Response.json({
       error: error instanceof Error ? error.message : 'Failed to fetch games'
     }, { status: 500 });

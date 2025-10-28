@@ -6,19 +6,16 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import ImageModel from "@/app/lib/models/image";
 import Post from "@/app/lib/models/post";
 import Memory from "@/app/lib/models/memory";
-import { auth } from "@/app/lib/auth";
 import { logActivity } from "@/app/lib/utils/activity-logger";
 import { emitLikeAdded, emitLikeRemoved } from "@/app/lib/socket/emit";
+import { requireAuth } from "@/app/lib/utils/auth-utils";
 
 type LikeableType = 'Image' | 'Post' | 'Memory';
 
 export async function toggleLike(itemId: string, itemType: LikeableType) {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  const { id: userId } = await requireAuth();
 
   await connectToDatabase();
-
-	const userId = session.user.id;
 	let item: any;
 	let updated: any;
 	let likePayload: any;
