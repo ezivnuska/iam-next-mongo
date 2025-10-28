@@ -35,6 +35,7 @@ interface UseAutoRestartOptions {
  * - Decrements countdown every second
  * - Only the winner's client triggers the restart (prevents concurrent requests)
  * - Cancels restart if winner leaves before countdown completes
+ * - Cancels restart if fewer than 2 players remain in the game (server handles state)
  * - Cleans up timers on unmount or when winner changes
  *
  * @param options - Configuration options
@@ -67,6 +68,13 @@ export function useAutoRestart({
 }: UseAutoRestartOptions) {
   useEffect(() => {
     if (winner) {
+      // Check if there are enough players to restart the game
+      if (players.length < 2) {
+        // Not enough players - cancel auto-restart (server handles state updates)
+        setCountdown(null);
+        return;
+      }
+
       // Check if winner is still in the game
       const winnerStillInGame = players.some(p => p.id === winner.winnerId);
 
@@ -83,8 +91,15 @@ export function useAutoRestart({
 
       const isWinner = currentUserId === winner.winnerId;
 
-      // Countdown timer - decrement every second and check if winner is still in game
+      // Countdown timer - decrement every second and check game state
       const countdownInterval = setInterval(() => {
+        // Check if there are still enough players
+        if (players.length < 2) {
+          setCountdown(null);
+          clearInterval(countdownInterval);
+          return;
+        }
+
         // Check if winner has left during countdown
         const winnerStillPresent = players.some(p => p.id === winner.winnerId);
         if (!winnerStillPresent) {
@@ -106,9 +121,8 @@ export function useAutoRestart({
       let restartTimeout: NodeJS.Timeout | null = null;
       if (isWinner) {
         restartTimeout = setTimeout(async () => {
-          // Double-check winner is still in game before restarting
-          const stillInGame = players.some(p => p.id === winner.winnerId);
-          if (stillInGame) {
+          // Double-check there are enough players and winner is still in game before restarting
+          if (players.length >= 2 && players.some(p => p.id === winner.winnerId)) {
             setCountdown(null);
             await onRestart();
           } else {

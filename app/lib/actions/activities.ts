@@ -59,10 +59,10 @@ export async function getActivities({
  * Get activities for the current user
  */
 export async function getUserActivities(limit = 50, offset = 0): Promise<ActivityType[]> {
-  await requireAuth();
+  const user = await requireAuth();
 
   return getActivities({
-    userId: session.user.id,
+    userId: user.id,
     limit,
     offset
   });
@@ -120,9 +120,9 @@ export async function getEntityActivities(
  * Get activity stats for a user
  */
 export async function getUserActivityStats(userId?: string) {
-  await requireAuth();
+  const user = await requireAuth();
 
-  const targetUserId = userId || session.user.id;
+  const targetUserId = userId || user.id;
 
   await connectToDatabase();
 

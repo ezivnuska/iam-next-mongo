@@ -69,15 +69,15 @@ export async function getUserContent(username?: string): Promise<ContentItem[]> 
 
   // Transform all content
   const transformedMemories = memories.map((m: any) =>
-    transformMemory(m, memoryCommentCounts, session.user?.id)
+    transformMemory(m, memoryCommentCounts, userId)
   );
 
   const transformedPosts = posts.map((p: any) =>
-    transformPost(p, postCommentCounts, session.user?.id)
+    transformPost(p, postCommentCounts, userId)
   );
 
   const transformedImages = images.map((img: any) =>
-    transformImage(img, imageCommentCounts, session.user?.id)
+    transformImage(img, imageCommentCounts, userId)
   );
 
   // Combine and sort by createdAt

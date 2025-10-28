@@ -13,6 +13,7 @@ import {
 } from "@/app/lib/socket/emit"
 import { logActivity } from "@/app/lib/utils/activity-logger"
 import { requireAuth } from "@/app/lib/utils/auth-utils"
+import { auth } from "@/app/lib/auth"
 
 export async function sendFriendRequest(recipientId: string) {
 	const user = await requireAuth()
@@ -138,7 +139,7 @@ export async function acceptFriendRequest(friendshipId: string) {
 	emitFriendRequestAccepted({
 		friendshipId: friendship._id.toString(),
 		userId: friendship.requester.toString(),
-		username: session.user.username || '',
+		username: user.username || '',
 		otherUserId: user.id, // The user who accepted (recipient)
 	})
 
@@ -179,7 +180,7 @@ export async function rejectFriendRequest(friendshipId: string) {
 	emitFriendRequestRejected({
 		friendshipId: friendship._id.toString(),
 		userId: friendship.requester.toString(),
-		username: session.user.username || '',
+		username: user.username || '',
 		otherUserId: user.id, // The user who rejected (recipient)
 	})
 
@@ -229,7 +230,7 @@ export async function removeFriend(friendshipId: string) {
 	emitFriendshipRemoved({
 		friendshipId: friendshipId,
 		userId: otherUserId,
-		username: session.user.username || '',
+		username: user.username || '',
 		otherUserId: user.id, // The user who removed the friendship
 	})
 
@@ -246,8 +247,8 @@ export async function getFriends(): Promise<Friend[]> {
 
 	const friendships = await Friendship.find({
 		$or: [
-			{ requester: user.id, status: 'accepted' },
-			{ recipient: user.id, status: 'accepted' }
+			{ requester: session.user.id, status: 'accepted' },
+			{ recipient: session.user.id, status: 'accepted' }
 		]
 	})
 		.populate({
@@ -270,7 +271,7 @@ export async function getFriends(): Promise<Friend[]> {
 		.lean()
 
 	return friendships.map((f: any) => {
-		const isRequester = f.requester._id.toString() === user.id
+		const isRequester = f.requester._id.toString() === session.user.id
 		const friend = isRequester ? f.recipient : f.requester
 
 		return {
@@ -295,7 +296,7 @@ export async function getPendingRequests(): Promise<FriendshipType[]> {
 	await connectToDatabase()
 
 	const requests = await Friendship.find({
-		recipient: user.id,
+		recipient: session.user.id,
 		status: 'pending'
 	})
 		.populate({
@@ -350,7 +351,7 @@ export async function getFriendshipStatus(userId: string): Promise<{
 		return { status: 'none' }
 	}
 
-	if (user.id === userId) {
+	if (session.user.id === userId) {
 		return { status: 'none' }
 	}
 
@@ -358,8 +359,8 @@ export async function getFriendshipStatus(userId: string): Promise<{
 
 	const friendship = await Friendship.findOne({
 		$or: [
-			{ requester: user.id, recipient: userId },
-			{ requester: userId, recipient: user.id }
+			{ requester: session.user.id, recipient: userId },
+			{ requester: userId, recipient: session.user.id }
 		]
 	}).lean<{
 		_id: any
@@ -371,7 +372,7 @@ export async function getFriendshipStatus(userId: string): Promise<{
 	if (!friendship) {
 		return { status: 'none' }
 	}
-    
+
 	if (friendship.status === 'accepted') {
 		return {
 			status: 'accepted',
@@ -380,7 +381,7 @@ export async function getFriendshipStatus(userId: string): Promise<{
 	}
 
 	if (friendship.status === 'pending') {
-		const isSender = friendship.requester.toString() === user.id
+		const isSender = friendship.requester.toString() === session.user.id
 		return {
 			status: isSender ? 'pending_sent' : 'pending_received',
 			friendshipId: friendship._id.toString()

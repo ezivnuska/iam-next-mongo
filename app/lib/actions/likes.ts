@@ -13,7 +13,8 @@ import { requireAuth } from "@/app/lib/utils/auth-utils";
 type LikeableType = 'Image' | 'Post' | 'Memory';
 
 export async function toggleLike(itemId: string, itemType: LikeableType) {
-  const { id: userId } = await requireAuth();
+  const user = await requireAuth();
+  const userId = user.id;
 
   await connectToDatabase();
 	let item: any;
@@ -50,7 +51,7 @@ export async function toggleLike(itemId: string, itemType: LikeableType) {
 				itemId,
 				itemType: 'Image' as const,
 				userId,
-				username: session.user.name || session.user.email || 'Unknown'
+				username: user.name || user.email || 'Unknown'
 			};
 			await (isLikedImage ? emitLikeRemoved(likePayload) : emitLikeAdded(likePayload));
 
@@ -88,7 +89,7 @@ export async function toggleLike(itemId: string, itemType: LikeableType) {
 				itemId,
 				itemType: 'Post' as const,
 				userId,
-				username: session.user.name || session.user.email || 'Unknown'
+				username: user.name || user.email || 'Unknown'
 			};
 			await (isLikedPost ? emitLikeRemoved(likePayload) : emitLikeAdded(likePayload));
 
@@ -126,7 +127,7 @@ export async function toggleLike(itemId: string, itemType: LikeableType) {
 				itemId,
 				itemType: 'Memory' as const,
 				userId,
-				username: session.user.name || session.user.email || 'Unknown'
+				username: user.name || user.email || 'Unknown'
 			};
 			await (isLikedMemory ? emitLikeRemoved(likePayload) : emitLikeAdded(likePayload));
 

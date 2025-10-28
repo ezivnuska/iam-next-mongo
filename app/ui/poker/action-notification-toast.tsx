@@ -3,13 +3,18 @@
 'use client';
 
 import { useProcessing, usePlayers } from '@/app/lib/providers/poker-provider';
+import { useUser } from '@/app/lib/providers/user-provider';
 
 export default function ActionNotificationToast() {
   const { pendingAction } = useProcessing();
   const { players } = usePlayers();
+  const { user } = useUser();
 
   // Don't render if no action is pending
   if (!pendingAction) return null;
+
+  // Don't show notification if the current user is performing the action
+  if (user?.id === pendingAction.playerId) return null;
 
   // Find the player performing the action
   const player = players.find(p => p.id === pendingAction.playerId);

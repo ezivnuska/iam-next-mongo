@@ -12,7 +12,7 @@ function CommunalCards() {
   const containerWidth = communalCards.length > 0 ? 72 + (communalCards.length - 1) * 24 : 0;
   
 return (
-    <div className='relative bg-amber-200' style={{ width: `${containerWidth}px`, height: '108px' }}>
+    <div className='relative' style={{ width: `${containerWidth}px`, height: '108px' }}>
         {communalCards.map((card, index) => (
             <div
                 key={`communal-card-${index}`}

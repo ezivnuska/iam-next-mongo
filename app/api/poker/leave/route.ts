@@ -35,5 +35,10 @@ export const POST = withAuth(async (request, context, session) => {
     actionHistory: gameState.actionHistory || [],
   });
 
+  // If game was reset (< 2 players remain), send full state update to sync hands, cards, etc.
+  if (gameState.players.length < 2) {
+    await PokerSocketEmitter.emitStateUpdate(gameState);
+  }
+
   return Response.json({ success: true, gameState: serialized });
 });

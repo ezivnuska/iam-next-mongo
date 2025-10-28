@@ -128,7 +128,7 @@ export async function removePlayer(
     return resetGame.toObject();
   }
 
-  // If only 1 player remains, reset game state
+  // If only 1 player remains, reset game state completely
   if (game.players.length === 1) {
     game.locked = false;
     game.lockTime = undefined;
@@ -139,6 +139,17 @@ export async function removePlayer(
     game.playerBets = [];
     game.communalCards = [];
     game.actionTimer = undefined;
+    game.stages = [];
+
+    // Clear remaining player's hand and reset deck
+    const remainingPlayer = game.players[0];
+    remainingPlayer.hand = [];
+    game.deck = initializeDeck();
+
+    // Mark modified for Mongoose (use specific path for nested document)
+    game.markModified('players.0.hand');
+    game.markModified('players');
+    game.markModified('deck');
   }
 
   // Add action history directly to document (avoid separate save)

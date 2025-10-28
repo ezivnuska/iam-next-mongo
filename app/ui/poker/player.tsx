@@ -38,15 +38,15 @@ export default function Player({ player, locked, index, currentPlayerIndex, potC
     >
       <div
         className={clsx(
-          'flex flex-row sm:flex-col gap-2 sm:justify-between px-2 py-1',
+          'flex flex-1 flex-row gap-1 justify-between px-2 py-1 items-center',
           {
             'bg-green-600': isCurrentPlayer,
           },
         )}
       >
         {/* <div className='flex flex-row sm:flex-col justify-center items-center gap-2 md:gap-0 shrink-0'> */}
-            <div className='flex flex-1 flex-row items-center gap-2 justify-stretch'>
-                <div className='flex w-full flex-row gap-2 items-center justify-stretch text-white'>
+            <div className='flex flex-1 flex-row items-center gap-2 justify-between'>
+                <div className='flex flex-1flex-row gap-2 items-center justify-between text-white'>
                     <UserAvatar size={44} username={player.username} />
                     <p
                       className={clsx(
