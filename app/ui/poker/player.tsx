@@ -8,7 +8,7 @@ import { getChipTotal } from '@/app/lib/utils/poker';
 import type { Player as PlayerType } from '@/app/lib/definitions/poker';
 import clsx from 'clsx';
 import { Button } from '../button';
-import { usePokerActions } from '@/app/lib/providers/poker-provider';
+import { useGameState, usePokerActions } from '@/app/lib/providers/poker-provider';
 import UserAvatar from '../user/user-avatar';
 
 interface PlayerProps {
@@ -24,27 +24,41 @@ interface PlayerProps {
 export default function Player({ player, locked, index, currentPlayerIndex, potContribution, isCurrentUser, onLeaveGame }: PlayerProps) {
   const chipTotal = getChipTotal(player.chips);
   const isCurrentPlayer = index === currentPlayerIndex;
+  const { winner } = useGameState();
+  const isWinner = player.id === winner?.winnerId;
 
   return (
-    <li className={clsx('flex flex-1 rounded-lg border-1 py-2 px-2 bg-white',
-        {
-            'bg-green-300': currentPlayerIndex === index,
-        },
-    )}>
-      <div className='flex flex-1 flex-row sm:flex-col gap-2 items-center sm:justify-between'>
-        <div className='flex flex-row sm:flex-col justify-center items-center gap-2 md:gap-0 flex-shrink-0'>
-            <div className='flex flex-col items-center gap-1'>
-                <UserAvatar size={50} username={player.username} />
-                <div className='flex flex-row flex-wrap bg-amber-300 self-center items-center justify-center gap-1'>
-                    <span className="border-1">{player.username}</span>
-                    <span className="border-1">({chipTotal})</span>
-                    {potContribution > 0 && (
-                        <span className="text-xs text-gray-700">Pot: ${potContribution}</span>
-                    )}
+    <li className='rounded-xl overflow-hidden bg-green-800'>
+      <div
+        className={clsx(
+          'flex flex-row sm:flex-col gap-2 sm:justify-between px-2 py-1',
+          {
+            'bg-green-600': isCurrentPlayer,
+          },
+        )}
+      >
+        {/* <div className='flex flex-row sm:flex-col justify-center items-center gap-2 md:gap-0 shrink-0'> */}
+            <div className='flex flex-1 flex-row items-center gap-2 justify-stretch'>
+                <div className='flex w-full flex-row gap-2 items-center justify-stretch text-white'>
+                    <UserAvatar size={44} username={player.username} />
+                    <p
+                      className={clsx(
+                        'flex flex-col shrink self-center items-center justify-center',
+                        {
+                            'text-green-300' : !isCurrentPlayer,
+                        },
+                      )}
+                    >
+                        <span className='text-md'>{player.username}</span>
+                        <span className='text-md'>({chipTotal})</span>
+                        {potContribution > 0 && (
+                            <span className="text-xs text-gray-700">Pot: ${potContribution}</span>
+                        )}
+                    </p>
                 </div>
+                {(isCurrentUser || isWinner) && player.hand.length > 0 && <Hand cards={player.hand} />}
             </div>
-        </div>
-        {player.hand.length > 0 && <Hand cards={player.hand} />}
+        {/* </div> */}
         {isCurrentUser && !locked && onLeaveGame && (
           <Button size='sm' onClick={onLeaveGame} className="mt-0 md:mt-2 text-sm">
             Leave

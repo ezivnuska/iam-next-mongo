@@ -31,7 +31,7 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
   const canJoin = !isUserInGame && !locked && players.length < MAX_SLOTS;
 
   return (
-    <ul className='flex border-1 flex-col sm:flex-row gap-2 sm:justify-between'>
+    <ul className='flex flex-1 flex-col gap-2'>
       {slots.map((slotIndex) => {
         const player = players[slotIndex];
 
@@ -58,7 +58,7 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
         return isFirstEmptySlot && canJoin && (
           <li
             key={slotIndex}
-            className='flex flex-1 flex-row sm:flex-col items-center sm:items-center gap-2 px-4 py-2 border rounded-lg bg-gray-50'
+            className='flex flex-row sm:flex-col items-center sm:items-center gap-2 px-4 py-2 border rounded-lg bg-gray-50'
           >
             <UserAvatar size={50} username={user?.username!} />
             {/* Player avatar skeleton */}

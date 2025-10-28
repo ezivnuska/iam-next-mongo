@@ -1,0 +1,96 @@
+// app/ui/poker/poker-table.tsx
+
+'use client';
+
+import { usePlayers, useGameState, useViewers, usePokerActions } from '@/app/lib/providers/poker-provider';
+import { useUser } from '@/app/lib/providers/user-provider';
+import PlayerSlots from './player-slots';
+import CommunalCards from './communal-cards';
+import Pot from './pot';
+import BestHand from './best-hand';
+import PlayerControls from './player-controls';
+import WinnerDisplay from './winner-display';
+import ActionHistoryDisplay from './action-history-display';
+import TimerStartButton from './timer-start-button';
+import LockTimerNotification from './lock-timer-notification';
+import GameActionStatus from './game-action-status';
+import PokerLoading from './poker-loading';
+import { Button } from '../button';
+
+export default function PokerTable() {
+  const { players } = usePlayers();
+  const { stage, stages, locked, currentPlayerIndex, winner, communalCards, isLoading, restartCountdown } = useGameState();
+  const { gameId, availableGames } = useViewers();
+  const { joinGame, restart, leaveGame, deleteGameFromLobby } = usePokerActions();
+  const { user } = useUser();
+
+  // Show loading screen while initial data is being fetched
+  if (isLoading) {
+    return null;
+    // return <PokerLoading />;
+  }
+
+  const isUserInGame = user?.username && players.some(p => p.username === user.username);
+  const canDeal = players.length > 1;
+  const showDealButton = canDeal && stage < stages.length;
+  const showRestartButton = stage === stages.length;
+  const showLobby = !gameId || !isUserInGame;
+
+  const currentPlayer = players[currentPlayerIndex];
+  const isCurrentUserTurn = user?.id === currentPlayer?.id;
+  // Show controls when game is locked (in progress)
+  const showPlayerControls = locked && !winner && isCurrentUserTurn && isUserInGame;
+
+  // Show manual restart button when:
+  // - Game has ended (winner exists)
+  // - At least 2 players remain
+  // - Auto-restart is cancelled (no countdown - winner has left)
+  const showManualRestart = winner && players.length >= 2 && !restartCountdown;
+
+  return (
+    <div id='poker-table' className='flex flex-1 flex-col sm:flex-row bg-green-700 gap-1 rounded-xl p-2'>
+        <div className='flex flex-2 flex-col-reverse sm:flex-row gap-1 p-1'>
+            <div id='players' className='flex flex-2'>
+                <PlayerSlots
+                    players={players}
+                    locked={locked}
+                    currentPlayerIndex={currentPlayerIndex}
+                    currentUserId={user?.id}
+                    gameId={gameId}
+                    onJoinGame={() => gameId && joinGame(gameId)}
+                    onLeaveGame={leaveGame}
+                />
+            </div>
+            <div className='flex flex-3 flex-col items-stretch'>
+                <div className='flex flex-col bg-amber-700'>
+                    <LockTimerNotification />
+                    <GameActionStatus />
+                    {/* <div className='flex flex-row items-center justiify-between gap-4 bg-amber-800'> */}
+                        {/* <div className='flex items-end'> */}
+                            {/* {winner && (
+                                <WinnerDisplay winner={winner} />
+                            )} */}
+                            {/* {locked ? (
+                                <BestHand players={players} communalCards={communalCards} locked={locked} />
+                            ) : winner && (
+                                <WinnerDisplay winner={winner} />
+                            )} */}
+                        {/* </div> */}
+                    {/* </div> */}
+                </div>
+                <div id='table' className='flex flex-1 flex-col items-center gap-4'>
+                    <Pot />
+                    <CommunalCards />
+                </div>
+            </div>
+        </div>
+        {/* <div id='sidebar' className='flex flex-col'> */}
+            {showPlayerControls && (
+                <div id='player-controls' className='flex flex-col'>
+                    <PlayerControls />
+                </div>
+            )}
+        {/* </div> */}
+    </div>
+  );
+}

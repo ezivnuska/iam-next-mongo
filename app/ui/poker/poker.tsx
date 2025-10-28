@@ -48,7 +48,7 @@ export default function Poker() {
   const showManualRestart = winner && players.length >= 2 && !restartCountdown;
 
   return (
-    <div id="game" className='flex flex-1 flex-col border-1 items-stretch'>
+    <div id="game" className='flex flex-1 flex-col'>
         <div className='flex flex-1 flex-col bg-amber-700'>
             <LockTimerNotification />
             <GameActionStatus />
@@ -85,9 +85,8 @@ export default function Poker() {
 
             <TimerStartButton />
 
-        </div>
             <div className='flex flex-col gap-4 bg-amber-700'>
-                <div className='flex flex-col sm:flex-row gap-4 items-center justify-center bg-amber-400'>
+                {/* <div className='flex flex-col sm:flex-row gap-4 items-center justify-center bg-amber-400'> */}
                     <PlayerSlots
                         players={players}
                         locked={locked}
@@ -98,8 +97,8 @@ export default function Poker() {
                         onLeaveGame={leaveGame}
                     />
                     <CommunalCards />
-                </div>
                 {/* <ActionHistoryDisplay /> */}
+            </div>
         </div>
     </div>
   );

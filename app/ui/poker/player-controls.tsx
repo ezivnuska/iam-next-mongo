@@ -37,25 +37,27 @@ function PlayerControls() {
   return (
     <div
       id="playerControls"
-      className='flex flex-row items-center justify-center gap-1'
+      className='flex flex-row sm:flex-col items-stretch justify-center gap-1'
     >
       {!hasBetToCall ? (
         // No bet to call - show Bet option
-        <Button id="betButton" onClick={handleBet}>
-          Bet (1 chip)
+        <Button size='sm' id="betButton" onClick={handleBet}>
+          Bet (10)
         </Button>
       ) : (
         // There's a bet to call - show Call and Raise options
+        // <div className='flex flex-row sm:flex-col justify-center gap-1 items-stretch'>
         <>
-          <Button id="callButton" onClick={handleCall}>
-            Call ({currentBet} chip{currentBet !== 1 ? 's' : ''})
+          <Button size='sm' id="callButton" onClick={handleCall}>
+            Call ({currentBet * 10})
           </Button>
-          <Button id="raiseButton" onClick={handleRaise}>
-            Raise ({currentBet + 1} chip{currentBet + 1 !== 1 ? 's' : ''})
+          <Button size='sm' id="raiseButton" onClick={handleRaise}>
+            Raise ({(currentBet + 1) * 10})
           </Button>
         </>
+        // </div>
       )}
-      <Button id="foldButton" onClick={fold}>
+      <Button size='sm' id="foldButton" onClick={fold}>
         Fold
       </Button>
     </div>

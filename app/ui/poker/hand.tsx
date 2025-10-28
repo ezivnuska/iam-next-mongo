@@ -2,7 +2,7 @@
 
 'use client';
 
-import CardStack from './card-stack';
+import Card from './card';
 import type { Card as CardType } from '@/app/lib/definitions/poker';
 
 interface HandProps {
@@ -10,5 +10,11 @@ interface HandProps {
 }
 
 export default function Hand({ cards }: HandProps) {
-    return <CardStack cards={cards} />;
+    return (
+        <div className='flex flex-row gap-1'>
+            {cards.map((card, index) => (
+                <Card key={`${card.id}-${index}`} index={index} card={card} size='sm' />
+            ))}
+        </div>
+    );
 }

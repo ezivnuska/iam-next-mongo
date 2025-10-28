@@ -6,6 +6,7 @@ import { memo, useCallback, useEffect, useRef } from 'react';
 import Countdown from '../countdown';
 import { useGameState, usePokerActions, usePlayers, useViewers } from '@/app/lib/providers/poker-provider';
 import { GameActionType } from '@/app/lib/definitions/game-actions';
+import WinnerDisplay from './winner-display';
 
 function GameActionStatus() {
   const { actionTimer, stage, restartCountdown, winner } = useGameState();
@@ -58,13 +59,8 @@ function GameActionStatus() {
     return (
       <div className="w-full max-w-2xl mx-auto p-4 bg-purple-50 border-2 border-purple-300 rounded-lg">
         <div className="flex flex-col items-center justify-center gap-3">
-          <span className="text-purple-700 font-semibold text-lg">🎉 Game Complete!</span>
-          <span className="text-purple-600">Winner: {winner.winnerName}</span>
-          <div className="flex flex-col items-center gap-1">
-            <span className="text-sm text-purple-600">Restarting in</span>
-            <span className="text-4xl font-bold text-purple-700">{restartCountdown}</span>
-            <span className="text-xs text-purple-500">seconds</span>
-          </div>
+          <WinnerDisplay winner={winner} />
+          <span className="text-sm text-purple-600">Restarting in {restartCountdown} seconds</span>
         </div>
       </div>
     );

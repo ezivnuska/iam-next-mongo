@@ -1,14 +1,15 @@
 // app/poker/page.tsx
 
 import { PokerProvider } from '@/app/lib/providers/poker-provider';
-import Poker from '@/app/ui/poker/poker';
+// import Poker from '@/app/ui/poker/poker';
+import PokerTable from '@/app/ui/poker/poker-table';
 import ProtectedRoute from '@/app/ui/auth/protected-route';
 
 export default function PokerPage() {
   return (
     <ProtectedRoute>
         <PokerProvider>
-            <Poker />
+            <PokerTable />
         </PokerProvider>
     </ProtectedRoute>
   );
