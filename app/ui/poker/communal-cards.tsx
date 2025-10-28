@@ -17,7 +17,7 @@ return (
             <div
                 key={`communal-card-${index}`}
                 className='absolute'
-                style={{ left: `${index * 24}px`, zIndex: index }}
+                style={{ left: `${index * 36}px`, zIndex: index }}
             >
                 <Card key={`${card.id}-${index}`} index={index} card={card} size='md' />
             </div>
