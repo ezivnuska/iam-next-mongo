@@ -58,28 +58,13 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
         return isFirstEmptySlot && canJoin && (
           <li
             key={slotIndex}
-            className='flex flex-row sm:flex-col items-center sm:items-center gap-2 px-4 py-2 border rounded-lg bg-gray-50'
+            className='flex flex-row items-center justify-between gap-2 px-2 py-1 rounded-xl bg-gray-50'
           >
-            <UserAvatar size={50} username={user?.username!} />
-            {/* Player avatar skeleton */}
-            {/* {isFirstEmptySlot && canJoin ? (
-                <UserAvatar size={50} username={currentUser?.username!} />
-            ) : (
-                <div className='w-[50px] h-[50px] rounded-full bg-gray-200 animate-pulse flex-shrink-0' />
-            )} */}
+            <UserAvatar size={44} username={user?.username!} />
 
-            <Button size='sm' onClick={onJoinGame} className='text-sm'>
+            <Button size='md' onClick={onJoinGame} className='text-sm'>
                 Join
             </Button>
-            {/* Show join button in first empty slot */}
-            {/* {isFirstEmptySlot && canJoin ? (
-            ) : (
-              <div className='flex flex-col xs:flex-col md:flex-row gap-2 md:gap-1 items-center xs:items-start border xs:items-start'>
-                <div className='w-20 h-4 bg-gray-200 rounded animate-pulse' />
-
-                <div className='w-12 h-3 bg-gray-200 rounded animate-pulse' />
-              </div>
-            )} */}
           </li>
         );
       })}
