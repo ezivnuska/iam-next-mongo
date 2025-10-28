@@ -6,6 +6,8 @@ import { memo } from 'react';
 import Player from './player';
 import { Button } from '../button';
 import type { Player as PlayerType } from '@/app/lib/definitions/poker';
+import { useUser } from '@/app/lib/providers/user-provider';
+import UserAvatar from '../user/user-avatar';
 
 interface PlayerSlotsProps {
   players: PlayerType[];
@@ -20,7 +22,8 @@ interface PlayerSlotsProps {
 function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameId, onJoinGame, onLeaveGame }: PlayerSlotsProps) {
   const MAX_SLOTS = 5;
   const slots = Array.from({ length: MAX_SLOTS }, (_, i) => i);
-
+  
+  const { user } = useUser()
   const isUserInGame = players.some(p => p.id === currentUserId);
   const firstEmptySlotIndex = players.length;
 
@@ -28,7 +31,7 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
   const canJoin = !isUserInGame && !locked && players.length < MAX_SLOTS;
 
   return (
-    <ul className='flex flex-row gap-2 justify-evenly'>
+    <ul className='flex border-1 flex-col sm:flex-row gap-2 sm:justify-between'>
       {slots.map((slotIndex) => {
         const player = players[slotIndex];
 
@@ -52,28 +55,31 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
         // Show empty slot
         const isFirstEmptySlot = slotIndex === firstEmptySlotIndex;
 
-        return (
+        return isFirstEmptySlot && canJoin && (
           <li
             key={slotIndex}
-            className='flex flex-col items-center gap-2 p-4 border rounded-lg bg-gray-50'
+            className='flex flex-1 flex-row sm:flex-col items-center sm:items-center gap-2 px-4 py-2 border rounded-lg bg-gray-50'
           >
+            <UserAvatar size={50} username={user?.username!} />
             {/* Player avatar skeleton */}
-            <div className='w-16 h-16 rounded-full bg-gray-200 animate-pulse' />
-
-            {/* Show join button in first empty slot */}
-            {isFirstEmptySlot && canJoin ? (
-              <Button size='sm' onClick={onJoinGame} className='text-sm'>
-                Join
-              </Button>
+            {/* {isFirstEmptySlot && canJoin ? (
+                <UserAvatar size={50} username={currentUser?.username!} />
             ) : (
-              <>
-                {/* Player name skeleton */}
+                <div className='w-[50px] h-[50px] rounded-full bg-gray-200 animate-pulse flex-shrink-0' />
+            )} */}
+
+            <Button size='sm' onClick={onJoinGame} className='text-sm'>
+                Join
+            </Button>
+            {/* Show join button in first empty slot */}
+            {/* {isFirstEmptySlot && canJoin ? (
+            ) : (
+              <div className='flex flex-col xs:flex-col md:flex-row gap-2 md:gap-1 items-center xs:items-start border xs:items-start'>
                 <div className='w-20 h-4 bg-gray-200 rounded animate-pulse' />
 
-                {/* Chip count skeleton */}
                 <div className='w-12 h-3 bg-gray-200 rounded animate-pulse' />
-              </>
-            )}
+              </div>
+            )} */}
           </li>
         );
       })}

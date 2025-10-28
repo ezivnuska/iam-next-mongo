@@ -48,11 +48,11 @@ export default function Poker() {
   const showManualRestart = winner && players.length >= 2 && !restartCountdown;
 
   return (
-    <div id="game" className='flex flex-row gap-4'>
-        <div className='flex flex-1 flex-col gap-4 p-2'>
+    <div id="game" className='flex flex-1 flex-col border-1 items-stretch'>
+        <div className='flex flex-1 flex-col bg-amber-700'>
             <LockTimerNotification />
             <GameActionStatus />
-            <div className='flex flex-row items-center justiify-between gap-4'>
+            <div className='flex flex-row items-center justiify-between gap-4 bg-amber-800'>
                 {!winner && <Pot />}
                 <div className='flex items-end'>
                     {locked ? (
@@ -67,7 +67,7 @@ export default function Poker() {
 
             {showManualRestart && (
               <div className="w-full max-w-2xl mx-auto mb-4">
-                <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg px-4 py-3 shadow-sm">
+                <div className="bg-yellow-50 border-2 rounded-lg px-4 py-3 shadow-sm">
                   <div className="flex items-center justify-between gap-4">
                     <p className="text-yellow-900 font-semibold">
                       Winner has left. Ready to continue?
@@ -85,19 +85,21 @@ export default function Poker() {
 
             <TimerStartButton />
 
-            <div className='flex flex-col gap-4 items-center justify-center'>
-                <PlayerSlots
-                    players={players}
-                    locked={locked}
-                    currentPlayerIndex={currentPlayerIndex}
-                    currentUserId={user?.id}
-                    gameId={gameId}
-                    onJoinGame={() => gameId && joinGame(gameId)}
-                    onLeaveGame={leaveGame}
-                />
-                <CommunalCards />
-            </div>
-            <ActionHistoryDisplay />
+        </div>
+            <div className='flex flex-col gap-4 bg-amber-700'>
+                <div className='flex flex-col sm:flex-row gap-4 items-center justify-center bg-amber-400'>
+                    <PlayerSlots
+                        players={players}
+                        locked={locked}
+                        currentPlayerIndex={currentPlayerIndex}
+                        currentUserId={user?.id}
+                        gameId={gameId}
+                        onJoinGame={() => gameId && joinGame(gameId)}
+                        onLeaveGame={leaveGame}
+                    />
+                    <CommunalCards />
+                </div>
+                {/* <ActionHistoryDisplay /> */}
         </div>
     </div>
   );
