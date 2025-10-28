@@ -38,6 +38,7 @@ export interface PokerGameDocument extends Document {
     actionType: string;        // Type of current action (e.g., 'PLAYER_BET', 'DEAL_CARDS')
     targetPlayerId?: string;   // Player whose turn it is (for bet actions)
     isPaused: boolean;
+    selectedAction?: 'fold' | 'call' | 'check' | 'bet' | 'raise'; // Player's pre-selected action on timer expiry
   };
   createdAt: Date;
   updatedAt: Date;

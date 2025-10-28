@@ -33,6 +33,7 @@ export interface GameStateContextValue {
     actionType: string;
     targetPlayerId?: string;
     isPaused: boolean;
+    selectedAction?: 'fold' | 'call' | 'check' | 'bet' | 'raise';
   };
   restartCountdown: number | null;
   actionHistory: any[];
@@ -66,6 +67,7 @@ export interface ActionsContextValue {
   pauseTimer: () => Promise<void>;
   resumeTimer: () => Promise<void>;
   forceLockGame: () => Promise<void>;
+  setTurnTimerAction: (action: 'fold' | 'call' | 'check' | 'bet' | 'raise') => Promise<void>;
 }
 
 export interface ProcessingContextValue {

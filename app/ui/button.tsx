@@ -39,7 +39,7 @@ export function Button({
   };
 
   const buttonClass = clsx(
-    'flex flex-row items-center justify-center cursor-pointer rounded-lg font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 aria-disabled:cursor-not-allowed aria-disabled:opacity-50',
+    'flex flex-1 flex-row items-center justify-center cursor-pointer rounded-lg font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 aria-disabled:cursor-not-allowed aria-disabled:opacity-50',
     sizeClasses[size],
     variantClasses[variant],
     {

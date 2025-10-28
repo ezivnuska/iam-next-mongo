@@ -56,24 +56,20 @@ function PlayerControls() {
       {!hasBetToCall ? (
         // No bet to call - show Bet option
         <Button size='md' id="betButton" onClick={handleBet} disabled={isActionProcessing}>
-          {isProcessing('bet') && <Spinner />}
-          <span className={isProcessing('bet') ? 'ml-2' : ''}>Bet (10)</span>
+            {isProcessing('bet') && <Spinner />}
+            <span className={isProcessing('bet') ? 'ml-2' : ''}>Bet (10)</span>
         </Button>
       ) : (
         // There's a bet to call - show Call and Raise options
-        // <div className='flex flex-row sm:flex-col justify-center gap-1 items-stretch'>
-        <>
           <Button size='md' id="callButton" onClick={handleCall} disabled={isActionProcessing}>
             {isProcessing('call') && <Spinner />}
             <span className={isProcessing('call') ? 'ml-2' : ''}>Call ({currentBet * 10})</span>
           </Button>
-          <Button size='md' id="raiseButton" onClick={handleRaise} disabled={isActionProcessing}>
-            {isProcessing('raise') && <Spinner />}
-            <span className={isProcessing('raise') ? 'ml-2' : ''}>Raise ({(currentBet + 1) * 10})</span>
-          </Button>
-        </>
-        // </div>
       )}
+      <Button size='md' id="raiseButton" onClick={handleRaise} disabled={isActionProcessing}>
+          {isProcessing('raise') && <Spinner />}
+          <span className={isProcessing('raise') ? 'ml-2' : ''}>Raise ({(currentBet + 1) * 10})</span>
+      </Button>
       <Button size='md' id="foldButton" onClick={fold} disabled={isActionProcessing}>
         {isProcessing('fold') && <Spinner />}
         <span className={isProcessing('fold') ? 'ml-2' : ''}>Fold</span>

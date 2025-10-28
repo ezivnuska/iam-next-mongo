@@ -45,7 +45,7 @@ export default function PokerTable() {
   return (
     <div id='poker-table' className='flex flex-1 flex-col sm:flex-row bg-green-700 gap-1 rounded-xl p-2'>
         <div className='flex flex-2 flex-col-reverse sm:flex-row gap-4 p-1'>
-            <div id='players' className='flex flex-2'>
+            <div id='players' className='flex'>
                 <PlayerSlots
                     players={players}
                     locked={locked}

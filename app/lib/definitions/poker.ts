@@ -64,6 +64,7 @@ export interface ActionTimer {
   actionType: GameActionType;
   targetPlayerId?: string;
   isPaused: boolean;
+  selectedAction?: 'fold' | 'call' | 'check' | 'bet' | 'raise';
 }
 
 /**
