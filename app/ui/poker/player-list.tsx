@@ -41,6 +41,7 @@ function PlayerList({ players, locked, currentPlayerIndex }: PlayerListProps) {
                         locked={locked}
                         currentPlayerIndex={currentPlayerIndex}
                         potContribution={potContribution}
+                        totalPlayers={players.length}
                     />
                 );
             })}

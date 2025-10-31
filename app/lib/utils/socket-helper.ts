@@ -155,6 +155,16 @@ export class PokerSocketEmitter {
   }
 
   /**
+   * Emit action timer action set event
+   */
+  static async emitTimerActionSet(payload: {
+    playerId: string;
+    action: 'fold' | 'call' | 'check' | 'bet' | 'raise';
+  }) {
+    await emitViaAPI(SOCKET_EVENTS.POKER_ACTION_TIMER_ACTION_SET, payload);
+  }
+
+  /**
    * Emit game action results (bet, round complete, cards dealt)
    * Convenience method for handling placeBet results
    */

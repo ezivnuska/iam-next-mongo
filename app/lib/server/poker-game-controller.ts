@@ -275,17 +275,29 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
 
     if (allContributionsEqual) {
       roundInfo = await completeRoundAndAdvanceStage(game);
-      // Timer must be started manually via /api/poker/timer/start
-      // Auto-start disabled per user request
-    } else {
-      // Timer must be started manually via /api/poker/timer/start
-      // Auto-start disabled per user request
     }
 
       // Save once with all changes (bet + potential stage advancement)
       // Release lock before save to prevent lock timeout issues
       game.processing = false;
       await game.save();
+
+      // Auto-start timer for next player
+      // Start timer if: 1) betting continues in same round, OR 2) new round started (cards dealt)
+      const shouldStartTimer = (!roundInfo.gameComplete) &&
+                               (!roundInfo.roundComplete || roundInfo.cardsDealt);
+
+      if (shouldStartTimer) {
+        const nextPlayer = game.players[game.currentPlayerIndex];
+        if (nextPlayer) {
+          try {
+            await startActionTimer(gameId, 30, GameActionType.PLAYER_BET, nextPlayer.id);
+          } catch (timerError) {
+            console.error('[PlaceBet] Failed to start timer for next player:', timerError);
+            // Don't fail the bet if timer fails
+          }
+        }
+      }
 
       return {
         game: game.toObject(),
@@ -303,6 +315,7 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
               stage: game.stage,
               communalCards: game.communalCards,
               deckCount: game.deck.length,
+              players: game.players, // Include players so clients can see dealt cards
             }
           }),
           ...(roundInfo.gameComplete && {
@@ -501,6 +514,17 @@ export async function restart(gameId: string) {
 
       await game.save();
 
+      // Auto-start timer for first player after restart
+      const firstPlayer = game.players[0];
+      if (firstPlayer) {
+        try {
+          await startActionTimer(gameId, 30, GameActionType.PLAYER_BET, firstPlayer.id);
+        } catch (timerError) {
+          console.error('[Restart] Failed to start timer for first player:', timerError);
+          // Don't fail restart if timer fails
+        }
+      }
+
       return game.toObject();
     } catch (error) {
       // Release lock on error
@@ -530,4 +554,4 @@ export async function deleteGame(gameId: string) {
 }
 
 // Re-export timer functions for backward compatibility
-export { startActionTimer, clearActionTimer, pauseActionTimer, resumeActionTimer } from './poker/poker-timer-controller';
+export { startActionTimer, clearActionTimer, pauseActionTimer, resumeActionTimer, setTurnTimerAction } from './poker/poker-timer-controller';

@@ -10,7 +10,7 @@ import WinnerDisplay from './winner-display';
 
 export default function PlayerActionArea() {
   const { players } = usePlayers();
-  const { locked, currentPlayerIndex, winner } = useGameState();
+  const { locked, currentPlayerIndex, winner, actionTimer } = useGameState();
   const { user } = useUser();
 
   // Check if user is in the game
@@ -43,7 +43,7 @@ export default function PlayerActionArea() {
       {isCurrentUserTurn ? (
         <PlayerControls />
       ) : (
-        <WaitingForPlayer playerName={currentPlayer.username} />
+        <WaitingForPlayer playerName={currentPlayer.username} actionTimer={actionTimer} />
       )}
     </div>
   );

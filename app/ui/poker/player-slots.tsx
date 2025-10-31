@@ -47,6 +47,7 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
               currentPlayerIndex={currentPlayerIndex}
               potContribution={0}
               isCurrentUser={isCurrentUser}
+              totalPlayers={players.length}
               onLeaveGame={onLeaveGame}
             />
           );

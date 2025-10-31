@@ -7,9 +7,9 @@ import Hand from './hand';
 import { getChipTotal } from '@/app/lib/utils/poker';
 import type { Player as PlayerType } from '@/app/lib/definitions/poker';
 import clsx from 'clsx';
-import { Button } from '../button';
 import { useGameState, usePokerActions } from '@/app/lib/providers/poker-provider';
 import UserAvatar from '../user/user-avatar';
+import { Button } from '../button';
 
 interface PlayerProps {
   index: number;
@@ -18,10 +18,11 @@ interface PlayerProps {
   currentPlayerIndex: number;
   potContribution: number;
   isCurrentUser?: boolean;
+  totalPlayers: number;
   onLeaveGame?: () => void;
 }
 
-export default function Player({ player, locked, index, currentPlayerIndex, potContribution, isCurrentUser, onLeaveGame }: PlayerProps) {
+export default function Player({ player, locked, index, currentPlayerIndex, potContribution, isCurrentUser, totalPlayers, onLeaveGame }: PlayerProps) {
   const chipTotal = getChipTotal(player.chips);
   const isCurrentPlayer = index === currentPlayerIndex;
   const { winner } = useGameState();
@@ -66,7 +67,7 @@ export default function Player({ player, locked, index, currentPlayerIndex, potC
                 {(isCurrentUser || isWinner) && player.hand.length > 0 && <Hand cards={player.hand} />}
             </div>
         {/* </div> */}
-        {isCurrentUser && !locked && onLeaveGame && (
+        {isCurrentUser && totalPlayers === 1 && onLeaveGame && (
           <Button size='sm' onClick={onLeaveGame} className="mt-0 md:mt-2 text-sm">
             Leave
           </Button>

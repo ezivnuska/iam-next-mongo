@@ -13,7 +13,6 @@ import WinnerDisplay from './winner-display';
 import ActionHistoryDisplay from './action-history-display';
 import TimerStartButton from './timer-start-button';
 import LockTimerNotification from './lock-timer-notification';
-import GameActionStatus from './game-action-status';
 import PokerLoading from './poker-loading';
 import { Button } from '../button';
 
@@ -59,7 +58,6 @@ export default function PokerTable() {
             <div className='flex flex-3 flex-col items-stretch'>
                 <div className='flex flex-col'>
                     <LockTimerNotification />
-                    <GameActionStatus />
                 </div>
                 <div id='table' className='flex flex-1 flex-col items-stretch gap-2'>
                     <div id='table' className='flex flex-1 flex-col items-center gap-4'>

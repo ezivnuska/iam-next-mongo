@@ -38,7 +38,7 @@ export const POST = withAuth(async (request, context, session) => {
     // Start timer for current player
     const updatedGame = await startActionTimer(
       id,
-      10, // 10 second duration
+      30, // 30 second duration
       GameActionType.PLAYER_BET,
       currentPlayer.id
     );

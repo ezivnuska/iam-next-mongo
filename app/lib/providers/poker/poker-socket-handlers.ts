@@ -181,11 +181,17 @@ export const createBetPlacedHandler = (
 
 export const createCardsDealtHandler = (
   setStage: (stage: number) => void,
-  setCommunalCards: (cards: Card[]) => void
+  setCommunalCards: (cards: Card[]) => void,
+  updatePlayers?: (players: Player[]) => void
 ) => {
   return (payload: any) => {
     setStage(payload.stage);
     setCommunalCards(payload.communalCards);
+
+    // Update players if included (e.g., when player cards are dealt after blind round)
+    if (payload.players && updatePlayers) {
+      updatePlayers(payload.players);
+    }
   };
 };
 

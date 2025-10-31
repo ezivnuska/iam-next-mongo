@@ -151,6 +151,11 @@ const PokerGameSchema = new Schema<PokerGameDocument>(
         actionType: String,
         targetPlayerId: String,
         isPaused: Boolean,
+        selectedAction: {
+          type: String,
+          enum: ['fold', 'call', 'check', 'bet', 'raise'],
+          required: false,
+        },
       },
       required: false,
     },

@@ -2,10 +2,18 @@
 
 'use client';
 
-import { useGameState } from '@/app/lib/providers/poker-provider';
+import { useGameState, usePokerActions, usePlayers } from '@/app/lib/providers/poker-provider';
+import { useUser } from '@/app/lib/providers/user-provider';
+import { Button } from '../button';
 
 export default function RestartTimerToast() {
   const { winner, restartCountdown } = useGameState();
+  const { leaveGame } = usePokerActions();
+  const { players } = usePlayers();
+  const { user } = useUser();
+
+  // Check if current user is in the game
+  const isUserInGame = user && players.some(p => p.id === user.id);
 
   // Don't render if no winner or no countdown
   if (!winner || !restartCountdown) return null;
@@ -16,7 +24,7 @@ export default function RestartTimerToast() {
       role="status"
       aria-live="polite"
     >
-      <div className="bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+      <div className="bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-4">
         {/* Timer Icon */}
         <svg
           className="h-5 w-5 text-white"
@@ -37,6 +45,17 @@ export default function RestartTimerToast() {
         <span className="font-medium">
           Restarting in <span className="font-bold">{restartCountdown}</span> second{restartCountdown !== 1 ? 's' : ''}
         </span>
+
+        {/* Leave Button */}
+        {isUserInGame && (
+          <Button
+            size='sm'
+            onClick={leaveGame}
+            className="bg-white text-green-700 hover:bg-gray-100 border-0"
+          >
+            Leave
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -41,6 +41,7 @@ import {
   createStartTimerAction,
   createPauseTimerAction,
   createResumeTimerAction,
+  createClearTimerAction,
   createSetTurnTimerAction,
   createForceLockGameAction,
   initializeGames,
@@ -244,6 +245,7 @@ export function PokerProvider({ children }: { children: ReactNode }) {
   const startTimer = useCallback(createStartTimerAction(gameId), [gameId]);
   const pauseTimer = useCallback(createPauseTimerAction(gameId), [gameId]);
   const resumeTimer = useCallback(createResumeTimerAction(gameId), [gameId]);
+  const clearTimer = useCallback(createClearTimerAction(gameId), [gameId]);
   const setTurnTimerAction = useCallback(createSetTurnTimerAction(gameId), [gameId]);
   const forceLockGame = useCallback(createForceLockGameAction(gameId), [gameId]);
 
@@ -354,9 +356,10 @@ export function PokerProvider({ children }: { children: ReactNode }) {
     startTimer,
     pauseTimer,
     resumeTimer,
+    clearTimer,
     setTurnTimerAction,
     forceLockGame,
-  }), [joinGame, restart, placeBet, fold, leaveGame, deleteGameFromLobby, startTimer, pauseTimer, resumeTimer, setTurnTimerAction, forceLockGame]);
+  }), [joinGame, restart, placeBet, fold, leaveGame, deleteGameFromLobby, startTimer, pauseTimer, resumeTimer, clearTimer, setTurnTimerAction, forceLockGame]);
 
   const processingValue = useMemo(() => ({
     isActionProcessing,

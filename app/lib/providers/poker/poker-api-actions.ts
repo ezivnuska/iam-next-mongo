@@ -197,6 +197,21 @@ export const createResumeTimerAction = (gameId: string | null) => {
   };
 };
 
+export const createClearTimerAction = (gameId: string | null) => {
+  return async () => {
+    if (!gameId) return;
+    try {
+      await fetch('/api/poker/timer/clear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameId }),
+      });
+    } catch (error) {
+      console.error('Error clearing timer:', error);
+    }
+  };
+};
+
 export const createSetTurnTimerAction = (gameId: string | null) => {
   return async (action: 'fold' | 'call' | 'check' | 'bet' | 'raise') => {
     if (!gameId) return;

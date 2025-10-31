@@ -128,7 +128,7 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
     const handlePlayerLeft = createPlayerLeftHandler(updaters.updatePlayers, updaters.updateGameStatus, setActionHistory);
     const handleGameLocked = createGameLockedHandler(updaters.updatePlayers, updaters.updateGameStatus, setStage);
     const handleBetPlaced = createBetPlacedHandler(updaters.updateBettingState, setActionHistory, setIsActionProcessing, setPendingAction);
-    const handleCardsDealt = createCardsDealtHandler(setStage, setCommunalCards);
+    const handleCardsDealt = createCardsDealtHandler(setStage, setCommunalCards, updaters.updatePlayers);
     const handleRoundComplete = createRoundCompleteHandler(setWinner, updaters.updatePlayers);
     const handleTimerStarted = createTimerStartedHandler(setActionTimer);
     const handleTimerPaused = createTimerPausedHandler(setActionTimer);
