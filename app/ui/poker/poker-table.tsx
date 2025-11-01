@@ -53,7 +53,7 @@ export default function PokerTable() {
             <div className='flex flex-3 flex-col items-stretch'>
                     <LockTimerNotification />
                 {/* </div> */}
-                <div id='table' className='flex flex-1 flex-col items-stretch gap-2 border-1'>
+                <div id='table' className='flex flex-1 flex-col items-stretch gap-2'>
                     <div className='flex flex-1 flex-row items-center justify-center'>
                         <CommunalCards />
                     </div>
