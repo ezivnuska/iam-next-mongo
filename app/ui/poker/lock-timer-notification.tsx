@@ -3,12 +3,19 @@
 'use client';
 
 import { memo, useState, useEffect } from 'react';
-import { useGameState, usePokerActions } from '@/app/lib/providers/poker-provider';
+import { useGameState, usePokerActions, usePlayers } from '@/app/lib/providers/poker-provider';
+import { useUser } from '@/app/lib/providers/user-provider';
+import { Button } from '../button';
 
 function LockTimerNotification() {
   const { lockTime, locked } = useGameState();
-  const { forceLockGame } = usePokerActions();
+  const { leaveGame } = usePokerActions();
+  const { players } = usePlayers();
+  const { user } = useUser();
   const [remainingSeconds, setRemainingSeconds] = useState(0);
+
+  // Check if current user is in the game
+  const isUserInGame = user && players.some(p => p.id === user.id);
 
   useEffect(() => {
     // Don't show if no lockTime or already locked
@@ -48,12 +55,16 @@ function LockTimerNotification() {
               {remainingSeconds} second{remainingSeconds !== 1 ? 's' : ''} left to join game
             </p>
           </div>
-          <button
-            onClick={forceLockGame}
-            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors shadow-sm"
-          >
-            Start Now
-          </button>
+          {/* Leave Button */}
+          {isUserInGame && (
+            <Button
+              size='sm'
+              onClick={leaveGame}
+              className="bg-white text-blue-700 hover:bg-gray-100 border-0"
+            >
+              Leave
+            </Button>
+          )}
         </div>
       </div>
     </div>

@@ -246,15 +246,22 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
       }
 
       // Check if betting round is complete BEFORE saving
-      // Always check for round completion after any action (bet, raise, call, or check)
-      // If all players have matched the highest bet, the round is complete
+      // Round completion check logic:
+      // 1. After actual bets (chipCount > 0): always check to see if everyone has matched
+      // 2. After checks (chipCount = 0): only check when we've looped back to starting position
+      //    This ensures all players have had a chance to act before completing the round
       let roundInfo = { roundComplete: false, cardsDealt: false, gameComplete: false };
 
-      const activePlayers = getActivePlayerUsernames(game.players);
-      const allContributionsEqual = areAllPotContributionsEqual(game.pot, activePlayers);
+      // Only check for round completion if:
+      // - A bet was placed (chipCount > 0), OR
+      // - After a check, all players have acted (currentPlayerIndex wrapped back to 0)
+      if (chipCount > 0 || game.currentPlayerIndex === 0) {
+        const activePlayers = getActivePlayerUsernames(game.players);
+        const allContributionsEqual = areAllPotContributionsEqual(game.pot, activePlayers);
 
-      if (allContributionsEqual) {
-        roundInfo = await completeRoundAndAdvanceStage(game);
+        if (allContributionsEqual) {
+          roundInfo = await completeRoundAndAdvanceStage(game);
+        }
       }
 
       // Save once with all changes (bet + potential stage advancement)
