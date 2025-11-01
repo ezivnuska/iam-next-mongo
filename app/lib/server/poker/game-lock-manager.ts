@@ -10,6 +10,8 @@ import { withRetry } from '@/app/lib/utils/retry';
 import { POKER_RETRY_CONFIG, POKER_TIMERS } from '@/app/lib/config/poker-constants';
 import { acquireGameLock, releaseGameLock } from './game-lock-utils';
 import { logGameStartedAction } from '@/app/lib/utils/action-history-helpers';
+import { placeAutomaticBlinds } from './blinds-manager';
+import { startActionTimer } from './poker-timer-controller';
 
 // Store timeout references for cancellation
 const lockTimers = new Map<string, NodeJS.Timeout>();
@@ -38,9 +40,14 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
         gameToLock.playerBets = initializeBets(gameToLock.players.length);
         gameToLock.currentPlayerIndex = 0;
 
-        // Players start with empty hands - cards will be dealt after first blind betting round
-        // Add action history
+        // Add action history for game start
         logGameStartedAction(gameToLock);
+
+        // Place automatic blind bets
+        // Small blind (1 chip) for player 0, big blind (2 chips) for player 1
+        placeAutomaticBlinds(gameToLock);
+
+        // Players start with empty hands - cards will be dealt after first blind betting round
 
         // Release lock before save
         gameToLock.processing = false;
@@ -55,10 +62,21 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
           players: gameToLock.players,
           currentPlayerIndex: gameToLock.currentPlayerIndex,
           lockTime: undefined, // Cleared
+          pot: gameToLock.pot, // Include pot with blinds
+          playerBets: gameToLock.playerBets, // Include player bets with blinds
+          actionHistory: gameToLock.actionHistory, // Include action history with blind bets
         });
 
-        // Timer must be started manually via /api/poker/timer/start
-        // Auto-start disabled per user request
+        // Auto-start action timer for the current player (after blinds)
+        const currentPlayer = gameToLock.players[gameToLock.currentPlayerIndex];
+        if (currentPlayer) {
+          await startActionTimer(
+            gameId,
+            POKER_TIMERS.ACTION_DURATION_SECONDS,
+            GameActionType.PLAYER_BET,
+            currentPlayer.id
+          );
+        }
       } catch (error) {
         // Release lock on error
         await releaseGameLock(gameId);

@@ -150,12 +150,24 @@ export const createPlayerLeftHandler = (
 export const createGameLockedHandler = (
   updatePlayers: (players: Player[]) => void,
   updateGameStatus: (locked: boolean, lockTime?: string, winner?: any) => void,
-  setStage: (stage: number) => void
+  setStage: (stage: number) => void,
+  updateBettingState: (pot: Bet[], playerBets: number[], currentPlayerIndex: number) => void,
+  setActionHistory: (history: any[]) => void
 ) => {
   return (payload: any) => {
     updatePlayers(payload.players); // Players now have dealt cards
     updateGameStatus(true, payload.lockTime, undefined);
     setStage(payload.stage);
+
+    // Update betting state with blinds if present
+    if (payload.pot !== undefined && payload.playerBets !== undefined) {
+      updateBettingState(payload.pot, payload.playerBets, payload.currentPlayerIndex || 0);
+    }
+
+    // Update action history with blind bets if present
+    if (payload.actionHistory !== undefined) {
+      setActionHistory(payload.actionHistory);
+    }
   };
 };
 

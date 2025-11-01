@@ -8,6 +8,10 @@ import { ActionHistoryType } from '@/app/lib/definitions/action-history';
 import { randomBytes } from 'crypto';
 import { PokerSocketEmitter } from '@/app/lib/utils/socket-helper';
 import { withRetry } from '@/app/lib/utils/retry';
+import { placeAutomaticBlinds } from '@/app/lib/server/poker/blinds-manager';
+import { startActionTimer } from '@/app/lib/server/poker/poker-timer-controller';
+import { GameActionType } from '@/app/lib/definitions/game-actions';
+import { POKER_TIMERS } from '@/app/lib/config/poker-constants';
 
 export const POST = withAuth(async (request, context, session) => {
   const { gameId } = await request.json();
@@ -75,6 +79,9 @@ export const POST = withAuth(async (request, context, session) => {
         });
         game.markModified('actionHistory');
 
+        // Place automatic blind bets
+        placeAutomaticBlinds(game);
+
         // Release lock before save to prevent lock timeout issues
         game.processing = false;
         await game.save();
@@ -87,7 +94,21 @@ export const POST = withAuth(async (request, context, session) => {
           players: game.players,
           currentPlayerIndex: game.currentPlayerIndex,
           lockTime: undefined, // Cleared
+          pot: game.pot, // Include pot with blinds
+          playerBets: game.playerBets, // Include player bets with blinds
+          actionHistory: game.actionHistory, // Include action history with blind bets
         });
+
+        // Auto-start action timer for the current player (after blinds)
+        const currentPlayer = game.players[game.currentPlayerIndex];
+        if (currentPlayer) {
+          await startActionTimer(
+            id,
+            POKER_TIMERS.ACTION_DURATION_SECONDS,
+            GameActionType.PLAYER_BET,
+            currentPlayer.id
+          );
+        }
 
         return {
           success: true,

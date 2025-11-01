@@ -29,6 +29,7 @@ import {
   logPlayerLeftAction,
   logGameRestartAction
 } from '@/app/lib/utils/action-history-helpers';
+import { placeAutomaticBlinds } from './poker/blinds-manager';
 
 export async function getGame(gameId: string) {
   return await PokerGame.findById(gameId);
@@ -403,22 +404,25 @@ export async function restart(gameId: string) {
       game.actionHistory = [];
       logGameRestartAction(game);
 
+      // Place automatic blind bets
+      placeAutomaticBlinds(game);
+
       game.processing = false; // Release lock before save
 
       await game.save();
 
-      // Auto-start timer for first player after restart
-      const firstPlayer = game.players[0];
-      if (firstPlayer) {
+      // Auto-start timer for player after big blind (currentPlayerIndex set by placeAutomaticBlinds)
+      const currentPlayer = game.players[game.currentPlayerIndex];
+      if (currentPlayer) {
         try {
           await startActionTimer(
             gameId,
             POKER_TIMERS.ACTION_DURATION_SECONDS,
             GameActionType.PLAYER_BET,
-            firstPlayer.id
+            currentPlayer.id
           );
         } catch (timerError) {
-          console.error('[Restart] Failed to start timer for first player:', timerError);
+          console.error('[Restart] Failed to start timer for current player:', timerError);
           // Don't fail restart if timer fails
         }
       }

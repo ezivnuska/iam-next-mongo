@@ -51,28 +51,6 @@ function PlayerControls() {
     }
   }, [actionTimer, user?.id]);
 
-  // Auto-start timer when it's the player's turn
-  useEffect(() => {
-    const autoStartTimer = async () => {
-      if (isMyTurn && !timerActive && !actionTimer) {
-        try {
-          await startTimer();
-          // Small delay to ensure timer is set before updating action
-          setTimeout(async () => {
-            try {
-              await setTurnTimerAction(selectedAction);
-            } catch (error) {
-              console.error('Error setting initial timer action:', error);
-            }
-          }, 100);
-        } catch (error) {
-          console.error('Error starting timer:', error);
-        }
-      }
-    };
-    autoStartTimer();
-  }, [isMyTurn, timerActive, actionTimer]);
-
   // Helper to check if a specific action is processing
   const isProcessing = (actionType: 'bet' | 'call' | 'raise' | 'fold') => {
     return isActionProcessing && pendingAction?.type === actionType && pendingAction?.playerId === user?.id;

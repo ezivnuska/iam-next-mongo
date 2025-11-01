@@ -70,6 +70,9 @@ export class PokerSocketEmitter {
     players: any[];
     currentPlayerIndex: number;
     lockTime?: string;
+    pot?: any[];
+    playerBets?: number[];
+    actionHistory?: any[];
   }) {
     await emitViaAPI(SOCKET_EVENTS.POKER_GAME_LOCKED, payload);
   }

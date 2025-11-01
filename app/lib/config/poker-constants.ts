@@ -23,6 +23,12 @@ export const POKER_GAME_CONFIG = {
 
   /** Minimum bet amount in chips */
   MIN_BET_AMOUNT: 1,
+
+  /** Small blind amount in chips */
+  SMALL_BLIND: 1,
+
+  /** Big blind amount in chips */
+  BIG_BLIND: 2,
 } as const;
 
 export const POKER_TIMERS = {
