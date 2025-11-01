@@ -30,16 +30,6 @@ export default function PokerTable() {
   }
 
   const isUserInGame = user?.username && players.some(p => p.username === user.username);
-  const canDeal = players.length > 1;
-  const showDealButton = canDeal && stage < stages.length;
-  const showRestartButton = stage === stages.length;
-  const showLobby = !gameId || !isUserInGame;
-
-  // Show manual restart button when:
-  // - Game has ended (winner exists)
-  // - At least 2 players remain
-  // - Auto-restart is cancelled (no countdown - winner has left)
-  const showManualRestart = winner && players.length >= 2 && !restartCountdown;
 
   return (
     <div id='poker-table' className='flex flex-1 flex-col sm:flex-row bg-green-700 gap-1 rounded-xl p-2'>

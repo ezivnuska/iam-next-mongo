@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useActionTimerCountdown } from '@/app/lib/hooks/use-action-timer-countdown';
 
 interface WaitingForPlayerProps {
   playerName: string;
@@ -15,29 +15,8 @@ interface WaitingForPlayerProps {
 }
 
 export default function WaitingForPlayer({ playerName, actionTimer }: WaitingForPlayerProps) {
-  const [countdown, setCountdown] = useState<number>(0);
-
-  useEffect(() => {
-    if (!actionTimer || actionTimer.isPaused) {
-      setCountdown(0);
-      return;
-    }
-
-    // Calculate initial countdown
-    const startTime = new Date(actionTimer.startTime).getTime();
-    const elapsed = (Date.now() - startTime) / 1000;
-    const remaining = Math.max(0, actionTimer.duration - elapsed);
-    setCountdown(Math.ceil(remaining));
-
-    // Update countdown every 100ms
-    const interval = setInterval(() => {
-      const currentElapsed = (Date.now() - startTime) / 1000;
-      const currentRemaining = Math.max(0, actionTimer.duration - currentElapsed);
-      setCountdown(Math.ceil(currentRemaining));
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [actionTimer]);
+  // Use custom hook for countdown logic
+  const countdown = useActionTimerCountdown(actionTimer);
 
   return (
     <div

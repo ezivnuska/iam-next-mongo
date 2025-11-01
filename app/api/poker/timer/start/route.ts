@@ -5,6 +5,7 @@ import { PokerGame } from '@/app/lib/models/poker-game';
 import { startActionTimer } from '@/app/lib/server/poker-game-controller';
 import { serializeGame } from '@/app/lib/utils/game-serialization';
 import { GameActionType } from '@/app/lib/definitions/game-actions';
+import { POKER_TIMERS } from '@/app/lib/config/poker-constants';
 
 export const POST = withAuth(async (request, context, session) => {
   const { gameId } = await request.json();
@@ -38,7 +39,7 @@ export const POST = withAuth(async (request, context, session) => {
     // Start timer for current player
     const updatedGame = await startActionTimer(
       id,
-      30, // 30 second duration
+      POKER_TIMERS.ACTION_DURATION_SECONDS,
       GameActionType.PLAYER_BET,
       currentPlayer.id
     );

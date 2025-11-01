@@ -7,6 +7,12 @@ import { initializeBets } from '@/app/lib/utils/betting-helpers';
 import { ActionHistoryType } from '@/app/lib/definitions/action-history';
 import { randomBytes } from 'crypto';
 import { withRetry } from '@/app/lib/utils/retry';
+import { POKER_RETRY_CONFIG, POKER_TIMERS } from '@/app/lib/config/poker-constants';
+import { acquireGameLock, releaseGameLock } from './game-lock-utils';
+import { logGameStartedAction } from '@/app/lib/utils/action-history-helpers';
+
+// Store timeout references for cancellation
+const lockTimers = new Map<string, NodeJS.Timeout>();
 
 /**
  * Initialize game when it's locked (2+ players ready to play)
@@ -16,28 +22,7 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
   try {
     await withRetry(async () => {
       // ATOMIC LOCK ACQUISITION
-      const lockResult = await PokerGame.findOneAndUpdate(
-        { _id: gameId, processing: false },
-        { processing: true },
-        { new: false, lean: true }
-      );
-
-      if (!lockResult) {
-        const existingGame = await PokerGame.findById(gameId).lean();
-        if (!existingGame) {
-          return; // Game was deleted
-        }
-        throw new Error('Game is currently being processed');
-      }
-
-      // Small delay to ensure write propagation
-      await new Promise(resolve => setTimeout(resolve, 10));
-
-      // Fetch fresh document for processing
-      const gameToLock = await PokerGame.findById(gameId);
-      if (!gameToLock) {
-        return;
-      }
+      const gameToLock = await acquireGameLock(gameId);
 
       try {
         // Check if game is already locked - if so, operation already succeeded (idempotent)
@@ -54,14 +39,8 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
         gameToLock.currentPlayerIndex = 0;
 
         // Players start with empty hands - cards will be dealt after first blind betting round
-        // Add action history directly to document (avoid separate save)
-        gameToLock.actionHistory.push({
-          id: randomBytes(8).toString('hex'),
-          timestamp: new Date(),
-          stage: 0, // Preflop
-          actionType: ActionHistoryType.GAME_STARTED,
-        });
-        gameToLock.markModified('actionHistory');
+        // Add action history
+        logGameStartedAction(gameToLock);
 
         // Release lock before save
         gameToLock.processing = false;
@@ -82,23 +61,10 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
         // Auto-start disabled per user request
       } catch (error) {
         // Release lock on error
-        try {
-          await PokerGame.findByIdAndUpdate(gameId, { processing: false });
-        } catch (unlockError) {
-          console.error('[Auto Lock] Failed to release lock:', unlockError);
-        }
+        await releaseGameLock(gameId);
         throw error;
       }
-    }, {
-      maxRetries: 8,
-      baseDelay: 50,
-      isRetryable: (error: any) => {
-        return error.message?.includes('No matching document found') ||
-               error.message?.includes('version') ||
-               error.name === 'VersionError' ||
-               error.message?.includes('currently being processed');
-      }
-    });
+    }, POKER_RETRY_CONFIG);
   } catch (error) {
     console.error('[Auto Lock] Error auto-locking game:', error);
   }
@@ -109,11 +75,30 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
  * Game will lock after 10 seconds to allow more players to join
  */
 export function scheduleGameLock(gameId: string, lockTime: Date): void {
+  // Cancel any existing timer for this game
+  cancelGameLock(gameId);
+
   const delay = lockTime.getTime() - Date.now();
 
-  setTimeout(async () => {
+  const timeoutId = setTimeout(async () => {
+    lockTimers.delete(gameId); // Clean up reference after execution
     await initializeGameAtLock(gameId);
   }, delay);
+
+  // Store timeout reference for cancellation
+  lockTimers.set(gameId, timeoutId);
+}
+
+/**
+ * Cancel a scheduled game lock
+ * Called when a player leaves and player count drops below 2
+ */
+export function cancelGameLock(gameId: string): void {
+  const timeoutId = lockTimers.get(gameId);
+  if (timeoutId) {
+    clearTimeout(timeoutId);
+    lockTimers.delete(gameId);
+  }
 }
 
 /**

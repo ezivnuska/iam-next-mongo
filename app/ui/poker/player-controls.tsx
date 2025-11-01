@@ -6,6 +6,7 @@ import { memo, useState, useEffect, useRef } from 'react';
 import { usePlayers, useGameState, usePokerActions, useProcessing } from '@/app/lib/providers/poker-provider';
 import { useUser } from '@/app/lib/providers/user-provider';
 import { Button } from '../button';
+import { useActionTimerCountdown } from '@/app/lib/hooks/use-action-timer-countdown';
 
 function PlayerControls() {
   const { players } = usePlayers();
@@ -26,7 +27,10 @@ function PlayerControls() {
   const initialAction = hasBetToCall ? 'call' : 'bet';
   const [selectedAction, setSelectedAction] = useState<'bet' | 'call' | 'raise' | 'fold'>(initialAction);
   const [timerActive, setTimerActive] = useState(false);
-  const [countdown, setCountdown] = useState<number>(0);
+
+  // Use custom hook for countdown logic
+  const isMyTimer = actionTimer?.targetPlayerId === user?.id;
+  const countdown = useActionTimerCountdown(actionTimer, isMyTimer);
 
   // Debounce ref for action changes
   const actionChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -42,14 +46,8 @@ function PlayerControls() {
   useEffect(() => {
     if (actionTimer && actionTimer.targetPlayerId === user?.id) {
       setTimerActive(true);
-      // Calculate remaining time
-      const startTime = new Date(actionTimer.startTime).getTime();
-      const elapsed = (Date.now() - startTime) / 1000;
-      const remaining = Math.max(0, actionTimer.duration - elapsed);
-      setCountdown(Math.ceil(remaining));
     } else {
       setTimerActive(false);
-      setCountdown(0);
     }
   }, [actionTimer, user?.id]);
 
@@ -74,22 +72,6 @@ function PlayerControls() {
     };
     autoStartTimer();
   }, [isMyTurn, timerActive, actionTimer]);
-
-  // Countdown effect
-  useEffect(() => {
-    if (!timerActive || countdown <= 0) return;
-
-    const interval = setInterval(() => {
-      if (actionTimer) {
-        const startTime = new Date(actionTimer.startTime).getTime();
-        const elapsed = (Date.now() - startTime) / 1000;
-        const remaining = Math.max(0, actionTimer.duration - elapsed);
-        setCountdown(Math.ceil(remaining));
-      }
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [timerActive, actionTimer, countdown]);
 
   // Helper to check if a specific action is processing
   const isProcessing = (actionType: 'bet' | 'call' | 'raise' | 'fold') => {

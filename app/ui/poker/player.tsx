@@ -2,7 +2,6 @@
 
 'use client';
 
-import PlayerCard from './player-card';
 import Hand from './hand';
 import { getChipTotal } from '@/app/lib/utils/poker';
 import type { Player as PlayerType } from '@/app/lib/definitions/poker';

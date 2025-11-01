@@ -110,7 +110,10 @@ async function executeScheduledAction(gameId: string) {
         case 'fold':
           // Execute fold action
           const { fold } = await import('../poker-game-controller');
-          await fold(gameId, targetPlayerId);
+          const foldResult = await fold(gameId, targetPlayerId);
+          // Emit state update to notify all clients
+          const { PokerSocketEmitter: EmitterFold } = await import('@/app/lib/utils/socket-helper');
+          await EmitterFold.emitStateUpdate(foldResult);
           break;
 
         case 'call':

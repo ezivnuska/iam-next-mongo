@@ -89,6 +89,10 @@ export function dealCommunalCards(game: PokerGameDoc, currentStage: GameStage): 
 
   game.stage = result.newStage;
 
+  // Mark arrays as modified so Mongoose saves the changes
+  game.markModified('deck');
+  game.markModified('communalCards');
+
   // Note: Action logging will be done by caller which has access to gameId
 }
 
@@ -152,6 +156,8 @@ export async function completeRoundAndAdvanceStage(game: PokerGameDoc): Promise<
 
     // Safety check: Ensure we have all 5 communal cards before determining winner
     ensureCommunalCardsComplete(game.deck, game.communalCards, 5);
+    game.markModified('deck');
+    game.markModified('communalCards');
 
     // Determine winner after River
     const winnerInfo = determineWinner(
@@ -165,6 +171,7 @@ export async function completeRoundAndAdvanceStage(game: PokerGameDoc): Promise<
 
     game.winner = winnerInfo;
     awardPotToWinners(game, winnerInfo);
+    game.markModified('players'); // Mark modified after awarding pot
 
     game.pot = [];
     game.locked = false;
