@@ -41,7 +41,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Timer is paused' }, { status: 200 });
     }
 
-    const { actionType, targetPlayerId, startTime, duration, selectedAction } = game.actionTimer;
+    const { actionType, targetPlayerId, startTime, duration, selectedAction, selectedBetAmount } = game.actionTimer;
 
     // Check if timer has expired
     const elapsed = (Date.now() - new Date(startTime).getTime()) / 1000;
@@ -84,20 +84,24 @@ export async function POST(request: Request) {
               });
 
             case 'call':
-              betAmount = currentBet;
+              // Match the current bet (use stored amount if available, otherwise calculate)
+              betAmount = selectedBetAmount !== undefined ? selectedBetAmount : currentBet;
               break;
 
             case 'check':
+              // Check is equivalent to betting 0 (no bet to match)
               betAmount = 0;
               break;
 
             case 'raise':
-              betAmount = currentBet + 1;
+              // Use stored bet amount if available, otherwise default to currentBet + 1
+              betAmount = selectedBetAmount !== undefined ? selectedBetAmount : (currentBet + 1);
               break;
 
             case 'bet':
             default:
-              betAmount = 1;
+              // Use stored bet amount if available, otherwise default to 1 chip
+              betAmount = selectedBetAmount !== undefined ? selectedBetAmount : 1;
               break;
           }
 

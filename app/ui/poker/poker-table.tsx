@@ -15,6 +15,7 @@ import TimerStartButton from './timer-start-button';
 import LockTimerNotification from './lock-timer-notification';
 import GameNotification from './game-notification';
 import PokerLoading from './poker-loading';
+import RestartTimerToast from './restart-timer-toast';
 import { Button } from '../button';
 
 export default function PokerTable() {
@@ -51,6 +52,7 @@ export default function PokerTable() {
                 <Pot />
             </div>
             <div className='flex flex-3 flex-col items-stretch'>
+                    <RestartTimerToast />
                     <LockTimerNotification />
                 {/* </div> */}
                 <div id='table' className='flex flex-1 flex-col items-stretch gap-2'>

@@ -5,7 +5,7 @@ import { setTurnTimerAction } from '@/app/lib/server/poker-game-controller';
 import { serializeGame } from '@/app/lib/utils/game-serialization';
 
 export const POST = withAuth(async (request, context, session) => {
-  const { gameId, action } = await request.json();
+  const { gameId, action, betAmount } = await request.json();
   const id = gameId || process.env.DEFAULT_GAME_ID!;
 
   if (!action || !['fold', 'call', 'check', 'bet', 'raise'].includes(action)) {
@@ -16,7 +16,7 @@ export const POST = withAuth(async (request, context, session) => {
   }
 
   try {
-    const game = await setTurnTimerAction(id, session.user.id, action);
+    const game = await setTurnTimerAction(id, session.user.id, action, betAmount);
     return Response.json({ success: true, game: serializeGame(game) });
   } catch (error) {
     console.error('[Set Timer Action API] Error:', error);

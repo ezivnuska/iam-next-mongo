@@ -213,13 +213,13 @@ export const createClearTimerAction = (gameId: string | null) => {
 };
 
 export const createSetTurnTimerAction = (gameId: string | null) => {
-  return async (action: 'fold' | 'call' | 'check' | 'bet' | 'raise') => {
+  return async (action: 'fold' | 'call' | 'check' | 'bet' | 'raise', betAmount?: number) => {
     if (!gameId) return;
     try {
       await fetch('/api/poker/timer/set-action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameId, action }),
+        body: JSON.stringify({ gameId, action, betAmount }),
       });
     } catch (error) {
       console.error('Error setting turn timer action:', error);

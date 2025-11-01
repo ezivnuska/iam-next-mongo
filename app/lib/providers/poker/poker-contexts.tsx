@@ -75,7 +75,7 @@ export interface ActionsContextValue {
   resumeTimer: () => Promise<void>;
   clearTimer: () => Promise<void>;
   forceLockGame: () => Promise<void>;
-  setTurnTimerAction: (action: 'fold' | 'call' | 'check' | 'bet' | 'raise') => Promise<void>;
+  setTurnTimerAction: (action: 'fold' | 'call' | 'check' | 'bet' | 'raise', betAmount?: number) => Promise<void>;
 }
 
 export interface ProcessingContextValue {

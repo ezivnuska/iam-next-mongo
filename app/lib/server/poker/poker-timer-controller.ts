@@ -104,6 +104,7 @@ async function executeScheduledAction(gameId: string) {
       // Default action: 'check' if no bet to call, otherwise 'call' to match the bet
       const defaultAction = currentBet === 0 ? 'check' : 'call';
       const selectedAction = game.actionTimer.selectedAction || defaultAction;
+      const selectedBetAmount = game.actionTimer.selectedBetAmount;
 
       // CRITICAL: Clear timer BEFORE executing to prevent duplicate execution
       // (both server setTimeout and client fallback might trigger)
@@ -126,8 +127,8 @@ async function executeScheduledAction(gameId: string) {
           break;
 
         case 'call':
-          // Match the current bet
-          betAmount = currentBet;
+          // Match the current bet (use stored amount if available, otherwise calculate)
+          betAmount = selectedBetAmount !== undefined ? selectedBetAmount : currentBet;
           const { placeBet: placeBetCall } = await import('../poker-game-controller');
           const resultCall = await placeBetCall(gameId, targetPlayerId, betAmount);
           const { PokerSocketEmitter: EmitterCall } = await import('@/app/lib/utils/socket-helper');
@@ -144,8 +145,8 @@ async function executeScheduledAction(gameId: string) {
           break;
 
         case 'bet':
-          // Bet minimum amount (1 chip)
-          betAmount = 1;
+          // Use stored bet amount if available, otherwise default to 1 chip
+          betAmount = selectedBetAmount !== undefined ? selectedBetAmount : 1;
           const { placeBet: placeBetBet } = await import('../poker-game-controller');
           const resultBet = await placeBetBet(gameId, targetPlayerId, betAmount);
           const { PokerSocketEmitter: EmitterBet } = await import('@/app/lib/utils/socket-helper');
@@ -153,8 +154,8 @@ async function executeScheduledAction(gameId: string) {
           break;
 
         case 'raise':
-          // Call and raise by 1 chip
-          betAmount = currentBet + 1;
+          // Use stored bet amount if available, otherwise default to currentBet + 1
+          betAmount = selectedBetAmount !== undefined ? selectedBetAmount : (currentBet + 1);
           const { placeBet: placeBetRaise } = await import('../poker-game-controller');
           const resultRaise = await placeBetRaise(gameId, targetPlayerId, betAmount);
           const { PokerSocketEmitter: EmitterRaise } = await import('@/app/lib/utils/socket-helper');
@@ -162,8 +163,8 @@ async function executeScheduledAction(gameId: string) {
           break;
 
         default:
-          // Default to bet 1 chip
-          betAmount = 1;
+          // Use stored bet amount if available, otherwise default to 1 chip
+          betAmount = selectedBetAmount !== undefined ? selectedBetAmount : 1;
           const { placeBet } = await import('../poker-game-controller');
           const result = await placeBet(gameId, targetPlayerId, betAmount);
           const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
@@ -275,12 +276,23 @@ export async function resumeActionTimer(gameId: string) {
 export async function setTurnTimerAction(
   gameId: string,
   playerId: string,
-  action: 'fold' | 'call' | 'check' | 'bet' | 'raise'
+  action: 'fold' | 'call' | 'check' | 'bet' | 'raise',
+  betAmount?: number
 ) {
   // First verify the player exists
   const game = await PokerGame.findById(gameId);
   if (!game) throw new Error('Game not found');
   validatePlayerExists(game.players, playerId);
+
+  // Prepare update object
+  const updateObj: any = {
+    'actionTimer.selectedAction': action
+  };
+
+  // If bet amount is provided, store it
+  if (betAmount !== undefined) {
+    updateObj['actionTimer.selectedBetAmount'] = betAmount;
+  }
 
   // Use atomic update to avoid version conflicts
   const updatedGame = await PokerGame.findOneAndUpdate(
@@ -289,7 +301,7 @@ export async function setTurnTimerAction(
       actionTimer: { $exists: true }
     },
     {
-      $set: { 'actionTimer.selectedAction': action }
+      $set: updateObj
     },
     {
       new: true,

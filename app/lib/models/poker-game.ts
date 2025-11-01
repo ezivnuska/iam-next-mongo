@@ -40,6 +40,7 @@ export interface PokerGameDocument extends Document {
     targetPlayerId?: string;   // Player whose turn it is (for bet actions)
     isPaused: boolean;
     selectedAction?: 'fold' | 'call' | 'check' | 'bet' | 'raise'; // Player's pre-selected action on timer expiry
+    selectedBetAmount?: number; // Player's selected bet amount for bet/raise actions
   };
   createdAt: Date;
   updatedAt: Date;
@@ -156,6 +157,10 @@ const PokerGameSchema = new Schema<PokerGameDocument>(
         selectedAction: {
           type: String,
           enum: ['fold', 'call', 'check', 'bet', 'raise'],
+          required: false,
+        },
+        selectedBetAmount: {
+          type: Number,
           required: false,
         },
       },

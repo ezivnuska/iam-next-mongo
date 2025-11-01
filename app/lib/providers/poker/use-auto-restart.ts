@@ -75,8 +75,17 @@ export function useAutoRestart({
         return;
       }
 
-      // Check if winner is still in the game
-      const winnerStillInGame = players.some(p => p.id === winner.winnerId);
+      // Check if winner is still in the game (handle both single winner and tie)
+      let winnerStillInGame: boolean;
+      if (winner.isTie && winner.tiedPlayers) {
+        // For ties, check if at least one tied player is still in the game
+        winnerStillInGame = winner.tiedPlayers.some(username =>
+          players.some(p => p.username === username)
+        );
+      } else {
+        // For single winner, check if winner is still in the game
+        winnerStillInGame = players.some(p => p.id === winner.winnerId);
+      }
 
       if (!winnerStillInGame) {
         // Winner has left - cancel auto-restart
@@ -89,7 +98,17 @@ export function useAutoRestart({
       let currentCountdown = countdownSeconds;
       setCountdown(currentCountdown);
 
-      const isWinner = currentUserId === winner.winnerId;
+      // Determine if current user should trigger restart
+      // For ties: first tied player (alphabetically) triggers restart to avoid race conditions
+      // For single winner: only the winner triggers restart
+      let isWinner: boolean;
+      if (winner.isTie && winner.tiedPlayers) {
+        const sortedTiedPlayers = [...winner.tiedPlayers].sort();
+        const firstTiedPlayer = players.find(p => p.username === sortedTiedPlayers[0]);
+        isWinner = currentUserId === firstTiedPlayer?.id;
+      } else {
+        isWinner = currentUserId === winner.winnerId;
+      }
 
       // Countdown timer - decrement every second and check game state
       const countdownInterval = setInterval(() => {
@@ -100,8 +119,17 @@ export function useAutoRestart({
           return;
         }
 
-        // Check if winner has left during countdown
-        const winnerStillPresent = players.some(p => p.id === winner.winnerId);
+        // Check if winner has left during countdown (handle both single winner and tie)
+        let winnerStillPresent: boolean;
+        if (winner.isTie && winner.tiedPlayers) {
+          // For ties, check if at least one tied player is still present
+          winnerStillPresent = winner.tiedPlayers.some(username =>
+            players.some(p => p.username === username)
+          );
+        } else {
+          // For single winner, check if winner is still present
+          winnerStillPresent = players.some(p => p.id === winner.winnerId);
+        }
         if (!winnerStillPresent) {
           setCountdown(null);
           clearInterval(countdownInterval);
@@ -117,12 +145,23 @@ export function useAutoRestart({
         }
       }, 1000);
 
-      // Schedule auto-restart - ONLY on winner's client
+      // Schedule auto-restart - ONLY on winner's client (or first tied player for ties)
       let restartTimeout: NodeJS.Timeout | null = null;
       if (isWinner) {
         restartTimeout = setTimeout(async () => {
           // Double-check there are enough players and winner is still in game before restarting
-          if (players.length >= 2 && players.some(p => p.id === winner.winnerId)) {
+          let shouldRestart = false;
+          if (winner.isTie && winner.tiedPlayers) {
+            // For ties, check if at least one tied player is still in the game
+            shouldRestart = players.length >= 2 && winner.tiedPlayers.some(username =>
+              players.some(p => p.username === username)
+            );
+          } else {
+            // For single winner, check if winner is still in the game
+            shouldRestart = players.length >= 2 && players.some(p => p.id === winner.winnerId);
+          }
+
+          if (shouldRestart) {
             setCountdown(null);
             await onRestart();
           } else {
