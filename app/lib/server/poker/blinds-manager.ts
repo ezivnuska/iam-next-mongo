@@ -17,18 +17,32 @@ const DEFAULT_BLINDS: BlindConfig = {
 };
 
 /**
- * Place small blind bet (Player 0)
+ * Calculate small blind position based on dealer button
+ * - Heads-up (2 players): Button is small blind
+ * - 3+ players: Player left of button is small blind
+ */
+function getSmallBlindPosition(buttonPosition: number, playerCount: number): number {
+  if (playerCount === 2) {
+    return buttonPosition; // In heads-up, button is small blind
+  }
+  return (buttonPosition + 1) % playerCount; // Left of button
+}
+
+/**
+ * Place small blind bet
  */
 export function placeSmallBlind(game: any): {
   player: { username: string; id: string };
   amount: number;
+  position: number;
 } {
   if (game.players.length < 2) {
     throw new Error('Need at least 2 players to place blinds');
   }
 
   const { smallBlind } = DEFAULT_BLINDS;
-  const smallBlindPlayer = game.players[0];
+  const smallBlindPosition = getSmallBlindPosition(game.dealerButtonPosition || 0, game.players.length);
+  const smallBlindPlayer = game.players[smallBlindPosition];
 
   // Validate player has enough chips for small blind
   if (!smallBlindPlayer.chips || smallBlindPlayer.chips.length < smallBlind) {
@@ -40,7 +54,7 @@ export function placeSmallBlind(game: any): {
     player: smallBlindPlayer.username,
     chips: smallBlindChips,
   });
-  game.playerBets[0] = smallBlind;
+  game.playerBets[smallBlindPosition] = smallBlind;
 
   // Add action history for small blind
   game.actionHistory.push({
@@ -64,22 +78,37 @@ export function placeSmallBlind(game: any): {
   return {
     player: smallBlindPlayer,
     amount: smallBlind,
+    position: smallBlindPosition,
   };
 }
 
 /**
- * Place big blind bet (Player 1)
+ * Calculate big blind position based on dealer button
+ * - Heads-up (2 players): Non-button player is big blind
+ * - 3+ players: Player two left of button is big blind
+ */
+function getBigBlindPosition(buttonPosition: number, playerCount: number): number {
+  if (playerCount === 2) {
+    return (buttonPosition + 1) % playerCount; // Other player in heads-up
+  }
+  return (buttonPosition + 2) % playerCount; // Two left of button
+}
+
+/**
+ * Place big blind bet
  */
 export function placeBigBlind(game: any): {
   player: { username: string; id: string };
   amount: number;
+  position: number;
 } {
   if (game.players.length < 2) {
     throw new Error('Need at least 2 players to place blinds');
   }
 
   const { bigBlind } = DEFAULT_BLINDS;
-  const bigBlindPlayer = game.players[1];
+  const bigBlindPosition = getBigBlindPosition(game.dealerButtonPosition || 0, game.players.length);
+  const bigBlindPlayer = game.players[bigBlindPosition];
 
   // Validate player has enough chips for big blind
   if (!bigBlindPlayer.chips || bigBlindPlayer.chips.length < bigBlind) {
@@ -91,7 +120,7 @@ export function placeBigBlind(game: any): {
     player: bigBlindPlayer.username,
     chips: bigBlindChips,
   });
-  game.playerBets[1] = bigBlind;
+  game.playerBets[bigBlindPosition] = bigBlind;
 
   // Add action history for big blind
   game.actionHistory.push({
@@ -106,10 +135,18 @@ export function placeBigBlind(game: any): {
     blindType: 'big',
   });
 
-  // Set current player to the one after big blind
-  // If only 2 players, start with player 0 (small blind)
-  // If 3+ players, start with player 2 (after big blind)
-  game.currentPlayerIndex = game.players.length === 2 ? 0 : 2;
+  // Set current player to the one after big blind (preflop action)
+  // In heads-up: Small blind (button) acts first preflop
+  // In 3+ players: Player after big blind acts first
+  const smallBlindPosition = getSmallBlindPosition(game.dealerButtonPosition || 0, game.players.length);
+
+  if (game.players.length === 2) {
+    // Heads-up: Small blind acts first preflop
+    game.currentPlayerIndex = smallBlindPosition;
+  } else {
+    // 3+ players: Player after big blind acts first
+    game.currentPlayerIndex = (bigBlindPosition + 1) % game.players.length;
+  }
 
   // Mark modified for Mongoose
   game.markModified('players');
@@ -121,6 +158,7 @@ export function placeBigBlind(game: any): {
   return {
     player: bigBlindPlayer,
     amount: bigBlind,
+    position: bigBlindPosition,
   };
 }
 

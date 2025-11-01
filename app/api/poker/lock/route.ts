@@ -12,6 +12,7 @@ import { placeSmallBlind, placeBigBlind } from '@/app/lib/server/poker/blinds-ma
 import { startActionTimer } from '@/app/lib/server/poker/poker-timer-controller';
 import { GameActionType } from '@/app/lib/definitions/game-actions';
 import { POKER_TIMERS } from '@/app/lib/config/poker-constants';
+import { dealPlayerCards } from '@/app/lib/server/poker/poker-dealer';
 
 export const POST = withAuth(async (request, context, session) => {
   const { gameId } = await request.json();
@@ -70,6 +71,12 @@ export const POST = withAuth(async (request, context, session) => {
         game.playerBets = initializeBets(game.players.length);
         game.currentPlayerIndex = 0;
 
+        // Initialize dealer button position if not set (first hand starts at position 0)
+        if (game.dealerButtonPosition === undefined) {
+          game.dealerButtonPosition = 0;
+          game.markModified('dealerButtonPosition');
+        }
+
         // Add action history
         game.actionHistory.push({
           id: randomBytes(8).toString('hex'),
@@ -87,12 +94,17 @@ export const POST = withAuth(async (request, context, session) => {
         const { getBlindConfig } = await import('@/app/lib/server/poker/blinds-manager');
         const { smallBlind, bigBlind } = getBlindConfig();
 
-        const player0Chips = game.players[0]?.chips?.length || 0;
-        const player1Chips = game.players[1]?.chips?.length || 0;
+        // Calculate which players will post blinds based on button position
+        const buttonPosition = game.dealerButtonPosition || 0;
+        const smallBlindPos = game.players.length === 2 ? buttonPosition : (buttonPosition + 1) % game.players.length;
+        const bigBlindPos = (buttonPosition + 1) % game.players.length;
 
-        if (player0Chips < smallBlind || player1Chips < bigBlind) {
+        const smallBlindPlayerChips = game.players[smallBlindPos]?.chips?.length || 0;
+        const bigBlindPlayerChips = game.players[bigBlindPos]?.chips?.length || 0;
+
+        if (smallBlindPlayerChips < smallBlind || bigBlindPlayerChips < bigBlind) {
           // At least one player doesn't have enough chips - can't lock
-          console.error(`[Force Lock] Insufficient chips - Player 0: ${player0Chips}/${smallBlind}, Player 1: ${player1Chips}/${bigBlind}`);
+          console.error(`[Force Lock] Insufficient chips - SB Player ${smallBlindPos}: ${smallBlindPlayerChips}/${smallBlind}, BB Player ${bigBlindPos}: ${bigBlindPlayerChips}/${bigBlind}`);
 
           // Unlock game and release lock
           game.locked = false;
@@ -120,7 +132,7 @@ export const POST = withAuth(async (request, context, session) => {
 
         // Emit bet placed event for small blind
         await PokerSocketEmitter.emitBetPlaced({
-          playerIndex: 0,
+          playerIndex: smallBlindInfo.position,
           chipCount: smallBlindInfo.amount,
           pot: game.pot,
           playerBets: game.playerBets,
@@ -142,7 +154,7 @@ export const POST = withAuth(async (request, context, session) => {
 
         // Emit bet placed event for big blind
         await PokerSocketEmitter.emitBetPlaced({
-          playerIndex: 1,
+          playerIndex: bigBlindInfo.position,
           chipCount: bigBlindInfo.amount,
           pot: game.pot,
           playerBets: game.playerBets,
@@ -158,7 +170,32 @@ export const POST = withAuth(async (request, context, session) => {
 
         await new Promise(resolve => setTimeout(resolve, 2200));
 
-        // Auto-start action timer for the current player (after blinds)
+        // DEAL HOLE CARDS immediately after blinds (standard poker rules)
+        dealPlayerCards(game.deck, game.players, 2);
+        game.markModified('deck');
+        game.markModified('players');
+
+        // Add action history for dealing hole cards
+        game.actionHistory.push({
+          id: randomBytes(8).toString('hex'),
+          timestamp: new Date(),
+          stage: 0, // Preflop
+          actionType: ActionHistoryType.CARDS_DEALT,
+          cardsDealt: 2,
+        });
+        game.markModified('actionHistory');
+
+        await game.save();
+
+        // Emit cards dealt event
+        await PokerSocketEmitter.emitCardsDealt({
+          stage: game.stage,
+          communalCards: game.communalCards,
+          deckCount: game.deck.length,
+          players: game.players,
+        });
+
+        // Auto-start action timer for the current player (after blinds and cards dealt)
         const currentPlayer = game.players[game.currentPlayerIndex];
         if (currentPlayer) {
           await startActionTimer(

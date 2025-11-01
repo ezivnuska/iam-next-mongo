@@ -19,6 +19,7 @@ export interface PokerGameDocument extends Document {
   lockTime?: Date; // When game will auto-lock
   processing: boolean; // Distributed lock for concurrent operations
   currentPlayerIndex: number; // Index of current player in players array
+  dealerButtonPosition: number; // Index of player with dealer button (rotates each hand)
   playerBets: number[]; // Each player's total bet in current round
   stages: GameStageProps[]; // History of completed betting rounds
   actionHistory: GameActionHistory[]; // Sequential log of all game actions
@@ -129,6 +130,7 @@ const PokerGameSchema = new Schema<PokerGameDocument>(
     lockTime: { type: Date, required: false },
     processing: { type: Boolean, default: false }, // Distributed lock for concurrent operations
     currentPlayerIndex: { type: Number, default: 0 },
+    dealerButtonPosition: { type: Number, default: 0 }, // Rotates each hand
     playerBets: { type: [Number], default: [] },
     stages: { type: [GameStagePropsSchema], default: [] },
     actionHistory: { type: [ActionHistorySchema], default: [] },

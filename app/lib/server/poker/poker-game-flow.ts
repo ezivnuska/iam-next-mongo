@@ -101,7 +101,27 @@ export function dealCommunalCards(game: PokerGameDoc, currentStage: GameStage): 
  */
 export function resetBettingRound(game: PokerGameDoc): void {
   game.playerBets = new Array(game.players.length).fill(0);
-  game.currentPlayerIndex = 0;
+
+  // Standard poker position rules for postflop:
+  // - First to act is the first player left of the button who is still in
+  // - In heads-up: Big blind acts first postflop
+  // - In 3+ players: Small blind (button + 1) acts first postflop
+  const isHeadsUp = game.players.length === 2;
+  const isPostflop = game.stage > 0;
+  const buttonPosition = game.dealerButtonPosition || 0;
+
+  if (isPostflop) {
+    if (isHeadsUp) {
+      // Heads-up postflop: Big blind acts first (non-button player)
+      game.currentPlayerIndex = (buttonPosition + 1) % game.players.length;
+    } else {
+      // 3+ players postflop: Small blind acts first (left of button)
+      game.currentPlayerIndex = (buttonPosition + 1) % game.players.length;
+    }
+  } else {
+    // Preflop: currentPlayerIndex already set by placeBigBlind
+    // Don't override it here
+  }
 
   // Mark paths as modified for Mongoose to track changes
   game.markModified('playerBets');
@@ -130,29 +150,10 @@ export async function completeRoundAndAdvanceStage(game: PokerGameDoc): Promise<
   let gameComplete = false;
   let cardsDealt = false;
 
-  // Check if players don't have cards yet (first betting round after lock - blind betting complete)
-  const playersNeedCards = game.players.length > 0 && game.players.every((p: Player) => p.hand.length === 0);
+  // Note: Hole cards are now dealt immediately after blinds (standard poker rules)
+  // This function only handles communal card dealing and stage advancement
 
-  if (playersNeedCards) {
-    // Deal 2 cards to each player (one at a time in rotation)
-    dealPlayerCards(game.deck, game.players, 2);
-    game.markModified('players');
-    game.markModified('deck');
-
-    cardsDealt = true;
-
-    // Add action history directly to document (avoid separate save)
-    game.actionHistory.push({
-      id: randomBytes(8).toString('hex'),
-      timestamp: new Date(),
-      stage: currentStage,
-      actionType: ActionHistoryType.CARDS_DEALT,
-      cardsDealt: 2,
-    });
-    game.markModified('actionHistory');
-
-    // Don't advance stage - stay at Preflop for normal Preflop betting with cards
-  } else if (currentStage === GameStage.River) {
+  if (currentStage === GameStage.River) {
 
     // Safety check: Ensure we have all 5 communal cards before determining winner
     ensureCommunalCardsComplete(game.deck, game.communalCards, 5);
