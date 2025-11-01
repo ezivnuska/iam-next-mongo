@@ -17,27 +17,24 @@ const DEFAULT_BLINDS: BlindConfig = {
 };
 
 /**
- * Place automatic blind bets when game starts
- * - Player 0: Small blind (1 chip)
- * - Player 1: Big blind (2 chips)
- *
- * Updates game state with blind bets and sets starting player
- * Returns info about blinds for notification purposes
+ * Place small blind bet (Player 0)
  */
-export function placeAutomaticBlinds(game: any): {
-  smallBlindPlayer: { username: string };
-  bigBlindPlayer: { username: string };
-  smallBlind: number;
-  bigBlind: number;
+export function placeSmallBlind(game: any): {
+  player: { username: string; id: string };
+  amount: number;
 } {
   if (game.players.length < 2) {
     throw new Error('Need at least 2 players to place blinds');
   }
 
-  const { smallBlind, bigBlind } = DEFAULT_BLINDS;
-
-  // Player 0 - Small blind
+  const { smallBlind } = DEFAULT_BLINDS;
   const smallBlindPlayer = game.players[0];
+
+  // Validate player has enough chips for small blind
+  if (!smallBlindPlayer.chips || smallBlindPlayer.chips.length < smallBlind) {
+    throw new Error(`Player ${smallBlindPlayer.username} does not have enough chips for small blind (needs ${smallBlind}, has ${smallBlindPlayer.chips?.length || 0})`);
+  }
+
   const smallBlindChips = smallBlindPlayer.chips.splice(0, smallBlind);
   game.pot.push({
     player: smallBlindPlayer.username,
@@ -58,8 +55,37 @@ export function placeAutomaticBlinds(game: any): {
     blindType: 'small',
   });
 
-  // Player 1 - Big blind
+  // Mark modified for Mongoose
+  game.markModified('players');
+  game.markModified('pot');
+  game.markModified('playerBets');
+  game.markModified('actionHistory');
+
+  return {
+    player: smallBlindPlayer,
+    amount: smallBlind,
+  };
+}
+
+/**
+ * Place big blind bet (Player 1)
+ */
+export function placeBigBlind(game: any): {
+  player: { username: string; id: string };
+  amount: number;
+} {
+  if (game.players.length < 2) {
+    throw new Error('Need at least 2 players to place blinds');
+  }
+
+  const { bigBlind } = DEFAULT_BLINDS;
   const bigBlindPlayer = game.players[1];
+
+  // Validate player has enough chips for big blind
+  if (!bigBlindPlayer.chips || bigBlindPlayer.chips.length < bigBlind) {
+    throw new Error(`Player ${bigBlindPlayer.username} does not have enough chips for big blind (needs ${bigBlind}, has ${bigBlindPlayer.chips?.length || 0})`);
+  }
+
   const bigBlindChips = bigBlindPlayer.chips.splice(0, bigBlind);
   game.pot.push({
     player: bigBlindPlayer.username,
@@ -93,10 +119,35 @@ export function placeAutomaticBlinds(game: any): {
   game.markModified('actionHistory');
 
   return {
-    smallBlindPlayer,
-    bigBlindPlayer,
-    smallBlind,
-    bigBlind,
+    player: bigBlindPlayer,
+    amount: bigBlind,
+  };
+}
+
+/**
+ * Place automatic blind bets when game starts
+ * - Player 0: Small blind (1 chip)
+ * - Player 1: Big blind (2 chips)
+ *
+ * Updates game state with blind bets and sets starting player
+ * Returns info about blinds for notification purposes
+ *
+ * @deprecated Use placeSmallBlind and placeBigBlind separately for better timing control
+ */
+export function placeAutomaticBlinds(game: any): {
+  smallBlindPlayer: { username: string };
+  bigBlindPlayer: { username: string };
+  smallBlind: number;
+  bigBlind: number;
+} {
+  const smallBlindInfo = placeSmallBlind(game);
+  const bigBlindInfo = placeBigBlind(game);
+
+  return {
+    smallBlindPlayer: smallBlindInfo.player,
+    bigBlindPlayer: bigBlindInfo.player,
+    smallBlind: smallBlindInfo.amount,
+    bigBlind: bigBlindInfo.amount,
   };
 }
 

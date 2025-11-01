@@ -8,7 +8,7 @@ import { ActionHistoryType } from '@/app/lib/definitions/action-history';
 import { randomBytes } from 'crypto';
 import { PokerSocketEmitter } from '@/app/lib/utils/socket-helper';
 import { withRetry } from '@/app/lib/utils/retry';
-import { placeAutomaticBlinds } from '@/app/lib/server/poker/blinds-manager';
+import { placeSmallBlind, placeBigBlind } from '@/app/lib/server/poker/blinds-manager';
 import { startActionTimer } from '@/app/lib/server/poker/poker-timer-controller';
 import { GameActionType } from '@/app/lib/definitions/game-actions';
 import { POKER_TIMERS } from '@/app/lib/config/poker-constants';
@@ -79,37 +79,79 @@ export const POST = withAuth(async (request, context, session) => {
         });
         game.markModified('actionHistory');
 
-        // Place automatic blind bets
-        const blindInfo = placeAutomaticBlinds(game);
-
         // Release lock before save to prevent lock timeout issues
         game.processing = false;
         await game.save();
 
+        // Validate players have enough chips before placing blinds
+        const { getBlindConfig } = await import('@/app/lib/server/poker/blinds-manager');
+        const { smallBlind, bigBlind } = getBlindConfig();
+
+        const player0Chips = game.players[0]?.chips?.length || 0;
+        const player1Chips = game.players[1]?.chips?.length || 0;
+
+        if (player0Chips < smallBlind || player1Chips < bigBlind) {
+          // At least one player doesn't have enough chips - can't lock
+          console.error(`[Force Lock] Insufficient chips - Player 0: ${player0Chips}/${smallBlind}, Player 1: ${player1Chips}/${bigBlind}`);
+
+          // Unlock game and release lock
+          game.locked = false;
+          game.processing = false;
+          await game.save();
+
+          throw new Error(`Cannot start game - players do not have enough chips for blinds`);
+        }
+
         // Emit game locked event to all clients
-        const gameState = game.toObject();
         await PokerSocketEmitter.emitGameLocked({
           locked: true,
           stage: game.stage,
           players: game.players,
           currentPlayerIndex: game.currentPlayerIndex,
           lockTime: undefined, // Cleared
-          pot: game.pot, // Include pot with blinds
-          playerBets: game.playerBets, // Include player bets with blinds
-          actionHistory: game.actionHistory, // Include action history with blind bets
+          pot: game.pot,
+          playerBets: game.playerBets,
+          actionHistory: game.actionHistory,
         });
 
-        // Emit blind notifications with delays
+        // PLACE SMALL BLIND with notification
+        const smallBlindInfo = placeSmallBlind(game);
+        await game.save();
+
+        // Emit bet placed event for small blind
+        await PokerSocketEmitter.emitBetPlaced({
+          playerIndex: 0,
+          chipCount: smallBlindInfo.amount,
+          pot: game.pot,
+          playerBets: game.playerBets,
+          currentPlayerIndex: game.currentPlayerIndex,
+          actionHistory: game.actionHistory,
+        });
+
         await PokerSocketEmitter.emitGameNotification({
-          message: `${blindInfo.smallBlindPlayer.username} posts small blind (${blindInfo.smallBlind} chip)`,
+          message: `${smallBlindInfo.player.username} posts small blind (${smallBlindInfo.amount} chip)`,
           type: 'blind',
           duration: 2000,
         });
 
         await new Promise(resolve => setTimeout(resolve, 2200));
 
+        // PLACE BIG BLIND with notification
+        const bigBlindInfo = placeBigBlind(game);
+        await game.save();
+
+        // Emit bet placed event for big blind
+        await PokerSocketEmitter.emitBetPlaced({
+          playerIndex: 1,
+          chipCount: bigBlindInfo.amount,
+          pot: game.pot,
+          playerBets: game.playerBets,
+          currentPlayerIndex: game.currentPlayerIndex,
+          actionHistory: game.actionHistory,
+        });
+
         await PokerSocketEmitter.emitGameNotification({
-          message: `${blindInfo.bigBlindPlayer.username} posts big blind (${blindInfo.bigBlind} chips)`,
+          message: `${bigBlindInfo.player.username} posts big blind (${bigBlindInfo.amount} chips)`,
           type: 'blind',
           duration: 2000,
         });

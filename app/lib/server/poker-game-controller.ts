@@ -29,7 +29,7 @@ import {
   logPlayerLeftAction,
   logGameRestartAction
 } from '@/app/lib/utils/action-history-helpers';
-import { placeAutomaticBlinds } from './poker/blinds-manager';
+import { placeSmallBlind, placeBigBlind } from './poker/blinds-manager';
 
 export async function getGame(gameId: string) {
   return await PokerGame.findById(gameId);
@@ -415,25 +415,68 @@ export async function restart(gameId: string) {
       game.actionHistory = [];
       logGameRestartAction(game);
 
-      // Place automatic blind bets
-      const blindInfo = placeAutomaticBlinds(game);
-
       game.processing = false; // Release lock before save
 
       await game.save();
 
-      // Emit blind notifications with delays
+      // Validate players have enough chips before placing blinds
       const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
+      const { getBlindConfig } = await import('./poker/blinds-manager');
+      const { smallBlind, bigBlind } = getBlindConfig();
+
+      const player0Chips = game.players[0]?.chips?.length || 0;
+      const player1Chips = game.players[1]?.chips?.length || 0;
+
+      if (player0Chips < smallBlind || player1Chips < bigBlind) {
+        // At least one player doesn't have enough chips - can't restart
+        console.error(`[Restart] Insufficient chips - Player 0: ${player0Chips}/${smallBlind}, Player 1: ${player1Chips}/${bigBlind}`);
+
+        // Unlock game and clear players who can't afford blinds
+        game.locked = false;
+        game.processing = false;
+        await game.save();
+
+        throw new Error(`Cannot restart game - players do not have enough chips for blinds`);
+      }
+
+      // PLACE SMALL BLIND with notification
+      const smallBlindInfo = placeSmallBlind(game);
+      await game.save();
+
+      // Emit bet placed event for small blind
+      await PokerSocketEmitter.emitBetPlaced({
+        playerIndex: 0,
+        chipCount: smallBlindInfo.amount,
+        pot: game.pot,
+        playerBets: game.playerBets,
+        currentPlayerIndex: game.currentPlayerIndex,
+        actionHistory: game.actionHistory,
+      });
+
       await PokerSocketEmitter.emitGameNotification({
-        message: `${blindInfo.smallBlindPlayer.username} posts small blind (${blindInfo.smallBlind} chip)`,
+        message: `${smallBlindInfo.player.username} posts small blind (${smallBlindInfo.amount} chip)`,
         type: 'blind',
         duration: 2000,
       });
 
       await new Promise(resolve => setTimeout(resolve, 2200));
 
+      // PLACE BIG BLIND with notification
+      const bigBlindInfo = placeBigBlind(game);
+      await game.save();
+
+      // Emit bet placed event for big blind
+      await PokerSocketEmitter.emitBetPlaced({
+        playerIndex: 1,
+        chipCount: bigBlindInfo.amount,
+        pot: game.pot,
+        playerBets: game.playerBets,
+        currentPlayerIndex: game.currentPlayerIndex,
+        actionHistory: game.actionHistory,
+      });
+
       await PokerSocketEmitter.emitGameNotification({
-        message: `${blindInfo.bigBlindPlayer.username} posts big blind (${blindInfo.bigBlind} chips)`,
+        message: `${bigBlindInfo.player.username} posts big blind (${bigBlindInfo.amount} chips)`,
         type: 'blind',
         duration: 2000,
       });

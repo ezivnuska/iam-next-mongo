@@ -13,9 +13,6 @@ export async function logPlayerJoined(
   playerName: string,
   currentStage: number = -1 // -1 for pre-game
 ): Promise<void> {
-  const game = await PokerGame.findById(gameId);
-  if (!game) return;
-
   const action: GameActionHistory = {
     id: randomBytes(8).toString('hex'),
     timestamp: new Date(),
@@ -25,9 +22,12 @@ export async function logPlayerJoined(
     playerName,
   };
 
-  game.actionHistory.push(action);
-  game.markModified('actionHistory');
-  await game.save();
+  // Use atomic $push to avoid version conflicts
+  await PokerGame.findByIdAndUpdate(
+    gameId,
+    { $push: { actionHistory: action } },
+    { new: true }
+  );
 }
 
 /**
@@ -39,9 +39,6 @@ export async function logPlayerLeft(
   playerName: string,
   currentStage: number
 ): Promise<void> {
-  const game = await PokerGame.findById(gameId);
-  if (!game) return;
-
   const action: GameActionHistory = {
     id: randomBytes(8).toString('hex'),
     timestamp: new Date(),
@@ -51,9 +48,12 @@ export async function logPlayerLeft(
     playerName,
   };
 
-  game.actionHistory.push(action);
-  game.markModified('actionHistory');
-  await game.save();
+  // Use atomic $push to avoid version conflicts
+  await PokerGame.findByIdAndUpdate(
+    gameId,
+    { $push: { actionHistory: action } },
+    { new: true }
+  );
 }
 
 /**
@@ -66,9 +66,6 @@ export async function logPlayerBet(
   chipAmount: number,
   currentStage: number
 ): Promise<void> {
-  const game = await PokerGame.findById(gameId);
-  if (!game) return;
-
   const action: GameActionHistory = {
     id: randomBytes(8).toString('hex'),
     timestamp: new Date(),
@@ -79,9 +76,12 @@ export async function logPlayerBet(
     chipAmount,
   };
 
-  game.actionHistory.push(action);
-  game.markModified('actionHistory');
-  await game.save();
+  // Use atomic $push to avoid version conflicts
+  await PokerGame.findByIdAndUpdate(
+    gameId,
+    { $push: { actionHistory: action } },
+    { new: true }
+  );
 }
 
 /**
@@ -93,9 +93,6 @@ export async function logPlayerFold(
   playerName: string,
   currentStage: number
 ): Promise<void> {
-  const game = await PokerGame.findById(gameId);
-  if (!game) return;
-
   const action: GameActionHistory = {
     id: randomBytes(8).toString('hex'),
     timestamp: new Date(),
@@ -105,9 +102,12 @@ export async function logPlayerFold(
     playerName,
   };
 
-  game.actionHistory.push(action);
-  game.markModified('actionHistory');
-  await game.save();
+  // Use atomic $push to avoid version conflicts
+  await PokerGame.findByIdAndUpdate(
+    gameId,
+    { $push: { actionHistory: action } },
+    { new: true }
+  );
 }
 
 /**
@@ -118,9 +118,6 @@ export async function logCardsDealt(
   cardsDealt: number,
   currentStage: number
 ): Promise<void> {
-  const game = await PokerGame.findById(gameId);
-  if (!game) return;
-
   const action: GameActionHistory = {
     id: randomBytes(8).toString('hex'),
     timestamp: new Date(),
@@ -129,9 +126,12 @@ export async function logCardsDealt(
     cardsDealt,
   };
 
-  game.actionHistory.push(action);
-  game.markModified('actionHistory');
-  await game.save();
+  // Use atomic $push to avoid version conflicts
+  await PokerGame.findByIdAndUpdate(
+    gameId,
+    { $push: { actionHistory: action } },
+    { new: true }
+  );
 }
 
 /**
@@ -142,9 +142,6 @@ export async function logStageAdvanced(
   fromStage: number,
   toStage: number
 ): Promise<void> {
-  const game = await PokerGame.findById(gameId);
-  if (!game) return;
-
   const action: GameActionHistory = {
     id: randomBytes(8).toString('hex'),
     timestamp: new Date(),
@@ -154,9 +151,12 @@ export async function logStageAdvanced(
     toStage,
   };
 
-  game.actionHistory.push(action);
-  game.markModified('actionHistory');
-  await game.save();
+  // Use atomic $push to avoid version conflicts
+  await PokerGame.findByIdAndUpdate(
+    gameId,
+    { $push: { actionHistory: action } },
+    { new: true }
+  );
 }
 
 /**
@@ -165,9 +165,6 @@ export async function logStageAdvanced(
 export async function logGameStarted(
   gameId: string
 ): Promise<void> {
-  const game = await PokerGame.findById(gameId);
-  if (!game) return;
-
   const action: GameActionHistory = {
     id: randomBytes(8).toString('hex'),
     timestamp: new Date(),
@@ -175,9 +172,12 @@ export async function logGameStarted(
     actionType: ActionHistoryType.GAME_STARTED,
   };
 
-  game.actionHistory.push(action);
-  game.markModified('actionHistory');
-  await game.save();
+  // Use atomic $push to avoid version conflicts
+  await PokerGame.findByIdAndUpdate(
+    gameId,
+    { $push: { actionHistory: action } },
+    { new: true }
+  );
 }
 
 /**
@@ -189,9 +189,6 @@ export async function logGameEnded(
   winnerName: string,
   currentStage: number
 ): Promise<void> {
-  const game = await PokerGame.findById(gameId);
-  if (!game) return;
-
   const action: GameActionHistory = {
     id: randomBytes(8).toString('hex'),
     timestamp: new Date(),
@@ -201,7 +198,10 @@ export async function logGameEnded(
     winnerName,
   };
 
-  game.actionHistory.push(action);
-  game.markModified('actionHistory');
-  await game.save();
+  // Use atomic $push to avoid version conflicts
+  await PokerGame.findByIdAndUpdate(
+    gameId,
+    { $push: { actionHistory: action } },
+    { new: true }
+  );
 }

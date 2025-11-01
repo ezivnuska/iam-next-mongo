@@ -10,7 +10,7 @@ import { withRetry } from '@/app/lib/utils/retry';
 import { POKER_RETRY_CONFIG, POKER_TIMERS } from '@/app/lib/config/poker-constants';
 import { acquireGameLock, releaseGameLock } from './game-lock-utils';
 import { logGameStartedAction } from '@/app/lib/utils/action-history-helpers';
-import { placeAutomaticBlinds } from './blinds-manager';
+import { placeSmallBlind, placeBigBlind } from './blinds-manager';
 import { startActionTimer } from './poker-timer-controller';
 
 // Store timeout references for cancellation
@@ -43,41 +43,82 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
         // Add action history for game start
         logGameStartedAction(gameToLock);
 
-        // Place automatic blind bets
-        // Small blind (1 chip) for player 0, big blind (2 chips) for player 1
-        const blindInfo = placeAutomaticBlinds(gameToLock);
-
         // Players start with empty hands - cards will be dealt after first blind betting round
 
         // Release lock before save
         gameToLock.processing = false;
         await gameToLock.save();
 
-        // Emit granular game locked event to all clients
+        // Validate players have enough chips before placing blinds
         const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
-        const gameState = gameToLock.toObject();
+        const { getBlindConfig } = await import('./blinds-manager');
+        const { smallBlind, bigBlind } = getBlindConfig();
+
+        const player0Chips = gameToLock.players[0]?.chips?.length || 0;
+        const player1Chips = gameToLock.players[1]?.chips?.length || 0;
+
+        if (player0Chips < smallBlind || player1Chips < bigBlind) {
+          // At least one player doesn't have enough chips - can't lock
+          console.error(`[Auto Lock] Insufficient chips - Player 0: ${player0Chips}/${smallBlind}, Player 1: ${player1Chips}/${bigBlind}`);
+
+          // Unlock game and release lock
+          gameToLock.locked = false;
+          gameToLock.processing = false;
+          await gameToLock.save();
+
+          throw new Error(`Cannot start game - players do not have enough chips for blinds`);
+        }
+
+        // Emit granular game locked event to all clients
         await PokerSocketEmitter.emitGameLocked({
           locked: true,
           stage: gameToLock.stage,
           players: gameToLock.players,
           currentPlayerIndex: gameToLock.currentPlayerIndex,
           lockTime: undefined, // Cleared
-          pot: gameToLock.pot, // Include pot with blinds
-          playerBets: gameToLock.playerBets, // Include player bets with blinds
-          actionHistory: gameToLock.actionHistory, // Include action history with blind bets
+          pot: gameToLock.pot,
+          playerBets: gameToLock.playerBets,
+          actionHistory: gameToLock.actionHistory,
         });
 
-        // Emit blind notifications with delays
+        // PLACE SMALL BLIND with notification
+        const smallBlindInfo = placeSmallBlind(gameToLock);
+        await gameToLock.save();
+
+        // Emit bet placed event for small blind
+        await PokerSocketEmitter.emitBetPlaced({
+          playerIndex: 0,
+          chipCount: smallBlindInfo.amount,
+          pot: gameToLock.pot,
+          playerBets: gameToLock.playerBets,
+          currentPlayerIndex: gameToLock.currentPlayerIndex,
+          actionHistory: gameToLock.actionHistory,
+        });
+
         await PokerSocketEmitter.emitGameNotification({
-          message: `${blindInfo.smallBlindPlayer.username} posts small blind (${blindInfo.smallBlind} chip)`,
+          message: `${smallBlindInfo.player.username} posts small blind (${smallBlindInfo.amount} chip)`,
           type: 'blind',
           duration: 2000,
         });
 
         await new Promise(resolve => setTimeout(resolve, 2200));
 
+        // PLACE BIG BLIND with notification
+        const bigBlindInfo = placeBigBlind(gameToLock);
+        await gameToLock.save();
+
+        // Emit bet placed event for big blind
+        await PokerSocketEmitter.emitBetPlaced({
+          playerIndex: 1,
+          chipCount: bigBlindInfo.amount,
+          pot: gameToLock.pot,
+          playerBets: gameToLock.playerBets,
+          currentPlayerIndex: gameToLock.currentPlayerIndex,
+          actionHistory: gameToLock.actionHistory,
+        });
+
         await PokerSocketEmitter.emitGameNotification({
-          message: `${blindInfo.bigBlindPlayer.username} posts big blind (${blindInfo.bigBlind} chips)`,
+          message: `${bigBlindInfo.player.username} posts big blind (${bigBlindInfo.amount} chips)`,
           type: 'blind',
           duration: 2000,
         });

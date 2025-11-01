@@ -10,7 +10,7 @@ import { useActionTimerCountdown } from '@/app/lib/hooks/use-action-timer-countd
 
 function PlayerControls() {
   const { players } = usePlayers();
-  const { playerBets, currentBet, actionTimer, currentPlayerIndex } = useGameState();
+  const { playerBets, currentBet, actionTimer, currentPlayerIndex, stage } = useGameState();
   const { placeBet, fold, startTimer, clearTimer, setTurnTimerAction } = usePokerActions();
   const { user } = useUser();
   const { isActionProcessing, pendingAction } = useProcessing();
@@ -19,8 +19,8 @@ function PlayerControls() {
 
   // Determine if there's an active bet to call
   const hasBetToCall = currentBet !== undefined && currentBet > 0;
-  // Determine if player can check (no bet to match)
-  const canCheck = currentBet === 0;
+  // Determine if player can check (no bet to match, including when currentBet is undefined)
+  const canCheck = currentBet === undefined || currentBet === 0;
 
   // Check if current user is the active player
   const isMyTurn = user && players[currentPlayerIndex]?.id === user.id;
@@ -37,12 +37,18 @@ function PlayerControls() {
   // Debounce ref for action changes
   const actionChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Update selected action when bet state changes
+  // Update selected action when bet state or stage changes
   useEffect(() => {
     if (!timerActive) {
       setSelectedAction(canCheck ? 'check' : (hasBetToCall ? 'call' : 'bet'));
     }
-  }, [canCheck, hasBetToCall, timerActive]);
+  }, [canCheck, hasBetToCall, timerActive, stage]);
+
+  // Always reset to default action when stage changes (new betting round)
+  useEffect(() => {
+    const defaultAction = canCheck ? 'check' : (hasBetToCall ? 'call' : 'bet');
+    setSelectedAction(defaultAction);
+  }, [stage, canCheck, hasBetToCall]);
 
   // Sync timer state with actionTimer
   useEffect(() => {
