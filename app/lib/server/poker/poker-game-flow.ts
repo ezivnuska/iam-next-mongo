@@ -19,6 +19,7 @@ interface PokerGameDoc {
   stage: number;
   playerBets: number[];
   currentPlayerIndex: number;
+  dealerButtonPosition?: number;
   winner?: WinnerInfo;
   locked: boolean;
   stages?: GameStageProps[];

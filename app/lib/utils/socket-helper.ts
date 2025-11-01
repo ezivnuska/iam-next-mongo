@@ -98,6 +98,7 @@ export class PokerSocketEmitter {
     stage: number;
     communalCards: any[];
     deckCount: number;
+    players?: any[];
   }) {
     await emitViaAPI(SOCKET_EVENTS.POKER_CARDS_DEALT, payload);
   }
