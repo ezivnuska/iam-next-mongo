@@ -191,6 +191,25 @@ export class PokerSocketEmitter {
       await this.emitBetPlaced(results.betPlaced);
     }
     if (results.cardsDealt) {
+      // Emit notification for dealing communal cards
+      const stage = results.cardsDealt.stage;
+      let message = '';
+      if (stage === 1) { // Flop
+        message = 'Dealing the flop';
+      } else if (stage === 2) { // Turn
+        message = 'Dealing the turn';
+      } else if (stage === 3) { // River
+        message = 'Dealing the river';
+      }
+
+      if (message) {
+        await this.emitGameNotification({
+          message,
+          type: 'deal',
+          duration: 2000,
+        });
+      }
+
       await this.emitCardsDealt(results.cardsDealt);
     }
     if (results.roundComplete) {

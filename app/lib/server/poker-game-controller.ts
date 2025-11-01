@@ -509,6 +509,13 @@ export async function restart(gameId: string) {
 
       await game.save();
 
+      // Emit notification for dealing player cards
+      await PokerSocketEmitter.emitGameNotification({
+        message: 'Dealing player cards',
+        type: 'deal',
+        duration: 2000,
+      });
+
       // Emit cards dealt event
       await PokerSocketEmitter.emitCardsDealt({
         stage: game.stage,

@@ -156,6 +156,13 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
 
         await gameToLock.save();
 
+        // Emit notification for dealing player cards
+        await PokerSocketEmitter.emitGameNotification({
+          message: 'Dealing player cards',
+          type: 'deal',
+          duration: 2000,
+        });
+
         // Emit cards dealt event
         await PokerSocketEmitter.emitCardsDealt({
           stage: gameToLock.stage,

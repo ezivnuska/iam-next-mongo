@@ -270,6 +270,32 @@ export function PokerProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Check for expired timers when actionTimer changes or on mount
+  useEffect(() => {
+    if (!actionTimer || !gameId || actionTimer.isPaused) return;
+
+    // Calculate if timer has expired
+    const startTime = new Date(actionTimer.startTime).getTime();
+    const elapsed = (Date.now() - startTime) / 1000;
+    const remaining = actionTimer.duration - elapsed;
+
+    // If timer has expired, call the check API to execute the action
+    if (remaining <= 0) {
+      const checkExpiredTimer = async () => {
+        try {
+          await fetch('/api/poker/timer/check', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ gameId }),
+          });
+        } catch (error) {
+          console.error('Error checking expired timer:', error);
+        }
+      };
+      checkExpiredTimer();
+    }
+  }, [actionTimer, gameId]);
+
   useEffect(() => {
     if (winner && stage === 0) setWinner(undefined)
   }, [stage])
