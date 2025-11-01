@@ -47,6 +47,9 @@ export const SOCKET_EVENTS = {
 	POKER_ACTION_TIMER_RESUMED: 'poker:action_timer_resumed',
 	POKER_ACTION_TIMER_CLEARED: 'poker:action_timer_cleared',
 	POKER_ACTION_TIMER_ACTION_SET: 'poker:action_timer_action_set',
+
+	// Poker events - Game notifications
+	POKER_GAME_NOTIFICATION: 'poker:game_notification',
 } as const
 
 export type SocketEventType = typeof SOCKET_EVENTS[keyof typeof SOCKET_EVENTS]
@@ -201,4 +204,10 @@ export interface PokerActionTimerResumedPayload {
 export interface PokerActionTimerActionSetPayload {
 	playerId: string           // Player who set the action
 	action: 'fold' | 'call' | 'check' | 'bet' | 'raise'  // Selected action
+}
+
+export interface PokerGameNotificationPayload {
+	message: string
+	type: 'blind' | 'deal' | 'action' | 'info'
+	duration?: number  // Duration in milliseconds (default 2000)
 }

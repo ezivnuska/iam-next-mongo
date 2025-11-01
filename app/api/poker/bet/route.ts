@@ -8,7 +8,7 @@ export const POST = withAuth(async (request, context, session) => {
   const { chipCount, gameId } = await request.json();
   const id = gameId || process.env.DEFAULT_GAME_ID!;
 
-  const result = await placeBet(id, session.user.id, chipCount || 1);
+  const result = await placeBet(id, session.user.id, chipCount ?? 1);
 
   // Emit granular events based on what happened
   await PokerSocketEmitter.emitGameActionResults(result.events);

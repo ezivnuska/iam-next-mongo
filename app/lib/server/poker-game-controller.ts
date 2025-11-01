@@ -65,119 +65,126 @@ export async function addPlayer(
   gameId: string,
   user: { id: string; username: string }
 ) {
-  const game = await PokerGame.findById(gameId);
-  if (!game) throw new Error('Game not found');
-
-  // Check if game is locked
-  if (game.locked) {
-    throw new Error('Game is locked - no new players allowed');
-  }
-
-  // Check if game is full (max players)
-  if (game.players.length >= POKER_GAME_CONFIG.MAX_PLAYERS) {
-    throw new Error(`Game is full - maximum ${POKER_GAME_CONFIG.MAX_PLAYERS} players allowed`);
-  }
-
-  const alreadyIn = game.players.some((p: Player) => p.id === user.id);
-  if (alreadyIn) return game.toObject();
-
-  // Get user's saved chip balance or create default
+  // Get or create balance ONCE before retry loop to avoid duplicate creation
   let balance = await PokerBalance.findOne({ userId: user.id });
-
   let playerChips = createChips(POKER_GAME_CONFIG.DEFAULT_STARTING_CHIPS);
 
   if (balance && balance.chips.length > 0) {
     // Use their saved balance
     playerChips = balance.chips;
   } else {
-    // Create new balance record with starting chips
-    await PokerBalance.create({
-      userId: user.id,
+    // Create new balance record with starting chips (idempotent - won't duplicate)
+    await PokerBalance.findOneAndUpdate(
+      { userId: user.id },
+      { $setOnInsert: { userId: user.id, chips: playerChips } },
+      { upsert: true, new: true }
+    );
+  }
+
+  // Retry logic for version conflicts
+  return withRetry(async () => {
+    const game = await PokerGame.findById(gameId);
+    if (!game) throw new Error('Game not found');
+
+    // Check if game is locked
+    if (game.locked) {
+      throw new Error('Game is locked - no new players allowed');
+    }
+
+    // Check if game is full (max players)
+    if (game.players.length >= POKER_GAME_CONFIG.MAX_PLAYERS) {
+      throw new Error(`Game is full - maximum ${POKER_GAME_CONFIG.MAX_PLAYERS} players allowed`);
+    }
+
+    // Check if player already in game (may have been added in a previous retry)
+    const alreadyIn = game.players.some((p: Player) => p.id === user.id);
+    if (alreadyIn) return game.toObject();
+
+    game.players.push({
+      id: user.id,
+      username: user.username,
+      hand: [],
       chips: playerChips,
     });
-  }
 
-  game.players.push({
-    id: user.id,
-    username: user.username,
-    hand: [],
-    chips: playerChips,
-  });
+    // Explicitly mark players array as modified for Mongoose
+    game.markModified('players');
 
-  // Explicitly mark players array as modified for Mongoose
-  game.markModified('players');
+    // Start auto-lock timer when 2nd player joins
+    if (shouldStartLockTimer(game.players.length, !!game.lockTime)) {
+      const lockTime = new Date(Date.now() + POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS);
+      game.lockTime = lockTime;
+      scheduleGameLock(gameId, lockTime);
+    }
 
-  // Start auto-lock timer when 2nd player joins
-  if (shouldStartLockTimer(game.players.length, !!game.lockTime)) {
-    const lockTime = new Date(Date.now() + POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS);
-    game.lockTime = lockTime;
-    scheduleGameLock(gameId, lockTime);
-  }
+    await game.save();
 
-  await game.save();
-
-  return game.toObject();
+    return game.toObject();
+  }, POKER_RETRY_CONFIG);
 }
 
 export async function removePlayer(
   gameId: string,
   user: { id: string; username: string }
 ): Promise<any> {
-  const game = await PokerGame.findById(gameId);
-  if (!game) throw new Error('Game not found');
+  // Retry logic for version conflicts
+  return withRetry(async () => {
+    const game = await PokerGame.findById(gameId);
+    if (!game) throw new Error('Game not found');
 
-  const isPlayer = game.players.some((p: Player) => p.id === user.id);
-  if (!isPlayer) return game.toObject();
+    const isPlayer = game.players.some((p: Player) => p.id === user.id);
+    if (!isPlayer) return game.toObject();
 
-  const leavingPlayer = game.players.find((p: Player) => p.id === user.id);
-  const currentStage = game.stage;
+    const leavingPlayer = game.players.find((p: Player) => p.id === user.id);
+    const currentStage = game.stage;
 
-  game.players = game.players.filter((p: Player) => p.id !== user.id);
+    game.players = game.players.filter((p: Player) => p.id !== user.id);
 
-  // Cancel lock timer if player count drops below 2
-  if (game.players.length < 2) {
-    const { cancelGameLock } = await import('./poker/game-lock-manager');
-    cancelGameLock(gameId);
-  }
+    // Cancel lock timer if player count drops below 2
+    if (game.players.length < 2) {
+      const { cancelGameLock } = await import('./poker/game-lock-manager');
+      cancelGameLock(gameId);
+    }
 
-  // If 0 players remain, reset game state (don't delete - singleton game persists)
-  if (game.players.length === 0) {
-    const { resetSingletonGame } = await import('./poker/singleton-game');
-    const resetGame = await resetSingletonGame(gameId);
-    return resetGame.toObject();
-  }
+    // If 0 players remain, reset game state (don't delete - singleton game persists)
+    if (game.players.length === 0) {
+      const { resetSingletonGame } = await import('./poker/singleton-game');
+      const resetGame = await resetSingletonGame(gameId);
+      return resetGame.toObject();
+    }
 
-  // If only 1 player remains, reset game state completely
-  if (game.players.length === 1) {
-    game.locked = false;
-    game.lockTime = undefined;
-    game.winner = undefined;
-    game.pot = [];
-    game.stage = 0;
-    game.currentPlayerIndex = 0;
-    game.playerBets = [];
-    game.communalCards = [];
-    game.actionTimer = undefined;
-    game.stages = [];
+    // If only 1 player remains, reset game state completely
+    if (game.players.length === 1) {
+      game.locked = false;
+      game.lockTime = undefined;
+      game.winner = undefined;
+      game.pot = [];
+      game.stage = 0;
+      game.currentPlayerIndex = 0;
+      game.playerBets = [];
+      game.communalCards = [];
+      game.actionTimer = undefined;
+      game.stages = [];
 
-    // Clear remaining player's hand and reset deck
-    const remainingPlayer = game.players[0];
-    remainingPlayer.hand = [];
-    game.deck = initializeDeck();
+      // Clear remaining player's hand and reset deck
+      const remainingPlayer = game.players[0];
+      remainingPlayer.hand = [];
+      game.deck = initializeDeck();
 
-    // Mark modified for Mongoose (use specific path for nested document)
-    game.markModified('players.0.hand');
-    game.markModified('players');
-    game.markModified('deck');
-  }
+      // Mark modified for Mongoose (use specific path for nested document)
+      game.markModified('players.0.hand');
+      game.markModified('players');
+      game.markModified('deck');
+    }
 
-  // Add action history
-  if (leavingPlayer) {
-    logPlayerLeftAction(game, user.id, leavingPlayer.username);
-  }
+    // Add action history
+    if (leavingPlayer) {
+      logPlayerLeftAction(game, user.id, leavingPlayer.username);
+    }
 
-  await game.save();
-  return game.toObject();
+    await game.save();
+    return game.toObject();
+  }, POKER_RETRY_CONFIG);
 }
 
 export async function placeBet(gameId: string, playerId: string, chipCount = 1) {
@@ -203,7 +210,15 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
       const expectedNewBetAmount = currentPlayerBetAmount + chipCount;
 
       // If player's bet amount already includes this chipCount, skip processing
-      const betAlreadyProcessed = currentPlayerBetAmount >= expectedNewBetAmount;
+      // For check actions (chipCount = 0), verify it's still this player's turn
+      // If the turn has advanced, the check was already processed
+      let betAlreadyProcessed = false;
+      if (chipCount > 0) {
+        betAlreadyProcessed = currentPlayerBetAmount >= expectedNewBetAmount;
+      } else {
+        // For checks, only process if it's still this player's turn
+        betAlreadyProcessed = game.currentPlayerIndex !== playerIndex;
+      }
 
       if (!betAlreadyProcessed) {
         // Ensure player bets are initialized
@@ -231,22 +246,18 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
       }
 
       // Check if betting round is complete BEFORE saving
-      const activePlayers = getActivePlayerUsernames(game.players);
-
-      // Calculate contributions for debugging
-      const playerContributions: Record<string, number> = {};
-      game.pot.forEach((bet: any) => {
-        const playerName = bet.player;
-        const betValue = bet.chips.reduce((sum: number, chip: any) => sum + chip.value, 0);
-        playerContributions[playerName] = (playerContributions[playerName] || 0) + betValue;
-      });
-
-      const allContributionsEqual = areAllPotContributionsEqual(game.pot, activePlayers);
-
+      // IMPORTANT: Check for round completion:
+      // 1. Always check after actual bets (chipCount > 0)
+      // 2. After checks, only check if currentPlayerIndex is back at 0 (all players have acted)
       let roundInfo = { roundComplete: false, cardsDealt: false, gameComplete: false };
 
-      if (allContributionsEqual) {
-        roundInfo = await completeRoundAndAdvanceStage(game);
+      if (chipCount > 0 || game.currentPlayerIndex === 0) {
+        const activePlayers = getActivePlayerUsernames(game.players);
+        const allContributionsEqual = areAllPotContributionsEqual(game.pot, activePlayers);
+
+        if (allContributionsEqual) {
+          roundInfo = await completeRoundAndAdvanceStage(game);
+        }
       }
 
       // Save once with all changes (bet + potential stage advancement)
@@ -405,11 +416,29 @@ export async function restart(gameId: string) {
       logGameRestartAction(game);
 
       // Place automatic blind bets
-      placeAutomaticBlinds(game);
+      const blindInfo = placeAutomaticBlinds(game);
 
       game.processing = false; // Release lock before save
 
       await game.save();
+
+      // Emit blind notifications with delays
+      const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
+      await PokerSocketEmitter.emitGameNotification({
+        message: `${blindInfo.smallBlindPlayer.username} posts small blind (${blindInfo.smallBlind} chip)`,
+        type: 'blind',
+        duration: 2000,
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 2200));
+
+      await PokerSocketEmitter.emitGameNotification({
+        message: `${blindInfo.bigBlindPlayer.username} posts big blind (${blindInfo.bigBlind} chips)`,
+        type: 'blind',
+        duration: 2000,
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 2200));
 
       // Auto-start timer for player after big blind (currentPlayerIndex set by placeAutomaticBlinds)
       const currentPlayer = game.players[game.currentPlayerIndex];

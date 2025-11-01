@@ -45,7 +45,7 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
 
         // Place automatic blind bets
         // Small blind (1 chip) for player 0, big blind (2 chips) for player 1
-        placeAutomaticBlinds(gameToLock);
+        const blindInfo = placeAutomaticBlinds(gameToLock);
 
         // Players start with empty hands - cards will be dealt after first blind betting round
 
@@ -66,6 +66,23 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
           playerBets: gameToLock.playerBets, // Include player bets with blinds
           actionHistory: gameToLock.actionHistory, // Include action history with blind bets
         });
+
+        // Emit blind notifications with delays
+        await PokerSocketEmitter.emitGameNotification({
+          message: `${blindInfo.smallBlindPlayer.username} posts small blind (${blindInfo.smallBlind} chip)`,
+          type: 'blind',
+          duration: 2000,
+        });
+
+        await new Promise(resolve => setTimeout(resolve, 2200));
+
+        await PokerSocketEmitter.emitGameNotification({
+          message: `${blindInfo.bigBlindPlayer.username} posts big blind (${blindInfo.bigBlind} chips)`,
+          type: 'blind',
+          duration: 2000,
+        });
+
+        await new Promise(resolve => setTimeout(resolve, 2200));
 
         // Auto-start action timer for the current player (after blinds)
         const currentPlayer = gameToLock.players[gameToLock.currentPlayerIndex];

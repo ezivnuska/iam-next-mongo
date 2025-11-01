@@ -41,7 +41,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Timer is paused' }, { status: 200 });
     }
 
-    const { actionType, targetPlayerId, startTime, duration } = game.actionTimer;
+    const { actionType, targetPlayerId, startTime, duration, selectedAction } = game.actionTimer;
 
     // Check if timer has expired
     const elapsed = (Date.now() - new Date(startTime).getTime()) / 1000;
@@ -51,32 +51,68 @@ export async function POST(request: Request) {
       // Execute the action
       if (actionType === GameActionType.PLAYER_BET && targetPlayerId) {
         try {
-          // Auto-bet always bets 1 chip (simplified logic)
-          validatePlayerExists(game.players, targetPlayerId);
+          const playerIndex = validatePlayerExists(game.players, targetPlayerId);
+          const actionToExecute = selectedAction || 'bet';
 
           // CRITICAL: Clear timer BEFORE executing to prevent duplicate execution
           // (both server setTimeout and client fallback might trigger)
           game.actionTimer = undefined;
           await game.save();
 
-          const autoBetAmount = 1; // Always 1 chip
           const actualGameId = game._id.toString();
-          const result = await placeBet(actualGameId, targetPlayerId, autoBetAmount);
+
+          // Calculate bet amount based on selected action
+          let betAmount: number;
+          const { calculateCurrentBet } = await import('@/app/lib/utils/betting-helpers');
+          const currentBet = calculateCurrentBet(game.playerBets, playerIndex);
+
+          switch (actionToExecute) {
+            case 'fold':
+              const { fold } = await import('@/app/lib/server/poker-game-controller');
+              const foldResult = await fold(actualGameId, targetPlayerId);
+              await PokerSocketEmitter.emitStateUpdate(foldResult);
+              return NextResponse.json({
+                message: 'Fold executed by client fallback',
+                action: 'fold',
+                playerId: targetPlayerId,
+                gameId: actualGameId,
+              });
+
+            case 'call':
+              betAmount = currentBet;
+              break;
+
+            case 'check':
+              betAmount = 0;
+              break;
+
+            case 'raise':
+              betAmount = currentBet + 1;
+              break;
+
+            case 'bet':
+            default:
+              betAmount = 1;
+              break;
+          }
+
+          // Execute bet action
+          const result = await placeBet(actualGameId, targetPlayerId, betAmount);
 
           // Emit socket events to notify all clients of the state change
           await PokerSocketEmitter.emitGameActionResults(result.events);
 
           return NextResponse.json({
             message: 'Action executed by client fallback',
-            action: GameActionType.PLAYER_BET,
+            action: actionToExecute,
             playerId: targetPlayerId,
             gameId: actualGameId,
             result
           });
         } catch (betError: any) {
-          console.error('[Timer Check API] Failed to execute placeBet after retries:', betError.message);
+          console.error('[Timer Check API] Failed to execute action after retries:', betError.message);
           return NextResponse.json({
-            error: 'Failed to execute bet action',
+            error: 'Failed to execute action',
             message: betError.message,
             playerId: targetPlayerId
           }, { status: 500 });

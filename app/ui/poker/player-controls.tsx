@@ -19,13 +19,15 @@ function PlayerControls() {
 
   // Determine if there's an active bet to call
   const hasBetToCall = currentBet !== undefined && currentBet > 0;
+  // Determine if player can check (no bet to match)
+  const canCheck = currentBet === 0;
 
   // Check if current user is the active player
   const isMyTurn = user && players[currentPlayerIndex]?.id === user.id;
 
   // Set initial selected action based on game state
-  const initialAction = hasBetToCall ? 'call' : 'bet';
-  const [selectedAction, setSelectedAction] = useState<'bet' | 'call' | 'raise' | 'fold'>(initialAction);
+  const initialAction = canCheck ? 'check' : (hasBetToCall ? 'call' : 'bet');
+  const [selectedAction, setSelectedAction] = useState<'bet' | 'call' | 'raise' | 'fold' | 'check'>(initialAction);
   const [timerActive, setTimerActive] = useState(false);
 
   // Use custom hook for countdown logic
@@ -38,9 +40,9 @@ function PlayerControls() {
   // Update selected action when bet state changes
   useEffect(() => {
     if (!timerActive) {
-      setSelectedAction(hasBetToCall ? 'call' : 'bet');
+      setSelectedAction(canCheck ? 'check' : (hasBetToCall ? 'call' : 'bet'));
     }
-  }, [hasBetToCall, timerActive]);
+  }, [canCheck, hasBetToCall, timerActive]);
 
   // Sync timer state with actionTimer
   useEffect(() => {
@@ -52,8 +54,10 @@ function PlayerControls() {
   }, [actionTimer, user?.id]);
 
   // Helper to check if a specific action is processing
-  const isProcessing = (actionType: 'bet' | 'call' | 'raise' | 'fold') => {
-    return isActionProcessing && pendingAction?.type === actionType && pendingAction?.playerId === user?.id;
+  const isProcessing = (actionType: 'bet' | 'call' | 'raise' | 'fold' | 'check') => {
+    // Check action is treated as a bet action internally
+    const normalizedType = actionType === 'check' ? 'bet' : actionType;
+    return isActionProcessing && pendingAction?.type === normalizedType && pendingAction?.playerId === user?.id;
   };
 
   // Loading spinner component
@@ -71,6 +75,15 @@ function PlayerControls() {
     }
     // Bet minimum amount (1 chip)
     placeBet(1);
+  };
+
+  const handleCheck = async () => {
+    // Clear timer if active
+    if (timerActive) {
+      await clearTimer();
+    }
+    // Check means betting 0 chips (staying in without adding chips)
+    placeBet(0);
   };
 
   const handleCall = async () => {
@@ -100,7 +113,7 @@ function PlayerControls() {
     fold();
   };
 
-  const handleActionChange = (action: 'bet' | 'call' | 'raise' | 'fold') => {
+  const handleActionChange = (action: 'bet' | 'call' | 'raise' | 'fold' | 'check') => {
     setSelectedAction(action);
 
     // Debounce the API call to avoid concurrent requests
@@ -141,7 +154,31 @@ function PlayerControls() {
 
       {/* Action Buttons with Radio Buttons - Horizontal Layout */}
       <div className='flex flex-row items-center justify-evenly gap-1'>
-        {!hasBetToCall ? (
+        {canCheck ? (
+          // Can check - show Check option
+          <div className='flex flex-col items-center gap-1'>
+            <input
+              type="radio"
+              id="radio-check"
+              name="autoAction"
+              value="check"
+              checked={selectedAction === 'check'}
+              onChange={() => handleActionChange('check')}
+              disabled={isActionProcessing}
+              className='w-4 h-4 cursor-pointer'
+            />
+            <Button
+              size='md'
+              id="checkButton"
+              onClick={handleCheck}
+              disabled={isActionProcessing}
+              className={selectedAction === 'check' ? 'ring-2 ring-yellow-400' : ''}
+            >
+              {isProcessing('check') && <Spinner />}
+              <span className={isProcessing('check') ? 'ml-2' : ''}>Check</span>
+            </Button>
+          </div>
+        ) : !hasBetToCall ? (
           // No bet to call - show Bet option
           <div className='flex flex-col items-center gap-1'>
             <input

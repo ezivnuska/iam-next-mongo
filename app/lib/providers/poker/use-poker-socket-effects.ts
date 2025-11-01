@@ -21,6 +21,7 @@ import {
   createTimerPausedHandler,
   createTimerResumedHandler,
   createTimerClearedHandler,
+  createGameNotificationHandler,
   registerSocketHandlers,
   type GameStateSnapshot,
   type StateUpdaters,
@@ -43,6 +44,7 @@ export interface PokerSocketEffectsDeps {
   setActionHistory: (history: any[]) => void;
   setIsActionProcessing: (processing: boolean) => void;
   setPendingAction: (action: { type: 'bet' | 'fold' | 'call' | 'raise'; playerId: string } | null) => void;
+  setGameNotification: React.Dispatch<React.SetStateAction<any>>;
 }
 
 /**
@@ -93,6 +95,7 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
     setActionHistory,
     setIsActionProcessing,
     setPendingAction,
+    setGameNotification,
   } = deps;
 
   useEffect(() => {
@@ -134,6 +137,7 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
     const handleTimerPaused = createTimerPausedHandler(setActionTimer);
     const handleTimerResumed = createTimerResumedHandler(setActionTimer);
     const handleTimerCleared = createTimerClearedHandler(setActionTimer);
+    const handleGameNotification = createGameNotificationHandler(setGameNotification);
 
     // Register all socket handlers
     const cleanup = registerSocketHandlers(
@@ -154,6 +158,7 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
         handleTimerPaused,
         handleTimerResumed,
         handleTimerCleared,
+        handleGameNotification,
       },
       SOCKET_EVENTS
     );
@@ -173,5 +178,6 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
     setActionHistory,
     setIsActionProcessing,
     setPendingAction,
+    setGameNotification,
   ]);
 }

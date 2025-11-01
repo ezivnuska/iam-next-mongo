@@ -22,8 +22,14 @@ const DEFAULT_BLINDS: BlindConfig = {
  * - Player 1: Big blind (2 chips)
  *
  * Updates game state with blind bets and sets starting player
+ * Returns info about blinds for notification purposes
  */
-export function placeAutomaticBlinds(game: any): void {
+export function placeAutomaticBlinds(game: any): {
+  smallBlindPlayer: { username: string };
+  bigBlindPlayer: { username: string };
+  smallBlind: number;
+  bigBlind: number;
+} {
   if (game.players.length < 2) {
     throw new Error('Need at least 2 players to place blinds');
   }
@@ -85,6 +91,13 @@ export function placeAutomaticBlinds(game: any): void {
   game.markModified('playerBets');
   game.markModified('currentPlayerIndex');
   game.markModified('actionHistory');
+
+  return {
+    smallBlindPlayer,
+    bigBlindPlayer,
+    smallBlind,
+    bigBlind,
+  };
 }
 
 /**

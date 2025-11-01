@@ -13,12 +13,13 @@ import WinnerDisplay from './winner-display';
 import ActionHistoryDisplay from './action-history-display';
 import TimerStartButton from './timer-start-button';
 import LockTimerNotification from './lock-timer-notification';
+import GameNotification from './game-notification';
 import PokerLoading from './poker-loading';
 import { Button } from '../button';
 
 export default function PokerTable() {
   const { players } = usePlayers();
-  const { stage, stages, locked, currentPlayerIndex, winner, communalCards, isLoading, restartCountdown } = useGameState();
+  const { stage, stages, locked, currentPlayerIndex, winner, communalCards, isLoading, restartCountdown, gameNotification } = useGameState();
   const { gameId, availableGames } = useViewers();
   const { joinGame, restart, leaveGame, deleteGameFromLobby } = usePokerActions();
   const { user } = useUser();
@@ -33,6 +34,7 @@ export default function PokerTable() {
 
   return (
     <div id='poker-table' className='flex flex-1 flex-col sm:flex-row bg-green-700 gap-1 rounded-xl p-2'>
+        <GameNotification notification={gameNotification} />
         <div className='flex flex-2 flex-col-reverse sm:flex-row gap-4 p-1'>
             <div id='players' className='flex'>
                 <PlayerSlots
@@ -45,13 +47,14 @@ export default function PokerTable() {
                     onLeaveGame={leaveGame}
                 />
             </div>
+            <div id='pot' className='flex flex-row items-center justify-center gap-4'>
+                <Pot />
+            </div>
             <div className='flex flex-3 flex-col items-stretch'>
-                <div className='flex flex-col'>
                     <LockTimerNotification />
-                </div>
-                <div id='table' className='flex flex-1 flex-col items-stretch gap-2'>
-                    <div id='table' className='flex flex-1 flex-col items-center gap-4'>
-                        <Pot />
+                {/* </div> */}
+                <div id='table' className='flex flex-1 flex-col items-stretch gap-2 border-1'>
+                    <div className='flex flex-1 flex-row items-center justify-center'>
                         <CommunalCards />
                     </div>
                     <PlayerActionArea />

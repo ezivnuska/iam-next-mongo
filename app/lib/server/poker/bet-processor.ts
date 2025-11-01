@@ -40,18 +40,26 @@ export function updateGameAfterBet(
   updatedPlayer: Player,
   betToAdd: Bet
 ): void {
-  // Add chips to pot
-  game.pot.push(betToAdd);
+  // Only add chips to pot if chipCount > 0 (skip for check action)
+  if (chipCount > 0) {
+    game.pot.push(betToAdd);
+    game.markModified('pot');
+  }
 
   // Update player's total bet for this round
   game.playerBets[playerIndex] += chipCount;
+  game.markModified('playerBets');
 
-  // Update player in game
+  // Update player in game (even if chips didn't change, mark as modified for Mongoose)
   game.players[playerIndex] = updatedPlayer;
+  game.markModified('players');
 
   // Move to next player
   const nextIndex = (playerIndex + 1) % game.players.length;
   game.currentPlayerIndex = nextIndex;
+
+  // Mark as modified for Mongoose to track the change
+  game.markModified('currentPlayerIndex');
 }
 
 /**

@@ -38,6 +38,13 @@ export interface GameStateContextValue {
   restartCountdown: number | null;
   actionHistory: any[];
   isLoading: boolean;
+  gameNotification: {
+    id: string;
+    message: string;
+    type: 'blind' | 'deal' | 'action' | 'info';
+    timestamp: number;
+    duration?: number;
+  } | null;
 }
 
 export interface PotContextValue {

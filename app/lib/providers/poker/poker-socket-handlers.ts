@@ -265,6 +265,34 @@ export const createTimerClearedHandler = (
   };
 };
 
+export const createGameNotificationHandler = (
+  setGameNotification: React.Dispatch<React.SetStateAction<any>>
+) => {
+  return (payload: any) => {
+    const duration = payload.duration || 2000;
+    const notification = {
+      id: `${Date.now()}-${Math.random()}`,
+      message: payload.message,
+      type: payload.type,
+      timestamp: Date.now(),
+      duration: duration,
+    };
+
+    setGameNotification(notification);
+
+    // Auto-clear notification after duration
+    setTimeout(() => {
+      setGameNotification((current: any) => {
+        // Only clear if it's still the same notification
+        if (current?.id === notification.id) {
+          return null;
+        }
+        return current;
+      });
+    }, duration);
+  };
+};
+
 export const registerSocketHandlers = (
   socket: Socket,
   handlers: {
@@ -283,6 +311,7 @@ export const registerSocketHandlers = (
     handleTimerPaused: (payload: any) => void;
     handleTimerResumed: (payload: any) => void;
     handleTimerCleared: () => void;
+    handleGameNotification: (payload: any) => void;
   },
   SOCKET_EVENTS: any
 ) => {
@@ -301,6 +330,7 @@ export const registerSocketHandlers = (
   socket.on(SOCKET_EVENTS.POKER_ACTION_TIMER_PAUSED, handlers.handleTimerPaused);
   socket.on(SOCKET_EVENTS.POKER_ACTION_TIMER_RESUMED, handlers.handleTimerResumed);
   socket.on(SOCKET_EVENTS.POKER_ACTION_TIMER_CLEARED, handlers.handleTimerCleared);
+  socket.on(SOCKET_EVENTS.POKER_GAME_NOTIFICATION, handlers.handleGameNotification);
 
   return () => {
     socket.off('connect', handlers.handleConnect);
@@ -318,5 +348,6 @@ export const registerSocketHandlers = (
     socket.off(SOCKET_EVENTS.POKER_ACTION_TIMER_PAUSED, handlers.handleTimerPaused);
     socket.off(SOCKET_EVENTS.POKER_ACTION_TIMER_RESUMED, handlers.handleTimerResumed);
     socket.off(SOCKET_EVENTS.POKER_ACTION_TIMER_CLEARED, handlers.handleTimerCleared);
+    socket.off(SOCKET_EVENTS.POKER_GAME_NOTIFICATION, handlers.handleGameNotification);
   };
 };

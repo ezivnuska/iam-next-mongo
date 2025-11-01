@@ -80,7 +80,7 @@ export const POST = withAuth(async (request, context, session) => {
         game.markModified('actionHistory');
 
         // Place automatic blind bets
-        placeAutomaticBlinds(game);
+        const blindInfo = placeAutomaticBlinds(game);
 
         // Release lock before save to prevent lock timeout issues
         game.processing = false;
@@ -98,6 +98,23 @@ export const POST = withAuth(async (request, context, session) => {
           playerBets: game.playerBets, // Include player bets with blinds
           actionHistory: game.actionHistory, // Include action history with blind bets
         });
+
+        // Emit blind notifications with delays
+        await PokerSocketEmitter.emitGameNotification({
+          message: `${blindInfo.smallBlindPlayer.username} posts small blind (${blindInfo.smallBlind} chip)`,
+          type: 'blind',
+          duration: 2000,
+        });
+
+        await new Promise(resolve => setTimeout(resolve, 2200));
+
+        await PokerSocketEmitter.emitGameNotification({
+          message: `${blindInfo.bigBlindPlayer.username} posts big blind (${blindInfo.bigBlind} chips)`,
+          type: 'blind',
+          duration: 2000,
+        });
+
+        await new Promise(resolve => setTimeout(resolve, 2200));
 
         // Auto-start action timer for the current player (after blinds)
         const currentPlayer = game.players[game.currentPlayerIndex];

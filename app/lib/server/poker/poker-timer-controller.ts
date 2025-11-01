@@ -3,6 +3,8 @@
 import { PokerGame } from '@/app/lib/models/poker-game';
 import { GameActionType } from '@/app/lib/definitions/game-actions';
 import { validatePlayerExists } from '@/app/lib/utils/player-helpers';
+import { withRetry } from '@/app/lib/utils/retry';
+import { POKER_RETRY_CONFIG } from '@/app/lib/config/poker-constants';
 
 /**
  * Start an action timer for the game
@@ -76,7 +78,9 @@ export async function startActionTimer(
  */
 async function executeScheduledAction(gameId: string) {
   const game = await PokerGame.findById(gameId);
-  if (!game || !game.actionTimer || game.actionTimer.isPaused) return;
+  if (!game || !game.actionTimer || game.actionTimer.isPaused) {
+    return;
+  }
 
   const { actionType, targetPlayerId, currentActionIndex } = game.actionTimer;
 
@@ -196,64 +200,68 @@ export async function clearActionTimer(gameId: string) {
  * Pause the action timer
  */
 export async function pauseActionTimer(gameId: string) {
-  const game = await PokerGame.findById(gameId);
-  if (!game || !game.actionTimer) throw new Error('No active timer');
+  return withRetry(async () => {
+    const game = await PokerGame.findById(gameId);
+    if (!game || !game.actionTimer) throw new Error('No active timer');
 
-  const elapsed = (Date.now() - game.actionTimer.startTime.getTime()) / 1000;
-  const remainingSeconds = Math.max(0, game.actionTimer.duration - elapsed);
+    const elapsed = (Date.now() - game.actionTimer.startTime.getTime()) / 1000;
+    const remainingSeconds = Math.max(0, game.actionTimer.duration - elapsed);
 
-  game.actionTimer.isPaused = true;
-  await game.save();
+    game.actionTimer.isPaused = true;
+    await game.save();
 
-  // Emit timer paused event
-  const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
-  await PokerSocketEmitter.emitTimerPaused({
-    pausedAt: new Date().toISOString(),
-    remainingSeconds,
-  });
+    // Emit timer paused event
+    const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
+    await PokerSocketEmitter.emitTimerPaused({
+      pausedAt: new Date().toISOString(),
+      remainingSeconds,
+    });
 
-  return game.toObject();
+    return game.toObject();
+  }, POKER_RETRY_CONFIG);
 }
 
 /**
  * Resume the action timer
  */
 export async function resumeActionTimer(gameId: string) {
-  const game = await PokerGame.findById(gameId);
-  if (!game || !game.actionTimer || !game.actionTimer.isPaused) {
-    throw new Error('No paused timer');
-  }
-
-  const elapsed = (Date.now() - game.actionTimer.startTime.getTime()) / 1000;
-  const remainingSeconds = Math.max(0, game.actionTimer.duration - elapsed);
-
-  // Reset timer with remaining time
-  game.actionTimer.startTime = new Date();
-  game.actionTimer.duration = remainingSeconds;
-  game.actionTimer.isPaused = false;
-  await game.save();
-
-  // Emit timer resumed event
-  const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
-  await PokerSocketEmitter.emitTimerResumed({
-    resumedAt: game.actionTimer.startTime.toISOString(),
-    duration: remainingSeconds,
-    currentActionIndex: game.actionTimer.currentActionIndex,
-    totalActions: game.actionTimer.totalActions,
-    actionType: game.actionTimer.actionType,
-    targetPlayerId: game.actionTimer.targetPlayerId,
-  });
-
-  // Schedule new timeout for remaining time
-  setTimeout(async () => {
-    try {
-      await executeScheduledAction(gameId);
-    } catch (error) {
-      console.error('[Timer] Error executing scheduled action after resume:', error);
+  return withRetry(async () => {
+    const game = await PokerGame.findById(gameId);
+    if (!game || !game.actionTimer || !game.actionTimer.isPaused) {
+      throw new Error('No paused timer');
     }
-  }, remainingSeconds * 1000);
 
-  return game.toObject();
+    const elapsed = (Date.now() - game.actionTimer.startTime.getTime()) / 1000;
+    const remainingSeconds = Math.max(0, game.actionTimer.duration - elapsed);
+
+    // Reset timer with remaining time
+    game.actionTimer.startTime = new Date();
+    game.actionTimer.duration = remainingSeconds;
+    game.actionTimer.isPaused = false;
+    await game.save();
+
+    // Emit timer resumed event
+    const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
+    await PokerSocketEmitter.emitTimerResumed({
+      resumedAt: game.actionTimer.startTime.toISOString(),
+      duration: remainingSeconds,
+      currentActionIndex: game.actionTimer.currentActionIndex,
+      totalActions: game.actionTimer.totalActions,
+      actionType: game.actionTimer.actionType,
+      targetPlayerId: game.actionTimer.targetPlayerId,
+    });
+
+    // Schedule new timeout for remaining time
+    setTimeout(async () => {
+      try {
+        await executeScheduledAction(gameId);
+      } catch (error) {
+        console.error('[Timer] Error executing scheduled action after resume:', error);
+      }
+    }, remainingSeconds * 1000);
+
+    return game.toObject();
+  }, POKER_RETRY_CONFIG);
 }
 
 /**

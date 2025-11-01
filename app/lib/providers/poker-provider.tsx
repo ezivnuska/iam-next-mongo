@@ -99,6 +99,15 @@ export function PokerProvider({ children }: { children: ReactNode }) {
     playerId: string;
   } | null>(null);
 
+  // --- Game notification state ---
+  const [gameNotification, setGameNotification] = useState<{
+    id: string;
+    message: string;
+    type: 'blind' | 'deal' | 'action' | 'info';
+    timestamp: number;
+    duration?: number;
+  } | null>(null);
+
   // --- Computed values ---
   // Calculate how much the current player needs to bet to call
   const currentBet = useMemo(() => {
@@ -148,6 +157,7 @@ export function PokerProvider({ children }: { children: ReactNode }) {
     setGameStages,
     setWinner,
     setActionHistory,
+    setActionTimer,
   }), []);
 
   const updateGameId = useCallback(createUpdateGameId(setGameId), []);
@@ -172,7 +182,8 @@ export function PokerProvider({ children }: { children: ReactNode }) {
       updateBettingState,
       updateStageState,
       updateGameStatus,
-      setActionHistory
+      setActionHistory,
+      setActionTimer
     ),
     [updateGameId, updatePlayers, updateBettingState, updateStageState, updateGameStatus]
   );
@@ -295,6 +306,7 @@ export function PokerProvider({ children }: { children: ReactNode }) {
     setActionHistory,
     setIsActionProcessing,
     setPendingAction,
+    setGameNotification,
   });
 
   // --- Memoized context values ---
@@ -313,7 +325,8 @@ export function PokerProvider({ children }: { children: ReactNode }) {
     restartCountdown,
     actionHistory,
     isLoading,
-  }), [stage, gameStages, locked, lockTime, currentPlayerIndex, currentBet, playerBets, communalCards, deck, winner, actionTimer, restartCountdown, actionHistory, isLoading]);
+    gameNotification,
+  }), [stage, gameStages, locked, lockTime, currentPlayerIndex, currentBet, playerBets, communalCards, deck, winner, actionTimer, restartCountdown, actionHistory, isLoading, gameNotification]);
 
   const potValue = useMemo(() => {
     // Calculate total pot value

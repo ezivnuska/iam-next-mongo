@@ -168,6 +168,17 @@ export class PokerSocketEmitter {
   }
 
   /**
+   * Emit game notification event
+   */
+  static async emitGameNotification(payload: {
+    message: string;
+    type: 'blind' | 'deal' | 'action' | 'info';
+    duration?: number;
+  }) {
+    await emitViaAPI(SOCKET_EVENTS.POKER_GAME_NOTIFICATION, payload);
+  }
+
+  /**
    * Emit game action results (bet, round complete, cards dealt)
    * Convenience method for handling placeBet results
    */

@@ -19,6 +19,7 @@ export interface StateSetters {
   setGameStages: (stages: GameStageProps[]) => void;
   setWinner: (winner?: any) => void;
   setActionHistory: (history: any[]) => void;
+  setActionTimer: (timer?: any) => void;
 }
 
 export const createResetGameState = (setters: StateSetters) => {
@@ -36,6 +37,7 @@ export const createResetGameState = (setters: StateSetters) => {
     setters.setGameStages([]);
     setters.setWinner(undefined);
     setters.setActionHistory([]);
+    setters.setActionTimer(undefined);
   };
 };
 
@@ -110,7 +112,8 @@ export const createUpdateGameState = (
   updateBettingState: (pot: Bet[], playerBets: number[], currentPlayerIndex: number) => void,
   updateStageState: (stage: number, communalCards: Card[], deck: Card[], stages?: GameStageProps[]) => void,
   updateGameStatus: (locked: boolean, lockTime?: string, winner?: any) => void,
-  setActionHistory: (history: any[]) => void
+  setActionHistory: (history: any[]) => void,
+  setActionTimer: (timer?: any) => void
 ) => {
   return (state: PokerStateUpdatePayload) => {
     // Extract game ID if present
@@ -123,6 +126,10 @@ export const createUpdateGameState = (
     updateGameStatus(state.locked, state.lockTime, state.winner);
     if ((state as any).actionHistory) {
       setActionHistory((state as any).actionHistory);
+    }
+    // Set action timer if present in state
+    if ((state as any).actionTimer !== undefined) {
+      setActionTimer((state as any).actionTimer);
     }
   };
 };
