@@ -154,80 +154,57 @@ function PlayerControls() {
 
       {/* Action Buttons with Radio Buttons - Horizontal Layout */}
       <div className='flex flex-row items-center justify-evenly gap-1'>
-        {canCheck ? (
-          // Can check - show Check option
-          <div className='flex flex-col items-center gap-1'>
-            <input
-              type="radio"
-              id="radio-check"
-              name="autoAction"
-              value="check"
-              checked={selectedAction === 'check'}
-              onChange={() => handleActionChange('check')}
-              disabled={isActionProcessing}
-              className='w-4 h-4 cursor-pointer'
-            />
-            <Button
-              size='md'
-              id="checkButton"
-              onClick={handleCheck}
-              disabled={isActionProcessing}
-              className={selectedAction === 'check' ? 'ring-2 ring-yellow-400' : ''}
-            >
-              {isProcessing('check') && <Spinner />}
-              <span className={isProcessing('check') ? 'ml-2' : ''}>Check</span>
-            </Button>
-          </div>
-        ) : !hasBetToCall ? (
-          // No bet to call - show Bet option
-          <div className='flex flex-col items-center gap-1'>
-            <input
-              type="radio"
-              id="radio-bet"
-              name="autoAction"
-              value="bet"
-              checked={selectedAction === 'bet'}
-              onChange={() => handleActionChange('bet')}
-              disabled={isActionProcessing}
-              className='w-4 h-4 cursor-pointer'
-            />
-            <Button
-              size='md'
-              id="betButton"
-              onClick={handleBet}
-              disabled={isActionProcessing}
-              className={selectedAction === 'bet' ? 'ring-2 ring-yellow-400' : ''}
-            >
-              {isProcessing('bet') && <Spinner />}
-              <span className={isProcessing('bet') ? 'ml-2' : ''}>Bet (10)</span>
-            </Button>
-          </div>
-        ) : (
-          // There's a bet to call - show Call option
-          <div className='flex flex-col items-center gap-1'>
-            <input
-              type="radio"
-              id="radio-call"
-              name="autoAction"
-              value="call"
-              checked={selectedAction === 'call'}
-              onChange={() => handleActionChange('call')}
-              disabled={isActionProcessing}
-              className='w-4 h-4 cursor-pointer'
-            />
-            <Button
-              size='md'
-              id="callButton"
-              onClick={handleCall}
-              disabled={isActionProcessing}
-              className={selectedAction === 'call' ? 'ring-2 ring-yellow-400' : ''}
-            >
-              {isProcessing('call') && <Spinner />}
-              <span className={isProcessing('call') ? 'ml-2' : ''}>Call ({currentBet * 10})</span>
-            </Button>
-          </div>
-        )}
+        {/* Check Button - disabled when there's a bet to call */}
+        <div className='flex flex-col items-center gap-1'>
+          <input
+            type="radio"
+            id="radio-check"
+            name="autoAction"
+            value="check"
+            checked={selectedAction === 'check'}
+            onChange={() => handleActionChange('check')}
+            disabled={isActionProcessing || !canCheck}
+            className='w-4 h-4 cursor-pointer'
+          />
+          <Button
+            size='sm'
+            id="checkButton"
+            onClick={handleCheck}
+            disabled={isActionProcessing || !canCheck}
+            className={selectedAction === 'check' ? 'ring-2 ring-yellow-400' : ''}
+          >
+            {isProcessing('check') && <Spinner />}
+            <span className={isProcessing('check') ? 'ml-2' : ''}>Check</span>
+          </Button>
+        </div>
 
+        {/* Bet/Call Button - changes based on whether there's a bet to match */}
+        <div className='flex flex-col items-center gap-1'>
+          <input
+            type="radio"
+            id={hasBetToCall ? "radio-call" : "radio-bet"}
+            name="autoAction"
+            value={hasBetToCall ? "call" : "bet"}
+            checked={hasBetToCall ? selectedAction === 'call' : selectedAction === 'bet'}
+            onChange={() => handleActionChange(hasBetToCall ? 'call' : 'bet')}
+            disabled={isActionProcessing}
+            className='w-4 h-4 cursor-pointer'
+          />
+          <Button
+            size='sm'
+            id={hasBetToCall ? "callButton" : "betButton"}
+            onClick={hasBetToCall ? handleCall : handleBet}
+            disabled={isActionProcessing}
+            className={(hasBetToCall ? selectedAction === 'call' : selectedAction === 'bet') ? 'ring-2 ring-yellow-400' : ''}
+          >
+            {(isProcessing('call') || isProcessing('bet')) && <Spinner />}
+            <span className={(isProcessing('call') || isProcessing('bet')) ? 'ml-2' : ''}>
+              {hasBetToCall ? `Call (${currentBet * 10})` : 'Bet (10)'}
+            </span>
+          </Button>
+        </div>
+
+        {/* Raise Button */}
         <div className='flex flex-col items-center gap-1'>
           <input
             type="radio"
@@ -240,7 +217,7 @@ function PlayerControls() {
             className='w-4 h-4 cursor-pointer'
           />
           <Button
-            size='md'
+            size='sm'
             id="raiseButton"
             onClick={handleRaise}
             disabled={isActionProcessing}
@@ -251,6 +228,7 @@ function PlayerControls() {
           </Button>
         </div>
 
+        {/* Fold Button */}
         <div className='flex flex-col items-center gap-1'>
           <input
             type="radio"
@@ -263,7 +241,7 @@ function PlayerControls() {
             className='w-4 h-4 cursor-pointer'
           />
           <Button
-            size='md'
+            size='sm'
             id="foldButton"
             onClick={handleFold}
             disabled={isActionProcessing}

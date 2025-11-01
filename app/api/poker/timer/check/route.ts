@@ -52,7 +52,14 @@ export async function POST(request: Request) {
       if (actionType === GameActionType.PLAYER_BET && targetPlayerId) {
         try {
           const playerIndex = validatePlayerExists(game.players, targetPlayerId);
-          const actionToExecute = selectedAction || 'bet';
+
+          // Calculate current bet to determine default action
+          const { calculateCurrentBet } = await import('@/app/lib/utils/betting-helpers');
+          const currentBet = calculateCurrentBet(game.playerBets, playerIndex);
+
+          // Default action: 'check' if no bet to call, otherwise 'call' to match the bet
+          const defaultAction = currentBet === 0 ? 'check' : 'call';
+          const actionToExecute = selectedAction || defaultAction;
 
           // CRITICAL: Clear timer BEFORE executing to prevent duplicate execution
           // (both server setTimeout and client fallback might trigger)
@@ -63,8 +70,6 @@ export async function POST(request: Request) {
 
           // Calculate bet amount based on selected action
           let betAmount: number;
-          const { calculateCurrentBet } = await import('@/app/lib/utils/betting-helpers');
-          const currentBet = calculateCurrentBet(game.playerBets, playerIndex);
 
           switch (actionToExecute) {
             case 'fold':
