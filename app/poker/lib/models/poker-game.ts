@@ -74,6 +74,8 @@ const PlayerSchema = new Schema<Player>(
     username: { type: String, required: true },
     hand: { type: [CardSchema], default: [] },
     chips: { type: [ChipSchema], default: [] },
+    lastHeartbeat: { type: Date, required: false },
+    folded: { type: Boolean, required: false },
   },
   { _id: false }
 );

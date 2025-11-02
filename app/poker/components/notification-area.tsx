@@ -34,7 +34,7 @@ export default function NotificationArea() {
   const showPlayerTurnStatus = locked && isUserInGame && currentPlayer && holeCardsDealt;
 
   return (
-    <div className="h-12 flex flex-1 items-center justify-center py-2">
+    <div className="h-12 flex flex-1 items-center justify-center">
       {/* Priority 1: Game notifications (blinds, deals) show first */}
       {gameNotification ? (
         <GameNotification notification={gameNotification} />

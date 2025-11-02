@@ -30,6 +30,10 @@ module.exports = {
         animation: {
           "fade-in": "fade-in 0.3s ease-out",
         },
+        screens: {
+          'portrait': { 'raw': '(orientation: portrait)' },
+          'landscape': { 'raw': '(orientation: landscape)' },
+        },
       },
     },
     plugins: [require("@tailwindcss/forms")],

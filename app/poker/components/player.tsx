@@ -9,6 +9,7 @@ import clsx from 'clsx';
 import { useGameState, usePokerActions } from '@/app/poker/lib/providers/poker-provider';
 import UserAvatar from '@/app/ui/user/user-avatar';
 import { Button } from '@/app/ui/button';
+import PlayerConnectionStatus from './player-connection-status';
 
 interface PlayerProps {
   index: number;
@@ -56,7 +57,16 @@ export default function Player({ player, locked, index, currentPlayerIndex, potC
                         },
                       )}
                     >
-                        <span className='text-md'>{player.username}</span>
+                        <div className='flex items-center gap-1.5'>
+                            <span className='text-md'>{player.username}</span>
+                            {locked && (
+                                <PlayerConnectionStatus
+                                    playerId={player.id}
+                                    lastHeartbeat={player.lastHeartbeat}
+                                    isCurrentPlayer={isCurrentPlayer}
+                                />
+                            )}
+                        </div>
                         <span className='text-md'>({chipTotal})</span>
                         {potContribution > 0 && (
                             <span className="text-xs text-gray-700">Pot: ${potContribution}</span>

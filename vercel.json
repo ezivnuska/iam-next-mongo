@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/poker/monitor-connections",
+      "schedule": "*/1 * * * *"
+    }
+  ]
+}

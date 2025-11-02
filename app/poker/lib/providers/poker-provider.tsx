@@ -51,6 +51,7 @@ import {
 import { useAutoRestart } from './use-auto-restart';
 import { usePokerSocketEffects } from './use-poker-socket-effects';
 import { usePokerSounds } from '../hooks/use-poker-sounds';
+import { usePlayerConnectionMonitor } from '../hooks/use-player-connection-monitor';
 
 // ============= Provider Component =============
 
@@ -315,6 +316,29 @@ export function PokerProvider({ children }: { children: ReactNode }) {
     duration: 30000, // 30 seconds
     currentUserId: user?.id,
     players,
+  });
+
+  // Monitor player connection status
+  const isUserInGame = user && players.some(p => p.id === user.id);
+  const isMyTurn = user && players[currentPlayerIndex]?.id === user.id;
+
+  usePlayerConnectionMonitor({
+    gameId,
+    isUserInGame: !!isUserInGame,
+    isMyTurn: !!isMyTurn,
+    onDisconnect: () => {
+      console.log('You disconnected from the game');
+    },
+    onReconnect: async () => {
+      console.log('You reconnected to the game');
+      // Refresh game state when reconnecting
+      if (gameId) {
+        const freshGameState = await fetchCurrentGame();
+        if (freshGameState) {
+          updateGameState(freshGameState);
+        }
+      }
+    },
   });
 
   // Memoize updaters object to prevent socket handlers from re-registering on every render

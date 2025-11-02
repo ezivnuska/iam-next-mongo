@@ -33,6 +33,8 @@ export interface Player {
   username: string;
   hand: Card[];
   chips: Chip[];
+  lastHeartbeat?: Date;
+  folded?: boolean;
 }
 
 export enum GameStage {
