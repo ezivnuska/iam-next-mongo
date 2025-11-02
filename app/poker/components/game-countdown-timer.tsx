@@ -107,7 +107,7 @@ function GameCountdownTimer() {
             <div className="flex items-center gap-2">
               <span className="text-lg">⏱️</span>
               <p className="text-blue-900 font-semibold">
-                {lockCountdown} second{lockCountdown !== 1 ? 's' : ''} before game start
+                Next deal in {lockCountdown} second{lockCountdown !== 1 ? 's' : ''}
               </p>
             </div>
             {/* Leave Button */}

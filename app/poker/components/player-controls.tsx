@@ -247,7 +247,7 @@ function PlayerControls() {
               className='w-4 h-4 cursor-pointer'
             />
             <div className='flex flex-1 flex-row gap-2'>
-                <div className='flex flex-1 flex-row gap-1 text-xs items-stretch'>
+                <div className='flex flex-1 flex-row gap-1 items-stretch'>
                     <Button
                         size='sm'
                         onClick={decrementBet}
@@ -266,9 +266,9 @@ function PlayerControls() {
                         {(isProcessing('bet') || isProcessing('call') || isProcessing('raise')) && <Spinner />}
                         <span className={clsx(
                             'flex flex-nowrap',
-                            // {
-                            //     'ml-2': (isProcessing('bet') || isProcessing('call') || isProcessing('raise')),
-                            // },
+                            {
+                                'ml-2': (isProcessing('bet') || isProcessing('call') || isProcessing('raise')),
+                            },
                         )}>
                             {hasBetToCall
                                 ? (betAmount === currentBet

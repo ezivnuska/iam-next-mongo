@@ -33,12 +33,12 @@ export function logBetAction(
   game: any,
   playerId: string,
   playerName: string,
-  betAmount: number
+  chipAmount: number
 ): void {
   addActionToHistory(game, ActionHistoryType.PLAYER_BET, {
     playerId,
     playerName,
-    betAmount,
+    chipAmount,
   });
 }
 

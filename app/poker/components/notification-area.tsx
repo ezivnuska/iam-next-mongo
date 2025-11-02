@@ -28,10 +28,13 @@ export default function NotificationArea() {
   const isUserInGame = user?.username && players.some(p => p.username === user.username);
   const currentPlayer = players[currentPlayerIndex];
   const isCurrentUserTurn = user?.id === currentPlayer?.id;
-  const showPlayerTurnStatus = locked && isUserInGame && currentPlayer;
+
+  // Only show player turn status after blind betting and hole cards are dealt
+  const holeCardsDealt = currentPlayer?.hand && currentPlayer.hand.length > 0;
+  const showPlayerTurnStatus = locked && isUserInGame && currentPlayer && holeCardsDealt;
 
   return (
-    <div className="h-12 flex flex-1 items-center justify-center">
+    <div className="h-12 flex flex-1 items-center justify-center py-2">
       {/* Priority 1: Game notifications (blinds, deals) show first */}
       {gameNotification ? (
         <GameNotification notification={gameNotification} />

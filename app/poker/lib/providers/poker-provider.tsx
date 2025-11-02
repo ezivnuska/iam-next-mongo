@@ -50,12 +50,14 @@ import {
 // Import custom hooks
 import { useAutoRestart } from './use-auto-restart';
 import { usePokerSocketEffects } from './use-poker-socket-effects';
+import { usePokerSounds } from '../hooks/use-poker-sounds';
 
 // ============= Provider Component =============
 
 export function PokerProvider({ children }: { children: ReactNode }) {
   const { socket } = useSocket();
   const { user } = useUser();
+  const { playSound, initSounds } = usePokerSounds();
 
   // --- Game state (synced from server) ---
   const [players, setPlayers] = useState<Player[]>([]);
@@ -264,6 +266,8 @@ export function PokerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const initialize = async () => {
       await initializeGames(setAvailableGames, setGameId, updateGameState);
+      // Initialize sound effects
+      await initSounds();
       setIsLoading(false);
     };
     initialize();
@@ -297,7 +301,9 @@ export function PokerProvider({ children }: { children: ReactNode }) {
   }, [actionTimer, gameId]);
 
   useEffect(() => {
+    // Clear winner when returning to preflop stage
     if (winner && stage === 0) setWinner(undefined)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage])
 
   // Schedule auto-restart when game ends (winner determined)
@@ -311,18 +317,21 @@ export function PokerProvider({ children }: { children: ReactNode }) {
     players,
   });
 
+  // Memoize updaters object to prevent socket handlers from re-registering on every render
+  const updaters = useMemo(() => ({
+    updateGameId,
+    updatePlayers,
+    updateBettingState,
+    updateStageState,
+    updateGameStatus,
+  }), [updateGameId, updatePlayers, updateBettingState, updateStageState, updateGameStatus]);
+
   // Socket event handlers
   usePokerSocketEffects({
     socket,
     gameId,
     stateRef,
-    updaters: {
-      updateGameId,
-      updatePlayers,
-      updateBettingState,
-      updateStageState,
-      updateGameStatus,
-    },
+    updaters,
     resetGameState,
     setAvailableGames,
     setStage,
@@ -333,6 +342,7 @@ export function PokerProvider({ children }: { children: ReactNode }) {
     setIsActionProcessing,
     setPendingAction,
     setGameNotification,
+    playSound,
   });
 
   // --- Memoized context values ---

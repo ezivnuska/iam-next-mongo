@@ -64,7 +64,7 @@ export function placeSmallBlind(game: any): {
     actionType: ActionHistoryType.PLAYER_BET,
     playerId: smallBlindPlayer.id,
     playerName: smallBlindPlayer.username,
-    betAmount: smallBlind,
+    chipAmount: smallBlind,
     isBlind: true,
     blindType: 'small',
   });
@@ -130,7 +130,7 @@ export function placeBigBlind(game: any): {
     actionType: ActionHistoryType.PLAYER_BET,
     playerId: bigBlindPlayer.id,
     playerName: bigBlindPlayer.username,
-    betAmount: bigBlind,
+    chipAmount: bigBlind,
     isBlind: true,
     blindType: 'big',
   });

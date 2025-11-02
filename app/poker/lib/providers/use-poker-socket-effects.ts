@@ -26,6 +26,7 @@ import {
   type GameStateSnapshot,
   type StateUpdaters,
 } from './poker-socket-handlers';
+import type { PokerSoundType } from '../hooks/use-poker-sounds';
 
 /**
  * Dependencies required for socket effects
@@ -45,6 +46,7 @@ export interface PokerSocketEffectsDeps {
   setIsActionProcessing: (processing: boolean) => void;
   setPendingAction: (action: { type: 'bet' | 'fold' | 'call' | 'raise'; playerId: string } | null) => void;
   setGameNotification: React.Dispatch<React.SetStateAction<any>>;
+  playSound: (sound: PokerSoundType) => void;
 }
 
 /**
@@ -96,6 +98,7 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
     setIsActionProcessing,
     setPendingAction,
     setGameNotification,
+    playSound,
   } = deps;
 
   useEffect(() => {
@@ -123,21 +126,22 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
       setActionHistory,
       setIsActionProcessing,
       setPendingAction,
+      playSound,
     });
 
     const handleGameCreated = createGameCreatedHandler(setAvailableGames);
     const handleGameDeleted = createGameDeletedHandler(gameId, resetGameState, setAvailableGames);
     const handlePlayerJoined = createPlayerJoinedHandler(updaters.updatePlayers, setActionHistory, updaters.updateGameStatus);
-    const handlePlayerLeft = createPlayerLeftHandler(updaters.updatePlayers, updaters.updateGameStatus, setActionHistory);
-    const handleGameLocked = createGameLockedHandler(updaters.updatePlayers, updaters.updateGameStatus, setStage, updaters.updateBettingState, setActionHistory);
-    const handleBetPlaced = createBetPlacedHandler(updaters.updateBettingState, setActionHistory, setIsActionProcessing, setPendingAction);
-    const handleCardsDealt = createCardsDealtHandler(setStage, setCommunalCards, updaters.updatePlayers);
-    const handleRoundComplete = createRoundCompleteHandler(setWinner, updaters.updatePlayers);
+    const handlePlayerLeft = createPlayerLeftHandler(updaters.updatePlayers, updaters.updateGameStatus, setActionHistory, playSound);
+    const handleGameLocked = createGameLockedHandler(updaters.updatePlayers, updaters.updateGameStatus, setStage, updaters.updateBettingState, setActionHistory, playSound);
+    const handleBetPlaced = createBetPlacedHandler(updaters.updateBettingState, setActionHistory, setIsActionProcessing, setPendingAction, playSound);
+    const handleCardsDealt = createCardsDealtHandler(setStage, setCommunalCards, updaters.updatePlayers, playSound);
+    const handleRoundComplete = createRoundCompleteHandler(setWinner, updaters.updatePlayers, playSound);
     const handleTimerStarted = createTimerStartedHandler(setActionTimer);
     const handleTimerPaused = createTimerPausedHandler(setActionTimer);
     const handleTimerResumed = createTimerResumedHandler(setActionTimer);
     const handleTimerCleared = createTimerClearedHandler(setActionTimer);
-    const handleGameNotification = createGameNotificationHandler(setGameNotification);
+    const handleGameNotification = createGameNotificationHandler(setGameNotification, playSound);
 
     // Register all socket handlers
     const cleanup = registerSocketHandlers(
@@ -179,5 +183,6 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
     setIsActionProcessing,
     setPendingAction,
     setGameNotification,
+    playSound,
   ]);
 }
