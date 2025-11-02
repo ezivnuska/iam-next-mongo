@@ -3,7 +3,7 @@
 import { emitViaAPI } from '@/app/api/socket/io';
 import { SOCKET_EVENTS } from '@/app/lib/socket/events';
 import { serializeGame } from './game-serialization';
-import type { PokerGameDocument } from '@/app/lib/models/poker-game';
+import type { PokerGameDocument } from '@/app/poker/lib/models/poker-game';
 
 /**
  * Centralized poker game socket event emitter
@@ -75,6 +75,23 @@ export class PokerSocketEmitter {
     actionHistory?: any[];
   }) {
     await emitViaAPI(SOCKET_EVENTS.POKER_GAME_LOCKED, payload);
+  }
+
+  /**
+   * Emit game restart event (clears cards immediately)
+   */
+  static async emitGameRestart(payload: {
+    stage: number;
+    locked: boolean;
+    players: any[];
+    communalCards: any[];
+    pot: any[];
+    playerBets: number[];
+    currentPlayerIndex: number;
+    dealerButtonPosition?: number;
+    actionHistory: any[];
+  }) {
+    await emitViaAPI(SOCKET_EVENTS.POKER_STATE_UPDATE, payload);
   }
 
   /**
@@ -175,8 +192,10 @@ export class PokerSocketEmitter {
     message: string;
     type: 'blind' | 'deal' | 'action' | 'info';
     duration?: number;
+    excludeUserId?: string;
   }) {
-    await emitViaAPI(SOCKET_EVENTS.POKER_GAME_NOTIFICATION, payload);
+    const { excludeUserId, ...data } = payload;
+    await emitViaAPI(SOCKET_EVENTS.POKER_GAME_NOTIFICATION, data, undefined, excludeUserId);
   }
 
   /**

@@ -1,7 +1,7 @@
 // app/api/poker/restart/route.ts
 
 import { withAuth } from '@/app/lib/api/with-auth';
-import { restart } from '@/app/lib/server/poker-game-controller';
+import { restart } from '@/app/poker/lib/server/poker-game-controller';
 import { serializeGame } from '@/app/lib/utils/game-serialization';
 import { PokerSocketEmitter } from '@/app/lib/utils/socket-helper';
 

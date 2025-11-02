@@ -1,7 +1,7 @@
 // app/api/poker/timer/set-action/route.ts
 
 import { withAuth } from '@/app/lib/api/with-auth';
-import { setTurnTimerAction } from '@/app/lib/server/poker-game-controller';
+import { setTurnTimerAction } from '@/app/poker/lib/server/poker-game-controller';
 import { serializeGame } from '@/app/lib/utils/game-serialization';
 
 export const POST = withAuth(async (request, context, session) => {

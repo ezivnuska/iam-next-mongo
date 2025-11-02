@@ -1,7 +1,7 @@
 // app/api/poker/bet/route.ts
 
 import { withAuth } from '@/app/lib/api/with-auth';
-import { placeBet } from '@/app/lib/server/poker-game-controller';
+import { placeBet } from '@/app/poker/lib/server/poker-game-controller';
 import { PokerSocketEmitter } from '@/app/lib/utils/socket-helper';
 
 export const POST = withAuth(async (request, context, session) => {

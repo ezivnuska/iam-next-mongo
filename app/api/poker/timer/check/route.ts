@@ -1,12 +1,12 @@
 // app/api/poker/timer/check/route.ts
 
 import { NextResponse } from 'next/server';
-import { PokerGame } from '@/app/lib/models/poker-game';
-import { placeBet } from '@/app/lib/server/poker-game-controller';
+import { PokerGame } from '@/app/poker/lib/models/poker-game';
+import { placeBet } from '@/app/poker/lib/server/poker-game-controller';
 import { auth } from '@/app/lib/auth';
 import { PokerSocketEmitter } from '@/app/lib/utils/socket-helper';
-import { GameActionType } from '@/app/lib/definitions/game-actions';
-import { validatePlayerExists } from '@/app/lib/utils/player-helpers';
+import { GameActionType } from '@/app/poker/lib/definitions/game-actions';
+import { validatePlayerExists } from '@/app/poker/lib/utils/player-helpers';
 
 /**
  * Check if timer has expired and execute action if needed
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
           const playerIndex = validatePlayerExists(game.players, targetPlayerId);
 
           // Calculate current bet to determine default action
-          const { calculateCurrentBet } = await import('@/app/lib/utils/betting-helpers');
+          const { calculateCurrentBet } = await import('@/app/poker/lib/utils/betting-helpers');
           const currentBet = calculateCurrentBet(game.playerBets, playerIndex);
 
           // Default action: 'check' if no bet to call, otherwise 'call' to match the bet
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
 
           switch (actionToExecute) {
             case 'fold':
-              const { fold } = await import('@/app/lib/server/poker-game-controller');
+              const { fold } = await import('@/app/poker/lib/server/poker-game-controller');
               const foldResult = await fold(actualGameId, targetPlayerId);
               await PokerSocketEmitter.emitStateUpdate(foldResult);
               return NextResponse.json({

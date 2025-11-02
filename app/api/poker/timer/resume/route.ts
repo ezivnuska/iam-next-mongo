@@ -1,7 +1,7 @@
 // app/api/poker/timer/resume/route.ts
 
 import { withAuth } from '@/app/lib/api/with-auth';
-import { resumeActionTimer } from '@/app/lib/server/poker-game-controller';
+import { resumeActionTimer } from '@/app/poker/lib/server/poker-game-controller';
 import { serializeGame } from '@/app/lib/utils/game-serialization';
 
 export const POST = withAuth(async (request, context, session) => {

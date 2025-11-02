@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
 	try {
-		const { event, room, data } = await request.json()
+		const { event, room, data, excludeUserId } = await request.json()
 
 		if (typeof global.io === 'undefined') {
 			console.error('Socket.IO not initialized')
@@ -15,7 +15,23 @@ export async function POST(request: NextRequest) {
 		const io = global.io as any
 
 		// Emit the event
-		if (room) {
+		if (excludeUserId) {
+			// Emit to all sockets except those belonging to excludeUserId
+			const sockets = await io.fetchSockets()
+			for (const socket of sockets) {
+				// Check if this socket belongs to the excluded user
+				if (socket.userId !== excludeUserId) {
+					if (room) {
+						// Check if socket is in the room before emitting
+						if (socket.rooms.has(room)) {
+							socket.emit(event, data)
+						}
+					} else {
+						socket.emit(event, data)
+					}
+				}
+			}
+		} else if (room) {
 			io.to(room).emit(event, data)
 		} else {
 			io.emit(event, data)

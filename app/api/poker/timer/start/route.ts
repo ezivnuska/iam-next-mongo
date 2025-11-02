@@ -1,11 +1,11 @@
 // app/api/poker/timer/start/route.ts
 
 import { withAuth } from '@/app/lib/api/with-auth';
-import { PokerGame } from '@/app/lib/models/poker-game';
-import { startActionTimer } from '@/app/lib/server/poker-game-controller';
+import { PokerGame } from '@/app/poker/lib/models/poker-game';
+import { startActionTimer } from '@/app/poker/lib/server/poker-game-controller';
 import { serializeGame } from '@/app/lib/utils/game-serialization';
-import { GameActionType } from '@/app/lib/definitions/game-actions';
-import { POKER_TIMERS } from '@/app/lib/config/poker-constants';
+import { GameActionType } from '@/app/poker/lib/definitions/game-actions';
+import { POKER_TIMERS } from '@/app/poker/lib/config/poker-constants';
 
 export const POST = withAuth(async (request, context, session) => {
   const { gameId } = await request.json();

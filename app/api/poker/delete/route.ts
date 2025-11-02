@@ -1,7 +1,7 @@
 // app/api/poker/delete/route.ts
 
 import { withAuth } from '@/app/lib/api/with-auth';
-import { deleteGame } from '@/app/lib/server/poker-game-controller';
+import { deleteGame } from '@/app/poker/lib/server/poker-game-controller';
 import { PokerSocketEmitter } from '@/app/lib/utils/socket-helper';
 
 export const DELETE = withAuth(async (request, context, session) => {

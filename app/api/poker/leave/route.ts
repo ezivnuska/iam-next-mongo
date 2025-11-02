@@ -1,10 +1,10 @@
 // app/api/poker/leave/route.ts
 
 import { withAuth } from '@/app/lib/api/with-auth';
-import { removePlayer } from '@/app/lib/server/poker-game-controller';
+import { removePlayer } from '@/app/poker/lib/server/poker-game-controller';
 import { serializeGame } from '@/app/lib/utils/game-serialization';
 import { PokerSocketEmitter } from '@/app/lib/utils/socket-helper';
-import { PokerGame } from '@/app/lib/models/poker-game';
+import { PokerGame } from '@/app/poker/lib/models/poker-game';
 
 export const POST = withAuth(async (request, context, session) => {
   const { gameId } = await request.json();

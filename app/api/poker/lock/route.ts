@@ -1,18 +1,18 @@
 // app/api/poker/lock/route.ts
 
 import { withAuth } from '@/app/lib/api/with-auth';
-import { PokerGame } from '@/app/lib/models/poker-game';
+import { PokerGame } from '@/app/poker/lib/models/poker-game';
 import { serializeGame } from '@/app/lib/utils/game-serialization';
-import { initializeBets } from '@/app/lib/utils/betting-helpers';
-import { ActionHistoryType } from '@/app/lib/definitions/action-history';
+import { initializeBets } from '@/app/poker/lib/utils/betting-helpers';
+import { ActionHistoryType } from '@/app/poker/lib/definitions/action-history';
 import { randomBytes } from 'crypto';
 import { PokerSocketEmitter } from '@/app/lib/utils/socket-helper';
 import { withRetry } from '@/app/lib/utils/retry';
-import { placeSmallBlind, placeBigBlind } from '@/app/lib/server/poker/blinds-manager';
-import { startActionTimer } from '@/app/lib/server/poker/poker-timer-controller';
-import { GameActionType } from '@/app/lib/definitions/game-actions';
-import { POKER_TIMERS } from '@/app/lib/config/poker-constants';
-import { dealPlayerCards } from '@/app/lib/server/poker/poker-dealer';
+import { placeSmallBlind, placeBigBlind } from '@/app/poker/lib/server/blinds-manager';
+import { startActionTimer } from '@/app/poker/lib/server/poker-timer-controller';
+import { GameActionType } from '@/app/poker/lib/definitions/game-actions';
+import { POKER_TIMERS } from '@/app/poker/lib/config/poker-constants';
+import { dealPlayerCards } from '@/app/poker/lib/server/poker-dealer';
 
 export const POST = withAuth(async (request, context, session) => {
   const { gameId } = await request.json();
@@ -91,7 +91,7 @@ export const POST = withAuth(async (request, context, session) => {
         await game.save();
 
         // Validate players have enough chips before placing blinds
-        const { getBlindConfig } = await import('@/app/lib/server/poker/blinds-manager');
+        const { getBlindConfig } = await import('@/app/poker/lib/server/blinds-manager');
         const { smallBlind, bigBlind } = getBlindConfig();
 
         // Calculate which players will post blinds based on button position
