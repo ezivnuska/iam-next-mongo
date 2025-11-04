@@ -138,6 +138,7 @@ export const POST = withAuth(async (request, context, session) => {
           playerBets: game.playerBets,
           currentPlayerIndex: game.currentPlayerIndex,
           actionHistory: game.actionHistory,
+          players: game.players, // Include players for all-in status updates
         });
 
         await PokerSocketEmitter.emitGameNotification({
@@ -160,6 +161,7 @@ export const POST = withAuth(async (request, context, session) => {
           playerBets: game.playerBets,
           currentPlayerIndex: game.currentPlayerIndex,
           actionHistory: game.actionHistory,
+          players: game.players, // Include players for all-in status updates
         });
 
         await PokerSocketEmitter.emitGameNotification({

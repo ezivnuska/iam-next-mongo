@@ -6,6 +6,9 @@ import { validatePlayerExists } from '@/app/poker/lib/utils/player-helpers';
 import { withRetry } from '@/app/lib/utils/retry';
 import { POKER_RETRY_CONFIG } from '@/app/poker/lib/config/poker-constants';
 
+// Store active timer references for cancellation
+const activeTimers = new Map<string, NodeJS.Timeout>();
+
 /**
  * Start an action timer for the game
  * Timer state is stored in DB with timestamp, clients calculate countdown locally
@@ -60,14 +63,26 @@ export async function startActionTimer(
     targetPlayerId,
   });
 
-  // Schedule auto-execution after duration
-  setTimeout(async () => {
+  // Cancel any existing timer for this game before creating a new one
+  const existingTimer = activeTimers.get(gameId);
+  if (existingTimer) {
+    clearTimeout(existingTimer);
+    activeTimers.delete(gameId);
+  }
+
+  // Schedule auto-execution after duration and store reference
+  const timerId = setTimeout(async () => {
     try {
       await executeScheduledAction(gameId);
+      activeTimers.delete(gameId); // Clean up after execution
     } catch (error) {
       console.error('[Timer] Error executing scheduled action:', error);
+      activeTimers.delete(gameId); // Clean up even on error
     }
   }, duration * 1000);
+
+  // Store timer reference for potential cancellation
+  activeTimers.set(gameId, timerId);
 
   return updatedGame.toObject();
 }
@@ -99,7 +114,7 @@ async function executeScheduledAction(gameId: string) {
 
       // Calculate current bet to determine default action
       const { calculateCurrentBet } = await import('@/app/poker/lib/utils/betting-helpers');
-      const currentBet = calculateCurrentBet(game.playerBets, playerIndex);
+      const currentBet = calculateCurrentBet(game.playerBets, playerIndex, game.players);
 
       // Default action: 'check' if no bet to call, otherwise 'call' to match the bet
       const defaultAction = currentBet === 0 ? 'check' : 'call';
@@ -121,9 +136,25 @@ async function executeScheduledAction(gameId: string) {
           // Execute fold action
           const { fold } = await import('./poker-game-controller');
           const foldResult = await fold(gameId, targetPlayerId);
-          // Emit state update to notify all clients
+
+          // Emit granular events instead of full state update
           const { PokerSocketEmitter: EmitterFold } = await import('@/app/lib/utils/socket-helper');
-          await EmitterFold.emitStateUpdate(foldResult);
+
+          // 1. Emit player left with fold action in history
+          await EmitterFold.emitPlayerLeft({
+            playerId: targetPlayerId,
+            players: foldResult.players,
+            playerCount: foldResult.players.length,
+            actionHistory: foldResult.actionHistory || [],
+          });
+
+          // 2. Emit round complete with winner info
+          if (foldResult.winner) {
+            await EmitterFold.emitRoundComplete({
+              winner: foldResult.winner,
+              players: foldResult.players,
+            });
+          }
           break;
 
         case 'call':
@@ -186,6 +217,14 @@ async function executeScheduledAction(gameId: string) {
  * Clear the action timer
  */
 export async function clearActionTimer(gameId: string) {
+  // Cancel the server-side setTimeout if it exists
+  const existingTimer = activeTimers.get(gameId);
+  if (existingTimer) {
+    clearTimeout(existingTimer);
+    activeTimers.delete(gameId);
+    console.log(`[Timer] Canceled server-side timer for game ${gameId}`);
+  }
+
   // Use atomic update to avoid version conflicts
   const updatedGame = await PokerGame.findByIdAndUpdate(
     gameId,
@@ -257,14 +296,26 @@ export async function resumeActionTimer(gameId: string) {
       targetPlayerId: game.actionTimer.targetPlayerId,
     });
 
-    // Schedule new timeout for remaining time
-    setTimeout(async () => {
+    // Cancel any existing timer before creating new one
+    const existingTimer = activeTimers.get(gameId);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+      activeTimers.delete(gameId);
+    }
+
+    // Schedule new timeout for remaining time and store reference
+    const timerId = setTimeout(async () => {
       try {
         await executeScheduledAction(gameId);
+        activeTimers.delete(gameId); // Clean up after execution
       } catch (error) {
         console.error('[Timer] Error executing scheduled action after resume:', error);
+        activeTimers.delete(gameId); // Clean up even on error
       }
     }, remainingSeconds * 1000);
+
+    // Store timer reference for potential cancellation
+    activeTimers.set(gameId, timerId);
 
     return game.toObject();
   }, POKER_RETRY_CONFIG);

@@ -14,7 +14,24 @@ export const POST = withAuth(async (request, context, session) => {
   try {
     const gameState = await fold(gameId, session.user.id);
     const serialized = serializeGame(gameState);
-    await PokerSocketEmitter.emitStateUpdate(gameState);
+
+    // Emit granular events instead of full state update
+    // 1. Emit player left with fold action in history
+    await PokerSocketEmitter.emitPlayerLeft({
+      playerId: session.user.id,
+      players: gameState.players,
+      playerCount: gameState.players.length,
+      actionHistory: gameState.actionHistory || [],
+    });
+
+    // 2. Emit round complete with winner info
+    if (gameState.winner) {
+      await PokerSocketEmitter.emitRoundComplete({
+        winner: gameState.winner,
+        players: gameState.players,
+      });
+    }
+
     return Response.json({ success: true, gameState: serialized });
   } catch (error) {
     console.error('Error folding:', error);

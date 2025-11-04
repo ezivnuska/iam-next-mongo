@@ -5,15 +5,30 @@ import { POKER_TIMERS } from '@/app/poker/lib/config/poker-constants';
 
 /**
  * Acquire an atomic lock on a game to prevent concurrent modifications
- * Uses optimistic locking pattern with processing flag
+ * Uses optimistic locking pattern with processing flag and timestamp
+ * Auto-releases stale locks older than 10 seconds
  *
- * @throws Error if game not found or already being processed
+ * @throws Error if game not found or already being processed by recent operation
  */
 export async function acquireGameLock(gameId: string): Promise<any> {
-  // ATOMIC LOCK ACQUISITION
+  const LOCK_TIMEOUT_MS = 10000; // 10 seconds - consider lock stale after this time
+  const now = new Date();
+  const lockExpiry = new Date(now.getTime() - LOCK_TIMEOUT_MS);
+
+  // Try to acquire lock (either processing=false OR processing timestamp is old/stale)
   const lockResult = await PokerGame.findOneAndUpdate(
-    { _id: gameId, processing: false },
-    { processing: true },
+    {
+      _id: gameId,
+      $or: [
+        { processing: false },
+        { processing: true, processingStartedAt: { $lt: lockExpiry } },
+        { processing: true, processingStartedAt: null } // Handle old docs without timestamp
+      ]
+    },
+    {
+      processing: true,
+      processingStartedAt: now
+    },
     { new: false, lean: true }
   );
 
@@ -22,6 +37,13 @@ export async function acquireGameLock(gameId: string): Promise<any> {
     if (!existingGame) {
       throw new Error('Game not found');
     }
+
+    // Check if lock is stale (for better error message)
+    const lockAge = (existingGame as any).processingStartedAt
+      ? now.getTime() - new Date((existingGame as any).processingStartedAt).getTime()
+      : 0;
+
+    console.warn(`[Game Lock] Failed to acquire lock for game ${gameId}, processing=${(existingGame as any).processing}, lock age=${lockAge}ms`);
     throw new Error('Game is currently being processed');
   }
 

@@ -37,6 +37,12 @@ export const POKER_TIMERS = {
 
   /** Small delay in milliseconds to ensure write propagation after lock acquisition */
   LOCK_ACQUISITION_DELAY_MS: 10,
+
+  /** Delay in milliseconds before advancing to next stage (for paced transitions) */
+  STAGE_TRANSITION_DELAY_MS: 5000,
+
+  /** Buffer delay in milliseconds to ensure client has time to process previous stage */
+  CLIENT_PROCESSING_BUFFER_MS: 1500,
 } as const;
 
 export const POKER_RETRY_CONFIG = {

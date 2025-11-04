@@ -1,13 +1,15 @@
 // app/lib/server/poker/poker-game-flow.ts
 
 import { determineWinner } from '@/app/poker/lib/utils/poker';
-import type { Bet, Player, GameStageProps, WinnerInfo } from '@/app/poker/lib/definitions/poker';
+import type { Bet, Player, GameStageProps, WinnerInfo, PotInfo } from '@/app/poker/lib/definitions/poker';
 import { GameStage } from '@/app/poker/lib/definitions/poker';
 import { PokerBalance } from '@/app/poker/lib/models/poker-balance';
 import { findPlayerByUsername } from '@/app/poker/lib/utils/player-helpers';
 import { dealPlayerCards, dealCommunalCards as dealCommunalCardsFromDealer, ensureCommunalCardsComplete } from './poker-dealer';
 import { ActionHistoryType, type GameActionHistory } from '@/app/poker/lib/definitions/action-history';
 import { randomBytes } from 'crypto';
+import { calculateSidePots } from '@/app/poker/lib/utils/side-pot-calculator';
+
 
 // Type for Mongoose game document with common methods
 interface PokerGameDoc {
@@ -16,6 +18,7 @@ interface PokerGameDoc {
   deck: any[];
   communalCards: any[];
   pot: Bet[];
+  pots?: PotInfo[];
   stage: number;
   playerBets: number[];
   currentPlayerIndex: number;
@@ -48,32 +51,127 @@ export async function savePlayerBalances(players: Player[]) {
 /**
  * Award pot chips to the winner(s)
  * Handles both single winner and tie scenarios
+ * Supports multiple pots (main pot + side pots) for all-in scenarios
  */
 export function awardPotToWinners(game: PokerGameDoc, winnerInfo: WinnerInfo): void {
-  const potChips = game.pot.flatMap((bet: Bet) => bet.chips);
+  // Calculate side pots from player bets
+  const sidePots = calculateSidePots(game.players, game.playerBets);
 
-  if (winnerInfo.isTie && winnerInfo.tiedPlayers) {
-    // Split pot among tied players
-    const chipsPerWinner = Math.floor(potChips.length / winnerInfo.tiedPlayers.length);
-    winnerInfo.tiedPlayers.forEach((username: string) => {
-      const player = findPlayerByUsername(game.players, username);
-      if (player) {
-        player.chips.push(...potChips.splice(0, chipsPerWinner));
+  // Store calculated pots in game for client display
+  game.pots = sidePots;
+  game.markModified('pots');
+
+  console.log(`[AwardPot] Calculated ${sidePots.length} pot(s) from player bets`);
+
+  // If no side pots, fall back to legacy pot distribution
+  if (sidePots.length === 0) {
+    const potChips = game.pot.flatMap((bet: Bet) => bet.chips);
+
+    if (winnerInfo.isTie && winnerInfo.tiedPlayers) {
+      // Split pot among tied players
+      const chipsPerWinner = Math.floor(potChips.length / winnerInfo.tiedPlayers.length);
+      winnerInfo.tiedPlayers.forEach((username: string) => {
+        const player = findPlayerByUsername(game.players, username);
+        if (player) {
+          player.chips.push(...potChips.splice(0, chipsPerWinner));
+        }
+      });
+      // Any remaining chips go to first tied player
+      if (potChips.length > 0) {
+        const firstWinner = findPlayerByUsername(game.players, winnerInfo.tiedPlayers![0]);
+        if (firstWinner) {
+          firstWinner.chips.push(...potChips);
+        }
       }
+    } else {
+      // Single winner gets entire pot
+      const winner = game.players.find((p: Player) => p.id === winnerInfo.winnerId);
+      if (winner) {
+        winner.chips.push(...potChips);
+      }
+    }
+    return;
+  }
+
+  // Award each pot separately
+  const potWinnings: { potIndex: number; amount: number }[] = [];
+
+  for (let potIndex = 0; potIndex < sidePots.length; potIndex++) {
+    const pot = sidePots[potIndex];
+
+    console.log(`[AwardPot] Processing ${potIndex === 0 ? 'Main' : 'Side'} Pot ${potIndex}: ${pot.amount} chips, eligible: ${pot.eligiblePlayers.length} players`);
+
+    // Get eligible players who haven't folded
+    const eligiblePlayers = game.players.filter(p =>
+      pot.eligiblePlayers.includes(p.id) && !p.folded
+    );
+
+    if (eligiblePlayers.length === 0) {
+      console.warn(`[AwardPot] No eligible players for pot ${potIndex}, skipping`);
+      continue;
+    }
+
+    // Determine winner among eligible players for this pot
+    const potWinner = determineWinner(
+      eligiblePlayers.map((p: Player) => ({
+        id: p.id,
+        username: p.username,
+        hand: p.hand,
+      })),
+      game.communalCards
+    );
+
+    console.log(`[AwardPot] Pot ${potIndex} winner: ${potWinner.winnerName} (${potWinner.handRank})`);
+
+    // Get chips from the pot
+    const potChips = game.pot.flatMap((bet: Bet) => {
+      const player = game.players.find(p => p.username === bet.player);
+      if (!player || !pot.eligiblePlayers.includes(player.id)) {
+        return [];
+      }
+      const contribution = pot.contributions[player.id] || 0;
+      return bet.chips.slice(0, contribution);
     });
-    // Any remaining chips go to first tied player
-    if (potChips.length > 0) {
-      const firstWinner = findPlayerByUsername(game.players, winnerInfo.tiedPlayers![0]);
-      if (firstWinner) {
-        firstWinner.chips.push(...potChips);
+
+    // Award chips to winner(s) of this pot
+    if (potWinner.isTie && potWinner.tiedPlayers) {
+      // Split pot among tied players
+      const chipsPerWinner = Math.floor(potChips.length / potWinner.tiedPlayers.length);
+
+      potWinner.tiedPlayers.forEach((username: string) => {
+        const player = findPlayerByUsername(game.players, username);
+        if (player && pot.eligiblePlayers.includes(player.id)) {
+          const wonChips = potChips.splice(0, chipsPerWinner);
+          player.chips.push(...wonChips);
+          console.log(`[AwardPot] ${username} wins ${wonChips.length} chips from pot ${potIndex} (tie)`);
+        }
+      });
+
+      // Any remaining chips go to first tied player
+      if (potChips.length > 0) {
+        const firstWinner = findPlayerByUsername(game.players, potWinner.tiedPlayers![0]);
+        if (firstWinner) {
+          firstWinner.chips.push(...potChips);
+        }
+      }
+    } else {
+      // Single winner gets entire pot
+      const winner = game.players.find((p: Player) => p.id === potWinner.winnerId);
+      if (winner && pot.eligiblePlayers.includes(winner.id)) {
+        winner.chips.push(...potChips);
+        console.log(`[AwardPot] ${winner.username} wins ${potChips.length} chips from pot ${potIndex}`);
+
+        // Track winnings for main winner info
+        if (winner.id === winnerInfo.winnerId) {
+          potWinnings.push({ potIndex, amount: potChips.length });
+        }
       }
     }
-  } else {
-    // Single winner gets entire pot
-    const winner = game.players.find((p: Player) => p.id === winnerInfo.winnerId);
-    if (winner) {
-      winner.chips.push(...potChips);
-    }
+  }
+
+  // Update winner info with pot winnings breakdown
+  if (potWinnings.length > 0) {
+    winnerInfo.potWinnings = potWinnings;
   }
 }
 
@@ -112,12 +210,38 @@ export function resetBettingRound(game: PokerGameDoc): void {
   const buttonPosition = game.dealerButtonPosition || 0;
 
   if (isPostflop) {
+    let startPosition: number;
+
     if (isHeadsUp) {
       // Heads-up postflop: Big blind acts first (non-button player)
-      game.currentPlayerIndex = (buttonPosition + 1) % game.players.length;
+      startPosition = (buttonPosition + 1) % game.players.length;
     } else {
       // 3+ players postflop: Small blind acts first (left of button)
-      game.currentPlayerIndex = (buttonPosition + 1) % game.players.length;
+      startPosition = (buttonPosition + 1) % game.players.length;
+    }
+
+    // Find first active player starting from startPosition
+    // This ensures we skip any players who are all-in or folded
+    let nextIndex = startPosition;
+    let foundValidPlayer = false;
+    let attempts = 0;
+
+    while (attempts < game.players.length) {
+      const candidate = game.players[nextIndex];
+      if (!candidate.isAllIn && !candidate.folded) {
+        foundValidPlayer = true;
+        break; // Found an active player
+      }
+      nextIndex = (nextIndex + 1) % game.players.length;
+      attempts++;
+    }
+
+    // Only update currentPlayerIndex if we found a valid player
+    // If all players are all-in/folded, leave currentPlayerIndex as-is
+    if (foundValidPlayer) {
+      game.currentPlayerIndex = nextIndex;
+    } else {
+      console.log('[resetBettingRound] All players all-in/folded, not updating currentPlayerIndex');
     }
   } else {
     // Preflop: currentPlayerIndex already set by placeBigBlind
@@ -129,103 +253,5 @@ export function resetBettingRound(game: PokerGameDoc): void {
   game.markModified('currentPlayerIndex');
 }
 
-/**
- * Complete the current betting round and advance to the next stage
- * Returns info about what happened for socket event emission
- */
-export async function completeRoundAndAdvanceStage(game: PokerGameDoc): Promise<{
-  roundComplete: boolean;
-  cardsDealt: boolean;
-  gameComplete: boolean
-}> {
-  const currentStage = Number(game.stage);
 
-  // Store stage history (optional for analytics)
-  const stageData: GameStageProps = {
-    players: game.players.map((p: Player) => ({ ...p })),
-    bets: [...game.pot],
-  };
-  if (!game.stages) game.stages = [];
-  game.stages.push(stageData);
 
-  let gameComplete = false;
-  let cardsDealt = false;
-
-  // Note: Hole cards are now dealt immediately after blinds (standard poker rules)
-  // This function only handles communal card dealing and stage advancement
-
-  if (currentStage === GameStage.River) {
-
-    // Safety check: Ensure we have all 5 communal cards before determining winner
-    ensureCommunalCardsComplete(game.deck, game.communalCards, 5);
-    game.markModified('deck');
-    game.markModified('communalCards');
-
-    // Determine winner after River
-    const winnerInfo = determineWinner(
-      game.players.map((p: Player) => ({
-        id: p.id,
-        username: p.username,
-        hand: p.hand,
-      })),
-      game.communalCards
-    );
-
-    game.winner = winnerInfo;
-    awardPotToWinners(game, winnerInfo);
-    game.markModified('players'); // Mark modified after awarding pot
-
-    game.pot = [];
-    game.locked = false;
-    gameComplete = true;
-
-    // Save all players' chip balances
-    await savePlayerBalances(game.players);
-
-    // Add action history directly to document (avoid separate save)
-    game.actionHistory.push({
-      id: randomBytes(8).toString('hex'),
-      timestamp: new Date(),
-      stage: currentStage,
-      actionType: ActionHistoryType.GAME_ENDED,
-      winnerId: winnerInfo.winnerId,
-      winnerName: winnerInfo.winnerName,
-    });
-    game.markModified('actionHistory');
-  } else {
-    // Advance to next stage and deal communal cards
-    const prevStage = currentStage;
-    dealCommunalCards(game, currentStage);
-    const newStage = game.stage;
-    cardsDealt = true;
-
-    // Determine how many cards were dealt
-    const numCardsDealt = prevStage === GameStage.Preflop ? 3 : 1;
-
-    // Add action history directly to document (avoid separate saves)
-    game.actionHistory.push({
-      id: randomBytes(8).toString('hex'),
-      timestamp: new Date(),
-      stage: newStage,
-      actionType: ActionHistoryType.CARDS_DEALT,
-      cardsDealt: numCardsDealt,
-    });
-    game.actionHistory.push({
-      id: randomBytes(8).toString('hex'),
-      timestamp: new Date(),
-      stage: newStage,
-      actionType: ActionHistoryType.STAGE_ADVANCED,
-      fromStage: prevStage,
-      toStage: newStage,
-    });
-    game.markModified('actionHistory');
-  }
-
-  // Reset betting round for next stage
-  resetBettingRound(game);
-
-  // Clear any existing timer
-  game.actionTimer = undefined;
-
-  return { roundComplete: true, cardsDealt, gameComplete };
-}

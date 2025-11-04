@@ -90,6 +90,7 @@ export class PokerSocketEmitter {
     currentPlayerIndex: number;
     dealerButtonPosition?: number;
     actionHistory: any[];
+    winner?: any;
   }) {
     await emitViaAPI(SOCKET_EVENTS.POKER_STATE_UPDATE, payload);
   }
@@ -104,6 +105,7 @@ export class PokerSocketEmitter {
     playerBets: number[];
     currentPlayerIndex: number;
     actionHistory: any[];
+    players?: any[]; // Include players array for chip count and all-in status updates
   }) {
     await emitViaAPI(SOCKET_EVENTS.POKER_BET_PLACED, payload);
   }
@@ -211,25 +213,13 @@ export class PokerSocketEmitter {
       await this.emitBetPlaced(results.betPlaced);
     }
     if (results.cardsDealt) {
-      // Emit notification for dealing communal cards
-      const stage = results.cardsDealt.stage;
-      let message = '';
-      if (stage === 1) { // Flop
-        message = 'Dealing the flop';
-      } else if (stage === 2) { // Turn
-        message = 'Dealing the turn';
-      } else if (stage === 3) { // River
-        message = 'Dealing the river';
-      }
-
-      if (message) {
-        await this.emitGameNotification({
-          message,
-          type: 'deal',
-          duration: 2000,
-        });
-      }
-
+      console.log('[SocketHelper] Emitting cards dealt event:', {
+        stage: results.cardsDealt.stage,
+        communalCardsCount: results.cardsDealt.communalCards?.length,
+        playersCount: results.cardsDealt.players?.length
+      });
+      // Note: Stage transition notifications are already emitted by poker-game-flow.ts
+      // before cards are dealt, so we don't emit duplicate notifications here
       await this.emitCardsDealt(results.cardsDealt);
     }
     if (results.roundComplete) {

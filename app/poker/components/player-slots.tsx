@@ -22,7 +22,7 @@ interface PlayerSlotsProps {
 function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameId, onJoinGame, onLeaveGame }: PlayerSlotsProps) {
   const MAX_SLOTS = 5;
   const slots = Array.from({ length: MAX_SLOTS }, (_, i) => i);
-  
+
   const { user } = useUser()
   const isUserInGame = players.some(p => p.id === currentUserId);
   const firstEmptySlotIndex = players.length;
@@ -36,8 +36,13 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
         const player = players[slotIndex];
 
         if (player) {
-          // Show actual player
+          // Skip the current user - they're displayed separately in poker-table
           const isCurrentUser = player.id === currentUserId;
+          if (isCurrentUser) {
+            return null;
+          }
+
+          // Show actual player
           return (
             <Player
               key={player.id}

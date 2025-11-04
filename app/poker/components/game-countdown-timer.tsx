@@ -8,9 +8,12 @@ import { useUser } from '@/app/lib/providers/user-provider';
 import { Button } from '@/app/ui/button';
 
 /**
- * Unified countdown timer component that handles both:
- * 1. Game restart countdown (after game ends with winner)
+ * Unified countdown timer component that handles:
+ * 1. Game restart countdown with winner display (after game ends)
  * 2. Game start countdown (when 2nd player joins)
+ *
+ * When a winner is determined, shows the winner information along with
+ * the restart countdown timer.
  *
  * Priority: Restart timer takes precedence over lock timer
  */
@@ -55,45 +58,61 @@ function GameCountdownTimer() {
   // Don't render if no timer is active
   if (!showRestartTimer && !showLockTimer) return null;
 
-  // Render restart timer
+  // Render restart timer with winner display
   if (showRestartTimer) {
     return (
       <div
-        className="w-full max-w-2xl bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center justify-center gap-3 animate-fade-in"
+        className="w-full max-w-2xl bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg flex flex-col items-center justify-center gap-2 animate-fade-in"
         role="status"
         aria-live="polite"
       >
-        {/* Timer Icon */}
-        <svg
-          className="h-4 w-4 text-white"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
+        {/* Winner Information */}
+        <div className="flex flex-col items-center gap-1">
+          {winner?.isTie ? (
+            <>
+              <h3 className="text-xl font-bold">It&apos;s a Tie!</h3>
+              <p className="text-sm">Players: {winner.tiedPlayers?.join(', ')}</p>
+              <p className="text-sm">Hand: {winner.handRank}</p>
+            </>
+          ) : (
+            <h3 className="text-xl font-bold">{winner?.winnerName} Wins with a {winner?.handRank}!</h3>
+          )}
+        </div>
 
-        {/* Message */}
-        <span className="font-medium">
-          New game in <span className="font-bold">{restartCountdown}</span> second{restartCountdown !== 1 ? 's' : ''}
-        </span>
-
-        {/* Leave Button */}
-        {isUserInGame && (
-          <Button
-            size='sm'
-            onClick={leaveGame}
-            className="bg-white text-green-700 hover:bg-gray-100 border-0"
+        {/* Restart Timer */}
+        <div className="flex items-center justify-center gap-3">
+          {/* Timer Icon */}
+          <svg
+            className="h-4 w-4 text-white"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
           >
-            Leave
-          </Button>
-        )}
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+
+          {/* Message */}
+          <span className="font-medium">
+            New game in <span className="font-bold">{restartCountdown}</span> second{restartCountdown !== 1 ? 's' : ''}
+          </span>
+
+          {/* Leave Button */}
+          {isUserInGame && (
+            <Button
+              size='sm'
+              onClick={leaveGame}
+              className="bg-white text-green-700 hover:bg-gray-100 border-0"
+            >
+              Leave
+            </Button>
+          )}
+        </div>
       </div>
     );
   }

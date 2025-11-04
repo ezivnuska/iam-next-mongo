@@ -33,7 +33,6 @@ export interface GameStateContextValue {
     actionType: string;
     targetPlayerId?: string;
     isPaused: boolean;
-    selectedAction?: 'fold' | 'call' | 'check' | 'bet' | 'raise';
   };
   restartCountdown: number | null;
   actionHistory: any[];
@@ -45,6 +44,8 @@ export interface GameStateContextValue {
     timestamp: number;
     duration?: number;
   } | null;
+  selectedAction: 'bet' | 'call' | 'raise' | 'fold' | 'check' | 'allin' | null;
+  setSelectedAction: (action: 'bet' | 'call' | 'raise' | 'fold' | 'check' | 'allin' | null) => void;
 }
 
 export interface PotContextValue {
@@ -76,6 +77,8 @@ export interface ActionsContextValue {
   clearTimer: () => Promise<void>;
   forceLockGame: () => Promise<void>;
   setTurnTimerAction: (action: 'fold' | 'call' | 'check' | 'bet' | 'raise', betAmount?: number) => Promise<void>;
+  clearTimerOptimistically: () => void;
+  playSound: (sound: string) => void;
 }
 
 export interface ProcessingContextValue {

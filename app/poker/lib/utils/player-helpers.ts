@@ -35,12 +35,12 @@ export function findOtherPlayer(players: Player[], excludeId: string): [Player |
 }
 
 /**
- * Get all active player usernames
+ * Get all active player usernames (excludes folded players)
  * @param players - Array of players
- * @returns Array of usernames
+ * @returns Array of usernames for non-folded players
  */
 export function getActivePlayerUsernames(players: Player[]): string[] {
-  return players.map((p) => p.username);
+  return players.filter((p) => !p.folded).map((p) => p.username);
 }
 
 /**

@@ -102,7 +102,7 @@ export const createUpdateGameStatus = (
   ) => {
     setLocked(locked);
     setLockTime(lockTime);
-    if (winner !== undefined) setWinner(winner);
+    setWinner(winner); // Always update winner state, even when undefined to clear it
   };
 };
 

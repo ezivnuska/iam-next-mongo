@@ -44,17 +44,28 @@ export function placeSmallBlind(game: any): {
   const smallBlindPosition = getSmallBlindPosition(game.dealerButtonPosition || 0, game.players.length);
   const smallBlindPlayer = game.players[smallBlindPosition];
 
-  // Validate player has enough chips for small blind
-  if (!smallBlindPlayer.chips || smallBlindPlayer.chips.length < smallBlind) {
-    throw new Error(`Player ${smallBlindPlayer.username} does not have enough chips for small blind (needs ${smallBlind}, has ${smallBlindPlayer.chips?.length || 0})`);
+  // Handle all-in if player doesn't have enough chips for small blind
+  const availableChips = smallBlindPlayer.chips?.length || 0;
+  const blindAmount = Math.min(smallBlind, availableChips);
+  const wentAllIn = availableChips > 0 && blindAmount === availableChips;
+
+  if (availableChips === 0) {
+    throw new Error(`Player ${smallBlindPlayer.username} has no chips to post small blind`);
   }
 
-  const smallBlindChips = smallBlindPlayer.chips.splice(0, smallBlind);
+  const smallBlindChips = smallBlindPlayer.chips.splice(0, blindAmount);
+
+  // Mark player as all-in if they bet all their chips
+  if (wentAllIn) {
+    smallBlindPlayer.isAllIn = true;
+    smallBlindPlayer.allInAmount = blindAmount;
+  }
+
   game.pot.push({
     player: smallBlindPlayer.username,
     chips: smallBlindChips,
   });
-  game.playerBets[smallBlindPosition] = smallBlind;
+  game.playerBets[smallBlindPosition] = blindAmount;
 
   // Add action history for small blind
   game.actionHistory.push({
@@ -64,7 +75,7 @@ export function placeSmallBlind(game: any): {
     actionType: ActionHistoryType.PLAYER_BET,
     playerId: smallBlindPlayer.id,
     playerName: smallBlindPlayer.username,
-    chipAmount: smallBlind,
+    chipAmount: blindAmount,
     isBlind: true,
     blindType: 'small',
   });
@@ -77,7 +88,7 @@ export function placeSmallBlind(game: any): {
 
   return {
     player: smallBlindPlayer,
-    amount: smallBlind,
+    amount: blindAmount,
     position: smallBlindPosition,
   };
 }
@@ -110,17 +121,28 @@ export function placeBigBlind(game: any): {
   const bigBlindPosition = getBigBlindPosition(game.dealerButtonPosition || 0, game.players.length);
   const bigBlindPlayer = game.players[bigBlindPosition];
 
-  // Validate player has enough chips for big blind
-  if (!bigBlindPlayer.chips || bigBlindPlayer.chips.length < bigBlind) {
-    throw new Error(`Player ${bigBlindPlayer.username} does not have enough chips for big blind (needs ${bigBlind}, has ${bigBlindPlayer.chips?.length || 0})`);
+  // Handle all-in if player doesn't have enough chips for big blind
+  const availableChips = bigBlindPlayer.chips?.length || 0;
+  const blindAmount = Math.min(bigBlind, availableChips);
+  const wentAllIn = availableChips > 0 && blindAmount === availableChips;
+
+  if (availableChips === 0) {
+    throw new Error(`Player ${bigBlindPlayer.username} has no chips to post big blind`);
   }
 
-  const bigBlindChips = bigBlindPlayer.chips.splice(0, bigBlind);
+  const bigBlindChips = bigBlindPlayer.chips.splice(0, blindAmount);
+
+  // Mark player as all-in if they bet all their chips
+  if (wentAllIn) {
+    bigBlindPlayer.isAllIn = true;
+    bigBlindPlayer.allInAmount = blindAmount;
+  }
+
   game.pot.push({
     player: bigBlindPlayer.username,
     chips: bigBlindChips,
   });
-  game.playerBets[bigBlindPosition] = bigBlind;
+  game.playerBets[bigBlindPosition] = blindAmount;
 
   // Add action history for big blind
   game.actionHistory.push({
@@ -130,7 +152,7 @@ export function placeBigBlind(game: any): {
     actionType: ActionHistoryType.PLAYER_BET,
     playerId: bigBlindPlayer.id,
     playerName: bigBlindPlayer.username,
-    chipAmount: bigBlind,
+    chipAmount: blindAmount,
     isBlind: true,
     blindType: 'big',
   });
@@ -140,13 +162,30 @@ export function placeBigBlind(game: any): {
   // In 3+ players: Player after big blind acts first
   const smallBlindPosition = getSmallBlindPosition(game.dealerButtonPosition || 0, game.players.length);
 
+  let initialPosition: number;
   if (game.players.length === 2) {
     // Heads-up: Small blind acts first preflop
-    game.currentPlayerIndex = smallBlindPosition;
+    initialPosition = smallBlindPosition;
   } else {
     // 3+ players: Player after big blind acts first
-    game.currentPlayerIndex = (bigBlindPosition + 1) % game.players.length;
+    initialPosition = (bigBlindPosition + 1) % game.players.length;
   }
+
+  // Find first active player starting from initialPosition
+  // Skip any players who went all-in during blind posting
+  let currentIndex = initialPosition;
+  let attempts = 0;
+
+  while (attempts < game.players.length) {
+    const candidate = game.players[currentIndex];
+    if (!candidate.isAllIn && !candidate.folded) {
+      break; // Found an active player
+    }
+    currentIndex = (currentIndex + 1) % game.players.length;
+    attempts++;
+  }
+
+  game.currentPlayerIndex = currentIndex;
 
   // Mark modified for Mongoose
   game.markModified('players');
@@ -157,7 +196,7 @@ export function placeBigBlind(game: any): {
 
   return {
     player: bigBlindPlayer,
-    amount: bigBlind,
+    amount: blindAmount,
     position: bigBlindPosition,
   };
 }

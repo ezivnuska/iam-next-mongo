@@ -75,7 +75,24 @@ export async function POST(request: Request) {
             case 'fold':
               const { fold } = await import('@/app/poker/lib/server/poker-game-controller');
               const foldResult = await fold(actualGameId, targetPlayerId);
-              await PokerSocketEmitter.emitStateUpdate(foldResult);
+
+              // Emit granular events instead of full state update
+              // 1. Emit player left with fold action in history
+              await PokerSocketEmitter.emitPlayerLeft({
+                playerId: targetPlayerId,
+                players: foldResult.players,
+                playerCount: foldResult.players.length,
+                actionHistory: foldResult.actionHistory || [],
+              });
+
+              // 2. Emit round complete with winner info
+              if (foldResult.winner) {
+                await PokerSocketEmitter.emitRoundComplete({
+                  winner: foldResult.winner,
+                  players: foldResult.players,
+                });
+              }
+
               return NextResponse.json({
                 message: 'Fold executed by client fallback',
                 action: 'fold',

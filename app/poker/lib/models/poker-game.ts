@@ -1,8 +1,8 @@
 // app/lib/models/poker-game.ts
 
 import mongoose, { Schema, model, models, Document } from 'mongoose';
-import type { Card, Bet, Player, GameStageProps } from '@/app/poker/lib/definitions/poker';
-import { GameStage } from '@/app/poker/lib/definitions/poker';
+import type { Card, Bet, Player, GameStageProps, PotInfo } from '@/app/poker/lib/definitions/poker';
+import { GameStage, StageStatus } from '@/app/poker/lib/definitions/poker';
 import type { GameActionHistory } from '@/app/poker/lib/definitions/action-history';
 
 /**
@@ -13,11 +13,14 @@ export interface PokerGameDocument extends Document {
   players: Player[];
   deck: Card[];
   communalCards: Card[];
-  pot: Bet[];
+  pot: Bet[];                   // Legacy single pot (for backward compatibility)
+  pots?: PotInfo[];             // NEW: Multiple pots for all-in scenarios
   stage: GameStage | number; // Stored as number in DB
+  stageStatus?: StageStatus;    // NEW: Track stage lifecycle position
   locked: boolean; // Whether game is in progress (locked from new joins)
   lockTime?: Date; // When game will auto-lock
   processing: boolean; // Distributed lock for concurrent operations
+  processingStartedAt?: Date; // Timestamp when processing lock was acquired
   currentPlayerIndex: number; // Index of current player in players array
   dealerButtonPosition: number; // Index of player with dealer button (rotates each hand)
   playerBets: number[]; // Each player's total bet in current round
@@ -41,6 +44,12 @@ export interface PokerGameDocument extends Document {
     isPaused: boolean;
     selectedAction?: 'fold' | 'call' | 'check' | 'bet' | 'raise'; // Player's pre-selected action on timer expiry
     selectedBetAmount?: number; // Player's selected bet amount for bet/raise actions
+  };
+  // NEW: Track what needs to happen before advancing
+  stageCompletionChecks?: {
+    bettingComplete: boolean;
+    cardsDealt: boolean;
+    notificationsSent: boolean;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -76,6 +85,8 @@ const PlayerSchema = new Schema<Player>(
     chips: { type: [ChipSchema], default: [] },
     lastHeartbeat: { type: Date, required: false },
     folded: { type: Boolean, required: false },
+    isAllIn: { type: Boolean, required: false },
+    allInAmount: { type: Number, required: false },
   },
   { _id: false }
 );
@@ -114,6 +125,15 @@ const ActionHistorySchema = new Schema<GameActionHistory>(
   { _id: false }
 );
 
+const PotInfoSchema = new Schema(
+  {
+    amount: { type: Number, required: true },
+    eligiblePlayers: { type: [String], required: true },
+    contributions: { type: Map, of: Number, default: {} },
+  },
+  { _id: false }
+);
+
 const PokerGameSchema = new Schema<PokerGameDocument>(
   {
     code: { type: String, required: true, unique: true },
@@ -121,6 +141,7 @@ const PokerGameSchema = new Schema<PokerGameDocument>(
     deck: { type: [CardSchema], default: [] },
     communalCards: { type: [CardSchema], default: [] },
     pot: { type: [BetSchema], default: [] },
+    pots: { type: [PotInfoSchema], required: false }, // NEW: Multiple pots for all-in scenarios
 
     // Store as Number (0, 1, 2, 3) to match GameStage enum values
     stage: {
@@ -129,9 +150,34 @@ const PokerGameSchema = new Schema<PokerGameDocument>(
       default: GameStage.Preflop,
     },
 
+    // NEW: Track stage lifecycle position
+    stageStatus: {
+      type: String,
+      enum: [
+        StageStatus.NOT_STARTED,
+        StageStatus.ENTERING,
+        StageStatus.ACTIVE,
+        StageStatus.COMPLETING,
+        StageStatus.COMPLETE
+      ],
+      default: StageStatus.ACTIVE,
+      required: false,
+    },
+
+    // NEW: Track what needs to happen before advancing
+    stageCompletionChecks: {
+      type: {
+        bettingComplete: { type: Boolean, default: false },
+        cardsDealt: { type: Boolean, default: false },
+        notificationsSent: { type: Boolean, default: false },
+      },
+      required: false,
+    },
+
     locked: { type: Boolean, default: false },
     lockTime: { type: Date, required: false },
     processing: { type: Boolean, default: false }, // Distributed lock for concurrent operations
+    processingStartedAt: { type: Date, required: false }, // Timestamp when processing lock was acquired
     currentPlayerIndex: { type: Number, default: 0 },
     dealerButtonPosition: { type: Number, default: 0 }, // Rotates each hand
     playerBets: { type: [Number], default: [] },

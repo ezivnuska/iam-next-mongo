@@ -28,6 +28,17 @@ export interface Bet {
   chips: Chip[];
 }
 
+/**
+ * Represents a pot (main or side) with eligible players
+ */
+export interface PotInfo {
+  amount: number;                    // Total chips in this pot
+  eligiblePlayers: string[];         // Player IDs who can win this pot
+  contributions: {                    // Track each player's contribution to this pot
+    [playerId: string]: number;
+  };
+}
+
 export interface Player {
   id: string;
   username: string;
@@ -35,6 +46,8 @@ export interface Player {
   chips: Chip[];
   lastHeartbeat?: Date;
   folded?: boolean;
+  isAllIn?: boolean;        // Player has bet all their chips
+  allInAmount?: number;     // Total amount player went all-in for (in chip count)
 }
 
 export enum GameStage {
@@ -42,6 +55,18 @@ export enum GameStage {
   Flop = 1,
   Turn = 2,
   River = 3,
+}
+
+/**
+ * Stage lifecycle status - tracks where we are in the stage flow
+ * Prevents stages from advancing before completing current stage
+ */
+export enum StageStatus {
+  NOT_STARTED = 'not_started',   // Stage hasn't begun yet
+  ENTERING = 'entering',          // Dealing cards, sending notifications
+  ACTIVE = 'active',              // Betting in progress
+  COMPLETING = 'completing',      // Round complete, finalizing
+  COMPLETE = 'complete'           // Ready to advance to next stage
 }
 
 /**
@@ -53,6 +78,10 @@ export interface WinnerInfo {
   handRank: string;
   isTie: boolean;
   tiedPlayers?: string[];
+  potWinnings?: {              // NEW: Track winnings from each pot
+    potIndex: number;
+    amount: number;
+  }[];
 }
 
 /**
@@ -86,8 +115,10 @@ export interface PokerGameDocument {
   players: Player[];
   deck: Card[];
   communalCards: Card[];
-  pot: Bet[];
+  pot: Bet[];                       // Legacy single pot (for backward compatibility)
+  pots?: PotInfo[];                 // NEW: Multiple pots for all-in scenarios
   stage: number;
+  stageStatus?: StageStatus;        // NEW: Track stage lifecycle position
   locked: boolean;
   lockTime?: Date;
   processing: boolean; // Distributed lock for concurrent operations
@@ -96,6 +127,14 @@ export interface PokerGameDocument {
   stages: GameStageProps[];
   winner?: WinnerInfo;
   actionTimer?: ActionTimer;
+
+  // NEW: Track what needs to happen before advancing
+  stageCompletionChecks?: {
+    bettingComplete: boolean;
+    cardsDealt: boolean;
+    notificationsSent: boolean;
+  };
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -119,6 +158,7 @@ export interface GameState {
   communalCards: Card[];
   pot: Bet[];
   stage: number;
+  stageStatus?: StageStatus;  // NEW: Track stage lifecycle
   stages: GameStageProps[];
   locked: boolean;
   playerBets: number[];

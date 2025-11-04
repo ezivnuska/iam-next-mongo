@@ -105,6 +105,7 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
           playerBets: gameToLock.playerBets,
           currentPlayerIndex: gameToLock.currentPlayerIndex,
           actionHistory: gameToLock.actionHistory,
+          players: gameToLock.players, // Include players for all-in status updates
         });
 
         await PokerSocketEmitter.emitGameNotification({
@@ -127,6 +128,7 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
           playerBets: gameToLock.playerBets,
           currentPlayerIndex: gameToLock.currentPlayerIndex,
           actionHistory: gameToLock.actionHistory,
+          players: gameToLock.players, // Include players for all-in status updates
         });
 
         await PokerSocketEmitter.emitGameNotification({

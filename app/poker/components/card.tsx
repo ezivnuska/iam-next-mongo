@@ -38,7 +38,7 @@ export default function Card({ card, index, size = 'md' }: CardProps) {
                         'flex flex-col items-center justify-center',
                         cardTextClasses[size],
                     )}>
-                        <span>{card.label}</span>
+                        <span className='text-black'>{card.label}</span>
                         <span className='-mt-2 text-2xl' style={{ color: card.color }}>{card.symbol}</span>
                     </p>
                 {/* </div> */}

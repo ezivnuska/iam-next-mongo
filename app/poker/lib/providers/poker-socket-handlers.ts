@@ -47,11 +47,18 @@ export interface SocketHandlerDeps {
   setIsActionProcessing: (processing: boolean) => void;
   setPendingAction: (action: { type: 'bet' | 'fold' | 'call' | 'raise'; playerId: string } | null) => void;
   playSound: (sound: PokerSoundType) => void;
+  getGameNotification?: () => { type: string; timestamp: number; duration: number } | null;
+  userId?: string | null;
 }
 
 export const createStateUpdateHandler = (deps: SocketHandlerDeps) => {
   return (payload: PokerStateUpdatePayload) => {
     const currentState = deps.stateRef.current;
+
+    console.log('[StateUpdateHandler] Received state update:', {
+      playersCount: payload.players?.length,
+      allInPlayers: payload.players?.filter(p => p.isAllIn).map(p => p.username)
+    });
 
     // Update game ID if present
     if (payload._id && currentState.gameId !== payload._id.toString()) {
@@ -77,7 +84,13 @@ export const createStateUpdateHandler = (deps: SocketHandlerDeps) => {
         const secondLastAction = actionHistory.length > 1 ? actionHistory[actionHistory.length - 2] : null;
 
         if (secondLastAction?.actionType === 'PLAYER_FOLD') {
-          deps.playSound('fold');
+          // Only play sound if this fold was NOT from the current user
+          const isActingPlayer = deps.userId && secondLastAction.playerId === deps.userId;
+          if (!isActingPlayer) {
+            deps.playSound('fold');
+          } else {
+            console.log('[StateUpdateHandler] Skipping fold sound for acting player (already played optimistically)');
+          }
         }
 
         // Check if game ended with a winner and play winner sound
@@ -154,7 +167,8 @@ export const createPlayerLeftHandler = (
   updatePlayers: (players: Player[]) => void,
   updateGameStatus: (locked: boolean, lockTime?: string, winner?: any) => void,
   setActionHistory: (history: any[]) => void,
-  playSound?: (sound: PokerSoundType) => void
+  playSound?: (sound: PokerSoundType) => void,
+  userId?: string | null
 ) => {
   return (payload: any) => {
     updatePlayers(payload.players);
@@ -166,7 +180,13 @@ export const createPlayerLeftHandler = (
       // Play fold sound if the last action was a fold
       const lastAction = payload.actionHistory[payload.actionHistory.length - 1];
       if (lastAction?.actionType === 'PLAYER_FOLD' && playSound) {
-        playSound('fold');
+        // Only play sound if this fold was NOT from the current user
+        const isActingPlayer = userId && lastAction.playerId === userId;
+        if (!isActingPlayer) {
+          playSound('fold');
+        } else {
+          console.log('[PlayerLeftHandler] Skipping fold sound for acting player (already played optimistically)');
+        }
       }
     }
 
@@ -186,7 +206,7 @@ export const createGameLockedHandler = (
   playSound: (sound: PokerSoundType) => void
 ) => {
   return (payload: any) => {
-    updatePlayers(payload.players); // Players now have dealt cards
+    updatePlayers(payload.players); // Players with empty hands (cards dealt later)
     updateGameStatus(true, payload.lockTime, undefined);
     setStage(payload.stage);
 
@@ -200,8 +220,7 @@ export const createGameLockedHandler = (
       setActionHistory(payload.actionHistory);
     }
 
-    // Play card deal sound when players receive their hole cards
-    playSound('card-deal');
+    // Note: Card deal sound will play when POKER_CARDS_DEALT event is received
   };
 };
 
@@ -210,10 +229,26 @@ export const createBetPlacedHandler = (
   setActionHistory: (history: any[]) => void,
   setIsActionProcessing: (processing: boolean) => void,
   setPendingAction: (action: { type: 'bet' | 'fold' | 'call' | 'raise'; playerId: string } | null) => void,
-  playSound: (sound: PokerSoundType) => void
+  playSound: (sound: PokerSoundType) => void,
+  updatePlayers?: (players: Player[]) => void,
+  userId?: string | null
 ) => {
   return (payload: any) => {
     updateBettingState(payload.pot, payload.playerBets, payload.currentPlayerIndex);
+
+    // Update players if provided (for chip count and all-in status changes)
+    if (payload.players && updatePlayers) {
+      // Log all-in status for debugging
+      const allInPlayers = payload.players.filter((p: Player) => p.isAllIn);
+      if (allInPlayers.length > 0) {
+        console.log('[BetPlacedHandler] Players with ALL-IN status:', allInPlayers.map((p: Player) => ({
+          username: p.username,
+          isAllIn: p.isAllIn,
+          chips: p.chips.length
+        })));
+      }
+      updatePlayers(payload.players);
+    }
 
     // Update action history and play sound
     if (payload.actionHistory && payload.actionHistory.length > 0) {
@@ -225,18 +260,26 @@ export const createBetPlacedHandler = (
         .find((action: any) => action.actionType === 'PLAYER_BET');
 
       if (lastBetAction) {
-        // chipAmount might be 0, so we check for null/undefined specifically
-        const chipAmount = lastBetAction.chipAmount;
+        // Only play sound if this action was NOT from the current user
+        // (acting player already heard the sound optimistically)
+        const isActingPlayer = userId && lastBetAction.playerId === userId;
 
-        if (chipAmount !== undefined && chipAmount !== null) {
-          // Simple sound logic:
-          // - 0 chips = check
-          // - Any chips = call/raise sound
-          if (chipAmount === 0) {
-            playSound('check');
-          } else {
-            playSound('call');
+        if (!isActingPlayer) {
+          // chipAmount might be 0, so we check for null/undefined specifically
+          const chipAmount = lastBetAction.chipAmount;
+
+          if (chipAmount !== undefined && chipAmount !== null) {
+            // Simple sound logic:
+            // - 0 chips = check
+            // - Any chips = call/raise sound
+            if (chipAmount === 0) {
+              playSound('check');
+            } else {
+              playSound('call');
+            }
           }
+        } else {
+          console.log('[BetPlacedHandler] Skipping sound for acting player (already played optimistically)');
         }
       }
     }
@@ -251,27 +294,75 @@ export const createCardsDealtHandler = (
   setStage: (stage: number) => void,
   setCommunalCards: (cards: Card[]) => void,
   updatePlayers?: (players: Player[]) => void,
-  playSound?: (sound: PokerSoundType) => void
+  playSound?: (sound: PokerSoundType) => void,
+  getGameNotification?: () => { type: string; timestamp: number; duration: number } | null
 ) => {
   return (payload: any) => {
-    setStage(payload.stage);
-    setCommunalCards(payload.communalCards);
+    console.log('[CardsDealtHandler] Received cards dealt event:', {
+      stage: payload.stage,
+      communalCardsCount: payload.communalCards?.length,
+      playersCount: payload.players?.length
+    });
 
-    // Update players if included (e.g., when player cards are dealt after blind round)
+    // CRITICAL: Capture notification state at time of arrival
+    // Don't reference getGameNotification() later - it might have changed
+    const notificationSnapshot = getGameNotification?.();
+    const hasDealNotification = notificationSnapshot?.type === 'deal';
+
+    // Apply state updates IMMEDIATELY (stage, players, chips, all-in status)
+    // These should not be delayed by notifications as UI controls depend on them
+    console.log('[CardsDealtHandler] Updating game state immediately - stage:', payload.stage);
+    setStage(payload.stage);
+
     if (payload.players && updatePlayers) {
+      console.log('[CardsDealtHandler] Updating player state immediately');
+      const allInPlayers = payload.players.filter((p: Player) => p.isAllIn);
+      if (allInPlayers.length > 0) {
+        console.log('[CardsDealtHandler] Players with ALL-IN status:', allInPlayers.map((p: Player) => ({
+          username: p.username,
+          isAllIn: p.isAllIn,
+          chips: p.chips.length
+        })));
+      }
       updatePlayers(payload.players);
     }
 
-    // Play card deal sound based on stage
-    if (playSound) {
-      // Stage 1 = Flop (3 cards), Stage 2 = Turn (1 card), Stage 3 = River (1 card)
-      if (payload.stage === 2 || payload.stage === 3) {
-        // Turn or River - single card
-        playSound('single-card');
-      } else {
-        // Flop - multiple cards
-        playSound('card-deal');
+    // Helper to apply ONLY the visual card updates (cards appearing, sound)
+    const applyVisualUpdate = () => {
+      setCommunalCards(payload.communalCards);
+
+      // Play card deal sound based on stage
+      if (playSound) {
+        if (payload.stage === 0) {
+          playSound('card-deal'); // Hole cards (preflop)
+        } else if (payload.stage === 1) {
+          playSound('card-deal'); // Flop (3 cards)
+        } else if (payload.stage === 2 || payload.stage === 3) {
+          playSound('single-card'); // Turn or River (1 card)
+        }
       }
+    };
+
+    // Queue visual updates (cards) if notification is active
+    if (hasDealNotification && notificationSnapshot) {
+      // Queue based on the snapshot taken when this event arrived
+      const notificationEnd = notificationSnapshot.timestamp + notificationSnapshot.duration;
+      const delay = Math.max(0, notificationEnd - Date.now());
+
+      console.log(`[CardsDealtHandler] Queuing visual update for ${delay}ms (notification in progress)`, {
+        notificationTimestamp: notificationSnapshot.timestamp,
+        notificationDuration: notificationSnapshot.duration,
+        calculatedDelay: delay
+      });
+
+      setTimeout(() => {
+        console.log('[CardsDealtHandler] Applying queued visual update for stage', payload.stage);
+        applyVisualUpdate();
+      }, delay);
+    } else {
+      // No active deal notification, apply immediately
+      console.log('[CardsDealtHandler] Applying visual update immediately (no notification)');
+      applyVisualUpdate();
     }
   };
 };
@@ -370,7 +461,7 @@ export const createGameNotificationHandler = (
           // Play different sounds for single card vs multiple cards
           if (payload.message?.includes('turn') || payload.message?.includes('river')) {
             playSound('single-card');
-          } else {
+          } else if (payload.message?.includes('flop') || payload.message?.includes('hole')) {
             playSound('card-deal');
           }
           break;
