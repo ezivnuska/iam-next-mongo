@@ -1,6 +1,7 @@
 // app/lib/server/poker/bet-processor.ts
 
 import type { Player, Bet, Chip } from '@/app/poker/lib/definitions/poker';
+import type { PokerGameDocument } from '@/app/poker/lib/models/poker-game';
 import { initializeBets } from '@/app/poker/lib/utils/betting-helpers';
 import { getPlayerChipCount, shouldGoAllIn, getMaxBetAmount } from '@/app/poker/lib/utils/side-pot-calculator';
 import { getChipTotal } from '@/app/poker/lib/utils/poker';
@@ -36,7 +37,7 @@ function removeChipsByValue(chips: Chip[], targetValue: number): Chip[] {
 /**
  * Initialize player bets array if not properly set
  */
-export function ensurePlayerBetsInitialized(game: any): void {
+export function ensurePlayerBetsInitialized(game: PokerGameDocument): void {
   if (game.playerBets.length !== game.players.length) {
     game.playerBets = initializeBets(game.players.length);
   }
@@ -93,7 +94,7 @@ export function processBetTransaction(
  * @param actualChipCount - The actual number of chips bet (may differ from requested if all-in)
  */
 export function updateGameAfterBet(
-  game: any,
+  game: PokerGameDocument,
   playerIndex: number,
   chipCount: number,
   updatedPlayer: Player,

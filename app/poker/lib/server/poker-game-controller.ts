@@ -26,7 +26,6 @@ import { acquireGameLock, releaseGameLock } from './game-lock-utils';
 import {
   logBetAction,
   logFoldAction,
-  logPlayerJoinAction,
   logPlayerLeftAction,
   logGameRestartAction
 } from '@/app/poker/lib/utils/action-history-helpers';
@@ -232,7 +231,7 @@ export async function removePlayer(
  * Calculate the starting player index for the current betting round
  * This is used to determine when all players have acted
  */
-function getBettingRoundStartIndex(game: any): number {
+function getBettingRoundStartIndex(game: PokerGameDocument): number {
   const buttonPosition = game.dealerButtonPosition || 0;
   const playerCount = game.players.length;
   const isHeadsUp = playerCount === 2;
@@ -372,7 +371,7 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
         await PokerSocketEmitter.emitGameNotification({
           message: actionMessage,
           type: 'action',
-          duration: 2000,
+          duration: POKER_TIMERS.NOTIFICATION_DURATION_MS,
           excludeUserId: playerId, // Don't show notification to the player who performed the action
         });
       }
@@ -386,8 +385,9 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
       let roundInfo = { roundComplete: false, cardsDealt: false, gameComplete: false };
 
       // Check how many players can still act (not folded, not all-in)
-      const playersWhoCanAct = game.players.filter((p: Player) => !p.folded && !p.isAllIn);
-      const activePlayers = game.players.filter((p: Player) => !p.folded);
+      const { getPlayersWhoCanAct, getActivePlayers } = await import('@/app/poker/lib/utils/player-helpers');
+      const playersWhoCanAct = getPlayersWhoCanAct(game.players);
+      const activePlayers = getActivePlayers(game.players);
 
       // Check if all active players have equal bets THIS ROUND (playerBets, not pot)
       const activePlayerBets = activePlayers.map((p: Player) => {
@@ -522,7 +522,7 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
         console.log('[PlaceBet] Next player:', nextPlayer?.username, 'isAllIn:', nextPlayer?.isAllIn, 'folded:', nextPlayer?.folded);
 
         // Additional safety check: Don't start timer if all active players are all-in
-        const playersWhoCanAct = game.players.filter((p: Player) => !p.folded && !p.isAllIn);
+        const playersWhoCanAct = getPlayersWhoCanAct(game.players);
         const allPlayersAllInOrFolded = playersWhoCanAct.length === 0;
 
         console.log('[PlaceBet] Timer safety checks:', {
@@ -823,7 +823,7 @@ export async function restart(gameId: string) {
         duration: 2000,
       });
 
-      await new Promise(resolve => setTimeout(resolve, 2200));
+      await new Promise(resolve => setTimeout(resolve, POKER_TIMERS.POST_NOTIFICATION_DELAY_MS));
 
       // PLACE BIG BLIND with notification
       const bigBlindInfo = placeBigBlind(game);
@@ -846,7 +846,7 @@ export async function restart(gameId: string) {
         duration: 2000,
       });
 
-      await new Promise(resolve => setTimeout(resolve, 2200));
+      await new Promise(resolve => setTimeout(resolve, POKER_TIMERS.POST_NOTIFICATION_DELAY_MS));
 
       // DEAL HOLE CARDS immediately after blinds (standard poker rules)
       dealPlayerCards(game.deck, game.players, 2);

@@ -14,6 +14,7 @@ import { Button } from '@/app/ui/button';
 import PlayerConnectionStatus from './player-connection-status';
 import PlayerControls from './player-controls';
 import NotificationArea from './notification-area';
+import { useActionTimerPercentage } from '@/app/poker/lib/hooks/use-action-timer-percentage';
 
 interface PlayerUserProps {
   index: number;
@@ -49,8 +50,8 @@ export default function PlayerUser({
   const [actionTriggered, setActionTriggered] = useState(false);
   const prevIsUserTurnRef = useRef(isUserTurn);
 
-  // Timer progress bar state
-  const [timePercentage, setTimePercentage] = useState<number>(0);
+  // Timer progress bar - only show for current user
+  const timePercentage = useActionTimerPercentage(actionTimer, user?.id);
 
   // Reset actionTriggered when it becomes the user's turn (new turn started)
   useEffect(() => {
@@ -60,39 +61,6 @@ export default function PlayerUser({
     }
     prevIsUserTurnRef.current = isUserTurn;
   }, [isUserTurn]);
-
-  // Calculate timer progress percentage for current user
-  useEffect(() => {
-    // Reset percentage if timer is not active or not for this user
-    if (!actionTimer || actionTimer.isPaused || actionTimer.targetPlayerId !== user?.id) {
-      setTimePercentage(0);
-      return;
-    }
-
-    // Calculate initial percentage
-    const startTime = new Date(actionTimer.startTime).getTime();
-    const calculatePercentage = () => {
-      const elapsed = (Date.now() - startTime) / 1000;
-      const remaining = Math.max(0, actionTimer.duration - elapsed);
-      const percentage = (remaining / actionTimer.duration) * 100;
-      return Math.max(0, Math.min(100, percentage));
-    };
-
-    setTimePercentage(calculatePercentage());
-
-    // Update percentage every 100ms for smooth animation
-    const interval = setInterval(() => {
-      const newPercentage = calculatePercentage();
-      setTimePercentage(newPercentage);
-
-      // Stop updating when time runs out
-      if (newPercentage <= 0) {
-        clearInterval(interval);
-      }
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [actionTimer, user?.id]);
 
   // Callback to notify when action is taken (called immediately on button click)
   const handleActionTaken = () => {
@@ -134,21 +102,12 @@ return (
         <div className='relative flex flex-row gap-2 items-center text-white rounded-lg overflow-hidden py-1 px-2 justify-between'>
             <div className='flex flex-row gap-2 items-center text-white'>
                 <UserAvatar size={44} username={player.username} />
-                <div
-                    className={clsx(
-                        'flex flex-col shrink justify-center',
-                        {
-                            'text-green-300' : !isCurrentPlayer,
-                        },
+                <div className='flex flex-row gap-2 sm:flex-col items-center sm:gap-0'>
+                    <span className='text-md'>{player.username}</span>
+                    <span className='text-md'>({chipTotal})</span>
+                    {potContribution > 0 && (
+                        <span className="text-xs text-gray-700">Pot: ${potContribution}</span>
                     )}
-                >
-                    <div className='flex flex-col items-center'>
-                        <span className='text-md'>{player.username}</span>
-                        <span className='text-md'>({chipTotal})</span>
-                        {potContribution > 0 && (
-                            <span className="text-xs text-gray-700">Pot: ${potContribution}</span>
-                        )}
-                    </div>
                 </div>
 
                 {player.isAllIn && !winner && (

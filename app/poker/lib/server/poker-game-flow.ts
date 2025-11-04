@@ -123,15 +123,31 @@ export function awardPotToWinners(game: PokerGameDoc, winnerInfo: WinnerInfo): v
 
     console.log(`[AwardPot] Pot ${potIndex} winner: ${potWinner.winnerName} (${potWinner.handRank})`);
 
-    // Get chips from the pot
-    const potChips = game.pot.flatMap((bet: Bet) => {
+    // Get chips from the pot - track how many chips we've extracted per player
+    const extracted: { [playerId: string]: number } = {};
+    const potChips: any[] = [];
+
+    game.pot.forEach((bet: Bet) => {
       const player = game.players.find(p => p.username === bet.player);
       if (!player || !pot.eligiblePlayers.includes(player.id)) {
-        return [];
+        return;
       }
-      const contribution = pot.contributions[player.id] || 0;
-      return bet.chips.slice(0, contribution);
+
+      const targetContribution = pot.contributions[player.id] || 0;
+      const alreadyExtracted = extracted[player.id] || 0;
+      const stillNeeded = targetContribution - alreadyExtracted;
+
+      if (stillNeeded > 0) {
+        // Extract chips up to the amount still needed
+        const chipsToTake = Math.min(stillNeeded, bet.chips.length);
+        const takenChips = bet.chips.splice(0, chipsToTake);
+        potChips.push(...takenChips);
+        extracted[player.id] = alreadyExtracted + takenChips.length;
+      }
     });
+
+    // Mark pot as modified since we extracted chips (even though it gets cleared later)
+    game.markModified('pot');
 
     // Award chips to winner(s) of this pot
     if (potWinner.isTie && potWinner.tiedPlayers) {

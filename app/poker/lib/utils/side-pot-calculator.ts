@@ -2,6 +2,7 @@
 
 import type { Player, PotInfo } from '../definitions/poker';
 import { getChipTotal } from './poker';
+import { getActivePlayers } from './player-helpers';
 
 /**
  * Player contribution for pot calculation
@@ -178,7 +179,7 @@ export function getMaxBetAmount(player: Player): number {
  * Check if all active players are all-in (no more betting possible)
  */
 export function areAllPlayersAllInOrFolded(players: Player[]): boolean {
-  const activePlayers = players.filter(p => !p.folded);
+  const activePlayers = getActivePlayers(players);
   const playersWithChips = activePlayers.filter(p => getPlayerChipCount(p) > 0);
 
   // If 0 or 1 player has chips, no more betting

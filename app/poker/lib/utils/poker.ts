@@ -84,7 +84,7 @@ export function shuffleDeck(deck: Card[]): Card[] {
   return shuffled;
 }
 
-export function createChips(count: number, value: number = 10): Chip[] {
+export function createChips(count: number, value: number = 1): Chip[] {
   return Array.from({ length: count }, (_, i) => ({
     id: `chip-${i}-${Date.now()}`,
     value,

@@ -1,6 +1,7 @@
 // app/lib/server/poker/blinds-manager.ts
 
 import type { Player } from '@/app/poker/lib/definitions/poker';
+import type { PokerGameDocument } from '@/app/poker/lib/models/poker-game';
 import { createChips } from '@/app/poker/lib/utils/poker';
 import { ActionHistoryType } from '@/app/poker/lib/definitions/action-history';
 import { randomBytes } from 'crypto';
@@ -31,7 +32,7 @@ function getSmallBlindPosition(buttonPosition: number, playerCount: number): num
 /**
  * Place small blind bet
  */
-export function placeSmallBlind(game: any): {
+export function placeSmallBlind(game: PokerGameDocument): {
   player: { username: string; id: string };
   amount: number;
   position: number;
@@ -108,7 +109,7 @@ function getBigBlindPosition(buttonPosition: number, playerCount: number): numbe
 /**
  * Place big blind bet
  */
-export function placeBigBlind(game: any): {
+export function placeBigBlind(game: PokerGameDocument): {
   player: { username: string; id: string };
   amount: number;
   position: number;
@@ -211,7 +212,7 @@ export function placeBigBlind(game: any): {
  *
  * @deprecated Use placeSmallBlind and placeBigBlind separately for better timing control
  */
-export function placeAutomaticBlinds(game: any): {
+export function placeAutomaticBlinds(game: PokerGameDocument): {
   smallBlindPlayer: { username: string };
   bigBlindPlayer: { username: string };
   smallBlind: number;

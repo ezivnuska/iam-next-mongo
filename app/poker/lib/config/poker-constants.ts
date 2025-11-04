@@ -13,7 +13,7 @@ export const POKER_GAME_CONFIG = {
   DEFAULT_STARTING_CHIPS: 100,
 
   /** Value of each chip for display purposes */
-  CHIP_VALUE: 10,
+  CHIP_VALUE: 1,
 
   /** Delay in milliseconds before game auto-locks after 2nd player joins */
   AUTO_LOCK_DELAY_MS: 10000,
@@ -43,6 +43,15 @@ export const POKER_TIMERS = {
 
   /** Buffer delay in milliseconds to ensure client has time to process previous stage */
   CLIENT_PROCESSING_BUFFER_MS: 1500,
+
+  /** Duration in milliseconds for game notifications */
+  NOTIFICATION_DURATION_MS: 2000,
+
+  /** Delay in milliseconds after showing notification (notification duration + buffer) */
+  POST_NOTIFICATION_DELAY_MS: 2200,
+
+  /** Interval in milliseconds for timer percentage updates */
+  TIMER_UPDATE_INTERVAL_MS: 100,
 } as const;
 
 export const POKER_RETRY_CONFIG = {

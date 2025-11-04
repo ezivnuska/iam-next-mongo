@@ -111,10 +111,10 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
         await PokerSocketEmitter.emitGameNotification({
           message: `${smallBlindInfo.player.username} posts small blind (${smallBlindInfo.amount} chip)`,
           type: 'blind',
-          duration: 2000,
+          duration: POKER_TIMERS.NOTIFICATION_DURATION_MS,
         });
 
-        await new Promise(resolve => setTimeout(resolve, 2200));
+        await new Promise(resolve => setTimeout(resolve, POKER_TIMERS.POST_NOTIFICATION_DELAY_MS));
 
         // PLACE BIG BLIND with notification
         const bigBlindInfo = placeBigBlind(gameToLock);
@@ -134,10 +134,10 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
         await PokerSocketEmitter.emitGameNotification({
           message: `${bigBlindInfo.player.username} posts big blind (${bigBlindInfo.amount} chips)`,
           type: 'blind',
-          duration: 2000,
+          duration: POKER_TIMERS.NOTIFICATION_DURATION_MS,
         });
 
-        await new Promise(resolve => setTimeout(resolve, 2200));
+        await new Promise(resolve => setTimeout(resolve, POKER_TIMERS.POST_NOTIFICATION_DELAY_MS));
 
         // DEAL HOLE CARDS immediately after blinds (standard poker rules)
         dealPlayerCards(gameToLock.deck, gameToLock.players, 2);

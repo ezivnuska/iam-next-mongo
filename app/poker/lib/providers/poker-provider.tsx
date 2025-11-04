@@ -239,15 +239,15 @@ export function PokerProvider({ children }: { children: ReactNode }) {
 
     // Optimistically update pot and playerBets on acting client
     if (chipCount > 0) {
-      // Create chips with standard value of 10 per chip
-      // chipCount represents total value, so divide by 10 to get number of chips
-      const numChips = Math.ceil(chipCount / 10);
+      // Create chips with standard value of 1 per chip
+      // chipCount represents total value, which equals the number of chips needed
+      const numChips = chipCount;
 
       setPot(prevPot => [
         ...prevPot,
         {
           player: currentPlayer.username,
-          chips: createChips(numChips, 10)
+          chips: createChips(numChips, 1)
         }
       ]);
 
@@ -416,6 +416,7 @@ export function PokerProvider({ children }: { children: ReactNode }) {
   usePokerSocketEffects({
     socket,
     gameId,
+    userId: user?.id,
     stateRef,
     updaters,
     resetGameState,
@@ -430,6 +431,7 @@ export function PokerProvider({ children }: { children: ReactNode }) {
     setGameNotification,
     playSound,
     gameNotificationRef,
+    setCurrentPlayerIndex,
   });
 
   // --- Memoized context values ---

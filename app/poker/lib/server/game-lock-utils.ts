@@ -1,6 +1,6 @@
 // app/lib/server/poker/game-lock-utils.ts
 
-import { PokerGame } from '@/app/poker/lib/models/poker-game';
+import { PokerGame, type PokerGameDocument } from '@/app/poker/lib/models/poker-game';
 import { POKER_TIMERS } from '@/app/poker/lib/config/poker-constants';
 
 /**
@@ -81,7 +81,7 @@ export async function releaseGameLock(gameId: string): Promise<void> {
  */
 export async function withGameLock<T>(
   gameId: string,
-  operation: (game: any) => Promise<T>
+  operation: (game: PokerGameDocument) => Promise<T>
 ): Promise<T> {
   const game = await acquireGameLock(gameId);
 

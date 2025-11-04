@@ -44,7 +44,8 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
   const [timerActive, setTimerActive] = useState(false);
 
   // Bet amount state - default to minimum bet or call amount
-  const minBetAmount = hasBetToCall ? currentBet : 1;
+  // Cap call amount at player's available chips (for all-in scenarios)
+  const minBetAmount = hasBetToCall ? Math.min(currentBet, playerChipCount) : 1;
   const [betAmount, setBetAmount] = useState(minBetAmount);
 
   // Debounce ref for action changes
@@ -53,21 +54,23 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
   // Update selected action and bet amount when bet state or stage changes
   useEffect(() => {
     if (!timerActive) {
-      const newBetAmount = hasBetToCall ? currentBet : 1;
+      // Cap call amount at player's available chips
+      const newBetAmount = hasBetToCall ? Math.min(currentBet, playerChipCount) : 1;
       console.log('[PlayerControls] Bet state changed - hasBetToCall:', hasBetToCall, 'currentBet:', currentBet, 'newBetAmount:', newBetAmount);
       setSelectedAction(canCheck ? 'check' : (hasBetToCall ? 'call' : 'bet'));
       setBetAmount(newBetAmount);
     }
-  }, [canCheck, hasBetToCall, timerActive, stage, currentBet]);
+  }, [canCheck, hasBetToCall, timerActive, stage, currentBet, playerChipCount]);
 
   // Always reset to default action and amount when stage changes (new betting round)
   useEffect(() => {
     const defaultAction = canCheck ? 'check' : (hasBetToCall ? 'call' : 'bet');
-    const newBetAmount = hasBetToCall ? currentBet : 1;
+    // Cap call amount at player's available chips
+    const newBetAmount = hasBetToCall ? Math.min(currentBet, playerChipCount) : 1;
     console.log('[PlayerControls] Stage changed - stage:', stage, 'hasBetToCall:', hasBetToCall, 'currentBet:', currentBet, 'newBetAmount:', newBetAmount);
     setSelectedAction(defaultAction);
     setBetAmount(newBetAmount);
-  }, [stage, canCheck, hasBetToCall, currentBet]);
+  }, [stage, canCheck, hasBetToCall, currentBet, playerChipCount]);
 
   // Sync timer state with actionTimer
   useEffect(() => {
@@ -180,7 +183,9 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
   };
 
   const decrementBet = () => {
-    setBetAmount(prev => Math.max(prev - 1, minBetAmount));
+    // Cap at the lesser of currentBet or playerChipCount
+    const cappedMinBet = hasBetToCall ? Math.min(currentBet, playerChipCount) : 1;
+    setBetAmount(prev => Math.max(prev - 1, cappedMinBet));
   };
 
   // Keyboard shortcuts for bet amount
@@ -188,18 +193,21 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (!isMyTurn || isActionProcessing) return;
 
+      // Cap at the lesser of currentBet or playerChipCount
+      const cappedMinBet = hasBetToCall ? Math.min(currentBet, playerChipCount) : 1;
+
       if (e.key === 'ArrowUp' || e.key === '+') {
         e.preventDefault();
         setBetAmount(prev => Math.min(prev + 1, playerChipCount));
       } else if (e.key === 'ArrowDown' || e.key === '-') {
         e.preventDefault();
-        setBetAmount(prev => Math.max(prev - 1, minBetAmount));
+        setBetAmount(prev => Math.max(prev - 1, cappedMinBet));
       }
     };
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [isMyTurn, isActionProcessing, playerChipCount, minBetAmount]);
+  }, [isMyTurn, isActionProcessing, playerChipCount, hasBetToCall, currentBet]);
 
   const handleAllIn = async () => {
     // Notify parent immediately that action was taken

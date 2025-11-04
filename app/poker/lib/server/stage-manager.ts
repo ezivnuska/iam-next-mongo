@@ -8,6 +8,7 @@ import { determineWinner } from '../utils/poker';
 import { awardPotToWinners, savePlayerBalances } from './poker-game-flow';
 import { randomBytes } from 'crypto';
 import { ActionHistoryType } from '../definitions/action-history';
+import { getActivePlayers, getPlayersWhoCanAct } from '../utils/player-helpers';
 
 /**
  * StageManager - Single source of truth for stage lifecycle
@@ -41,10 +42,10 @@ export class StageManager {
    * Check if current stage betting round is complete
    */
   static isBettingComplete(game: PokerGameDocument): boolean {
-    const activePlayers = game.players.filter((p: Player) => !p.folded);
+    const activePlayers = getActivePlayers(game.players);
 
     // Get players who can still act (not folded, not all-in)
-    const playersWhoCanAct = game.players.filter((p: Player) => !p.folded && !p.isAllIn);
+    const playersWhoCanAct = getPlayersWhoCanAct(game.players);
 
     // If no one can act, betting is complete
     if (playersWhoCanAct.length === 0) {
@@ -134,7 +135,7 @@ export class StageManager {
    * Check if we should auto-advance (all active players are all-in)
    */
   static shouldAutoAdvance(game: PokerGameDocument): boolean {
-    const activePlayers = game.players.filter((p: Player) => !p.folded);
+    const activePlayers = getActivePlayers(game.players);
     const playersWithChips = activePlayers.filter((p: Player) => !p.isAllIn && p.chips.length > 0);
 
     const shouldAuto = playersWithChips.length <= 1;
@@ -186,14 +187,6 @@ export class StageManager {
           cardsDealt: numCardsDealt,
         });
         game.markModified('actionHistory');
-
-        // Emit cards dealt event
-        await PokerSocketEmitter.emitCardsDealt({
-          stage: newStage,
-          communalCards: game.communalCards,
-          deckCount: game.deck.length,
-          players: game.players,
-        });
       }
     }
 
@@ -201,8 +194,19 @@ export class StageManager {
     game.playerBets = new Array(game.players.length).fill(0);
     game.markModified('playerBets');
 
-    // Set first player to act (postflop rules)
+    // Set first player to act (postflop rules) BEFORE emitting events
     this.setFirstToAct(game);
+
+    // Emit cards dealt event AFTER setting currentPlayerIndex so clients get the correct value
+    if (newStage > GameStage.Preflop) {
+      await PokerSocketEmitter.emitCardsDealt({
+        stage: newStage,
+        communalCards: game.communalCards,
+        deckCount: game.deck.length,
+        players: game.players,
+        currentPlayerIndex: game.currentPlayerIndex, // Include currentPlayerIndex so clients know whose turn it is
+      });
+    }
 
     // Mark stage as active
     game.stageStatus = StageStatus.ACTIVE;

@@ -49,6 +49,7 @@ export interface PokerSocketEffectsDeps {
   setGameNotification: React.Dispatch<React.SetStateAction<any>>;
   playSound: (sound: PokerSoundType) => void;
   gameNotificationRef: React.MutableRefObject<{ type: string; timestamp: number; duration: number } | null>;
+  setCurrentPlayerIndex: (index: number) => void;
 }
 
 /**
@@ -103,6 +104,7 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
     setGameNotification,
     playSound,
     gameNotificationRef,
+    setCurrentPlayerIndex,
   } = deps;
 
   useEffect(() => {
@@ -144,7 +146,7 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
     // Create getter function for current notification state
     const getGameNotification = () => gameNotificationRef.current;
 
-    const handleCardsDealt = createCardsDealtHandler(setStage, setCommunalCards, updaters.updatePlayers, playSound, getGameNotification);
+    const handleCardsDealt = createCardsDealtHandler(setStage, setCommunalCards, updaters.updatePlayers, playSound, getGameNotification, setCurrentPlayerIndex);
     const handleRoundComplete = createRoundCompleteHandler(setWinner, updaters.updatePlayers, playSound);
     const handleTimerStarted = createTimerStartedHandler(setActionTimer);
     const handleTimerPaused = createTimerPausedHandler(setActionTimer);

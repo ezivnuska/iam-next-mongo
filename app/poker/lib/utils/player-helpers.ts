@@ -57,3 +57,48 @@ export function validatePlayerExists(players: Player[], playerId: string): numbe
   }
   return index;
 }
+
+/**
+ * Get all players who can still act (not folded and not all-in)
+ * @param players - Array of players
+ * @returns Array of players who can take actions
+ */
+export function getPlayersWhoCanAct(players: Player[]): Player[] {
+  return players.filter((p) => !p.folded && !p.isAllIn);
+}
+
+/**
+ * Get all active players (not folded)
+ * @param players - Array of players
+ * @returns Array of players who haven't folded
+ */
+export function getActivePlayers(players: Player[]): Player[] {
+  return players.filter((p) => !p.folded);
+}
+
+/**
+ * Find the next active player starting from a given index
+ * @param players - Array of players
+ * @param startIndex - Index to start searching from
+ * @returns Object with the next active player's index and whether one was found
+ */
+export function findNextActivePlayer(
+  players: Player[],
+  startIndex: number
+): { index: number; found: boolean } {
+  const totalPlayers = players.length;
+
+  // Search through all players starting from startIndex + 1
+  for (let i = 1; i <= totalPlayers; i++) {
+    const currentIndex = (startIndex + i) % totalPlayers;
+    const player = players[currentIndex];
+
+    // Check if player can act (not folded and not all-in)
+    if (!player.folded && !player.isAllIn) {
+      return { index: currentIndex, found: true };
+    }
+  }
+
+  // No active player found
+  return { index: startIndex, found: false };
+}

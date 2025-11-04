@@ -295,13 +295,15 @@ export const createCardsDealtHandler = (
   setCommunalCards: (cards: Card[]) => void,
   updatePlayers?: (players: Player[]) => void,
   playSound?: (sound: PokerSoundType) => void,
-  getGameNotification?: () => { type: string; timestamp: number; duration: number } | null
+  getGameNotification?: () => { type: string; timestamp: number; duration: number } | null,
+  setCurrentPlayerIndex?: (index: number) => void
 ) => {
   return (payload: any) => {
     console.log('[CardsDealtHandler] Received cards dealt event:', {
       stage: payload.stage,
       communalCardsCount: payload.communalCards?.length,
-      playersCount: payload.players?.length
+      playersCount: payload.players?.length,
+      currentPlayerIndex: payload.currentPlayerIndex
     });
 
     // CRITICAL: Capture notification state at time of arrival
@@ -313,6 +315,12 @@ export const createCardsDealtHandler = (
     // These should not be delayed by notifications as UI controls depend on them
     console.log('[CardsDealtHandler] Updating game state immediately - stage:', payload.stage);
     setStage(payload.stage);
+
+    // Update currentPlayerIndex if provided (postflop stages)
+    if (payload.currentPlayerIndex !== undefined && setCurrentPlayerIndex) {
+      console.log('[CardsDealtHandler] Updating currentPlayerIndex to:', payload.currentPlayerIndex);
+      setCurrentPlayerIndex(payload.currentPlayerIndex);
+    }
 
     if (payload.players && updatePlayers) {
       console.log('[CardsDealtHandler] Updating player state immediately');
