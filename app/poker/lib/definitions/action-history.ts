@@ -29,6 +29,8 @@ export interface GameActionHistory {
 
   // Bet-specific data
   chipAmount?: number;
+  isBlind?: boolean; // Whether this bet is a blind
+  blindType?: 'small' | 'big'; // Type of blind if isBlind is true
 
   // Card dealing data
   cardsDealt?: number; // Number of cards dealt (3 for flop, 1 for turn/river)

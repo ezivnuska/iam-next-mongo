@@ -1,9 +1,8 @@
 // app/lib/server/poker-game-controller.ts
 
-import { PokerGame } from '@/app/poker/lib/models/poker-game';
+import { PokerGame, type PokerGameDocument } from '@/app/poker/lib/models/poker-game';
 import { PokerBalance } from '@/app/poker/lib/models/poker-balance';
 import { createChips } from '@/app/poker/lib/utils/poker';
-import { areAllBetsEqual, areAllPotContributionsEqual } from '@/app/poker/lib/utils/betting';
 import { withRetry } from '@/app/lib/utils/retry';
 import type { Bet, Card, Player } from '@/app/poker/lib/definitions/poker';
 import { GameStage } from '@/app/poker/lib/definitions/poker';
