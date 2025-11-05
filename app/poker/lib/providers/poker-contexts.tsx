@@ -4,6 +4,7 @@
 
 import { createContext } from 'react';
 import type { GameStageProps, Player, Card, Bet } from '@/app/poker/lib/definitions/poker';
+import type { PokerSoundType } from '../hooks/use-poker-sounds';
 
 // ============= Context Interfaces =============
 
@@ -78,7 +79,7 @@ export interface ActionsContextValue {
   forceLockGame: () => Promise<void>;
   setTurnTimerAction: (action: 'fold' | 'call' | 'check' | 'bet' | 'raise', betAmount?: number) => Promise<void>;
   clearTimerOptimistically: () => void;
-  playSound: (sound: string) => void;
+  playSound: (type: PokerSoundType) => void;
 }
 
 export interface ProcessingContextValue {
