@@ -70,19 +70,12 @@ const CardSchema = new Schema<Card>(
   { _id: false }
 );
 
-const ChipSchema = new Schema(
-  {
-    value: { type: Number, required: true },
-  },
-  { _id: false }
-);
-
 const PlayerSchema = new Schema<Player>(
   {
     id: { type: String, required: true },
     username: { type: String, required: true },
     hand: { type: [CardSchema], default: [] },
-    chips: { type: [ChipSchema], default: [] },
+    chipCount: { type: Number, required: true, default: 0 },
     lastHeartbeat: { type: Date, required: false },
     folded: { type: Boolean, required: false },
     isAllIn: { type: Boolean, required: false },
@@ -94,7 +87,7 @@ const PlayerSchema = new Schema<Player>(
 const BetSchema = new Schema<Bet>(
   {
     player: { type: String, required: true },
-    chips: { type: [ChipSchema], default: [] },
+    chipCount: { type: Number, required: true, default: 0 },
   },
   { _id: false }
 );

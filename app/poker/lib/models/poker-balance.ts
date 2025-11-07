@@ -1,25 +1,17 @@
 // app/lib/models/poker-balance.ts
 
 import mongoose, { Schema, model, models, Document } from 'mongoose';
-import type { Chip } from '@/app/poker/lib/definitions/poker';
 
 export interface PokerBalanceDocument extends Document {
   userId: string;
-  chips: Chip[];
+  chipCount: number;
   updatedAt: Date;
 }
-
-const ChipSchema = new Schema(
-  {
-    value: { type: Number, required: true },
-  },
-  { _id: false }
-);
 
 const PokerBalanceSchema = new Schema<PokerBalanceDocument>(
   {
     userId: { type: String, required: true, unique: true },
-    chips: { type: [ChipSchema], default: [] },
+    chipCount: { type: Number, required: true, default: 0 },
   },
   { timestamps: true }
 );

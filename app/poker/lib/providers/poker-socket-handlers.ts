@@ -244,7 +244,7 @@ export const createBetPlacedHandler = (
         console.log('[BetPlacedHandler] Players with ALL-IN status:', allInPlayers.map((p: Player) => ({
           username: p.username,
           isAllIn: p.isAllIn,
-          chips: p.chips.length
+          chipCount: p.chipCount
         })));
       }
       updatePlayers(payload.players);
@@ -329,7 +329,7 @@ export const createCardsDealtHandler = (
         console.log('[CardsDealtHandler] Players with ALL-IN status:', allInPlayers.map((p: Player) => ({
           username: p.username,
           isAllIn: p.isAllIn,
-          chips: p.chips.length
+          chipCount: p.chipCount
         })));
       }
       updatePlayers(payload.players);

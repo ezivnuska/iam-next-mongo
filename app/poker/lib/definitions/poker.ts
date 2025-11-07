@@ -18,6 +18,10 @@ export interface GameStageProps {
   bets: Bet[];
 }
 
+/**
+ * @deprecated Chips are now represented as simple numbers (chipCount)
+ * This interface is kept for backward compatibility during migration
+ */
 export interface Chip {
   id: string;
   value: number;
@@ -25,7 +29,7 @@ export interface Chip {
 
 export interface Bet {
   player: string;
-  chips: Chip[];
+  chipCount: number;
 }
 
 /**
@@ -43,7 +47,7 @@ export interface Player {
   id: string;
   username: string;
   hand: Card[];
-  chips: Chip[];
+  chipCount: number;
   lastHeartbeat?: Date;
   folded?: boolean;
   isAllIn?: boolean;        // Player has bet all their chips

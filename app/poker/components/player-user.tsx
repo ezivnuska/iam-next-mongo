@@ -39,9 +39,9 @@ export default function PlayerUser({
     isUserTurn,
     onLeaveGame,
 }: PlayerUserProps) {
-  const chipTotal = getChipTotal(player.chips);
+  const chipTotal = player.chipCount;
   const isCurrentPlayer = index === currentPlayerIndex;
-  const { winner, actionTimer } = useGameState();
+  const { winner, actionTimer, stage, gameNotification } = useGameState();
   const isWinner = player.id === winner?.winnerId;
   const { isActionProcessing, pendingAction } = useProcessing();
   const { user } = useUser();
@@ -49,11 +49,12 @@ export default function PlayerUser({
   // Track if an action has been triggered during the current turn
   const [actionTriggered, setActionTriggered] = useState(false);
   const prevIsUserTurnRef = useRef(isUserTurn);
+  const prevStageRef = useRef(stage);
 
   // Timer progress bar - only show for current user
   const timePercentage = useActionTimerPercentage(actionTimer, user?.id);
 
-  // Reset actionTriggered when it becomes the user's turn (new turn started)
+  // Reset actionTriggered when it becomes the user's turn (new turn started) OR when stage changes
   useEffect(() => {
     // When isUserTurn changes from false to true, it's a new turn for the user
     if (isUserTurn && !prevIsUserTurnRef.current) {
@@ -61,6 +62,14 @@ export default function PlayerUser({
     }
     prevIsUserTurnRef.current = isUserTurn;
   }, [isUserTurn]);
+
+  // Reset actionTriggered when stage changes (new betting round)
+  useEffect(() => {
+    if (stage !== prevStageRef.current) {
+      setActionTriggered(false);
+      prevStageRef.current = stage;
+    }
+  }, [stage]);
 
   // Callback to notify when action is taken (called immediately on button click)
   const handleActionTaken = () => {
@@ -72,11 +81,11 @@ export default function PlayerUser({
     if (player.isAllIn) {
       console.log(`[PlayerUser] Player ${player.username} has isAllIn status:`, {
         isAllIn: player.isAllIn,
-        chips: player.chips.length,
+        chipCount: player.chipCount,
         allInAmount: player.allInAmount
       });
     }
-  }, [player.isAllIn, player.username, player.chips.length, player.allInAmount]);
+  }, [player.isAllIn, player.username, player.chipCount, player.allInAmount]);
 
   // Check if current user has a pending action being processed
   const isProcessingUserAction = isActionProcessing && pendingAction?.playerId === player.id;
@@ -140,7 +149,7 @@ return (
             )}
         </div>
         {/* Player controls or notification area */}
-        {isUserTurn && locked && player.hand.length > 0 && !winner && !actionTriggered ? (
+        {isUserTurn && locked && player.hand.length > 0 && !winner && !actionTriggered && !gameNotification ? (
             <PlayerControls onActionTaken={handleActionTaken} />
         ) : (
             <NotificationArea />

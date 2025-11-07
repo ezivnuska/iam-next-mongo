@@ -1,7 +1,6 @@
 // app/poker/lib/utils/side-pot-calculator.ts
 
 import type { Player, PotInfo } from '../definitions/poker';
-import { getChipTotal } from './poker';
 import { getActivePlayers } from './player-helpers';
 
 /**
@@ -157,7 +156,7 @@ export function calculateSidePots(
  * Check if a player has enough chips to make a bet
  */
 export function getPlayerChipCount(player: Player): number {
-  return getChipTotal(player.chips);
+  return player.chipCount;
 }
 
 /**
@@ -194,14 +193,14 @@ export function convertLegacyPotToPotInfo(
   players: Player[]
 ): PotInfo {
   const totalAmount = pot.reduce((sum, bet) => {
-    return sum + getChipTotal(bet.chips);
+    return sum + (bet.chipCount || 0);
   }, 0);
 
   const contributions: { [key: string]: number } = {};
   pot.forEach(bet => {
     const player = players.find(p => p.username === bet.player);
     if (player) {
-      const betAmount = getChipTotal(bet.chips);
+      const betAmount = bet.chipCount || 0;
       contributions[player.id] = (contributions[player.id] || 0) + betAmount;
     }
   });

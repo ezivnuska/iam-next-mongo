@@ -32,7 +32,7 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
 
   // Get current player's chip count and all-in status
   const currentPlayer = isMyTurn ? players[currentPlayerIndex] : null;
-  const playerChipCount = currentPlayer ? getChipTotal(currentPlayer.chips) : 0;
+  const playerChipCount = currentPlayer ? currentPlayer.chipCount : 0;
   const isPlayerAllIn = currentPlayer?.isAllIn || false;
 
   // Check if calling the current bet would be an all-in (hide separate All-In button)

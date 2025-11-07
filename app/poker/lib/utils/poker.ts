@@ -84,21 +84,30 @@ export function shuffleDeck(deck: Card[]): Card[] {
   return shuffled;
 }
 
-export function createChips(count: number, value: number = 1): Chip[] {
-  return Array.from({ length: count }, (_, i) => ({
-    id: `chip-${i}-${Date.now()}`,
-    value,
-  }));
+/**
+ * @deprecated Chips are now represented as simple numbers.
+ * Use the chip count directly instead of calling this function.
+ * This function is kept for backward compatibility and simply returns the count.
+ */
+export function createChips(count: number, value: number = 1): number {
+  return count * value;
 }
 
-export function getChipTotal(chips: Chip[]): number {
-  return chips.reduce((total, chip) => total + chip.value, 0);
+/**
+ * @deprecated Chips are now represented as simple numbers.
+ * This function is kept for backward compatibility and returns the value as-is.
+ */
+export function getChipTotal(chipCount: number | Chip[]): number {
+  // Handle both old (array) and new (number) formats for backward compatibility
+  if (typeof chipCount === 'number') {
+    return chipCount;
+  }
+  // Legacy support for Chip arrays
+  return chipCount.reduce((total, chip) => total + chip.value, 0);
 }
 
-export function getPotTotal(bets: { chips: Chip[] }[]): number {
-  return bets.reduce((total, bet) => {
-    return total + getChipTotal(bet.chips);
-  }, 0);
+export function getPotTotal(bets: { chipCount: number }[]): number {
+  return bets.reduce((total, bet) => total + bet.chipCount, 0);
 }
 
 // Hand evaluation types

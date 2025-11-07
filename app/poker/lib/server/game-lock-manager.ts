@@ -56,6 +56,29 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
         gameToLock.processing = false;
         await gameToLock.save();
 
+        // Migrate players from old chips array format if needed
+        const { getChipTotal } = await import('@/app/poker/lib/utils/poker');
+        let migrationNeeded = false;
+        for (const player of gameToLock.players) {
+          if ((player as any).chips && Array.isArray((player as any).chips)) {
+            const oldChipTotal = getChipTotal((player as any).chips);
+            player.chipCount = oldChipTotal;
+            delete (player as any).chips;
+            migrationNeeded = true;
+            console.log(`[GameLockManager] Migrated player ${player.username} chips: ${oldChipTotal}`);
+          } else if (typeof player.chipCount !== 'number') {
+            // No chipCount set, default to starting chips
+            const { POKER_GAME_CONFIG } = await import('@/app/poker/lib/config/poker-constants');
+            player.chipCount = POKER_GAME_CONFIG.DEFAULT_STARTING_CHIPS;
+            migrationNeeded = true;
+            console.log(`[GameLockManager] Set default chips for player ${player.username}: ${player.chipCount}`);
+          }
+        }
+        if (migrationNeeded) {
+          gameToLock.markModified('players');
+          await gameToLock.save();
+        }
+
         // Validate players have enough chips before placing blinds
         const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
         const { getBlindConfig } = await import('./blinds-manager');
@@ -66,8 +89,8 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
         const smallBlindPos = gameToLock.players.length === 2 ? buttonPosition : (buttonPosition + 1) % gameToLock.players.length;
         const bigBlindPos = (buttonPosition + 1) % gameToLock.players.length;
 
-        const smallBlindPlayerChips = gameToLock.players[smallBlindPos]?.chips?.length || 0;
-        const bigBlindPlayerChips = gameToLock.players[bigBlindPos]?.chips?.length || 0;
+        const smallBlindPlayerChips = gameToLock.players[smallBlindPos]?.chipCount || 0;
+        const bigBlindPlayerChips = gameToLock.players[bigBlindPos]?.chipCount || 0;
 
         if (smallBlindPlayerChips < smallBlind || bigBlindPlayerChips < bigBlind) {
           // At least one player doesn't have enough chips - can't lock

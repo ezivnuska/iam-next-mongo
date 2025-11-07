@@ -136,7 +136,7 @@ export class StageManager {
    */
   static shouldAutoAdvance(game: PokerGameDocument): boolean {
     const activePlayers = getActivePlayers(game.players);
-    const playersWithChips = activePlayers.filter((p: Player) => !p.isAllIn && p.chips.length > 0);
+    const playersWithChips = activePlayers.filter((p: Player) => !p.isAllIn && p.chipCount > 0);
 
     const shouldAuto = playersWithChips.length <= 1;
 

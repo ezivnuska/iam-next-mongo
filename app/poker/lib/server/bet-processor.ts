@@ -1,38 +1,9 @@
 // app/lib/server/poker/bet-processor.ts
 
-import type { Player, Bet, Chip } from '@/app/poker/lib/definitions/poker';
+import type { Player, Bet } from '@/app/poker/lib/definitions/poker';
 import type { PokerGameDocument } from '@/app/poker/lib/models/poker-game';
 import { initializeBets } from '@/app/poker/lib/utils/betting-helpers';
 import { getPlayerChipCount, shouldGoAllIn, getMaxBetAmount } from '@/app/poker/lib/utils/side-pot-calculator';
-import { getChipTotal } from '@/app/poker/lib/utils/poker';
-
-/**
- * Remove chips from player's chip array by total value
- * Handles chips with different denominations (e.g., chips worth 1, 10, 100)
- *
- * @param chips - Array of chip objects to remove from
- * @param targetValue - Total value of chips to remove
- * @returns Array of removed chip objects
- */
-function removeChipsByValue(chips: Chip[], targetValue: number): Chip[] {
-  const removed: Chip[] = [];
-  let remainingValue = targetValue;
-
-  // Remove chips from the beginning until we've removed enough value
-  while (remainingValue > 0 && chips.length > 0) {
-    const chip = chips.shift()!; // Remove first chip
-    removed.push(chip);
-    remainingValue -= chip.value;
-  }
-
-  // Sanity check: we should have removed exactly the target value
-  const actualRemoved = getChipTotal(removed);
-  if (actualRemoved !== targetValue) {
-    console.warn(`[removeChipsByValue] Warning: Removed ${actualRemoved} chips but target was ${targetValue}`);
-  }
-
-  return removed;
-}
 
 /**
  * Initialize player bets array if not properly set
@@ -61,13 +32,10 @@ export function processBetTransaction(
 
   console.log(`[BetProcessor] Bet calculation: actualChipCount=${actualChipCount}, wentAllIn=${wentAllIn}`);
 
-  // Remove chips from player BY VALUE (not by element count)
-  // This handles chips with different denominations correctly
-  const chipsToRemove = removeChipsByValue(player.chips, actualChipCount);
-  const chipsRemaining = player.chips.length;
-  const chipsRemainingValue = getChipTotal(player.chips);
+  // Remove chips from player (simple subtraction now)
+  player.chipCount -= actualChipCount;
 
-  console.log(`[BetProcessor] Chips after bet - removed: ${chipsToRemove.length} elements (value: ${getChipTotal(chipsToRemove)}), remaining: ${chipsRemaining} elements (value: ${chipsRemainingValue})`);
+  console.log(`[BetProcessor] Chips after bet - removed: ${actualChipCount}, remaining: ${player.chipCount}`);
 
   // Mark player as all-in if they bet all their chips
   if (wentAllIn) {
@@ -75,14 +43,14 @@ export function processBetTransaction(
     player.allInAmount = actualChipCount;
     console.log(`[BetProcessor] Player ${player.username} marked as ALL-IN: isAllIn=${player.isAllIn}, allInAmount=${actualChipCount}`);
   } else {
-    console.log(`[BetProcessor] Player ${player.username} NOT all-in: wentAllIn=${wentAllIn}, actualChipCount=${actualChipCount}, availableChips=${availableChips}, chipsRemainingValue=${chipsRemainingValue}`);
+    console.log(`[BetProcessor] Player ${player.username} NOT all-in: wentAllIn=${wentAllIn}, actualChipCount=${actualChipCount}, availableChips=${availableChips}, chipsRemaining=${player.chipCount}`);
   }
 
   return {
     player,
     chipsToAdd: {
       player: player.username,
-      chips: chipsToRemove,
+      chipCount: actualChipCount,
     },
     actualChipCount,
     wentAllIn,
@@ -118,8 +86,7 @@ export function updateGameAfterBet(
   game.players[playerIndex] = updatedPlayer;
   game.markModified('players');
 
-  const chipValue = getChipTotal(updatedPlayer.chips);
-  console.log(`[updateGameAfterBet] Player ${updatedPlayer.username} updated in game - chips: ${updatedPlayer.chips.length} elements (value: ${chipValue}), isAllIn: ${updatedPlayer.isAllIn}`);
+  console.log(`[updateGameAfterBet] Player ${updatedPlayer.username} updated in game - chipCount: ${updatedPlayer.chipCount}, isAllIn: ${updatedPlayer.isAllIn}`);
 
   // Move to next player (skip all-in and folded players)
   const startingIndex = playerIndex;

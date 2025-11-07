@@ -239,15 +239,11 @@ export function PokerProvider({ children }: { children: ReactNode }) {
 
     // Optimistically update pot and playerBets on acting client
     if (chipCount > 0) {
-      // Create chips with standard value of 1 per chip
-      // chipCount represents total value, which equals the number of chips needed
-      const numChips = chipCount;
-
       setPot(prevPot => [
         ...prevPot,
         {
           player: currentPlayer.username,
-          chips: createChips(numChips, 1)
+          chipCount: chipCount
         }
       ]);
 
@@ -458,14 +454,14 @@ export function PokerProvider({ children }: { children: ReactNode }) {
   const potValue = useMemo(() => {
     // Calculate total pot value
     const potTotal = pot.reduce((total, bet: Bet) => {
-      return total + getChipTotal(bet.chips);
+      return total + bet.chipCount;
     }, 0);
 
     // Calculate each player's contribution
     const playerContributions: Record<string, number> = {};
     pot.forEach((bet: Bet) => {
       const playerName = bet.player;
-      const betValue = getChipTotal(bet.chips);
+      const betValue = bet.chipCount;
       playerContributions[playerName] = (playerContributions[playerName] || 0) + betValue;
     });
 

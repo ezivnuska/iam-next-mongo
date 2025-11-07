@@ -24,7 +24,7 @@ interface PlayerProps {
 }
 
 export default function Player({ player, locked, index, currentPlayerIndex, potContribution, isCurrentUser, totalPlayers, onLeaveGame }: PlayerProps) {
-  const chipTotal = getChipTotal(player.chips);
+  const chipTotal = player.chipCount;
   const isCurrentPlayer = index === currentPlayerIndex;
   const { winner, actionTimer } = useGameState();
   const isWinner = player.id === winner?.winnerId;

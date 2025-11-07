@@ -2,7 +2,6 @@
 
 import { PokerGame, type PokerGameDocument } from '@/app/poker/lib/models/poker-game';
 import { PokerBalance } from '@/app/poker/lib/models/poker-balance';
-import { createChips } from '@/app/poker/lib/utils/poker';
 import { withRetry } from '@/app/lib/utils/retry';
 import type { Bet, Card, Player } from '@/app/poker/lib/definitions/poker';
 import { GameStage } from '@/app/poker/lib/definitions/poker';
@@ -65,19 +64,38 @@ export async function addPlayer(
   user: { id: string; username: string }
 ) {
   // Get or create balance ONCE before retry loop to avoid duplicate creation
-  let balance = await PokerBalance.findOne({ userId: user.id });
-  let playerChips = createChips(POKER_GAME_CONFIG.DEFAULT_STARTING_CHIPS);
+  const balanceDoc = await PokerBalance.findOne({ userId: user.id }).lean();
+  let playerChipCount: number = POKER_GAME_CONFIG.DEFAULT_STARTING_CHIPS;
 
-  if (balance && balance.chips.length > 0) {
-    // Use their saved balance
-    playerChips = balance.chips;
+  if (balanceDoc) {
+    const balance = balanceDoc as any; // Use any for migration compatibility
+    // Check if balance has the new chipCount field
+    if (typeof balance.chipCount === 'number' && balance.chipCount > 0) {
+      playerChipCount = balance.chipCount;
+    } else if (balance.chips && Array.isArray(balance.chips)) {
+      // Migrate from old chips array format
+      const { getChipTotal } = await import('@/app/poker/lib/utils/poker');
+      const oldChipTotal = getChipTotal(balance.chips);
+      playerChipCount = oldChipTotal > 0 ? oldChipTotal : POKER_GAME_CONFIG.DEFAULT_STARTING_CHIPS;
+
+      // Update the balance document to new format
+      await PokerBalance.findOneAndUpdate(
+        { userId: user.id },
+        { $set: { chipCount: playerChipCount }, $unset: { chips: '' } }
+      );
+      console.log(`[AddPlayer] Migrated balance for ${user.username}: ${oldChipTotal} -> ${playerChipCount} chips`);
+    } else {
+      // Balance exists but has no chips, set to default
+      await PokerBalance.findOneAndUpdate(
+        { userId: user.id },
+        { $set: { chipCount: playerChipCount } }
+      );
+      console.log(`[AddPlayer] Set default balance for ${user.username}: ${playerChipCount} chips`);
+    }
   } else {
-    // Create new balance record with starting chips (idempotent - won't duplicate)
-    await PokerBalance.findOneAndUpdate(
-      { userId: user.id },
-      { $setOnInsert: { userId: user.id, chips: playerChips } },
-      { upsert: true, new: true }
-    );
+    // Create new balance record with starting chips
+    await PokerBalance.create({ userId: user.id, chipCount: playerChipCount });
+    console.log(`[AddPlayer] Created new balance for ${user.username}: ${playerChipCount} chips`);
   }
 
   // Retry logic for version conflicts
@@ -103,7 +121,7 @@ export async function addPlayer(
       id: user.id,
       username: user.username,
       hand: [],
-      chips: playerChips,
+      chipCount: playerChipCount,
     });
 
     // Explicitly mark players array as modified for Mongoose
@@ -484,10 +502,8 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
 
       // Log player chips before save
       console.log('[PlaceBet] Player chips before save:');
-      const { getChipTotal } = await import('@/app/poker/lib/utils/poker');
       game.players.forEach((p: Player, idx: number) => {
-        const chipValue = getChipTotal(p.chips);
-        console.log(`  Player ${idx} (${p.username}): ${p.chips.length} elements (value: ${chipValue}), isAllIn=${p.isAllIn}`);
+        console.log(`  Player ${idx} (${p.username}): chipCount=${p.chipCount}, isAllIn=${p.isAllIn}`);
       });
 
       // Save once with all changes (bet + potential stage advancement)
@@ -771,7 +787,7 @@ export async function restart(gameId: string) {
       // Check each player's chips and refill if needed
       const playersNeedingChips: number[] = [];
       game.players.forEach((player: Player, index: number) => {
-        const playerChips = player.chips?.length || 0;
+        const playerChips = player.chipCount || 0;
         const requiredChips = index === smallBlindPos ? smallBlind : (index === bigBlindPos ? bigBlind : 0);
 
         if (playerChips < requiredChips) {
@@ -785,13 +801,13 @@ export async function restart(gameId: string) {
 
         for (const playerIndex of playersNeedingChips) {
           const player = game.players[playerIndex];
-          const newChips = createChips(POKER_GAME_CONFIG.DEFAULT_STARTING_CHIPS);
-          player.chips = newChips;
+          const newChipCount = POKER_GAME_CONFIG.DEFAULT_STARTING_CHIPS;
+          player.chipCount = newChipCount;
 
           // Update their balance in the database
           await PokerBalance.findOneAndUpdate(
             { userId: player.id },
-            { chips: newChips },
+            { chipCount: newChipCount },
             { upsert: true }
           );
 

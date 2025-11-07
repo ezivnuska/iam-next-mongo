@@ -2,7 +2,6 @@
 
 import type { Player } from '@/app/poker/lib/definitions/poker';
 import type { PokerGameDocument } from '@/app/poker/lib/models/poker-game';
-import { createChips } from '@/app/poker/lib/utils/poker';
 import { ActionHistoryType } from '@/app/poker/lib/definitions/action-history';
 import { randomBytes } from 'crypto';
 import { POKER_GAME_CONFIG } from '@/app/poker/lib/config/poker-constants';
@@ -46,7 +45,7 @@ export function placeSmallBlind(game: PokerGameDocument): {
   const smallBlindPlayer = game.players[smallBlindPosition];
 
   // Handle all-in if player doesn't have enough chips for small blind
-  const availableChips = smallBlindPlayer.chips?.length || 0;
+  const availableChips = smallBlindPlayer.chipCount || 0;
   const blindAmount = Math.min(smallBlind, availableChips);
   const wentAllIn = availableChips > 0 && blindAmount === availableChips;
 
@@ -54,7 +53,8 @@ export function placeSmallBlind(game: PokerGameDocument): {
     throw new Error(`Player ${smallBlindPlayer.username} has no chips to post small blind`);
   }
 
-  const smallBlindChips = smallBlindPlayer.chips.splice(0, blindAmount);
+  // Deduct chips from player
+  smallBlindPlayer.chipCount -= blindAmount;
 
   // Mark player as all-in if they bet all their chips
   if (wentAllIn) {
@@ -64,7 +64,7 @@ export function placeSmallBlind(game: PokerGameDocument): {
 
   game.pot.push({
     player: smallBlindPlayer.username,
-    chips: smallBlindChips,
+    chipCount: blindAmount,
   });
   game.playerBets[smallBlindPosition] = blindAmount;
 
@@ -123,7 +123,7 @@ export function placeBigBlind(game: PokerGameDocument): {
   const bigBlindPlayer = game.players[bigBlindPosition];
 
   // Handle all-in if player doesn't have enough chips for big blind
-  const availableChips = bigBlindPlayer.chips?.length || 0;
+  const availableChips = bigBlindPlayer.chipCount || 0;
   const blindAmount = Math.min(bigBlind, availableChips);
   const wentAllIn = availableChips > 0 && blindAmount === availableChips;
 
@@ -131,7 +131,8 @@ export function placeBigBlind(game: PokerGameDocument): {
     throw new Error(`Player ${bigBlindPlayer.username} has no chips to post big blind`);
   }
 
-  const bigBlindChips = bigBlindPlayer.chips.splice(0, blindAmount);
+  // Deduct chips from player
+  bigBlindPlayer.chipCount -= blindAmount;
 
   // Mark player as all-in if they bet all their chips
   if (wentAllIn) {
@@ -141,7 +142,7 @@ export function placeBigBlind(game: PokerGameDocument): {
 
   game.pot.push({
     player: bigBlindPlayer.username,
-    chips: bigBlindChips,
+    chipCount: blindAmount,
   });
   game.playerBets[bigBlindPosition] = blindAmount;
 

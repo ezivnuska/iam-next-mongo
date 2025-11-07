@@ -40,7 +40,7 @@ export async function savePlayerBalances(players: Player[]) {
   const balanceUpdates = players.map(player =>
     PokerBalance.findOneAndUpdate(
       { userId: player.id },
-      { chips: player.chips },
+      { chipCount: player.chipCount },
       { upsert: true, new: true }
     )
   );
@@ -65,29 +65,30 @@ export function awardPotToWinners(game: PokerGameDoc, winnerInfo: WinnerInfo): v
 
   // If no side pots, fall back to legacy pot distribution
   if (sidePots.length === 0) {
-    const potChips = game.pot.flatMap((bet: Bet) => bet.chips);
+    const potTotal = game.pot.reduce((sum: number, bet: Bet) => sum + bet.chipCount, 0);
 
     if (winnerInfo.isTie && winnerInfo.tiedPlayers) {
       // Split pot among tied players
-      const chipsPerWinner = Math.floor(potChips.length / winnerInfo.tiedPlayers.length);
+      const chipsPerWinner = Math.floor(potTotal / winnerInfo.tiedPlayers.length);
       winnerInfo.tiedPlayers.forEach((username: string) => {
         const player = findPlayerByUsername(game.players, username);
         if (player) {
-          player.chips.push(...potChips.splice(0, chipsPerWinner));
+          player.chipCount += chipsPerWinner;
         }
       });
       // Any remaining chips go to first tied player
-      if (potChips.length > 0) {
+      const remainder = potTotal % winnerInfo.tiedPlayers.length;
+      if (remainder > 0) {
         const firstWinner = findPlayerByUsername(game.players, winnerInfo.tiedPlayers![0]);
         if (firstWinner) {
-          firstWinner.chips.push(...potChips);
+          firstWinner.chipCount += remainder;
         }
       }
     } else {
       // Single winner gets entire pot
       const winner = game.players.find((p: Player) => p.id === winnerInfo.winnerId);
       if (winner) {
-        winner.chips.push(...potChips);
+        winner.chipCount += potTotal;
       }
     }
     return;
@@ -123,63 +124,33 @@ export function awardPotToWinners(game: PokerGameDoc, winnerInfo: WinnerInfo): v
 
     console.log(`[AwardPot] Pot ${potIndex} winner: ${potWinner.winnerName} (${potWinner.handRank})`);
 
-    // Get chips from the pot - track how many chips we've extracted per player
-    const extracted: { [playerId: string]: number } = {};
-    const potChips: any[] = [];
-
-    game.pot.forEach((bet: Bet) => {
-      const player = game.players.find(p => p.username === bet.player);
-      if (!player || !pot.eligiblePlayers.includes(player.id)) {
-        return;
-      }
-
-      const targetContribution = pot.contributions[player.id] || 0;
-      const alreadyExtracted = extracted[player.id] || 0;
-      const stillNeeded = targetContribution - alreadyExtracted;
-
-      if (stillNeeded > 0) {
-        // Extract chips up to the amount still needed
-        const chipsToTake = Math.min(stillNeeded, bet.chips.length);
-        const takenChips = bet.chips.splice(0, chipsToTake);
-        potChips.push(...takenChips);
-        extracted[player.id] = alreadyExtracted + takenChips.length;
-      }
-    });
-
-    // Mark pot as modified since we extracted chips (even though it gets cleared later)
-    game.markModified('pot');
+    // The pot amount is already calculated in sidePots
+    const potAmount = pot.amount;
 
     // Award chips to winner(s) of this pot
     if (potWinner.isTie && potWinner.tiedPlayers) {
       // Split pot among tied players
-      const chipsPerWinner = Math.floor(potChips.length / potWinner.tiedPlayers.length);
+      const chipsPerWinner = Math.floor(potAmount / potWinner.tiedPlayers.length);
+      const remainder = potAmount % potWinner.tiedPlayers.length;
 
-      potWinner.tiedPlayers.forEach((username: string) => {
+      potWinner.tiedPlayers.forEach((username: string, index: number) => {
         const player = findPlayerByUsername(game.players, username);
         if (player && pot.eligiblePlayers.includes(player.id)) {
-          const wonChips = potChips.splice(0, chipsPerWinner);
-          player.chips.push(...wonChips);
-          console.log(`[AwardPot] ${username} wins ${wonChips.length} chips from pot ${potIndex} (tie)`);
+          const wonChips = chipsPerWinner + (index === 0 ? remainder : 0); // First player gets remainder
+          player.chipCount += wonChips;
+          console.log(`[AwardPot] ${username} wins ${wonChips} chips from pot ${potIndex} (tie)`);
         }
       });
-
-      // Any remaining chips go to first tied player
-      if (potChips.length > 0) {
-        const firstWinner = findPlayerByUsername(game.players, potWinner.tiedPlayers![0]);
-        if (firstWinner) {
-          firstWinner.chips.push(...potChips);
-        }
-      }
     } else {
       // Single winner gets entire pot
       const winner = game.players.find((p: Player) => p.id === potWinner.winnerId);
       if (winner && pot.eligiblePlayers.includes(winner.id)) {
-        winner.chips.push(...potChips);
-        console.log(`[AwardPot] ${winner.username} wins ${potChips.length} chips from pot ${potIndex}`);
+        winner.chipCount += potAmount;
+        console.log(`[AwardPot] ${winner.username} wins ${potAmount} chips from pot ${potIndex}`);
 
         // Track winnings for main winner info
         if (winner.id === winnerInfo.winnerId) {
-          potWinnings.push({ potIndex, amount: potChips.length });
+          potWinnings.push({ potIndex, amount: potAmount });
         }
       }
     }
