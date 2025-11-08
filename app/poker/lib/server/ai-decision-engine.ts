@@ -85,14 +85,20 @@ function evaluatePreflopStrength(hand: Card[]): HandStrength {
   // High cards
   if (val1 === 14 && val2 >= 11) return HandStrength.VERY_STRONG; // AK, AQ, AJ
   if (val1 === 14 && val2 >= 10) return HandStrength.STRONG; // AT, A9
+  if (val1 === 14 && val2 >= 8) return HandStrength.MEDIUM; // A8, A7
   if (val1 >= 13 && val2 >= 11) return HandStrength.STRONG; // KQ, KJ
+  if (val1 >= 13 && val2 >= 10) return HandStrength.MEDIUM; // KT, K9
+  if (val1 >= 12 && val2 >= 10) return HandStrength.MEDIUM; // QT, Q9, JT
 
   // Suited connectors and high suited
-  if (isSuited && gap <= 1 && highCard >= 8) return HandStrength.MEDIUM;
-  if (isSuited && highCard >= 11) return HandStrength.MEDIUM;
+  if (isSuited && gap <= 1 && highCard >= 7) return HandStrength.MEDIUM;
+  if (isSuited && highCard >= 10) return HandStrength.MEDIUM;
 
   // Connected cards
-  if (gap <= 1 && highCard >= 9) return HandStrength.WEAK;
+  if (gap <= 1 && highCard >= 8) return HandStrength.WEAK;
+
+  // Any face card
+  if (highCard >= 11) return HandStrength.WEAK;
 
   return HandStrength.TRASH;
 }
@@ -250,24 +256,24 @@ function makeMediumStrongHandDecision(
   const maxBet = aiPlayer.chipCount;
 
   if (canCheck) {
-    // Sometimes bet for value
-    if (Math.random() > 0.4 || aggression === AggressionLevel.AGGRESSIVE) {
+    // More often bet for value
+    if (Math.random() > 0.3 || aggression === AggressionLevel.AGGRESSIVE) {
       const betSize = Math.min(Math.floor(potSize * 0.4), maxBet);
       return betSize > 0 ? { action: 'bet', amount: betSize } : { action: 'check' };
     }
     return { action: 'check' };
   }
 
-  // Facing a bet
-  if (amountToCall >= maxBet * 0.5) {
-    // Big bet - usually fold unless getting good odds
-    if (potOdds < 0.33) {
+  // Facing a bet - more willing to call with strong hands
+  if (amountToCall >= maxBet * 0.7) {
+    // Very big bet - fold unless getting decent odds
+    if (potOdds < 0.5) {
       return { action: 'call' };
     }
     return { action: 'fold' };
   }
 
-  // Small to medium bet - usually call
+  // Most bets - usually call with strong hands
   return { action: 'call' };
 }
 
@@ -283,16 +289,21 @@ function makeMediumHandDecision(
   aggression: AggressionLevel
 ): AIDecision {
   if (canCheck) {
-    // Usually check with medium hands
-    if (aggression === AggressionLevel.AGGRESSIVE && Math.random() > 0.7) {
+    // Sometimes check, sometimes bet with medium hands
+    if (aggression === AggressionLevel.AGGRESSIVE && Math.random() > 0.6) {
       const betSize = Math.min(Math.floor(potSize * 0.3), aiPlayer.chipCount);
       return betSize > 0 ? { action: 'bet', amount: betSize } : { action: 'check' };
     }
     return { action: 'check' };
   }
 
-  // Facing a bet - call if getting good odds
-  if (potOdds < 0.25 && amountToCall <= aiPlayer.chipCount * 0.3) {
+  // Facing a bet - more willing to call with medium hands
+  if (potOdds < 0.4 && amountToCall <= aiPlayer.chipCount * 0.5) {
+    return { action: 'call' };
+  }
+
+  // Even with worse odds, call small bets
+  if (amountToCall <= aiPlayer.chipCount * 0.2) {
     return { action: 'call' };
   }
 
@@ -313,8 +324,13 @@ function makeWeakHandDecision(
     return { action: 'check' };
   }
 
-  // Only call with weak hands if getting amazing odds and small bet
-  if (potOdds < 0.15 && amountToCall <= aiPlayer.chipCount * 0.1) {
+  // More willing to call with weak hands if getting good odds or small bet
+  if (potOdds < 0.3 && amountToCall <= aiPlayer.chipCount * 0.25) {
+    return { action: 'call' };
+  }
+
+  // Call very small bets even with weak hands
+  if (amountToCall <= aiPlayer.chipCount * 0.1) {
     return { action: 'call' };
   }
 
