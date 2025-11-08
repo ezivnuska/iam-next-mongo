@@ -42,6 +42,9 @@ export const POST = withAuth(async (request, context, session) => {
       actionHistory: updatedGame?.actionHistory || [],
     });
 
+    // Also emit full state to sync AI player changes and timer
+    await PokerSocketEmitter.emitStateUpdate(gameState);
+
     return Response.json({ success: true, gameState: serializedState });
   } catch (error: any) {
     // Handle specific errors with appropriate status codes and messages

@@ -27,11 +27,31 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
   const isUserInGame = players.some(p => p.id === currentUserId);
   const firstEmptySlotIndex = players.length;
 
+  // Check if there are any human players
+  const humanPlayers = players.filter(p => !p.isAI);
+  const hasHumanPlayers = humanPlayers.length > 0;
+  const aiPlayer = players.find(p => p.isAI);
+
   // Show button if user is not in game, game is not locked (in progress), and table is not full
   const canJoin = !isUserInGame && !locked && players.length < MAX_SLOTS;
 
   return (
     <ul className='flex flex-1 flex-col gap-2'>
+      {/* Show AI player as first item if no human players have joined */}
+      {!hasHumanPlayers && aiPlayer && (
+        <Player
+          key={aiPlayer.id}
+          player={aiPlayer}
+          index={0}
+          locked={locked}
+          currentPlayerIndex={currentPlayerIndex}
+          potContribution={0}
+          isCurrentUser={false}
+          totalPlayers={players.length}
+          onLeaveGame={onLeaveGame}
+        />
+      )}
+
       {slots.map((slotIndex) => {
         const player = players[slotIndex];
 
@@ -39,6 +59,11 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
           // Skip the current user - they're displayed separately in poker-table
           const isCurrentUser = player.id === currentUserId;
           if (isCurrentUser) {
+            return null;
+          }
+
+          // If no human players, skip AI here (already shown above)
+          if (!hasHumanPlayers && player.isAI) {
             return null;
           }
 

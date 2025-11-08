@@ -80,6 +80,7 @@ const PlayerSchema = new Schema<Player>(
     folded: { type: Boolean, required: false },
     isAllIn: { type: Boolean, required: false },
     allInAmount: { type: Number, required: false },
+    isAI: { type: Boolean, required: false, default: false },
   },
   { _id: false }
 );

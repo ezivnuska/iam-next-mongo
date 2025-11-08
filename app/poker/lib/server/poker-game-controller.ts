@@ -127,16 +127,46 @@ export async function addPlayer(
     // Explicitly mark players array as modified for Mongoose
     game.markModified('players');
 
-    // Start auto-lock timer when 2nd player joins
-    if (shouldStartLockTimer(game.players.length, !!game.lockTime)) {
-      const lockTime = new Date(Date.now() + POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS);
-      game.lockTime = lockTime;
-      scheduleGameLock(gameId, lockTime);
-    }
-
     await game.save();
 
-    return game.toObject();
+    // Manage AI player based on human player count (do this before timer to get accurate count)
+    const humanCount = game.players.filter((p: Player) => !p.isAI).length;
+    const hasAI = game.players.some((p: Player) => p.isAI);
+
+    if (humanCount >= 2 && hasAI) {
+      // Remove AI if 2+ human players
+      const { removeAIPlayerFromGame } = await import('./ai-player-manager');
+      await removeAIPlayerFromGame(gameId);
+      // Refresh game to get updated player list
+      const refreshedGame = await PokerGame.findById(gameId);
+      if (refreshedGame) {
+        game.players = refreshedGame.players;
+      }
+      console.log('[AddPlayer] Removed AI - 2+ human players present');
+    } else if (humanCount === 1 && !hasAI && !game.locked) {
+      // Add AI if only 1 human player
+      const { addAIPlayerToGame } = await import('./ai-player-manager');
+      await addAIPlayerToGame(gameId);
+      // Refresh game to get updated player list
+      const refreshedGame = await PokerGame.findById(gameId);
+      if (refreshedGame) {
+        game.players = refreshedGame.players;
+      }
+      console.log('[AddPlayer] Added AI - only 1 human player');
+    }
+
+    // Start/reset auto-lock timer when we have 2+ total players and game not locked
+    if (game.players.length >= 2 && !game.locked) {
+      const lockTime = new Date(Date.now() + POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS);
+      game.lockTime = lockTime;
+      await PokerGame.findByIdAndUpdate(gameId, { lockTime });
+      scheduleGameLock(gameId, lockTime);
+      console.log(`[AddPlayer] ${humanCount === 1 ? 'Started' : 'Reset'} auto-lock timer - game will lock in ${POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS / 1000} seconds`);
+    }
+
+    // Return fresh game state
+    const finalGame = await PokerGame.findById(gameId);
+    return finalGame ? finalGame.toObject() : game.toObject();
   }, POKER_RETRY_CONFIG);
 }
 
@@ -159,10 +189,42 @@ export async function removePlayer(
 
     game.players = game.players.filter((p: Player) => p.id !== user.id);
 
-    // Cancel lock timer if player count drops below 2
+    // Save the updated player list first
+    game.markModified('players');
+    await game.save();
+
+    // Manage AI player based on remaining human player count
+    const humanCount = game.players.filter((p: Player) => !p.isAI).length;
+    const hasAI = game.players.some((p: Player) => p.isAI);
+
+    if (humanCount === 1 && !hasAI && !game.locked) {
+      // Add AI if only 1 human player remains
+      const { addAIPlayerToGame } = await import('./ai-player-manager');
+      await addAIPlayerToGame(gameId);
+      // Refresh game to get updated player list
+      const refreshedGame = await PokerGame.findById(gameId);
+      if (refreshedGame) {
+        game.players = refreshedGame.players;
+      }
+      console.log('[RemovePlayer] Added AI - only 1 human player remains');
+    }
+
+    // Manage lock timer based on total player count (after AI management)
     if (game.players.length < 2) {
+      // Cancel lock timer if player count drops below 2
       const { cancelGameLock } = await import('./game-lock-manager');
       cancelGameLock(gameId);
+      game.lockTime = undefined;
+      await PokerGame.findByIdAndUpdate(gameId, { lockTime: undefined });
+      console.log('[RemovePlayer] Cancelled auto-lock timer - less than 2 players');
+    } else if (game.players.length >= 2 && !game.locked) {
+      // Reset lock timer if 2+ players remain (give them more time after someone leaves)
+      const { scheduleGameLock } = await import('./game-lock-manager');
+      const lockTime = new Date(Date.now() + POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS);
+      game.lockTime = lockTime;
+      await PokerGame.findByIdAndUpdate(gameId, { lockTime });
+      scheduleGameLock(gameId, lockTime);
+      console.log(`[RemovePlayer] Reset auto-lock timer - game will lock in ${POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS / 1000} seconds`);
     }
 
     // If 0 players remain, reset game state (don't delete - singleton game persists)
@@ -240,7 +302,10 @@ export async function removePlayer(
     }
 
     await game.save();
-    return game.toObject();
+
+    // Return fresh game state
+    const finalGame = await PokerGame.findById(gameId);
+    return finalGame ? finalGame.toObject() : game.toObject();
   }, POKER_RETRY_CONFIG);
 }
 
@@ -569,7 +634,7 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
         console.log('[PlaceBet] Not starting timer - game complete or round complete without cards dealt');
       }
 
-      return {
+      const result = {
         game: game.toObject(),
         events: {
           betPlaced: {
@@ -597,6 +662,18 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
           }),
         }
       };
+
+      // Check if next player is AI and trigger their turn
+      setImmediate(async () => {
+        try {
+          const { checkAndExecuteAITurn } = await import('./ai-player-manager');
+          await checkAndExecuteAITurn(gameId);
+        } catch (aiError) {
+          console.error('[PlaceBet] Error checking AI turn:', aiError);
+        }
+      });
+
+      return result;
     } catch (error) {
       // Release lock on error
       await releaseGameLock(gameId);
@@ -668,17 +745,23 @@ export async function fold(gameId: string, playerId: string) {
       });
       game.markModified('actionHistory');
 
-      // Release lock before save to prevent lock timeout issues
-      game.processing = false;
-      await game.save();
-
-      // Clear any existing timer (game ended due to fold)
+      // Clear any existing timer (game ended due to fold) - do this before save/emit
       try {
         await clearActionTimer(gameId);
       } catch (timerError) {
         console.error('[Fold] Failed to clear timer:', timerError);
         // Don't fail the fold if timer clear fails
       }
+
+      // Release lock before save to prevent lock timeout issues
+      game.processing = false;
+      await game.save();
+
+      // Fetch fresh game state after timer clear to ensure timer is removed
+      const freshGame = await PokerGame.findById(gameId);
+
+      // Emit full game state update to show winner (with timer already cleared)
+      await PokerSocketEmitter.emitStateUpdate(freshGame ? freshGame.toObject() : game.toObject());
 
       return game.toObject();
     } catch (error) {
@@ -695,6 +778,21 @@ export async function restart(gameId: string) {
     const game = await acquireGameLock(gameId);
 
     try {
+      // Before restarting, check if we should remove AI (if 2+ human players)
+      const humanPlayers = game.players.filter((p: Player) => !p.isAI);
+      const hasAI = game.players.some((p: Player) => p.isAI);
+
+      if (humanPlayers.length >= 2 && hasAI) {
+        console.log('[Restart] Removing AI player - sufficient human players for next game');
+        const aiIndex = game.players.findIndex((p: Player) => p.isAI);
+        if (aiIndex !== -1) {
+          game.players.splice(aiIndex, 1);
+          game.markModified('players');
+          await game.save();
+          console.log(`[Restart] AI player removed before restart`);
+        }
+      }
+
       // Validate that we have enough players to restart (need at least 2)
       if (game.players.length < 2) {
         console.warn(`[Restart] Not enough players to restart (${game.players.length} players)`);

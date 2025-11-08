@@ -31,6 +31,20 @@ export async function getOrCreateSingletonGame() {
         currentPlayerIndex: 0,
         playerBets: [],
       });
+
+      // Add AI player to new singleton game
+      try {
+        const { addAIPlayerToGame } = await import('./ai-player-manager');
+        await addAIPlayerToGame(game._id.toString());
+        // Refresh game to get updated player list
+        game = await PokerGame.findById(game._id);
+        if (!game) {
+          throw new Error('Failed to refresh game after adding AI');
+        }
+      } catch (aiError) {
+        console.error('[Singleton] Error adding initial AI player:', aiError);
+        // Don't fail game creation if AI add fails
+      }
     } catch (error: any) {
       // Handle race condition: another request created the game between our check and create
       if (error.code === 11000) {
@@ -71,5 +85,17 @@ export async function resetSingletonGame(gameId: string) {
   game.actionTimer = undefined;
 
   await game.save();
-  return game;
+
+  // Add AI player to reset game
+  try {
+    const { addAIPlayerToGame } = await import('./ai-player-manager');
+    await addAIPlayerToGame(gameId);
+    // Refresh game to get updated player list
+    const refreshedGame = await PokerGame.findById(gameId);
+    return refreshedGame || game;
+  } catch (aiError) {
+    console.error('[Singleton] Error adding AI player after reset:', aiError);
+    // Don't fail reset if AI add fails
+    return game;
+  }
 }

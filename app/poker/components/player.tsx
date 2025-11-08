@@ -66,6 +66,11 @@ export default function Player({ player, locked, index, currentPlayerIndex, potC
                         )}
                     </div>
     
+                    {player.isAI && (
+                        <span className="bg-blue-600 text-white px-1.5 py-0.5 rounded text-xs font-bold">
+                            AI
+                        </span>
+                    )}
                     {player.isAllIn && !winner && (
                         <span className="bg-red-500 text-white px-1.5 py-0.5 rounded text-xs font-bold">
                             ALL-IN

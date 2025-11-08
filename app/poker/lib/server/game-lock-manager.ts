@@ -205,6 +205,18 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
             GameActionType.PLAYER_BET,
             currentPlayer.id
           );
+
+          // Check if first player is AI and trigger their turn
+          if (currentPlayer.isAI) {
+            setImmediate(async () => {
+              try {
+                const { checkAndExecuteAITurn } = await import('./ai-player-manager');
+                await checkAndExecuteAITurn(gameId);
+              } catch (aiError) {
+                console.error('[GameLock] Error checking AI turn:', aiError);
+              }
+            });
+          }
         }
       } catch (error) {
         // Release lock on error

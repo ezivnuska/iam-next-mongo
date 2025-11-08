@@ -1,6 +1,7 @@
 // app/poker/lib/server/stage-manager.ts
 
 import type { PokerGameDocument } from '../models/poker-game';
+import { PokerGame } from '../models/poker-game';
 import { GameStage, StageStatus, type Player } from '../definitions/poker';
 import { POKER_TIMERS } from '../config/poker-constants';
 import { dealCommunalCards as dealCommunalCardsFromDealer, ensureCommunalCardsComplete } from './poker-dealer';
@@ -426,10 +427,27 @@ export class StageManager {
     });
     game.markModified('actionHistory');
 
+    await game.save();
+
+    // Clear any existing action timer (game ended) - after save but before emit
+    try {
+      const { clearActionTimer } = await import('./poker-timer-controller');
+      const gameId = String(game._id);
+      await clearActionTimer(gameId);
+    } catch (timerError) {
+      console.error('[StageManager] Failed to clear timer:', timerError);
+      // Don't fail game completion if timer clear fails
+    }
+
+    // Fetch fresh game state to ensure timer is cleared
+    const freshGame = await PokerGame.findById(game._id);
+    const gamePlayers = freshGame ? freshGame.players : game.players;
+    const gameWinner = freshGame ? freshGame.winner : game.winner;
+
     // Emit winner event
     await PokerSocketEmitter.emitRoundComplete({
-      winner: game.winner,
-      players: game.players,
+      winner: gameWinner,
+      players: gamePlayers,
     });
 
     console.log(`[StageManager] Game complete. Winner: ${winnerInfo.winnerName}`);

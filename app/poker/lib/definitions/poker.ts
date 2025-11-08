@@ -52,6 +52,7 @@ export interface Player {
   folded?: boolean;
   isAllIn?: boolean;        // Player has bet all their chips
   allInAmount?: number;     // Total amount player went all-in for (in chip count)
+  isAI?: boolean;           // Whether this is an AI player
 }
 
 export enum GameStage {
