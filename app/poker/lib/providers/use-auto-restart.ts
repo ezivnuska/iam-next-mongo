@@ -101,13 +101,27 @@ export function useAutoRestart({
       // Determine if current user should trigger restart
       // For ties: first tied player (alphabetically) triggers restart to avoid race conditions
       // For single winner: only the winner triggers restart
-      let isWinner: boolean;
-      if (winner.isTie && winner.tiedPlayers) {
+      // Special case: If winner is AI, first human player triggers restart
+      let shouldTriggerRestart: boolean;
+
+      // Check if winner is AI
+      const winnerPlayer = players.find(p => p.id === winner.winnerId);
+      const isAIWinner = winnerPlayer?.isAI === true;
+
+      if (isAIWinner) {
+        // AI won - first human player (alphabetically) triggers restart
+        const humanPlayers = players.filter(p => !p.isAI);
+        const sortedHumans = [...humanPlayers].sort((a, b) => a.username.localeCompare(b.username));
+        const firstHuman = sortedHumans[0];
+        shouldTriggerRestart = currentUserId === firstHuman?.id;
+      } else if (winner.isTie && winner.tiedPlayers) {
+        // Tie - first tied player (alphabetically) triggers restart
         const sortedTiedPlayers = [...winner.tiedPlayers].sort();
         const firstTiedPlayer = players.find(p => p.username === sortedTiedPlayers[0]);
-        isWinner = currentUserId === firstTiedPlayer?.id;
+        shouldTriggerRestart = currentUserId === firstTiedPlayer?.id;
       } else {
-        isWinner = currentUserId === winner.winnerId;
+        // Human won - only the winner triggers restart
+        shouldTriggerRestart = currentUserId === winner.winnerId;
       }
 
       // Countdown timer - decrement every second and check game state
@@ -145,9 +159,9 @@ export function useAutoRestart({
         }
       }, 1000);
 
-      // Schedule auto-restart - ONLY on winner's client (or first tied player for ties)
+      // Schedule auto-restart - ONLY on designated client to avoid race conditions
       let restartTimeout: NodeJS.Timeout | null = null;
-      if (isWinner) {
+      if (shouldTriggerRestart) {
         restartTimeout = setTimeout(async () => {
           // Double-check there are enough players and winner is still in game before restarting
           let shouldRestart = false;
