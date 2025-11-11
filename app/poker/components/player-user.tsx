@@ -2,18 +2,13 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import Hand from './hand';
-import { getChipTotal } from '@/app/poker/lib/utils/poker';
 import type { Player as PlayerType } from '@/app/poker/lib/definitions/poker';
-import clsx from 'clsx';
-import { useGameState, usePokerActions, useProcessing } from '@/app/poker/lib/providers/poker-provider';
+import { useGameState, usePlayers, usePokerActions } from '@/app/poker/lib/providers/poker-provider';
 import { useUser } from '@/app/lib/providers/user-provider';
 import UserAvatar from '@/app/ui/user/user-avatar';
 import { Button } from '@/app/ui/button';
-import PlayerConnectionStatus from './player-connection-status';
-import PlayerControls from './player-controls';
-import NotificationArea from './notification-area';
 import { useActionTimerPercentage } from '@/app/poker/lib/hooks/use-action-timer-percentage';
 
 interface PlayerUserProps {
@@ -41,41 +36,18 @@ export default function PlayerUser({
 }: PlayerUserProps) {
   const chipTotal = player.chipCount;
   const isCurrentPlayer = index === currentPlayerIndex;
-  const { winner, actionTimer, stage, gameNotification } = useGameState();
+  const { winner, actionTimer } = useGameState();
+  const { leaveGame } = usePokerActions();
   const isWinner = player.id === winner?.winnerId;
-  const { isActionProcessing, pendingAction } = useProcessing();
+  const { players } = usePlayers();
   const { user } = useUser();
-
-  // Track if an action has been triggered during the current turn
-  const [actionTriggered, setActionTriggered] = useState(false);
-  const prevIsUserTurnRef = useRef(isUserTurn);
-  const prevStageRef = useRef(stage);
 
   // Timer progress bar - only show for current user
   const timePercentage = useActionTimerPercentage(actionTimer, user?.id);
-
-  // Reset actionTriggered when it becomes the user's turn (new turn started) OR when stage changes
-  useEffect(() => {
-    // When isUserTurn changes from false to true, it's a new turn for the user
-    if (isUserTurn && !prevIsUserTurnRef.current) {
-      setActionTriggered(false);
-    }
-    prevIsUserTurnRef.current = isUserTurn;
-  }, [isUserTurn]);
-
-  // Reset actionTriggered when stage changes (new betting round)
-  useEffect(() => {
-    if (stage !== prevStageRef.current) {
-      setActionTriggered(false);
-      prevStageRef.current = stage;
-    }
-  }, [stage]);
-
-  // Callback to notify when action is taken (called immediately on button click)
-  const handleActionTaken = () => {
-    setActionTriggered(true);
-  };
-
+  
+  // Check if current user is in the game
+  const isUserInGame = user && players.some(p => p.id === user.id);
+  
   // Debug logging for isAllIn status
   useEffect(() => {
     if (player.isAllIn) {
@@ -86,25 +58,6 @@ export default function PlayerUser({
       });
     }
   }, [player.isAllIn, player.username, player.chipCount, player.allInAmount]);
-
-  // Check if current user has a pending action being processed
-  const isProcessingUserAction = isActionProcessing && pendingAction?.playerId === player.id;
-
-  // Map action types to display text
-  const getActionDisplayText = (actionType: string): string => {
-    switch (actionType) {
-      case 'bet':
-        return 'Betting';
-      case 'call':
-        return 'Calling';
-      case 'raise':
-        return 'Raising';
-      case 'fold':
-        return 'Folding';
-      default:
-        return 'Processing';
-    }
-  };
 
 return (
     <div className='flex flex-col gap-2 justify-between'>
@@ -119,11 +72,11 @@ return (
                     )}
                 </div>
 
-                {player.isAI && (
+                {/* {player.isAI && (
                     <span className="bg-blue-600 text-white px-1.5 py-0.5 rounded text-xs font-bold">
                         AI
                     </span>
-                )}
+                )} */}
                 {player.isAllIn && !winner && (
                     <span className="bg-red-500 text-white px-1.5 py-0.5 rounded text-xs font-bold">
                         ALL-IN
@@ -138,11 +91,21 @@ return (
                 )} */}
             </div>
             {(isCurrentUser || isWinner) && player.hand.length > 0 && <Hand cards={player.hand} />}
-            {isCurrentUser && totalPlayers === 1 && onLeaveGame && (
+            
+            {!locked && isUserInGame && (
+                <Button
+                    size='sm'
+                    onClick={leaveGame}
+                    className="bg-white text-blue-700 hover:bg-gray-100 border-0"
+                >
+                    Leave
+                </Button>
+            )}
+            {/* {isCurrentUser && totalPlayers === 1 && onLeaveGame && (
             <Button size='sm' onClick={onLeaveGame} className="mt-0 md:mt-2 text-sm">
                 Leave
             </Button>
-            )}
+            )} */}
 
             {/* Timer progress bar - absolutely positioned filling full height */}
             {timePercentage > 0 && (
@@ -153,12 +116,6 @@ return (
                 />
             )}
         </div>
-        {/* Player controls or notification area */}
-        {isUserTurn && locked && player.hand.length > 0 && !winner && !actionTriggered && !gameNotification ? (
-            <PlayerControls onActionTaken={handleActionTaken} />
-        ) : (
-            <NotificationArea />
-        )}
     </div>
   );
 }

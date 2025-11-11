@@ -7,7 +7,8 @@ import { withRetry } from '@/app/lib/utils/retry';
 import { POKER_RETRY_CONFIG } from '@/app/poker/lib/config/poker-constants';
 
 // Store active timer references for cancellation
-const activeTimers = new Map<string, NodeJS.Timeout>();
+// Exported so it can be accessed directly for optimization
+export const activeTimers = new Map<string, NodeJS.Timeout>();
 
 /**
  * Start an action timer for the game

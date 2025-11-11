@@ -35,7 +35,7 @@ export function Button({
     ghost: 'bg-transparent text-blue-500 hover:bg-blue-50',
     active: 'bg-blue-500 text-white hover:bg-blue-600',
     warn: 'bg-white text-red-500 hover:bg-red-200',
-    confirm: 'text-red-500 border-1 border-red-500 hover:bg-red-500 hover:text-white',
+    confirm: 'text-red-500 hover:bg-red-500 hover:text-white',
   };
 
   const buttonClass = clsx(

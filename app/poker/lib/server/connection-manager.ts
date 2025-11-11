@@ -51,10 +51,12 @@ export async function autoFoldDisconnectedPlayer(
     if (game) {
       const disconnectedPlayer = game.players.find((p: any) => p.id === playerId);
       if (disconnectedPlayer) {
-        await PokerSocketEmitter.emitGameNotification({
-          message: `${disconnectedPlayer.username} was auto-folded (disconnected)`,
-          type: 'action',
-          duration: 3000,
+        // Emit auto-fold notification (event-based)
+        await PokerSocketEmitter.emitNotification({
+          notificationType: 'player_fold',
+          category: 'action',
+          playerId: disconnectedPlayer.id,
+          playerName: disconnectedPlayer.username,
         });
       }
     }

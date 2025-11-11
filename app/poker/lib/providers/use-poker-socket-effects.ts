@@ -21,7 +21,6 @@ import {
   createTimerPausedHandler,
   createTimerResumedHandler,
   createTimerClearedHandler,
-  createGameNotificationHandler,
   registerSocketHandlers,
   type GameStateSnapshot,
   type StateUpdaters,
@@ -46,10 +45,10 @@ export interface PokerSocketEffectsDeps {
   setActionHistory: (history: any[]) => void;
   setIsActionProcessing: (processing: boolean) => void;
   setPendingAction: (action: { type: 'bet' | 'fold' | 'call' | 'raise'; playerId: string } | null) => void;
-  setGameNotification: React.Dispatch<React.SetStateAction<any>>;
+  setAutoAdvanceMode: (mode: boolean) => void;
   playSound: (sound: PokerSoundType) => void;
-  gameNotificationRef: React.MutableRefObject<{ type: string; timestamp: number; duration: number } | null>;
   setCurrentPlayerIndex: (index: number) => void;
+  showNotification?: (notification: { message: string; type: string; duration: number; onComplete?: () => void; metadata?: any }) => void;
 }
 
 /**
@@ -101,10 +100,10 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
     setActionHistory,
     setIsActionProcessing,
     setPendingAction,
-    setGameNotification,
+    setAutoAdvanceMode,
     playSound,
-    gameNotificationRef,
     setCurrentPlayerIndex,
+    showNotification,
   } = deps;
 
   useEffect(() => {
@@ -132,6 +131,7 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
       setActionHistory,
       setIsActionProcessing,
       setPendingAction,
+      setAutoAdvanceMode,
       playSound,
       userId,
     });
@@ -143,16 +143,12 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
     const handleGameLocked = createGameLockedHandler(updaters.updatePlayers, updaters.updateGameStatus, setStage, updaters.updateBettingState, setActionHistory, playSound);
     const handleBetPlaced = createBetPlacedHandler(updaters.updateBettingState, setActionHistory, setIsActionProcessing, setPendingAction, playSound, updaters.updatePlayers, userId);
 
-    // Create getter function for current notification state
-    const getGameNotification = () => gameNotificationRef.current;
-
-    const handleCardsDealt = createCardsDealtHandler(setStage, setCommunalCards, updaters.updatePlayers, playSound, getGameNotification, setCurrentPlayerIndex);
-    const handleRoundComplete = createRoundCompleteHandler(setWinner, updaters.updatePlayers, playSound);
+    const handleCardsDealt = createCardsDealtHandler(updaters.updateStageState, updaters.updatePlayers, playSound, setCurrentPlayerIndex);
+    const handleRoundComplete = createRoundCompleteHandler(setWinner, updaters.updatePlayers, playSound, showNotification, gameId);
     const handleTimerStarted = createTimerStartedHandler(setActionTimer);
     const handleTimerPaused = createTimerPausedHandler(setActionTimer);
     const handleTimerResumed = createTimerResumedHandler(setActionTimer);
     const handleTimerCleared = createTimerClearedHandler(setActionTimer);
-    const handleGameNotification = createGameNotificationHandler(setGameNotification, playSound);
 
     // Register all socket handlers
     const cleanup = registerSocketHandlers(
@@ -173,7 +169,6 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
         handleTimerPaused,
         handleTimerResumed,
         handleTimerCleared,
-        handleGameNotification,
       },
       SOCKET_EVENTS
     );
@@ -193,8 +188,7 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
     setActionHistory,
     setIsActionProcessing,
     setPendingAction,
-    setGameNotification,
     playSound,
-    gameNotificationRef,
+    setCurrentPlayerIndex,
   ]);
 }

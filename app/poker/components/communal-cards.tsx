@@ -8,11 +8,14 @@ import Card from './card';
 
 function CommunalCards() {
   const { communalCards } = useGameState();
+  const cardWidth = 72
+  const cardHeight = 108
 
-  const containerWidth = communalCards.length > 0 ? 72 + (communalCards.length - 1) * 24 : 0;
+  const containerWidth = communalCards.length > 0 ? cardWidth + (communalCards.length - 1) * (cardWidth / 2) : 0;
+  const containerHeight = cardHeight
   
 return (
-    <div className='relative' style={{ width: `${containerWidth}px`, height: '108px' }}>
+    <div className='relative' style={{ width: `${containerWidth}px`, height: `${containerHeight}px` }}>
         {communalCards.map((card, index) => (
             <div
                 key={`communal-card-${index}`}

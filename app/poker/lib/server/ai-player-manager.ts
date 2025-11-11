@@ -12,9 +12,8 @@ import type { Player } from '@/app/poker/lib/definitions/poker';
  */
 export const AI_PLAYER_CONFIG = {
   ID_PREFIX: 'ai-player-',
-  DEFAULT_NAME: 'AI Player',
+  DEFAULT_NAME: 'Computer',
   DEFAULT_AGGRESSION: AggressionLevel.BALANCED,
-  ACTION_DELAY_MS: 2000, // Delay before AI acts (for realism)
 };
 
 /**
@@ -22,7 +21,8 @@ export const AI_PLAYER_CONFIG = {
  */
 export async function createAIPlayer(name?: string, aggression?: AggressionLevel): Promise<Player> {
   const aiId = `${AI_PLAYER_CONFIG.ID_PREFIX}${Date.now()}`;
-  const aiName = name || `${AI_PLAYER_CONFIG.DEFAULT_NAME} ${Math.floor(Math.random() * 100)}`;
+//   const aiName = name || `${AI_PLAYER_CONFIG.DEFAULT_NAME} ${Math.floor(Math.random() * 100)}`;
+  const aiName = name || `${AI_PLAYER_CONFIG.DEFAULT_NAME}`;
 
   // Create balance for AI player
   await PokerBalance.findOneAndUpdate(
@@ -72,28 +72,30 @@ export async function addAIPlayerToGame(gameId: string, name?: string): Promise<
   console.log(`[AI Manager] Added AI player ${aiPlayer.username} to game ${gameId}`);
 }
 
+// checkAndExecuteAITurn removed - no longer needed with unified timer system
+// Use executeAIActionIfReady instead (timer already started by caller)
+
 /**
- * Check if current player is AI and needs to act
+ * Execute AI action if it's the AI player's turn (timer already started)
+ * This is called after a timer has been started for an AI player
  */
-export async function checkAndExecuteAITurn(gameId: string): Promise<void> {
+export async function executeAIActionIfReady(gameId: string): Promise<void> {
   const game = await PokerGame.findById(gameId);
   if (!game) return;
-
-  // Only act if game is locked and not processing
-  if (!game.locked || game.processing) return;
 
   const currentPlayer = game.players[game.currentPlayerIndex];
   if (!currentPlayer || !currentPlayer.isAI) return;
 
+  // Only act if game is locked and not processing
+  if (!game.locked || game.processing) return;
+
   // Check if AI player is folded or all-in
   if (currentPlayer.folded || currentPlayer.isAllIn) return;
 
-  console.log(`[AI Manager] AI player ${currentPlayer.username}'s turn - executing action`);
+  console.log(`[AI Manager] Executing AI action for ${currentPlayer.username} (timer already started)`);
 
-  // Add realistic delay before AI acts
-  setTimeout(async () => {
-    await executeAIAction(gameId);
-  }, AI_PLAYER_CONFIG.ACTION_DELAY_MS);
+  // Execute AI action immediately (timer was already started by caller)
+  await executeAIAction(gameId);
 }
 
 /**
@@ -109,6 +111,9 @@ async function executeAIAction(gameId: string): Promise<void> {
 
     // Check if AI is still current player (game might have advanced)
     if (currentPlayer.folded || currentPlayer.isAllIn) return;
+
+    // Timer already started in checkAndExecuteAITurn
+    // Now the AI makes its decision immediately
 
     // Calculate current game state
     const potSize = getPotTotal(game.pot);
@@ -131,9 +136,9 @@ async function executeAIAction(gameId: string): Promise<void> {
 
     console.log(`[AI Manager] AI decision:`, decision);
 
-    // Execute the decision using game controller
+    // Execute the actual action using game controllers
+    // The controllers will emit notifications and clear timers automatically
     const { placeBet: placeBetController, fold: foldController } = await import('./poker-game-controller');
-    const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
 
     let result;
 
@@ -141,7 +146,6 @@ async function executeAIAction(gameId: string): Promise<void> {
       case 'fold':
         result = await foldController(gameId, currentPlayer.id);
         console.log(`[AI Manager] AI folded`);
-        // Fold already emits state update
         break;
 
       case 'check':
@@ -172,25 +176,8 @@ async function executeAIAction(gameId: string): Promise<void> {
         break;
     }
 
-    // Emit socket events for all actions except fold (fold already emits)
-    if (result && decision.action !== 'fold') {
-      const { events } = result;
-
-      // Emit bet placed event
-      if (events.betPlaced) {
-        await PokerSocketEmitter.emitBetPlaced(events.betPlaced);
-      }
-
-      // Emit cards dealt event
-      if (events.cardsDealt) {
-        await PokerSocketEmitter.emitCardsDealt(events.cardsDealt);
-      }
-
-      // Emit round complete event
-      if (events.roundComplete) {
-        await PokerSocketEmitter.emitRoundComplete(events.roundComplete);
-      }
-    }
+    // Socket events and notifications are emitted by the controllers
+    console.log(`[AI Manager] AI action executed successfully`);
   } catch (error) {
     console.error('[AI Manager] Error executing AI action:', error);
   }

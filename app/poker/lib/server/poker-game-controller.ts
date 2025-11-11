@@ -17,6 +17,8 @@ import { ensurePlayerBetsInitialized, processBetTransaction, updateGameAfterBet 
 import { validatePlayerExists, getActivePlayerUsernames, findOtherPlayer } from '@/app/poker/lib/utils/player-helpers';
 import { scheduleGameLock, shouldStartLockTimer } from './game-lock-manager';
 import { getPlayerChipCount } from '@/app/poker/lib/utils/side-pot-calculator';
+import { TurnManager } from './turn-manager';
+import { PokerSocketEmitter } from '@/app/lib/utils/socket-helper';
 
 // Import refactored utilities
 import { POKER_GAME_CONFIG, POKER_TIMERS, POKER_RETRY_CONFIG } from '@/app/poker/lib/config/poker-constants';
@@ -51,7 +53,7 @@ export async function createGame() {
     communalCards: [],
     pot: [],
     players: [],
-    stage: Number(GameStage.Preflop), // Ensure it's stored as number 0
+    stage: Number(GameStage.Preflop), // Ensure it's stored as number 0 (Preflop stage)
     currentPlayerIndex: 0,
     playerBets: [],
   });
@@ -129,45 +131,85 @@ export async function addPlayer(
 
     await game.save();
 
-    // Manage AI player based on human player count (do this before timer to get accurate count)
-    const humanCount = game.players.filter((p: Player) => !p.isAI).length;
-    const hasAI = game.players.some((p: Player) => p.isAI);
-
-    if (humanCount >= 2 && hasAI) {
-      // Remove AI if 2+ human players
-      const { removeAIPlayerFromGame } = await import('./ai-player-manager');
-      await removeAIPlayerFromGame(gameId);
-      // Refresh game to get updated player list
-      const refreshedGame = await PokerGame.findById(gameId);
-      if (refreshedGame) {
-        game.players = refreshedGame.players;
-      }
-      console.log('[AddPlayer] Removed AI - 2+ human players present');
-    } else if (humanCount === 1 && !hasAI && !game.locked) {
-      // Add AI if only 1 human player
-      const { addAIPlayerToGame } = await import('./ai-player-manager');
-      await addAIPlayerToGame(gameId);
-      // Refresh game to get updated player list
-      const refreshedGame = await PokerGame.findById(gameId);
-      if (refreshedGame) {
-        game.players = refreshedGame.players;
-      }
-      console.log('[AddPlayer] Added AI - only 1 human player');
-    }
-
     // Start/reset auto-lock timer when we have 2+ total players and game not locked
+    // Note: AI player is always present in singleton game, so this will trigger when first human joins
     if (game.players.length >= 2 && !game.locked) {
       const lockTime = new Date(Date.now() + POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS);
       game.lockTime = lockTime;
       await PokerGame.findByIdAndUpdate(gameId, { lockTime });
       scheduleGameLock(gameId, lockTime);
-      console.log(`[AddPlayer] ${humanCount === 1 ? 'Started' : 'Reset'} auto-lock timer - game will lock in ${POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS / 1000} seconds`);
+      const humanCount = game.players.filter((p: Player) => !p.isAI).length;
+      console.log(`[AddPlayer] ${humanCount === 1 ? 'Started' : 'Reset'} auto-lock timer - game will lock in ${POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS / 1000} seconds (${game.players.length} total players: ${humanCount} human + AI)`);
     }
 
     // Return fresh game state
     const finalGame = await PokerGame.findById(gameId);
     return finalGame ? finalGame.toObject() : game.toObject();
   }, POKER_RETRY_CONFIG);
+}
+
+/**
+ * Handle complete player join flow including emissions and notifications
+ * Consolidates logic from /api/poker/join and /api/socket/emit routes
+ */
+export async function handlePlayerJoin(
+  gameId: string,
+  userId: string,
+  username: string
+): Promise<{ success: boolean; gameState: any; error?: string }> {
+  try {
+    // Add player to game
+    const gameState = await addPlayer(gameId, {
+      id: userId,
+      username: username || 'Guest',
+    });
+
+    // Find the newly joined player
+    const joinedPlayer = gameState.players.find((p: any) => p.id === userId);
+
+    // Log player join action
+    const { logPlayerJoined } = await import('@/app/poker/lib/utils/action-history');
+    const currentStage = gameState.locked ? gameState.stage : -1;
+    await logPlayerJoined(
+      gameState._id.toString(),
+      userId,
+      username || 'Guest',
+      currentStage
+    );
+
+    // Fetch updated game state with new action history
+    const updatedGame = await PokerGame.findById(gameId);
+    const { serializeGame } = await import('@/app/lib/utils/game-serialization');
+    const serializedState = serializeGame(updatedGame);
+
+    // Emit granular player joined event with actionHistory and lockTime
+    await PokerSocketEmitter.emitPlayerJoined({
+      player: joinedPlayer,
+      players: gameState.players,
+      playerCount: gameState.players.length,
+      lockTime: gameState.lockTime ? new Date(gameState.lockTime).toISOString() : undefined,
+      actionHistory: updatedGame?.actionHistory || [],
+    });
+
+    // If this player join brings the count to 2+ and game isn't locked, emit countdown notification
+    if (gameState.players.length >= 2 && !gameState.locked && gameState.lockTime) {
+      console.log('[HandlePlayerJoin] Emitting game_starting notification');
+      await PokerSocketEmitter.emitNotification({
+        notificationType: 'game_starting',
+        category: 'info',
+        countdownSeconds: POKER_GAME_CONFIG.AUTO_LOCK_DELAY_SECONDS,
+      });
+    }
+
+    // Also emit full state to sync AI player changes and timer
+    await PokerSocketEmitter.emitStateUpdate(gameState);
+
+    return { success: true, gameState: serializedState };
+  } catch (error: any) {
+    const errorMessage = error?.message || 'Failed to join game';
+    console.error('[HandlePlayerJoin] Error:', errorMessage);
+    return { success: false, gameState: null, error: errorMessage };
+  }
 }
 
 export async function removePlayer(
@@ -193,23 +235,8 @@ export async function removePlayer(
     game.markModified('players');
     await game.save();
 
-    // Manage AI player based on remaining human player count
-    const humanCount = game.players.filter((p: Player) => !p.isAI).length;
-    const hasAI = game.players.some((p: Player) => p.isAI);
-
-    if (humanCount === 1 && !hasAI && !game.locked) {
-      // Add AI if only 1 human player remains
-      const { addAIPlayerToGame } = await import('./ai-player-manager');
-      await addAIPlayerToGame(gameId);
-      // Refresh game to get updated player list
-      const refreshedGame = await PokerGame.findById(gameId);
-      if (refreshedGame) {
-        game.players = refreshedGame.players;
-      }
-      console.log('[RemovePlayer] Added AI - only 1 human player remains');
-    }
-
-    // Manage lock timer based on total player count (after AI management)
+    // Manage lock timer based on total player count
+    // Note: AI player is always present in singleton game
     if (game.players.length < 2) {
       // Cancel lock timer if player count drops below 2
       const { cancelGameLock } = await import('./game-lock-manager');
@@ -227,8 +254,10 @@ export async function removePlayer(
       console.log(`[RemovePlayer] Reset auto-lock timer - game will lock in ${POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS / 1000} seconds`);
     }
 
-    // If 0 players remain, reset game state (don't delete - singleton game persists)
-    if (game.players.length === 0) {
+    // If only AI player remains (no humans), reset game state (don't delete - singleton game persists)
+    const humanCount = game.players.filter((p: Player) => !p.isAI).length;
+    if (humanCount === 0) {
+      console.log('[RemovePlayer] No human players remain - resetting singleton game');
       const { resetSingletonGame } = await import('./singleton-game');
       const resetGame = await resetSingletonGame(gameId);
       return resetGame.toObject();
@@ -317,7 +346,7 @@ function getBettingRoundStartIndex(game: PokerGameDocument): number {
   const buttonPosition = game.dealerButtonPosition || 0;
   const playerCount = game.players.length;
   const isHeadsUp = playerCount === 2;
-  const isPreflop = game.stage === 0;
+  const isPreflop = game.stage === 0; // Preflop is stage 0
 
   if (isPreflop) {
     // Preflop: First to act is after big blind
@@ -352,6 +381,29 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
 
       // Get player info before conditional (needed for logging later)
       const player = game.players[playerIndex];
+
+      // Prevent betting during Showdown or GAME_ENDED stages
+      if (game.stage >= 4) { // 4 = Showdown, 5 = End
+        throw new Error('Cannot bet - game has ended');
+      }
+
+      // VALIDATION GATE: Use TurnManager to validate player can act
+      const turnValidation = TurnManager.validatePlayerCanAct(game, playerId);
+      if (!turnValidation.valid) {
+        console.error('[PlaceBet] Turn validation failed:', turnValidation.errors);
+        // For Phase 1, log but don't block - existing validations below will catch issues
+        // In Phase 2, we would throw: throw new Error(`Cannot act: ${turnValidation.errors.join(', ')}`);
+      }
+
+      // Get current turn context for logging
+      const turnContext = TurnManager.getCurrentTurnContext(game);
+      if (turnContext) {
+        console.log('[PlaceBet] Turn context:', {
+          turnNumber: turnContext.turnNumber,
+          stage: turnContext.stage,
+          actionRequired: turnContext.actionRequired,
+        });
+      }
 
       // Validate it's this player's turn
       if (game.currentPlayerIndex !== playerIndex) {
@@ -416,18 +468,40 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
 
       // Add action history OUTSIDE the betAlreadyProcessed check to ensure logging on retries
       // Check if this exact bet was already logged to prevent duplicates
+      // NOTE: Use timestamp-based deduplication (within last 1 second) to handle retry scenarios
+      const now = new Date();
+      const oneSecondAgo = new Date(now.getTime() - 1000);
+
+      // Determine if this is a blind post (happens during game lock, not during regular play)
+      const isBlindPost = false; // Regular play bets are never blind posts
+
       const recentBetActions = game.actionHistory.filter((action: any) =>
         action.actionType === ActionHistoryType.PLAYER_BET &&
         action.playerId === playerId &&
         action.stage === game.stage &&
-        action.betAmount === chipCount
+        action.chipAmount === chipCount &&
+        action.isBlind === isBlindPost && // Also check if blind status matches
+        action.timestamp && new Date(action.timestamp) > oneSecondAgo // Only check very recent duplicates
       );
 
-      // Only log if this bet hasn't been logged yet for this player at this stage
+      console.log(`[PlaceBet] Checking for duplicate bet actions for ${player.username} (AI: ${player.isAI}):`, {
+        playerId,
+        stage: game.stage,
+        chipCount,
+        isBlindPost,
+        recentActionsCount: recentBetActions.length,
+        totalActionsInHistory: game.actionHistory.length,
+        checkingWithinLastSecond: true,
+      });
+
+      // Only log if this bet hasn't been logged in the last second (prevents retry duplicates)
       if (recentBetActions.length === 0) {
+        console.log(`[PlaceBet] Logging bet action and emitting notification for ${player.username} (AI: ${player.isAI}), chipCount: ${chipCount}`);
         logBetAction(game, playerId, player.username, chipCount);
 
-        // Emit action notification
+        console.log(`[PlaceBet] Current action history count: ${game.actionHistory.length}, last action:`, game.actionHistory[game.actionHistory.length - 1]);
+
+        // Emit action notification (event-based)
         const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
         const { calculateCurrentBet } = await import('@/app/poker/lib/utils/betting-helpers');
 
@@ -438,26 +512,107 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
           game.players
         );
 
-        // Determine action type
-        let actionMessage = '';
-        if (chipCount === 0) {
-          actionMessage = `${player.username} checks`;
+        // Determine action type and notification type
+        // Check if player went all-in based on current chip count
+        const playerWentAllIn = game.players[playerIndex].chipCount === 0 && chipCount > 0;
+
+        let notificationType: 'player_check' | 'player_call' | 'player_raise' | 'player_bet' | 'player_all_in';
+        if (playerWentAllIn) {
+          notificationType = 'player_all_in';
+        } else if (chipCount === 0) {
+          notificationType = 'player_check';
         } else if (betToCall > 0 && chipCount === betToCall) {
-          actionMessage = `${player.username} calls ${chipCount}`;
+          notificationType = 'player_call';
         } else if (betToCall > 0 && chipCount > betToCall) {
-          actionMessage = `${player.username} raises to ${chipCount}`;
+          notificationType = 'player_raise';
         } else {
-          actionMessage = `${player.username} bets ${chipCount}`;
+          notificationType = 'player_bet';
         }
 
-        await PokerSocketEmitter.emitGameNotification({
-          message: actionMessage,
-          type: 'action',
-          duration: POKER_TIMERS.NOTIFICATION_DURATION_MS,
-          excludeUserId: playerId, // Don't show notification to the player who performed the action
+        console.log(`[PlaceBet] *** EMITTING NOTIFICATION: ${notificationType} for ${player.username}, chips: ${chipCount}, stage: ${game.stage} ***`);
+
+        // Send to all users (including acting user)
+        // Acting user will skip showing duplicate notification but still signal ready
+        await PokerSocketEmitter.emitNotification({
+          notificationType,
+          category: 'action',
+          playerId,
+          playerName: player.username,
+          chipAmount: chipCount,
+          isAI: player.isAI || false,  // Include AI flag so client knows not to signal ready
+          // Include pot sync data
+          pot: JSON.parse(JSON.stringify(game.pot)),
+          playerBets: [...game.playerBets],
+          currentPlayerIndex: game.currentPlayerIndex,
         });
+
+        console.log(`[PlaceBet] *** NOTIFICATION EMITTED SUCCESSFULLY ***`);
+      } else {
+        console.warn(`[PlaceBet] SKIPPING notification emit for ${player.username} (AI: ${player.isAI}) - bet already logged (duplicate detected within last 1 second)`);
       }
 
+      // DEFERRED TURN/STAGE ADVANCEMENT:
+      // After emitting the notification, we do NOT advance the turn or stage here.
+      // Instead, we wait for the client to signal 'poker:ready_for_next_turn' after viewing the notification.
+      // The turn-handler will then check for round completion and advance accordingly.
+      console.log('[PlaceBet] Action processed and notification emitted - deferring turn/stage advancement until client signals ready');
+
+      // Clear timer since player has taken their action - do this BEFORE saving
+      // This ensures the state update includes the cleared timer
+      game.actionTimer = undefined;
+      game.markModified('actionTimer');
+      console.log('[PlaceBet] Timer cleared from game object');
+
+      // Cancel the server-side setTimeout if it exists
+      const { activeTimers } = await import('./poker-timer-controller');
+      const existingTimer = activeTimers.get(gameId);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+        activeTimers.delete(gameId);
+        console.log('[PlaceBet] Canceled server-side timer');
+      }
+
+      // Release lock and save game state with current player index unchanged and timer cleared
+      game.processing = false;
+      await game.save();
+
+      // Emit state update so clients see the updated bets, pot, and CLEARED TIMER
+      const { PokerSocketEmitter: Emitter } = await import('@/app/lib/utils/socket-helper');
+      await Emitter.emitStateUpdate(game.toObject());
+
+      // If this was an AI action, wait for notification to complete before advancing
+      // Human players will signal ready from the client after viewing the notification
+      if (player.isAI) {
+        console.log('[PlaceBet] AI action - waiting for notification to complete before advancing turn');
+
+        const { POKER_TIMERS } = await import('../config/poker-constants');
+        // Use setTimeout wrapped in Promise to properly await the delay
+        await new Promise(resolve => setTimeout(resolve, POKER_TIMERS.NOTIFICATION_DURATION_MS));
+
+        console.log('[PlaceBet] AI action notification complete - advancing turn');
+        const { handleReadyForNextTurn } = await import('./turn-handler');
+        await handleReadyForNextTurn(gameId);
+        console.log('[PlaceBet] AI turn advancement completed');
+      }
+
+      // Return result in expected format
+      return {
+        game: game.toObject(),
+        events: {
+          betPlaced: {
+            playerIndex,
+            chipCount,
+            pot: game.pot,
+            playerBets: game.playerBets,
+            currentPlayerIndex: game.currentPlayerIndex,
+            actionHistory: game.actionHistory,
+            players: game.players,
+          }
+        }
+      };
+
+      // OLD CODE BELOW - Keep for reference but commented out
+      /*
       // Check if betting round is complete BEFORE saving
       // Round completion check logic:
       // We check for round completion when:
@@ -483,7 +638,32 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
 
       // Determine if we should check for round completion
       const startIndex = getBettingRoundStartIndex(game);
-      const hasWrappedToStart = game.currentPlayerIndex === startIndex;
+
+      // Count how many non-blind actions have happened in this stage
+      const actionsInCurrentStage = game.actionHistory.filter((action: any) =>
+        action.stage === game.stage &&
+        !action.isBlind // Exclude blind posts
+      ).length;
+
+      // Get unique players who have acted (not including blinds)
+      const playersWhoActedThisStage = new Set(
+        game.actionHistory
+          .filter((action: any) => action.stage === game.stage && !action.isBlind)
+          .map((action: any) => action.playerId)
+      );
+
+      // Count active players who can act (current player is already included in playersWhoCanAct)
+      const activePlayersCount = playersWhoCanAct.length;
+
+      // We've wrapped if:
+      // 1. Current player is at start position
+      // 2. All active players have acted at least once
+      // 3. At least 2 actions have occurred (can't wrap on first action)
+      const allActivePlayersHaveActed = playersWhoActedThisStage.size >= activePlayersCount;
+      const hasWrappedToStart = game.currentPlayerIndex === startIndex &&
+                                 actionsInCurrentStage >= 2 &&
+                                 allActivePlayersHaveActed;
+
       const noOneCanAct = playersWhoCanAct.length === 0;
       // If only one player can act and all bets are equal, that player just matched and round is complete
       const onlyOneCanActAndBetsEqual = playersWhoCanAct.length === 1 && allBetsEqual;
@@ -497,6 +677,12 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
         activePlayerBets,
         allBetsEqual,
         playersWhoCanAct: playersWhoCanAct.length,
+        currentPlayerIndex: game.currentPlayerIndex,
+        startIndex,
+        actionsInCurrentStage,
+        playersWhoActedThisStage: Array.from(playersWhoActedThisStage),
+        activePlayersCount,
+        allActivePlayersHaveActed,
         hasWrappedToStart,
         noOneCanAct,
         onlyOneCanActAndBetsEqual,
@@ -534,25 +720,46 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
               gameComplete: true
             };
           } else if (nextAction === 'auto-advance') {
-            // All players all-in - advance through all remaining stages
-            console.log('[PlaceBet] Auto-advancing through remaining stages (all players all-in)');
-            const autoAdvanceResult = await StageManager.autoAdvanceThroughRemainingStages(game);
+            // All players all-in - start auto-advance sequence
+            console.log('[PlaceBet] Starting auto-advance sequence (all players all-in)');
+            const autoAdvanceResult = await StageManager.startAutoAdvanceSequence(game);
 
             roundInfo = {
               roundComplete: true,
               cardsDealt: autoAdvanceResult.cardsDealt,
-              gameComplete: autoAdvanceResult.gameComplete
+              gameComplete: false // Game won't be complete until all stages finish
             };
           } else if (nextAction === 'advance') {
-            // Normal stage advancement
-            console.log('[PlaceBet] Advancing to next stage (normal flow)');
-            const advanced = await StageManager.advanceToNextStage(game);
+            // Normal stage advancement for Preflop/Flop/Turn/River
+            if (game.stage === 0) {
+              console.log('[PlaceBet] First betting round complete in Preflop stage - advancing to Flop');
 
-            roundInfo = {
-              roundComplete: true,
-              cardsDealt: advanced,
-              gameComplete: false
-            };
+              roundInfo = {
+                roundComplete: true,
+                cardsDealt: false,
+                gameComplete: false
+              };
+            } else {
+              console.log('[PlaceBet] Advancing to next stage (normal flow)');
+              const advanced = await StageManager.advanceToNextStage(game);
+
+              // Special case: If we just advanced to Showdown (stage 4), end the game immediately
+              if (game.stage === 4) { // Showdown
+                console.log('[PlaceBet] Advanced to Showdown - ending game immediately');
+                await StageManager.endGame(game);
+                roundInfo = {
+                  roundComplete: true,
+                  cardsDealt: false,
+                  gameComplete: true
+                };
+              } else {
+                roundInfo = {
+                  roundComplete: true,
+                  cardsDealt: advanced,
+                  gameComplete: false
+                };
+              }
+            }
           } else {
             // Continue betting in current stage
             console.log('[PlaceBet] Continuing betting in current stage');
@@ -563,6 +770,8 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
             };
           }
         }
+        // DO NOT advance turn here - let turn-handler do it after notification completes
+        // Client will signal ready_for_next_turn, then turn-handler advances the turn
       }
 
       // Log player chips before save
@@ -584,96 +793,7 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
         // Don't fail the bet if timer clear fails
       }
 
-      // Auto-start timer for next player
-      // Start timer if: 1) betting continues in same round, OR 2) new round started (cards dealt)
-      const shouldStartTimer = (!roundInfo.gameComplete) &&
-                               (!roundInfo.roundComplete || roundInfo.cardsDealt);
-
-      console.log('[PlaceBet] Timer decision:', {
-        shouldStartTimer,
-        gameComplete: roundInfo.gameComplete,
-        roundComplete: roundInfo.roundComplete,
-        cardsDealt: roundInfo.cardsDealt,
-        currentPlayerIndex: game.currentPlayerIndex
-      });
-
-      if (shouldStartTimer) {
-        const nextPlayer = game.players[game.currentPlayerIndex];
-        console.log('[PlaceBet] Next player:', nextPlayer?.username, 'isAllIn:', nextPlayer?.isAllIn, 'folded:', nextPlayer?.folded);
-
-        // Additional safety check: Don't start timer if all active players are all-in
-        const playersWhoCanAct = getPlayersWhoCanAct(game.players);
-        const allPlayersAllInOrFolded = playersWhoCanAct.length === 0;
-
-        console.log('[PlaceBet] Timer safety checks:', {
-          playersWhoCanAct: playersWhoCanAct.length,
-          allPlayersAllInOrFolded,
-          nextPlayerExists: !!nextPlayer,
-          nextPlayerCanAct: nextPlayer && !nextPlayer.isAllIn && !nextPlayer.folded
-        });
-
-        // Only start timer if next player exists, is not all-in, AND there are players who can act
-        if (nextPlayer && !nextPlayer.isAllIn && !nextPlayer.folded && !allPlayersAllInOrFolded) {
-          console.log(`[PlaceBet] Starting timer for player ${nextPlayer.username}`);
-          try {
-            await startActionTimer(
-              gameId,
-              POKER_TIMERS.ACTION_DURATION_SECONDS,
-              GameActionType.PLAYER_BET,
-              nextPlayer.id
-            );
-            console.log(`[PlaceBet] Timer started successfully for ${nextPlayer.username}`);
-          } catch (timerError) {
-            console.error('[PlaceBet] Failed to start timer for next player:', timerError);
-            // Don't fail the bet if timer fails
-          }
-        } else {
-          console.log('[PlaceBet] Not starting timer - next player is all-in/folded, no players can act, or does not exist');
-        }
-      } else {
-        console.log('[PlaceBet] Not starting timer - game complete or round complete without cards dealt');
-      }
-
-      const result = {
-        game: game.toObject(),
-        events: {
-          betPlaced: {
-            playerIndex,
-            chipCount,
-            pot: game.pot,
-            playerBets: game.playerBets,
-            currentPlayerIndex: game.currentPlayerIndex,
-            actionHistory: game.actionHistory,
-            players: game.players, // Include players for chip count and all-in status updates
-          },
-          ...(roundInfo.cardsDealt && {
-            cardsDealt: {
-              stage: game.stage,
-              communalCards: game.communalCards,
-              deckCount: game.deck.length,
-              players: game.players, // Include players so clients can see dealt cards
-            }
-          }),
-          ...(roundInfo.gameComplete && {
-            roundComplete: {
-              winner: game.winner,
-              players: game.players,
-            }
-          }),
-        }
-      };
-
-      // Check if next player is AI and trigger their turn
-      setImmediate(async () => {
-        try {
-          const { checkAndExecuteAITurn } = await import('./ai-player-manager');
-          await checkAndExecuteAITurn(gameId);
-        } catch (aiError) {
-          console.error('[PlaceBet] Error checking AI turn:', aiError);
-        }
-      });
-
-      return result;
+      */
     } catch (error) {
       // Release lock on error
       await releaseGameLock(gameId);
@@ -725,16 +845,45 @@ export async function fold(gameId: string, playerId: string) {
       // Add action history
       logFoldAction(game, playerId, foldingPlayer.username);
 
-      // Emit fold notification
       const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
-      await PokerSocketEmitter.emitGameNotification({
-        message: `${foldingPlayer.username} folds`,
-        type: 'action',
-        duration: 2000,
-        excludeUserId: playerId, // Don't show notification to the player who folded
+
+      // Emit fold notification (event-based)
+      // Send to all users (including acting user)
+      // Acting user will skip showing duplicate notification but still signal ready
+      await PokerSocketEmitter.emitNotification({
+        notificationType: 'player_fold',
+        category: 'action',
+        playerId: playerId,
+        playerName: foldingPlayer.username,
+        isAI: foldingPlayer.isAI || false,
       });
 
-      // Log game ended
+      console.log(`[Fold] Fold notification emitted for ${foldingPlayer.username} (AI: ${foldingPlayer.isAI})`);
+
+      // If AI folded, wait for notification to complete before emitting winner
+      // Human players will trigger winner notification after fold notification completes on client
+      if (foldingPlayer.isAI) {
+        console.log('[Fold] AI fold - waiting for fold notification to complete before emitting winner');
+        const { POKER_TIMERS } = await import('../config/poker-constants');
+        await new Promise(resolve => setTimeout(resolve, POKER_TIMERS.NOTIFICATION_DURATION_MS));
+      } else {
+        // For human folds, add small buffer to ensure fold notification is sent first
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      // Emit winner notification (event-based)
+      await PokerSocketEmitter.emitNotification({
+        notificationType: 'winner_determined',
+        category: 'info',
+        winnerId: winner.id,
+        winnerName: winner.username,
+        handRank: winnerInfo.handRank,
+      });
+
+      console.log(`[Fold] Winner notification emitted for ${winner.username}`);
+
+
+      // Log game ended in action history (for UI display only, not notifications)
       game.actionHistory.push({
         id: require('crypto').randomBytes(8).toString('hex'),
         timestamp: new Date(),
@@ -742,26 +891,30 @@ export async function fold(gameId: string, playerId: string) {
         actionType: ActionHistoryType.GAME_ENDED,
         winnerId: winner.id,
         winnerName: winner.username,
+        handRank: winnerInfo.handRank,
       });
       game.markModified('actionHistory');
 
-      // Clear any existing timer (game ended due to fold) - do this before save/emit
-      try {
-        await clearActionTimer(gameId);
-      } catch (timerError) {
-        console.error('[Fold] Failed to clear timer:', timerError);
-        // Don't fail the fold if timer clear fails
+      // Clear timer since game ended - do this BEFORE saving
+      game.actionTimer = undefined;
+      game.markModified('actionTimer');
+      console.log('[Fold] Timer cleared from game object');
+
+      // Cancel the server-side setTimeout if it exists
+      const { activeTimers } = await import('./poker-timer-controller');
+      const existingTimer = activeTimers.get(gameId);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+        activeTimers.delete(gameId);
+        console.log('[Fold] Canceled server-side timer');
       }
 
       // Release lock before save to prevent lock timeout issues
       game.processing = false;
       await game.save();
 
-      // Fetch fresh game state after timer clear to ensure timer is removed
-      const freshGame = await PokerGame.findById(gameId);
-
-      // Emit full game state update to show winner (with timer already cleared)
-      await PokerSocketEmitter.emitStateUpdate(freshGame ? freshGame.toObject() : game.toObject());
+      // Emit full game state update to show winner with timer already cleared
+      await PokerSocketEmitter.emitStateUpdate(game.toObject());
 
       return game.toObject();
     } catch (error) {
@@ -778,22 +931,8 @@ export async function restart(gameId: string) {
     const game = await acquireGameLock(gameId);
 
     try {
-      // Before restarting, check if we should remove AI (if 2+ human players)
-      const humanPlayers = game.players.filter((p: Player) => !p.isAI);
-      const hasAI = game.players.some((p: Player) => p.isAI);
-
-      if (humanPlayers.length >= 2 && hasAI) {
-        console.log('[Restart] Removing AI player - sufficient human players for next game');
-        const aiIndex = game.players.findIndex((p: Player) => p.isAI);
-        if (aiIndex !== -1) {
-          game.players.splice(aiIndex, 1);
-          game.markModified('players');
-          await game.save();
-          console.log(`[Restart] AI player removed before restart`);
-        }
-      }
-
       // Validate that we have enough players to restart (need at least 2)
+      // Note: AI player is always present in singleton game
       if (game.players.length < 2) {
         console.warn(`[Restart] Not enough players to restart (${game.players.length} players)`);
 
@@ -915,53 +1054,15 @@ export async function restart(gameId: string) {
         game.markModified('players');
       }
 
-      // PLACE SMALL BLIND with notification
+      // PLACE SMALL BLIND automatically without notification
       const smallBlindInfo = placeSmallBlind(game);
-      await game.save();
+      console.log(`[Restart] Small blind posted by ${smallBlindInfo.player.username}: ${smallBlindInfo.amount} chips`);
 
-      // Emit bet placed event for small blind
-      await PokerSocketEmitter.emitBetPlaced({
-        playerIndex: smallBlindInfo.position,
-        chipCount: smallBlindInfo.amount,
-        pot: game.pot,
-        playerBets: game.playerBets,
-        currentPlayerIndex: game.currentPlayerIndex,
-        actionHistory: game.actionHistory,
-        players: game.players, // Include players for all-in status updates
-      });
-
-      await PokerSocketEmitter.emitGameNotification({
-        message: `${smallBlindInfo.player.username} posts small blind (${smallBlindInfo.amount} chip)`,
-        type: 'blind',
-        duration: 2000,
-      });
-
-      await new Promise(resolve => setTimeout(resolve, POKER_TIMERS.POST_NOTIFICATION_DELAY_MS));
-
-      // PLACE BIG BLIND with notification
+      // PLACE BIG BLIND automatically without notification
       const bigBlindInfo = placeBigBlind(game);
-      await game.save();
+      console.log(`[Restart] Big blind posted by ${bigBlindInfo.player.username}: ${bigBlindInfo.amount} chips`);
 
-      // Emit bet placed event for big blind
-      await PokerSocketEmitter.emitBetPlaced({
-        playerIndex: bigBlindInfo.position,
-        chipCount: bigBlindInfo.amount,
-        pot: game.pot,
-        playerBets: game.playerBets,
-        currentPlayerIndex: game.currentPlayerIndex,
-        actionHistory: game.actionHistory,
-        players: game.players, // Include players for all-in status updates
-      });
-
-      await PokerSocketEmitter.emitGameNotification({
-        message: `${bigBlindInfo.player.username} posts big blind (${bigBlindInfo.amount} chips)`,
-        type: 'blind',
-        duration: 2000,
-      });
-
-      await new Promise(resolve => setTimeout(resolve, POKER_TIMERS.POST_NOTIFICATION_DELAY_MS));
-
-      // DEAL HOLE CARDS immediately after blinds (standard poker rules)
+      // DEAL HOLE CARDS automatically after blinds (no notification)
       dealPlayerCards(game.deck, game.players, 2);
       game.markModified('deck');
       game.markModified('players');
@@ -976,24 +1077,12 @@ export async function restart(gameId: string) {
       });
       game.markModified('actionHistory');
 
+      console.log(`[Restart] Hole cards dealt to all players`);
+
       await game.save();
 
-      // Emit notification for dealing player cards
-      await PokerSocketEmitter.emitGameNotification({
-        message: 'Dealing player cards',
-        type: 'deal',
-        duration: 2000,
-      });
-
-      // Emit cards dealt event
-      await PokerSocketEmitter.emitCardsDealt({
-        stage: game.stage,
-        communalCards: game.communalCards,
-        deckCount: game.deck.length,
-        players: game.players,
-      });
-
       // Auto-start timer for player after big blind and cards dealt
+      // Timer starts for both human and AI players - AI will act quickly and cancel timer
       const currentPlayer = game.players[game.currentPlayerIndex];
       if (currentPlayer) {
         try {
@@ -1003,6 +1092,15 @@ export async function restart(gameId: string) {
             GameActionType.PLAYER_BET,
             currentPlayer.id
           );
+
+          // If current player is AI, trigger action immediately after timer starts
+          if (currentPlayer.isAI) {
+            console.log('[Restart] Timer started for AI player - triggering immediate action');
+            const { executeAIActionIfReady } = await import('./ai-player-manager');
+            executeAIActionIfReady(gameId).catch(error => {
+              console.error('[Restart] AI action failed:', error);
+            });
+          }
         } catch (timerError) {
           console.error('[Restart] Failed to start timer for current player:', timerError);
           // Don't fail restart if timer fails

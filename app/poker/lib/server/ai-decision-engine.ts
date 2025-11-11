@@ -145,6 +145,7 @@ function calculatePotOdds(betAmount: number, potSize: number): number {
 
 /**
  * Main AI decision function
+ * @param currentBet - The amount the AI needs to call to match the current bet (NOT the max bet on table)
  */
 export function makeAIDecision(
   aiPlayer: Player,
@@ -164,8 +165,8 @@ export function makeAIDecision(
     communalCards: communalCards.length
   });
 
-  // Calculate how much AI needs to call
-  const amountToCall = currentBet - playerBet;
+  // currentBet is already the amount to call (calculated by caller)
+  const amountToCall = currentBet;
   const canCheck = amountToCall === 0;
 
   // If no chips, can only check or fold
@@ -175,10 +176,17 @@ export function makeAIDecision(
 
   // Evaluate hand strength
   const handStrength = evaluateHandStrength(aiPlayer.hand, communalCards, stage);
-  console.log(`[AI] Hand strength: ${HandStrength[handStrength]}`);
+  console.log(`[AI] Hand strength: ${HandStrength[handStrength]}, Hand:`, aiPlayer.hand.map(c => `${c.label}${c.symbol}`).join(' '));
 
   // Calculate pot odds if facing a bet
   const potOdds = amountToCall > 0 ? calculatePotOdds(amountToCall, potSize) : 0;
+  console.log(`[AI] Decision factors:`, {
+    amountToCall,
+    canCheck,
+    potOdds: potOdds.toFixed(2),
+    chipCount: aiPlayer.chipCount,
+    percentOfStack: ((amountToCall / aiPlayer.chipCount) * 100).toFixed(1) + '%'
+  });
 
   // Decision making based on hand strength and situation
   switch (handStrength) {
@@ -325,12 +333,12 @@ function makeWeakHandDecision(
   }
 
   // More willing to call with weak hands if getting good odds or small bet
-  if (potOdds < 0.3 && amountToCall <= aiPlayer.chipCount * 0.25) {
+  if (potOdds < 0.4 && amountToCall <= aiPlayer.chipCount * 0.3) {
     return { action: 'call' };
   }
 
-  // Call very small bets even with weak hands
-  if (amountToCall <= aiPlayer.chipCount * 0.1) {
+  // Call very small bets even with weak hands (increased threshold)
+  if (amountToCall <= aiPlayer.chipCount * 0.15) {
     return { action: 'call' };
   }
 
@@ -350,8 +358,19 @@ function makeTrashHandDecision(
     return { action: 'check' };
   }
 
-  // Extremely rare bluff or with incredible pot odds
-  if (potOdds < 0.1 && amountToCall <= chipCount * 0.05 && Math.random() > 0.95) {
+  // Call very small bets even with trash hands (good pot odds)
+  // This is important for heads-up play where blinds are small
+  if (amountToCall <= chipCount * 0.02) {
+    return { action: 'call' };
+  }
+
+  // Call small bets with decent pot odds
+  if (potOdds < 0.25 && amountToCall <= chipCount * 0.1) {
+    return { action: 'call' };
+  }
+
+  // Rare bluff with incredible pot odds
+  if (potOdds < 0.1 && amountToCall <= chipCount * 0.05 && Math.random() > 0.9) {
     return { action: 'call' };
   }
 

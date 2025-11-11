@@ -64,7 +64,7 @@ function ActionHistoryDisplay() {
         }
         return { icon: '🃏', text: `${action.cardsDealt} community card${action.cardsDealt !== 1 ? 's' : ''} dealt`, color: 'text-purple-700' };
       case ActionHistoryType.STAGE_ADVANCED:
-        const stageNames = ['Preflop', 'Flop', 'Turn', 'River'];
+        const stageNames = ['Preflop', 'Flop', 'Turn', 'River', 'Showdown'];
         return { icon: '➡️', text: `Advanced to ${stageNames[action.toStage] || 'Unknown'}`, color: 'text-indigo-700' };
       case ActionHistoryType.GAME_STARTED:
         return { icon: '🎮', text: 'Game started', color: 'text-green-800 font-semibold' };

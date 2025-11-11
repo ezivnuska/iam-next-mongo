@@ -28,22 +28,7 @@ export default function AuthLinks() {
 
   return (
     <div className="flex w-full justify-end items-center gap-2">
-      {status === "authenticated" ? (
-        <button
-          onClick={handleSignOut}
-          disabled={isSigningOut}
-          className={`flex items-center gap-2 self-start cursor-pointer rounded-lg px-3 py-2 m-1 text-sm font-medium text-white transition-colors md:text-base ${
-            isSigningOut
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-500 hover:bg-blue-400"
-          }`}
-        >
-          <PowerIcon className="w-5" />
-          <p className="hidden min-[376px]:block">
-            {isSigningOut ? "Signing Out..." : "Sign Out"}
-          </p>
-        </button>
-      ) : status === "loading" ? null : (
+      {status === "authenticated" ? null : status === "loading" ? null : (
         <>
           <Link
             href="/signin"

@@ -3,18 +3,21 @@
 import Breadcrumbs from "@/app/ui/layout/breadcrumbs";
 import ProtectedRoute from "@/app/ui/auth/protected-route";
 import ImagesClient from "@/app/ui/images/images-client";
+import DefaultPage from "@/app/ui/layout/page/default-page";
 
 export default async function Page() {
 
     return (
         <ProtectedRoute>
-            <Breadcrumbs
-                breadcrumbs={[
-                    { label: "Profile", href: "/profile" },
-                    { label: "Images", href: "/profile/images", active: true },
-                ]}
-            />
-            <ImagesClient authorized={true} />
+            <DefaultPage>
+                <Breadcrumbs
+                    breadcrumbs={[
+                        { label: "Profile", href: "/profile" },
+                        { label: "Images", href: "/profile/images", active: true },
+                    ]}
+                />
+                <ImagesClient authorized={true} />
+            </DefaultPage>
         </ProtectedRoute>
     );
 }

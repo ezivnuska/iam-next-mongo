@@ -44,33 +44,36 @@ import {
   createClearTimerAction,
   createSetTurnTimerAction,
   createForceLockGameAction,
+  createResetSingletonAction,
   initializeGames,
 } from './poker-api-actions';
 
 // Import custom hooks
-import { useAutoRestart } from './use-auto-restart';
 import { usePokerSocketEffects } from './use-poker-socket-effects';
 import { usePokerSounds } from '../hooks/use-poker-sounds';
 import { usePlayerConnectionMonitor } from '../hooks/use-player-connection-monitor';
+import { NotificationProvider, useNotifications } from './notification-provider';
+import { useStageCoordinator } from '../hooks/use-stage-coordinator';
 
-// ============= Provider Component =============
+// ============= Inner Provider Component (with NotificationProvider access) =============
 
-export function PokerProvider({ children }: { children: ReactNode }) {
+function PokerProviderInner({ children }: { children: ReactNode }) {
   const { socket } = useSocket();
   const { user } = useUser();
   const { playSound, initSounds } = usePokerSounds();
 
   // --- Game state (synced from server) ---
+  const [gameId, setGameId] = useState<string | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
   const [deck, setDeck] = useState<Card[]>([]);
   const [communalCards, setCommunalCards] = useState<Card[]>([]);
   const [pot, setPot] = useState<Bet[]>([]);
   const [stage, setStage] = useState(0);
   const [locked, setLocked] = useState(false);
-  const [lockTime, setLockTime] = useState<string>();
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [playerBets, setPlayerBets] = useState<number[]>([]);
   const [gameStages, setGameStages] = useState<GameStageProps[]>([]);
+  const [autoAdvanceMode, setAutoAdvanceMode] = useState(false);
   const [winner, setWinner] = useState<{
     winnerId: string;
     winnerName: string;
@@ -78,8 +81,12 @@ export function PokerProvider({ children }: { children: ReactNode }) {
     isTie: boolean;
     tiedPlayers?: string[];
   }>();
-  const [gameId, setGameId] = useState<string | null>(null);
   const [availableGames, setAvailableGames] = useState<Array<{ id: string; code: string; creatorId: string | null }>>([]);
+
+  // Stage coordination - delays stage updates until notifications complete
+  // This must be inside NotificationProvider
+  const { applyStageUpdate, resetCoordinator } = useStageCoordinator(gameId, playSound);
+  const { resetNotifications, showNotification } = useNotifications();
 
   // --- Server-synced timer state ---
   const [actionTimer, setActionTimer] = useState<{
@@ -91,7 +98,6 @@ export function PokerProvider({ children }: { children: ReactNode }) {
     targetPlayerId?: string;
     isPaused: boolean;
   }>();
-  const [restartCountdown, setRestartCountdown] = useState<number | null>(null);
   const [actionHistory, setActionHistory] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -101,35 +107,6 @@ export function PokerProvider({ children }: { children: ReactNode }) {
     type: 'bet' | 'fold' | 'call' | 'raise';
     playerId: string;
   } | null>(null);
-
-  // --- Game notification state ---
-  const [gameNotification, setGameNotification] = useState<{
-    id: string;
-    message: string;
-    type: 'blind' | 'deal' | 'action' | 'info';
-    timestamp: number;
-    duration?: number;
-  } | null>(null);
-
-  // Ref to track current notification for socket handlers
-  const gameNotificationRef = useRef<{
-    type: string;
-    timestamp: number;
-    duration: number;
-  } | null>(null);
-
-  // Keep ref in sync with state
-  useEffect(() => {
-    if (gameNotification) {
-      gameNotificationRef.current = {
-        type: gameNotification.type,
-        timestamp: gameNotification.timestamp,
-        duration: gameNotification.duration || 2000,
-      };
-    } else {
-      gameNotificationRef.current = null;
-    }
-  }, [gameNotification]);
 
   // --- Client-side action state (for display purposes) ---
   const [selectedAction, setSelectedAction] = useState<'bet' | 'call' | 'raise' | 'fold' | 'check' | 'allin' | null>(null);
@@ -169,35 +146,69 @@ export function PokerProvider({ children }: { children: ReactNode }) {
   }, [players, pot, playerBets, currentPlayerIndex, stage, communalCards, locked, winner, gameId]);
 
   // --- Create state updater functions ---
-  const resetGameState = useCallback(createResetGameState({
-    setGameId,
-    setPlayers,
-    setDeck,
-    setCommunalCards,
-    setPot,
-    setStage,
-    setLocked,
-    setLockTime,
-    setCurrentPlayerIndex,
-    setPlayerBets,
-    setGameStages,
-    setWinner,
-    setActionHistory,
-    setActionTimer,
-  }), []);
+  const resetGameState = useCallback(() => {
+    console.log('[PokerProvider] Resetting game state');
+
+    // Reset all game state
+    createResetGameState({
+      setGameId,
+      setPlayers,
+      setDeck,
+      setCommunalCards,
+      setPot,
+      setStage,
+      setLocked,
+      setCurrentPlayerIndex,
+      setPlayerBets,
+      setGameStages,
+      setWinner,
+      setActionHistory,
+      setActionTimer,
+    })();
+
+    // Reset notifications and coordinator state
+    resetNotifications();
+    resetCoordinator();
+  }, [resetNotifications, resetCoordinator]);
 
   const updateGameId = useCallback(createUpdateGameId(setGameId), []);
   const updatePlayers = useCallback(createUpdatePlayers(setPlayers), []);
-  const updateBettingState = useCallback(
-    createUpdateBettingState(setPot, setPlayerBets, setCurrentPlayerIndex),
-    []
-  );
-  const updateStageState = useCallback(
-    createUpdateStageState(setStage, setCommunalCards, setDeck, setGameStages),
-    []
-  );
+
+  // Coordinated betting state updater - uses turn coordinator for currentPlayerIndex
+  const updateBettingState = useCallback((
+    pot: Bet[],
+    playerBets: number[],
+    currentPlayerIndex: number
+  ) => {
+    // Always update pot, playerBets, and currentPlayerIndex immediately
+    setPot(pot);
+    setPlayerBets(playerBets);
+    setCurrentPlayerIndex(currentPlayerIndex);
+  }, []);
+
+  // Coordinated stage updater - uses stage coordinator to delay updates until notifications complete
+  const updateStageState = useCallback((
+    stage: number,
+    communalCards: Card[],
+    deck: Card[],
+    stages?: GameStageProps[]
+  ) => {
+    // Always update deck and game stages immediately
+    setDeck(deck);
+    if (stages) setGameStages(stages);
+
+    // Use stage coordinator for stage and communalCards updates
+    // This delays the update until the notification completes
+    applyStageUpdate(
+      { stage, communalCards },
+      setStage,
+      setCommunalCards,
+      undefined,
+      autoAdvanceMode
+    );
+  }, [applyStageUpdate, autoAdvanceMode]);
   const updateGameStatus = useCallback(
-    createUpdateGameStatus(setLocked, setLockTime, setWinner),
+    createUpdateGameStatus(setLocked, setWinner),
     []
   );
 
@@ -219,16 +230,18 @@ export function PokerProvider({ children }: { children: ReactNode }) {
     createRestartAction(gameId, updateGameState),
     [gameId, updateGameState]
   );
-  const joinGame = useCallback(createJoinGameAction(setGameId), []);
+  const joinGame = useCallback(
+    createJoinGameAction(setGameId, socket, user?.username || user?.email),
+    [socket, user]
+  );
 
   // Wrap placeBet to set processing state and update optimistically
   const placeBetOriginal = useCallback(createPlaceBetAction(gameId), [gameId]);
+
   const placeBet = useCallback(async (chipCount: number) => {
     if (isActionProcessing || !user?.id) return;
 
     const actionType = currentBet === 0 ? 'bet' : (chipCount > currentBet ? 'raise' : 'call');
-    setIsActionProcessing(true);
-    setPendingAction({ type: actionType, playerId: user.id });
 
     // Find current player's username
     const currentPlayer = players.find(p => p.id === user.id);
@@ -237,8 +250,30 @@ export function PokerProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Optimistically update pot and playerBets on acting client
+    // Determine action message
+    let actionMessage = '';
+    if (chipCount === 0) {
+      actionMessage = `${currentPlayer.username} checks`;
+    } else if (actionType === 'bet') {
+      actionMessage = `${currentPlayer.username} bets $${chipCount}`;
+    } else if (actionType === 'raise') {
+      actionMessage = `${currentPlayer.username} raises to $${chipCount}`;
+    } else if (actionType === 'call') {
+      actionMessage = `${currentPlayer.username} calls`;
+    }
+
+    // Show notification immediately (optimistically)
+    showNotification({
+      message: actionMessage,
+      type: 'action',
+      duration: 5000,
+    });
+
+    // Optimistically update pot, playerBets, and player chips IMMEDIATELY on acting client
     if (chipCount > 0) {
+      console.log('[PlaceBet] Optimistically updating pot, playerBets, and player chips immediately');
+
+      // Update pot
       setPot(prevPot => [
         ...prevPot,
         {
@@ -256,7 +291,24 @@ export function PokerProvider({ children }: { children: ReactNode }) {
         }
         return newBets;
       });
+
+      // Update player's chip count
+      setPlayers(prevPlayers => {
+        return prevPlayers.map(p => {
+          if (p.id === user.id) {
+            return {
+              ...p,
+              chipCount: p.chipCount - chipCount
+            };
+          }
+          return p;
+        });
+      });
     }
+
+    // Execute action immediately (not waiting for notification)
+    setIsActionProcessing(true);
+    setPendingAction({ type: actionType, playerId: user.id });
 
     // Set timeout to clear processing state if no response after 5 seconds
     const timeoutId = setTimeout(() => {
@@ -273,13 +325,28 @@ export function PokerProvider({ children }: { children: ReactNode }) {
       setPendingAction(null);
       console.error('Error placing bet:', error);
     }
-  }, [placeBetOriginal, isActionProcessing, user, currentBet, players]);
+  }, [placeBetOriginal, isActionProcessing, user, currentBet, players, showNotification, setPot, setPlayerBets, setPlayers]);
 
   // Wrap fold to set processing state
   const foldOriginal = useCallback(createFoldAction(gameId), [gameId]);
   const fold = useCallback(async () => {
     if (isActionProcessing || !user?.id) return;
 
+    // Find current player's username
+    const currentPlayer = players.find(p => p.id === user.id);
+    if (!currentPlayer) {
+      console.error('Current player not found');
+      return;
+    }
+
+    // Show notification immediately (optimistically)
+    showNotification({
+      message: `${currentPlayer.username} folds`,
+      type: 'action',
+      duration: 5000,
+    });
+
+    // Execute fold action immediately (not waiting for notification)
     setIsActionProcessing(true);
     setPendingAction({ type: 'fold', playerId: user.id });
 
@@ -298,7 +365,7 @@ export function PokerProvider({ children }: { children: ReactNode }) {
       setPendingAction(null);
       console.error('Error folding:', error);
     }
-  }, [foldOriginal, isActionProcessing, user]);
+  }, [foldOriginal, isActionProcessing, user, players, showNotification]);
   const leaveGame = useCallback(
     createLeaveGameAction(gameId, resetGameState, setAvailableGames),
     [gameId, resetGameState]
@@ -313,6 +380,10 @@ export function PokerProvider({ children }: { children: ReactNode }) {
   const clearTimer = useCallback(createClearTimerAction(gameId), [gameId]);
   const setTurnTimerAction = useCallback(createSetTurnTimerAction(gameId), [gameId]);
   const forceLockGame = useCallback(createForceLockGameAction(gameId), [gameId]);
+  const resetSingleton = useCallback(
+    createResetSingletonAction(gameId, updateGameState),
+    [gameId, updateGameState]
+  );
 
   // Optimistically clear timer locally without waiting for server
   const clearTimerOptimistically = useCallback(() => {
@@ -359,21 +430,16 @@ export function PokerProvider({ children }: { children: ReactNode }) {
   }, [actionTimer, gameId]);
 
   useEffect(() => {
-    // Clear winner when returning to preflop stage
+    // Clear winner when returning to preflop stage (game reset)
     if (winner && stage === 0) setWinner(undefined)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage])
 
-  // Schedule auto-restart when game ends (winner determined)
-  // Only winner's client will trigger restart to prevent concurrent requests
-  useAutoRestart({
-    winner,
-    onRestart: restart,
-    setCountdown: setRestartCountdown,
-    duration: 30000, // 30 seconds
-    currentUserId: user?.id,
-    players,
-  });
+  // Auto-restart is now handled by notification system:
+  // 1. Winner notification completes (10s)
+  // 2. Server emits round_complete with winner: undefined
+  // 3. "Game starting!" notification shows (10s countdown)
+  // 4. onComplete triggers game lock via /api/poker/lock
 
   // Monitor player connection status
   // DISABLED: Connection monitor was disrupting normal game flow
@@ -424,10 +490,10 @@ export function PokerProvider({ children }: { children: ReactNode }) {
     setActionHistory,
     setIsActionProcessing,
     setPendingAction,
-    setGameNotification,
+    setAutoAdvanceMode,
     playSound,
-    gameNotificationRef,
     setCurrentPlayerIndex,
+    showNotification,
   });
 
   // --- Memoized context values ---
@@ -435,7 +501,6 @@ export function PokerProvider({ children }: { children: ReactNode }) {
     stage,
     stages: gameStages,
     locked,
-    lockTime,
     currentPlayerIndex,
     currentBet,
     playerBets,
@@ -443,13 +508,11 @@ export function PokerProvider({ children }: { children: ReactNode }) {
     deck,
     winner,
     actionTimer,
-    restartCountdown,
     actionHistory,
     isLoading,
-    gameNotification,
     selectedAction,
     setSelectedAction,
-  }), [stage, gameStages, locked, lockTime, currentPlayerIndex, currentBet, playerBets, communalCards, deck, winner, actionTimer, restartCountdown, actionHistory, isLoading, gameNotification, selectedAction]);
+  }), [stage, gameStages, locked, currentPlayerIndex, currentBet, playerBets, communalCards, deck, winner, actionTimer, actionHistory, isLoading, selectedAction]);
 
   const potValue = useMemo(() => {
     // Calculate total pot value
@@ -495,9 +558,17 @@ export function PokerProvider({ children }: { children: ReactNode }) {
     clearTimer,
     setTurnTimerAction,
     forceLockGame,
+    resetSingleton,
     clearTimerOptimistically,
     playSound,
-  }), [joinGame, restart, placeBet, fold, leaveGame, deleteGameFromLobby, startTimer, pauseTimer, resumeTimer, clearTimer, setTurnTimerAction, forceLockGame, clearTimerOptimistically, playSound]);
+    // Expose state updaters for optimistic updates
+    setPot,
+    setPlayerBets,
+    setPlayers,
+    setCurrentPlayerIndex,
+    setCommunalCards,
+    setLocked,
+  }), [joinGame, restart, placeBet, fold, leaveGame, deleteGameFromLobby, startTimer, pauseTimer, resumeTimer, clearTimer, setTurnTimerAction, forceLockGame, resetSingleton, clearTimerOptimistically, playSound, setPot, setPlayerBets, setPlayers, setCurrentPlayerIndex, setCommunalCards, setLocked]);
 
   const processingValue = useMemo(() => ({
     isActionProcessing,
@@ -521,6 +592,18 @@ export function PokerProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// ============= Outer Provider Component =============
+
+export function PokerProvider({ children }: { children: ReactNode }) {
+  return (
+    <NotificationProvider>
+      <PokerProviderInner>
+        {children}
+      </PokerProviderInner>
+    </NotificationProvider>
+  );
+}
+
 // Re-export hooks for convenience
 export {
   useGameState,
@@ -531,3 +614,5 @@ export {
   useProcessing,
   usePoker,
 } from './poker-hooks';
+
+export { useNotifications } from './notification-provider';

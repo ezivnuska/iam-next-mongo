@@ -70,6 +70,68 @@ app.prepare().then(() => {
 			}
 		})
 
+		// Handle poker game join
+		socket.on('poker:join_game', async ({ gameId, username }) => {
+			console.log('[Socket] Received poker:join_game for game:', gameId, 'user:', socket.userId);
+
+			try {
+				// User must be registered first
+				if (!socket.userId) {
+					socket.emit('poker:join_error', { error: 'Not authenticated - register first' });
+					return;
+				}
+
+				// Delegate to API route which handles all the join logic
+				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						signal: 'poker:join_game',
+						gameId,
+						userId: socket.userId,
+						username: username || 'Guest'
+					}),
+				});
+
+				const result = await response.json();
+
+				if (!response.ok) {
+					console.error('[Socket] Join failed:', result.error);
+					socket.emit('poker:join_error', { error: result.error });
+				} else {
+					console.log('[Socket] Successfully joined game');
+					// Success event will be sent via emitPlayerJoined and emitStateUpdate
+					socket.emit('poker:join_success', { gameState: result.gameState });
+				}
+			} catch (error) {
+				console.error('[Socket] Error processing join_game:', error);
+				socket.emit('poker:join_error', { error: error.message || 'Failed to join game' });
+			}
+		});
+
+		// Handle ready for next turn signal from client (after notifications complete)
+		socket.on('poker:ready_for_next_turn', async ({ gameId }) => {
+			console.log('[Socket] Received poker:ready_for_next_turn for game:', gameId);
+
+			try {
+				// Delegate to API route
+				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ signal: 'poker:ready_for_next_turn', gameId }),
+				});
+
+				if (!response.ok) {
+					const errorText = await response.text();
+					console.error('[Socket] API call failed:', errorText);
+				} else {
+					console.log('[Socket] Successfully processed ready_for_next_turn');
+				}
+			} catch (error) {
+				console.error('[Socket] Error processing ready_for_next_turn:', error);
+			}
+		});
+
 		socket.on('disconnect', () => {
 			if (socket.userId) {
 				const userId = socket.userId

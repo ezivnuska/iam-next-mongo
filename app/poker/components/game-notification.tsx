@@ -2,84 +2,29 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useNotifications } from '@/app/poker/lib/providers/notification-provider';
+import { usePokerEventHandler } from '@/app/poker/lib/hooks/use-poker-event-handler';
+import { useNotificationPotSync } from '@/app/poker/lib/hooks/use-notification-pot-sync';
+import { useViewers } from '@/app/poker/lib/providers/poker-provider';
+import PokerNotificationDisplay from './poker-notification-display';
 
-interface GameNotification {
-  id: string;
-  message: string;
-  type: 'blind' | 'deal' | 'action' | 'info';
-  timestamp: number;
-  duration?: number;
-}
+/**
+ * Centralized poker game notification component.
+ * Uses event-driven notification system with timer-driven progress bars.
+ * When notifications display, pot updates and sound effects trigger together.
+ */
+export default function GameNotification() {
+  const { gameId } = useViewers();
+  const { currentNotification } = useNotifications();
 
-interface GameNotificationProps {
-  notification: GameNotification | null;
-}
+  // Centralized poker event handler processes all socket events
+  usePokerEventHandler(gameId);
 
-export default function GameNotification({ notification }: GameNotificationProps) {
-  const [isVisible, setIsVisible] = useState(false);
+  // Sync pot state when notifications are DISPLAYED (not when received)
+  // This ensures pot updates happen simultaneously with sound effects
+  useNotificationPotSync();
 
-  useEffect(() => {
-    if (notification) {
-      setIsVisible(true);
-    } else {
-      setIsVisible(false);
-    }
-  }, [notification]);
-
-  if (!notification || !isVisible) {
-    return null;
-  }
-
-  const getIconForType = (type: string) => {
-    switch (type) {
-      case 'blind':
-        return '💰';
-      case 'deal':
-        return '🃏';
-      case 'action':
-        return '⚡';
-      default:
-        return 'ℹ️';
-    }
-  };
-
-  const getBgColorForType = (type: string) => {
-    switch (type) {
-      case 'blind':
-        return 'bg-yellow-50 border-yellow-400';
-      case 'deal':
-        return 'bg-blue-50 border-blue-400';
-      case 'action':
-        return 'bg-green-50 border-green-400';
-      default:
-        return 'bg-gray-50 border-gray-400';
-    }
-  };
-
-  const getTextColorForType = (type: string) => {
-    switch (type) {
-      case 'blind':
-        return 'text-yellow-900';
-      case 'deal':
-        return 'text-blue-900';
-      case 'action':
-        return 'text-green-900';
-      default:
-        return 'text-gray-900';
-    }
-  };
-
-  return (
-    <div className="w-full max-w-2xl animate-fade-in">
-      <div className={`${getBgColorForType(notification.type)} border-2 rounded-lg px-4 py-2 shadow-lg`}>
-        <div className="flex items-center gap-2">
-          <span className="text-xl">{getIconForType(notification.type)}</span>
-          <p className={`${getTextColorForType(notification.type)} font-semibold`}>
-            {notification.message}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+  // Display the current notification from the queue
+  // PokerNotificationDisplay handles sound effects
+  return <PokerNotificationDisplay notification={currentNotification} />;
 }

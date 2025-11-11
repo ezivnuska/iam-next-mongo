@@ -159,41 +159,13 @@ export function placeBigBlind(game: PokerGameDocument): {
     blindType: 'big',
   });
 
-  // Set current player to the one after big blind (preflop action)
-  // In heads-up: Small blind (button) acts first preflop
-  // In 3+ players: Player after big blind acts first
-  const smallBlindPosition = getSmallBlindPosition(game.dealerButtonPosition || 0, game.players.length);
-
-  let initialPosition: number;
-  if (game.players.length === 2) {
-    // Heads-up: Small blind acts first preflop
-    initialPosition = smallBlindPosition;
-  } else {
-    // 3+ players: Player after big blind acts first
-    initialPosition = (bigBlindPosition + 1) % game.players.length;
-  }
-
-  // Find first active player starting from initialPosition
-  // Skip any players who went all-in during blind posting
-  let currentIndex = initialPosition;
-  let attempts = 0;
-
-  while (attempts < game.players.length) {
-    const candidate = game.players[currentIndex];
-    if (!candidate.isAllIn && !candidate.folded) {
-      break; // Found an active player
-    }
-    currentIndex = (currentIndex + 1) % game.players.length;
-    attempts++;
-  }
-
-  game.currentPlayerIndex = currentIndex;
+  // NOTE: currentPlayerIndex will be set AFTER cards are dealt in game-lock-manager
+  // This ensures the index remains undefined during blind posting and card dealing
 
   // Mark modified for Mongoose
   game.markModified('players');
   game.markModified('pot');
   game.markModified('playerBets');
-  game.markModified('currentPlayerIndex');
   game.markModified('actionHistory');
 
   return {

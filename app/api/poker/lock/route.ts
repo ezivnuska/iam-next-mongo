@@ -114,65 +114,15 @@ export const POST = withAuth(async (request, context, session) => {
           throw new Error(`Cannot start game - players do not have enough chips for blinds`);
         }
 
-        // Emit game locked event to all clients
-        await PokerSocketEmitter.emitGameLocked({
-          locked: true,
-          stage: game.stage,
-          players: game.players,
-          currentPlayerIndex: game.currentPlayerIndex,
-          lockTime: undefined, // Cleared
-          pot: game.pot,
-          playerBets: game.playerBets,
-          actionHistory: game.actionHistory,
-        });
-
-        // PLACE SMALL BLIND with notification
+        // PLACE SMALL BLIND automatically without notification
         const smallBlindInfo = placeSmallBlind(game);
-        await game.save();
+        console.log(`[Game Lock] Small blind posted by ${smallBlindInfo.player.username}: ${smallBlindInfo.amount} chips`);
 
-        // Emit bet placed event for small blind
-        await PokerSocketEmitter.emitBetPlaced({
-          playerIndex: smallBlindInfo.position,
-          chipCount: smallBlindInfo.amount,
-          pot: game.pot,
-          playerBets: game.playerBets,
-          currentPlayerIndex: game.currentPlayerIndex,
-          actionHistory: game.actionHistory,
-          players: game.players, // Include players for all-in status updates
-        });
-
-        await PokerSocketEmitter.emitGameNotification({
-          message: `${smallBlindInfo.player.username} posts small blind (${smallBlindInfo.amount} chip)`,
-          type: 'blind',
-          duration: 2000,
-        });
-
-        await new Promise(resolve => setTimeout(resolve, 2200));
-
-        // PLACE BIG BLIND with notification
+        // PLACE BIG BLIND automatically without notification
         const bigBlindInfo = placeBigBlind(game);
-        await game.save();
+        console.log(`[Game Lock] Big blind posted by ${bigBlindInfo.player.username}: ${bigBlindInfo.amount} chips`);
 
-        // Emit bet placed event for big blind
-        await PokerSocketEmitter.emitBetPlaced({
-          playerIndex: bigBlindInfo.position,
-          chipCount: bigBlindInfo.amount,
-          pot: game.pot,
-          playerBets: game.playerBets,
-          currentPlayerIndex: game.currentPlayerIndex,
-          actionHistory: game.actionHistory,
-          players: game.players, // Include players for all-in status updates
-        });
-
-        await PokerSocketEmitter.emitGameNotification({
-          message: `${bigBlindInfo.player.username} posts big blind (${bigBlindInfo.amount} chips)`,
-          type: 'blind',
-          duration: 2000,
-        });
-
-        await new Promise(resolve => setTimeout(resolve, 2200));
-
-        // DEAL HOLE CARDS immediately after blinds (standard poker rules)
+        // DEAL HOLE CARDS automatically after blinds (no notification)
         dealPlayerCards(game.deck, game.players, 2);
         game.markModified('deck');
         game.markModified('players');
@@ -187,24 +137,24 @@ export const POST = withAuth(async (request, context, session) => {
         });
         game.markModified('actionHistory');
 
+        console.log(`[Game Lock] Hole cards dealt to all players`);
+
         await game.save();
 
-        // Emit notification for dealing player cards
-        await PokerSocketEmitter.emitGameNotification({
-          message: 'Dealing player cards',
-          type: 'deal',
-          duration: 2000,
-        });
-
-        // Emit cards dealt event
-        await PokerSocketEmitter.emitCardsDealt({
+        // Emit game locked event to all clients with blinds and cards already dealt
+        await PokerSocketEmitter.emitGameLocked({
+          locked: true,
           stage: game.stage,
-          communalCards: game.communalCards,
-          deckCount: game.deck.length,
           players: game.players,
+          currentPlayerIndex: game.currentPlayerIndex,
+          lockTime: undefined, // Cleared
+          pot: game.pot,
+          playerBets: game.playerBets,
+          actionHistory: game.actionHistory,
         });
 
         // Auto-start action timer for the current player (after blinds and cards dealt)
+        // Timer starts for both human and AI players - AI will act quickly and cancel timer
         const currentPlayer = game.players[game.currentPlayerIndex];
         if (currentPlayer) {
           await startActionTimer(
@@ -213,6 +163,17 @@ export const POST = withAuth(async (request, context, session) => {
             GameActionType.PLAYER_BET,
             currentPlayer.id
           );
+
+          // If current player is AI, trigger action immediately after timer starts
+          // AI will act quickly and timer will be cancelled by the action
+          if (currentPlayer.isAI) {
+            console.log('[Game Lock] Timer started for AI player - triggering immediate action');
+            const { executeAIActionIfReady } = await import('@/app/poker/lib/server/ai-player-manager');
+            // Don't await - let it run asynchronously so response returns quickly
+            executeAIActionIfReady(id).catch(error => {
+              console.error('[Game Lock] AI action failed:', error);
+            });
+          }
         }
 
         return {

@@ -12,7 +12,6 @@ export interface GameStateContextValue {
   stage: number;
   stages: GameStageProps[];
   locked: boolean;
-  lockTime?: string;
   currentPlayerIndex: number;
   currentBet: number;
   playerBets: number[];
@@ -35,16 +34,8 @@ export interface GameStateContextValue {
     targetPlayerId?: string;
     isPaused: boolean;
   };
-  restartCountdown: number | null;
   actionHistory: any[];
   isLoading: boolean;
-  gameNotification: {
-    id: string;
-    message: string;
-    type: 'blind' | 'deal' | 'action' | 'info';
-    timestamp: number;
-    duration?: number;
-  } | null;
   selectedAction: 'bet' | 'call' | 'raise' | 'fold' | 'check' | 'allin' | null;
   setSelectedAction: (action: 'bet' | 'call' | 'raise' | 'fold' | 'check' | 'allin' | null) => void;
 }
@@ -77,9 +68,17 @@ export interface ActionsContextValue {
   resumeTimer: () => Promise<void>;
   clearTimer: () => Promise<void>;
   forceLockGame: () => Promise<void>;
+  resetSingleton: () => Promise<void>;
   setTurnTimerAction: (action: 'fold' | 'call' | 'check' | 'bet' | 'raise', betAmount?: number) => Promise<void>;
   clearTimerOptimistically: () => void;
   playSound: (type: PokerSoundType) => void;
+  // State setters for centralized updates
+  setPot: (pot: Bet[] | ((prev: Bet[]) => Bet[])) => void;
+  setPlayerBets: (bets: number[] | ((prev: number[]) => number[])) => void;
+  setCurrentPlayerIndex: (index: number) => void;
+  setPlayers: (players: Player[] | ((prev: Player[]) => Player[])) => void;
+  setCommunalCards: (cards: Card[] | ((prev: Card[]) => Card[])) => void;
+  setLocked: (locked: boolean) => void;
 }
 
 export interface ProcessingContextValue {

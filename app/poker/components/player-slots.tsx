@@ -25,7 +25,6 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
 
   const { user } = useUser()
   const isUserInGame = players.some(p => p.id === currentUserId);
-  const firstEmptySlotIndex = players.length;
 
   // Check if there are any human players
   const humanPlayers = players.filter(p => !p.isAI);
@@ -38,66 +37,64 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
   return (
     <ul className='flex flex-1 flex-col gap-2'>
       {/* Show AI player as first item if no human players have joined */}
-      {!hasHumanPlayers && aiPlayer && (
-        <Player
-          key={aiPlayer.id}
-          player={aiPlayer}
-          index={0}
-          locked={locked}
-          currentPlayerIndex={currentPlayerIndex}
-          potContribution={0}
-          isCurrentUser={false}
-          totalPlayers={players.length}
-          onLeaveGame={onLeaveGame}
-        />
-      )}
+      {/* {!hasHumanPlayers && aiPlayer && (
+        <li key={aiPlayer.id}>
+          <Player
+            player={aiPlayer}
+            index={0}
+            locked={locked}
+            currentPlayerIndex={currentPlayerIndex}
+            potContribution={0}
+            isCurrentUser={false}
+            totalPlayers={players.length}
+          />
+        </li>
+      )} */}
 
       {slots.map((slotIndex) => {
         const player = players[slotIndex];
 
         if (player) {
-          // Skip the current user - they're displayed separately in poker-table
           const isCurrentUser = player.id === currentUserId;
-          if (isCurrentUser) {
-            return null;
-          }
 
           // If no human players, skip AI here (already shown above)
-          if (!hasHumanPlayers && player.isAI) {
-            return null;
-          }
+        //   if (!hasHumanPlayers && player.isAI) {
+        //     return null;
+        //   }
 
-          // Show actual player
+        //   if (!isUserInGame) {
+        //     return null;
+        //   }
+
+          // Show actual player wrapped in <li>
           return (
-            <Player
-              key={player.id}
-              player={player}
-              index={slotIndex}
-              locked={locked}
-              currentPlayerIndex={currentPlayerIndex}
-              potContribution={0}
-              isCurrentUser={isCurrentUser}
-              totalPlayers={players.length}
-              onLeaveGame={onLeaveGame}
-            />
+            <li key={player.id} className='flex'>
+              <Player
+                player={player}
+                index={slotIndex}
+                locked={locked}
+                currentPlayerIndex={currentPlayerIndex}
+                potContribution={0}
+                isCurrentUser={isCurrentUser}
+                totalPlayers={players.length}
+              />
+            </li>
           );
         }
 
-        // Show empty slot
-        const isFirstEmptySlot = slotIndex === firstEmptySlotIndex;
+        // // Show empty slot with current user and Join button
+        // const isFirstEmptySlot = slotIndex === players.length;
 
-        return isFirstEmptySlot && canJoin && (
-          <li
-            key={slotIndex}
-            className='flex flex-row items-center justify-between gap-2 px-2 py-1 rounded-xl bg-gray-50'
-          >
-            <UserAvatar size={44} username={user?.username!} />
-
-            <Button size='md' onClick={onJoinGame} className='text-sm'>
-                Join
-            </Button>
-          </li>
-        );
+        // return !isUserInGame && isFirstEmptySlot && user && (
+        //     <li key={slotIndex} className='flex'>
+        //         <div className='flex flex-row gap-2 items-center text-white'>
+        //             <UserAvatar size={44} username={user.username} />
+        //             <div className='flex flex-row gap-1 sm:gap-0 sm:flex-col items-center'>
+        //                 <span className='text-md'>{user.username}</span>
+        //             </div>
+        //         </div>
+        //     </li>
+        // );
       })}
     </ul>
   );

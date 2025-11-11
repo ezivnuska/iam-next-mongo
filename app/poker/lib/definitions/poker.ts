@@ -56,10 +56,12 @@ export interface Player {
 }
 
 export enum GameStage {
-  Preflop = 0,
-  Flop = 1,
-  Turn = 2,
-  River = 3,
+  Preflop = 0,    // Post blinds, deal hole cards, first betting round
+  Flop = 1,       // Deal 3 community cards, betting round
+  Turn = 2,       // Deal 1 community card, betting round
+  River = 3,      // Deal 1 community card, betting round
+  Showdown = 4,   // Determine winner
+  End = 5,        // Game over
 }
 
 /**

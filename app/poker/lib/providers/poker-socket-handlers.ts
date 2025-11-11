@@ -46,6 +46,7 @@ export interface SocketHandlerDeps {
   setActionHistory: (history: any[]) => void;
   setIsActionProcessing: (processing: boolean) => void;
   setPendingAction: (action: { type: 'bet' | 'fold' | 'call' | 'raise'; playerId: string } | null) => void;
+  setAutoAdvanceMode: (mode: boolean) => void;
   playSound: (sound: PokerSoundType) => void;
   getGameNotification?: () => { type: string; timestamp: number; duration: number } | null;
   userId?: string | null;
@@ -93,19 +94,19 @@ export const createStateUpdateHandler = (deps: SocketHandlerDeps) => {
           }
         }
 
-        // Check if game ended with a winner and play winner sound
-        if (lastAction?.actionType === 'GAME_ENDED' && payload.winner) {
-          deps.playSound('winner');
-          setTimeout(() => {
-            deps.playSound('chips');
-          }, 500);
-        }
+        // NOTE: Winner sounds are now played when the winner notification is displayed
+        // This ensures sounds play at the same time as the visual notification
       }
     }
 
     // Update action timer if present in payload
     if ((payload as any).actionTimer !== undefined) {
       deps.setActionTimer((payload as any).actionTimer);
+    }
+
+    // Update auto-advance mode if present in payload
+    if ((payload as any).autoAdvanceMode !== undefined) {
+      deps.setAutoAdvanceMode((payload as any).autoAdvanceMode);
     }
 
     // Clear action processing state (used for fold action which triggers full state update)
@@ -291,11 +292,9 @@ export const createBetPlacedHandler = (
 };
 
 export const createCardsDealtHandler = (
-  setStage: (stage: number) => void,
-  setCommunalCards: (cards: Card[]) => void,
+  updateStageState: (stage: number, communalCards: Card[], deck: Card[], stages?: any[]) => void,
   updatePlayers?: (players: Player[]) => void,
   playSound?: (sound: PokerSoundType) => void,
-  getGameNotification?: () => { type: string; timestamp: number; duration: number } | null,
   setCurrentPlayerIndex?: (index: number) => void
 ) => {
   return (payload: any) => {
@@ -306,22 +305,13 @@ export const createCardsDealtHandler = (
       currentPlayerIndex: payload.currentPlayerIndex
     });
 
-    // CRITICAL: Capture notification state at time of arrival
-    // Don't reference getGameNotification() later - it might have changed
-    const notificationSnapshot = getGameNotification?.();
-    const hasDealNotification = notificationSnapshot?.type === 'deal';
-
-    // Apply state updates IMMEDIATELY (stage, players, chips, all-in status)
-    // These should not be delayed by notifications as UI controls depend on them
-    console.log('[CardsDealtHandler] Updating game state immediately - stage:', payload.stage);
-    setStage(payload.stage);
-
-    // Update currentPlayerIndex if provided (postflop stages)
+    // Update current player index immediately
     if (payload.currentPlayerIndex !== undefined && setCurrentPlayerIndex) {
-      console.log('[CardsDealtHandler] Updating currentPlayerIndex to:', payload.currentPlayerIndex);
+      console.log('[CardsDealtHandler] Updating current player index to:', payload.currentPlayerIndex);
       setCurrentPlayerIndex(payload.currentPlayerIndex);
     }
 
+    // Update players immediately (hands, chips, all-in status)
     if (payload.players && updatePlayers) {
       console.log('[CardsDealtHandler] Updating player state immediately');
       const allInPlayers = payload.players.filter((p: Player) => p.isAllIn);
@@ -335,63 +325,61 @@ export const createCardsDealtHandler = (
       updatePlayers(payload.players);
     }
 
-    // Helper to apply ONLY the visual card updates (cards appearing, sound)
-    const applyVisualUpdate = () => {
-      setCommunalCards(payload.communalCards);
+    // Route stage and communal cards through the coordinated update system
+    // This will queue the notification and delay the card display until notification completes
+    console.log('[CardsDealtHandler] Routing stage/card update through coordinator');
+    updateStageState(
+      payload.stage,
+      payload.communalCards || [],
+      payload.deck || [],
+      payload.stages
+    );
 
-      // Play card deal sound based on stage
-      if (playSound) {
-        if (payload.stage === 0) {
-          playSound('card-deal'); // Hole cards (preflop)
-        } else if (payload.stage === 1) {
-          playSound('card-deal'); // Flop (3 cards)
-        } else if (payload.stage === 2 || payload.stage === 3) {
-          playSound('single-card'); // Turn or River (1 card)
-        }
-      }
-    };
-
-    // Queue visual updates (cards) if notification is active
-    if (hasDealNotification && notificationSnapshot) {
-      // Queue based on the snapshot taken when this event arrived
-      const notificationEnd = notificationSnapshot.timestamp + notificationSnapshot.duration;
-      const delay = Math.max(0, notificationEnd - Date.now());
-
-      console.log(`[CardsDealtHandler] Queuing visual update for ${delay}ms (notification in progress)`, {
-        notificationTimestamp: notificationSnapshot.timestamp,
-        notificationDuration: notificationSnapshot.duration,
-        calculatedDelay: delay
-      });
-
-      setTimeout(() => {
-        console.log('[CardsDealtHandler] Applying queued visual update for stage', payload.stage);
-        applyVisualUpdate();
-      }, delay);
-    } else {
-      // No active deal notification, apply immediately
-      console.log('[CardsDealtHandler] Applying visual update immediately (no notification)');
-      applyVisualUpdate();
-    }
+    // NOTE: Sound is now played by the stage coordinator when stage is actually updated
+    // This ensures sound plays at the same time cards are displayed to the user
   };
 };
 
 export const createRoundCompleteHandler = (
   setWinner: (winner: any) => void,
   updatePlayers: (players: Player[]) => void,
-  playSound?: (sound: PokerSoundType) => void
+  playSound?: (sound: PokerSoundType) => void,
+  showNotification?: (notification: { message: string; type: string; duration: number; onComplete?: () => void; metadata?: any }) => void,
+  gameId?: string | null
 ) => {
   return (payload: any) => {
+    console.log('[RoundCompleteHandler] Round complete event received:', { hasWinner: !!payload.winner });
+
     setWinner(payload.winner);
     updatePlayers(payload.players);
 
-    // Play winner sound and chips sound when round completes
-    if (playSound) {
-      playSound('winner');
-      // Delay chips sound slightly for better effect
-      setTimeout(() => {
-        playSound('chips');
-      }, 500);
+    // If winner is cleared (undefined), game has been reset and is ready to restart
+    // Show "Game starting!" notification (10 second countdown) then trigger game lock
+    if (!payload.winner && showNotification && gameId) {
+      console.log('[RoundCompleteHandler] Winner cleared - showing game starting notification with 10s countdown');
+      const { POKER_GAME_CONFIG } = require('../config/poker-constants');
+      showNotification({
+        message: 'Game starting!',
+        type: 'info',
+        duration: POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS, // 10 seconds
+        onComplete: async () => {
+          console.log('[RoundCompleteHandler] Game starting notification complete - triggering game lock');
+          try {
+            await fetch('/api/poker/lock', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ gameId }),
+            });
+            console.log('[RoundCompleteHandler] Game lock triggered successfully');
+          } catch (error) {
+            console.error('[RoundCompleteHandler] Failed to trigger game lock:', error);
+          }
+        },
+      });
     }
+
+    // NOTE: Winner sounds are now played when the winner notification is displayed
+    // This ensures sounds play at the same time as the visual notification
   };
 };
 
@@ -443,54 +431,7 @@ export const createTimerClearedHandler = (
   };
 };
 
-export const createGameNotificationHandler = (
-  setGameNotification: React.Dispatch<React.SetStateAction<any>>,
-  playSound?: (sound: PokerSoundType) => void
-) => {
-  return (payload: any) => {
-    const duration = payload.duration || 2000;
-    const notification = {
-      id: `${Date.now()}-${Math.random()}`,
-      message: payload.message,
-      type: payload.type,
-      timestamp: Date.now(),
-      duration: duration,
-    };
-
-    setGameNotification(notification);
-
-    // Play sound based on notification type
-    if (playSound) {
-      switch (payload.type) {
-        case 'blind':
-          playSound('blind');
-          break;
-        case 'deal':
-          // Play different sounds for single card vs multiple cards
-          if (payload.message?.includes('turn') || payload.message?.includes('river')) {
-            playSound('single-card');
-          } else if (payload.message?.includes('flop') || payload.message?.includes('hole')) {
-            playSound('card-deal');
-          }
-          break;
-        case 'action':
-          // Action sounds are handled by other handlers
-          break;
-      }
-    }
-
-    // Auto-clear notification after duration
-    setTimeout(() => {
-      setGameNotification((current: any) => {
-        // Only clear if it's still the same notification
-        if (current?.id === notification.id) {
-          return null;
-        }
-        return current;
-      });
-    }, duration);
-  };
-};
+// Old game notification handler removed - notifications now handled by NotificationProvider
 
 export const registerSocketHandlers = (
   socket: Socket,
@@ -510,7 +451,6 @@ export const registerSocketHandlers = (
     handleTimerPaused: (payload: any) => void;
     handleTimerResumed: (payload: any) => void;
     handleTimerCleared: () => void;
-    handleGameNotification: (payload: any) => void;
   },
   SOCKET_EVENTS: any
 ) => {
@@ -529,7 +469,6 @@ export const registerSocketHandlers = (
   socket.on(SOCKET_EVENTS.POKER_ACTION_TIMER_PAUSED, handlers.handleTimerPaused);
   socket.on(SOCKET_EVENTS.POKER_ACTION_TIMER_RESUMED, handlers.handleTimerResumed);
   socket.on(SOCKET_EVENTS.POKER_ACTION_TIMER_CLEARED, handlers.handleTimerCleared);
-  socket.on(SOCKET_EVENTS.POKER_GAME_NOTIFICATION, handlers.handleGameNotification);
 
   return () => {
     socket.off('connect', handlers.handleConnect);
@@ -547,6 +486,5 @@ export const registerSocketHandlers = (
     socket.off(SOCKET_EVENTS.POKER_ACTION_TIMER_PAUSED, handlers.handleTimerPaused);
     socket.off(SOCKET_EVENTS.POKER_ACTION_TIMER_RESUMED, handlers.handleTimerResumed);
     socket.off(SOCKET_EVENTS.POKER_ACTION_TIMER_CLEARED, handlers.handleTimerCleared);
-    socket.off(SOCKET_EVENTS.POKER_GAME_NOTIFICATION, handlers.handleGameNotification);
   };
 };

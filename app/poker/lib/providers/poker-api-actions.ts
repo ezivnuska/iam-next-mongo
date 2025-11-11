@@ -49,21 +49,31 @@ export const fetchCurrentGame = async () => {
 // NOTE: createAndJoinGameAction removed - using singleton game pattern instead
 
 export const createJoinGameAction = (
-  setGameId: (id: string) => void
+  setGameId: (id: string) => void,
+  socket: any,
+  username?: string
 ) => {
   return async (gameId: string) => {
     try {
-      setGameId(gameId);
-      const response = await fetch('/api/poker/join', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameId }),
-      });
+      if (!socket || !socket.connected) {
+        console.error('[Join Game] Socket not connected');
+        alert('Connection error. Please refresh the page.');
+        return;
+      }
 
-      if (!response.ok) {
-        // Parse error message from response
-        const errorData = await response.json().catch(() => ({ error: 'Failed to join game' }));
-        const errorMessage = errorData.error || 'Failed to join game';
+      setGameId(gameId);
+
+      // Emit socket event to join game
+      socket.emit('poker:join_game', { gameId, username });
+
+      // Listen for success/error responses (one-time listeners)
+      const successHandler = (data: any) => {
+        console.log('[Join Game] Successfully joined game via socket');
+        socket.off('poker:join_error', errorHandler);
+      };
+
+      const errorHandler = (data: any) => {
+        const errorMessage = data.error || 'Failed to join game';
 
         // Check if error is about game being locked
         if (errorMessage.includes('locked')) {
@@ -76,7 +86,12 @@ export const createJoinGameAction = (
 
         // Clear the gameId since join failed
         setGameId('');
-      }
+        socket.off('poker:join_success', successHandler);
+      };
+
+      socket.once('poker:join_success', successHandler);
+      socket.once('poker:join_error', errorHandler);
+
     } catch (error) {
       console.error('Error joining game:', error);
       alert('Error joining game. Please try again.');
@@ -259,6 +274,50 @@ export const createForceLockGameAction = (gameId: string | null) => {
       if (!response.ok) console.error('Failed to force lock game');
     } catch (error) {
       console.error('Error force locking game:', error);
+    }
+  };
+};
+
+export const createResetSingletonAction = (
+  gameId: string | null,
+  updateGameState: (state: PokerStateUpdatePayload) => void
+) => {
+  return async () => {
+    if (!gameId) return;
+
+    // Confirm with user before resetting
+    const confirmed = confirm(
+      'Are you sure you want to reset the game? This will:\n' +
+      '• Remove all players\n' +
+      '• Reset all game state\n' +
+      '• Add a new AI player\n\n' +
+      'This action cannot be undone.'
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch('/api/poker/reset-singleton', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameId }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.gameState) {
+          // Immediately update local state with response
+          updateGameState(data.gameState);
+          console.log('[ResetSingleton] Game reset successfully');
+        }
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to reset game:', errorData.error);
+        alert(`Failed to reset game: ${errorData.error}`);
+      }
+    } catch (error) {
+      console.error('Error resetting game:', error);
+      alert('Error resetting game. Please try again.');
     }
   };
 };

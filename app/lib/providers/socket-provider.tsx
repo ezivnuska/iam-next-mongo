@@ -37,9 +37,11 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 		})
 
 		socketInstance.on('connect', () => {
+			console.log('[SocketProvider] Socket connected, userId:', user?.id);
 			setIsConnected(true)
 
 			if (user?.id) {
+				console.log('[SocketProvider] Registering user:', user.id);
 				socketInstance.emit('register', user.id)
 			}
 		})

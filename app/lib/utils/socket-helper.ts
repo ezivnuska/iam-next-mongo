@@ -4,6 +4,7 @@ import { emitViaAPI } from '@/app/api/socket/io';
 import { SOCKET_EVENTS } from '@/app/lib/socket/events';
 import { serializeGame } from './game-serialization';
 import type { PokerGameDocument } from '@/app/poker/lib/models/poker-game';
+import type { PokerNotificationPayload } from '@/app/lib/socket/events';
 
 /**
  * Centralized poker game socket event emitter
@@ -225,6 +226,28 @@ export class PokerSocketEmitter {
     }
     if (results.roundComplete) {
       await this.emitRoundComplete(results.roundComplete);
+    }
+  }
+
+  /**
+   * Emit poker notification event (new event-based system)
+   * This replaces action history-based notification detection
+   * @param payload - The notification payload
+   * @param excludeUserId - Optional user ID to exclude from receiving this notification (for optimistic updates)
+   */
+  static async emitNotification(payload: PokerNotificationPayload, excludeUserId?: string) {
+    console.log('[PokerSocketEmitter] Emitting notification:', {
+      event: SOCKET_EVENTS.POKER_NOTIFICATION,
+      payload,
+      excludeUserId
+    });
+    try {
+      const result = await emitViaAPI(SOCKET_EVENTS.POKER_NOTIFICATION, payload, undefined, excludeUserId);
+      console.log('[PokerSocketEmitter] Notification emitted successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('[PokerSocketEmitter] Failed to emit notification:', error);
+      throw error;
     }
   }
 }

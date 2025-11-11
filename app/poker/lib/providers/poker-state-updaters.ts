@@ -13,7 +13,6 @@ export interface StateSetters {
   setPot: (pot: Bet[]) => void;
   setStage: (stage: number) => void;
   setLocked: (locked: boolean) => void;
-  setLockTime: (lockTime?: string) => void;
   setCurrentPlayerIndex: (index: number) => void;
   setPlayerBets: (bets: number[]) => void;
   setGameStages: (stages: GameStageProps[]) => void;
@@ -31,7 +30,6 @@ export const createResetGameState = (setters: StateSetters) => {
     setters.setPot([]);
     setters.setStage(0);
     setters.setLocked(false);
-    setters.setLockTime(undefined);
     setters.setCurrentPlayerIndex(0);
     setters.setPlayerBets([]);
     setters.setGameStages([]);
@@ -86,12 +84,11 @@ export const createUpdateStageState = (
 
 export const createUpdateGameStatus = (
   setLocked: (locked: boolean) => void,
-  setLockTime: (lockTime?: string) => void,
   setWinner: (winner?: any) => void
 ) => {
   return (
     locked: boolean,
-    lockTime?: string,
+    _lockTime?: string, // Ignored for backwards compatibility
     winner?: {
       winnerId: string;
       winnerName: string;
@@ -101,7 +98,6 @@ export const createUpdateGameStatus = (
     }
   ) => {
     setLocked(locked);
-    setLockTime(lockTime);
     setWinner(winner); // Always update winner state, even when undefined to clear it
   };
 };

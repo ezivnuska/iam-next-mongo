@@ -32,6 +32,9 @@ export const SOCKET_EVENTS = {
 	POKER_GAME_DELETED: 'poker:game_deleted',
 
 	// Poker events - Player management
+	POKER_JOIN_GAME: 'poker:join_game', // Client -> Server: Request to join game
+	POKER_JOIN_SUCCESS: 'poker:join_success', // Server -> Client: Join succeeded
+	POKER_JOIN_ERROR: 'poker:join_error', // Server -> Client: Join failed
 	POKER_PLAYER_JOINED: 'poker:player_joined',
 	POKER_PLAYER_LEFT: 'poker:player_left',
 	POKER_GAME_LOCKED: 'poker:game_locked',
@@ -48,8 +51,11 @@ export const SOCKET_EVENTS = {
 	POKER_ACTION_TIMER_CLEARED: 'poker:action_timer_cleared',
 	POKER_ACTION_TIMER_ACTION_SET: 'poker:action_timer_action_set',
 
-	// Poker events - Game notifications
+	// Poker events - Game notifications (legacy - being phased out)
 	POKER_GAME_NOTIFICATION: 'poker:game_notification',
+
+	// Poker events - Notification events (new event-based system)
+	POKER_NOTIFICATION: 'poker:notification', // Generic notification event
 } as const
 
 export type SocketEventType = typeof SOCKET_EVENTS[keyof typeof SOCKET_EVENTS]
@@ -125,6 +131,19 @@ export interface PokerGameDeletedPayload {
 }
 
 // Player management event payloads
+export interface PokerJoinGamePayload {
+	gameId: string
+	username?: string
+}
+
+export interface PokerJoinSuccessPayload {
+	gameState: any
+}
+
+export interface PokerJoinErrorPayload {
+	error: string
+}
+
 export interface PokerPlayerJoinedPayload {
 	player: {
 		id: string
@@ -210,4 +229,58 @@ export interface PokerGameNotificationPayload {
 	message: string
 	type: 'blind' | 'deal' | 'action' | 'info'
 	duration?: number  // Duration in milliseconds (default 2000)
+}
+
+/**
+ * New event-based notification system
+ * Notifications are typed events with specific payloads
+ */
+export type PokerNotificationType =
+	| 'player_bet'
+	| 'player_raise'
+	| 'player_call'
+	| 'player_check'
+	| 'player_fold'
+	| 'player_all_in'
+	| 'blind_posted'
+	| 'cards_dealt'
+	| 'winner_determined'
+	| 'game_tied'
+	| 'stage_advanced'
+	| 'game_starting'
+	| 'game_shuffling';
+
+export interface PokerNotificationPayload {
+	notificationType: PokerNotificationType;
+	category: 'action' | 'info' | 'blind' | 'stage' | 'deal';
+
+	// Player action notifications
+	playerId?: string;
+	playerName?: string;
+	chipAmount?: number;
+	isAI?: boolean;  // Indicates if the action was taken by an AI player
+
+	// Blind notifications
+	blindType?: 'small' | 'big';
+
+	// Winner notifications
+	winnerId?: string;
+	winnerName?: string;
+	handRank?: string;
+
+	// Tie notifications
+	isTie?: boolean;
+	tiedPlayers?: string[];
+
+	// Stage notifications
+	stage?: number;
+	stageName?: string;
+
+	// Game starting countdown
+	countdownSeconds?: number;
+
+	// Pot synchronization data (included with betting actions and blinds)
+	pot?: any[];
+	playerBets?: number[];
+	currentPlayerIndex?: number;
 }

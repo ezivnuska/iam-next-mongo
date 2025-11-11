@@ -1,18 +1,11 @@
 // app/lib/server/poker/game-lock-manager.ts
 
 import { PokerGame } from '@/app/poker/lib/models/poker-game';
-import type { Player } from '@/app/poker/lib/definitions/poker';
-import { GameActionType } from '@/app/poker/lib/definitions/game-actions';
 import { initializeBets } from '@/app/poker/lib/utils/betting-helpers';
-import { ActionHistoryType } from '@/app/poker/lib/definitions/action-history';
-import { randomBytes } from 'crypto';
 import { withRetry } from '@/app/lib/utils/retry';
-import { POKER_RETRY_CONFIG, POKER_TIMERS } from '@/app/poker/lib/config/poker-constants';
+import { POKER_RETRY_CONFIG } from '@/app/poker/lib/config/poker-constants';
 import { acquireGameLock, releaseGameLock } from './game-lock-utils';
 import { logGameStartedAction } from '@/app/poker/lib/utils/action-history-helpers';
-import { placeSmallBlind, placeBigBlind } from './blinds-manager';
-import { startActionTimer } from './poker-timer-controller';
-import { dealPlayerCards } from './poker-dealer';
 
 // Store timeout references for cancellation
 const lockTimers = new Map<string, NodeJS.Timeout>();
@@ -92,19 +85,91 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
         const smallBlindPlayerChips = gameToLock.players[smallBlindPos]?.chipCount || 0;
         const bigBlindPlayerChips = gameToLock.players[bigBlindPos]?.chipCount || 0;
 
-        if (smallBlindPlayerChips < smallBlind || bigBlindPlayerChips < bigBlind) {
-          // At least one player doesn't have enough chips - can't lock
-          console.error(`[Auto Lock] Insufficient chips - SB Player ${smallBlindPos}: ${smallBlindPlayerChips}/${smallBlind}, BB Player ${bigBlindPos}: ${bigBlindPlayerChips}/${bigBlind}`);
+        // Players need at least SOME chips to post blinds (can go all-in with less than blind amount)
+        if (smallBlindPlayerChips === 0 || bigBlindPlayerChips === 0) {
+          // At least one player has no chips at all - can't start game
+          console.error(`[Auto Lock] Player with zero chips - SB Player ${smallBlindPos}: ${smallBlindPlayerChips}, BB Player ${bigBlindPos}: ${bigBlindPlayerChips}`);
 
           // Unlock game and release lock
           gameToLock.locked = false;
           gameToLock.processing = false;
           await gameToLock.save();
 
-          throw new Error(`Cannot start game - players do not have enough chips for blinds`);
+          throw new Error(`Cannot start game - players have zero chips`);
         }
 
-        // Emit granular game locked event to all clients
+        // Log if players will go all-in on blinds
+        if (smallBlindPlayerChips < smallBlind) {
+          console.log(`[Auto Lock] Small blind player will go all-in: ${smallBlindPlayerChips}/${smallBlind} chips`);
+        }
+        if (bigBlindPlayerChips < bigBlind) {
+          console.log(`[Auto Lock] Big blind player will go all-in: ${bigBlindPlayerChips}/${bigBlind} chips`);
+        }
+
+        // Place blinds and deal cards automatically without notifications
+        const { placeSmallBlind, placeBigBlind } = await import('./blinds-manager');
+        const { dealPlayerCards } = await import('./poker-dealer');
+        const { ActionHistoryType } = await import('@/app/poker/lib/definitions/action-history');
+        const { randomBytes } = await import('crypto');
+
+        // PLACE SMALL BLIND automatically without notification
+        const smallBlindInfo = placeSmallBlind(gameToLock);
+        console.log(`[Auto Lock] Small blind posted by ${smallBlindInfo.player.username}: ${smallBlindInfo.amount} chips`);
+
+        // PLACE BIG BLIND automatically without notification
+        const bigBlindInfo = placeBigBlind(gameToLock);
+        console.log(`[Auto Lock] Big blind posted by ${bigBlindInfo.player.username}: ${bigBlindInfo.amount} chips`);
+
+        // DEAL HOLE CARDS automatically after blinds (no notification)
+        dealPlayerCards(gameToLock.deck, gameToLock.players, 2);
+        gameToLock.markModified('deck');
+        gameToLock.markModified('players');
+
+        // Add action history for dealing hole cards
+        gameToLock.actionHistory.push({
+          id: randomBytes(8).toString('hex'),
+          timestamp: new Date(),
+          stage: 0, // Preflop
+          actionType: ActionHistoryType.CARDS_DEALT,
+          cardsDealt: 2,
+        });
+        gameToLock.markModified('actionHistory');
+
+        console.log(`[Auto Lock] Hole cards dealt to all players`);
+
+        // NOW set currentPlayerIndex after blinds are posted and cards are dealt
+        // In heads-up: Small blind acts first preflop
+        // In 3+ players: Player after big blind (UTG) acts first
+        // Reuse buttonPosition from line 81 (already declared)
+        const initialPosition = gameToLock.players.length === 2
+          ? buttonPosition  // Heads-up: button (small blind) acts first
+          : (bigBlindPos + 1) % gameToLock.players.length;  // 3+: player after big blind (UTG)
+
+        // Find first active player starting from initialPosition
+        // Skip any players who went all-in during blind posting
+        let currentIndex = initialPosition;
+        let attempts = 0;
+
+        console.log(`[Auto Lock] Finding first active player starting from position ${initialPosition} (${gameToLock.players.length} players, heads-up: ${gameToLock.players.length === 2})`);
+
+        while (attempts < gameToLock.players.length) {
+          const candidate = gameToLock.players[currentIndex];
+          console.log(`[Auto Lock] Checking player at index ${currentIndex}: ${candidate.username}, isAllIn: ${candidate.isAllIn}, folded: ${candidate.folded}`);
+          if (!candidate.isAllIn && !candidate.folded) {
+            console.log(`[Auto Lock] Found active player at index ${currentIndex}: ${candidate.username}`);
+            break; // Found an active player
+          }
+          currentIndex = (currentIndex + 1) % gameToLock.players.length;
+          attempts++;
+        }
+
+        gameToLock.currentPlayerIndex = currentIndex;
+        gameToLock.markModified('currentPlayerIndex');
+        console.log(`[Auto Lock] Set currentPlayerIndex to ${currentIndex} (${gameToLock.players[currentIndex]?.username}) AFTER cards dealt`);
+
+        await gameToLock.save();
+
+        // Emit game locked event to all clients with blinds and cards already dealt
         await PokerSocketEmitter.emitGameLocked({
           locked: true,
           stage: gameToLock.stage,
@@ -116,89 +181,18 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
           actionHistory: gameToLock.actionHistory,
         });
 
-        // PLACE SMALL BLIND with notification
-        const smallBlindInfo = placeSmallBlind(gameToLock);
-        await gameToLock.save();
-
-        // Emit bet placed event for small blind
-        await PokerSocketEmitter.emitBetPlaced({
-          playerIndex: smallBlindInfo.position,
-          chipCount: smallBlindInfo.amount,
-          pot: gameToLock.pot,
-          playerBets: gameToLock.playerBets,
-          currentPlayerIndex: gameToLock.currentPlayerIndex,
-          actionHistory: gameToLock.actionHistory,
-          players: gameToLock.players, // Include players for all-in status updates
-        });
-
-        await PokerSocketEmitter.emitGameNotification({
-          message: `${smallBlindInfo.player.username} posts small blind (${smallBlindInfo.amount} chip)`,
-          type: 'blind',
-          duration: POKER_TIMERS.NOTIFICATION_DURATION_MS,
-        });
-
-        await new Promise(resolve => setTimeout(resolve, POKER_TIMERS.POST_NOTIFICATION_DELAY_MS));
-
-        // PLACE BIG BLIND with notification
-        const bigBlindInfo = placeBigBlind(gameToLock);
-        await gameToLock.save();
-
-        // Emit bet placed event for big blind
-        await PokerSocketEmitter.emitBetPlaced({
-          playerIndex: bigBlindInfo.position,
-          chipCount: bigBlindInfo.amount,
-          pot: gameToLock.pot,
-          playerBets: gameToLock.playerBets,
-          currentPlayerIndex: gameToLock.currentPlayerIndex,
-          actionHistory: gameToLock.actionHistory,
-          players: gameToLock.players, // Include players for all-in status updates
-        });
-
-        await PokerSocketEmitter.emitGameNotification({
-          message: `${bigBlindInfo.player.username} posts big blind (${bigBlindInfo.amount} chips)`,
-          type: 'blind',
-          duration: POKER_TIMERS.NOTIFICATION_DURATION_MS,
-        });
-
-        await new Promise(resolve => setTimeout(resolve, POKER_TIMERS.POST_NOTIFICATION_DELAY_MS));
-
-        // DEAL HOLE CARDS immediately after blinds (standard poker rules)
-        dealPlayerCards(gameToLock.deck, gameToLock.players, 2);
-        gameToLock.markModified('deck');
-        gameToLock.markModified('players');
-
-        // Add action history for dealing hole cards
-        const { randomBytes } = await import('crypto');
-        const { ActionHistoryType } = await import('@/app/poker/lib/definitions/action-history');
-        gameToLock.actionHistory.push({
-          id: randomBytes(8).toString('hex'),
-          timestamp: new Date(),
-          stage: 0, // Preflop
-          actionType: ActionHistoryType.CARDS_DEALT,
-          cardsDealt: 2,
-        });
-        gameToLock.markModified('actionHistory');
-
-        await gameToLock.save();
-
-        // Emit notification for dealing player cards
-        await PokerSocketEmitter.emitGameNotification({
-          message: 'Dealing player cards',
-          type: 'deal',
-          duration: 2000,
-        });
-
-        // Emit cards dealt event
-        await PokerSocketEmitter.emitCardsDealt({
-          stage: gameToLock.stage,
-          communalCards: gameToLock.communalCards,
-          deckCount: gameToLock.deck.length,
-          players: gameToLock.players,
-        });
+        console.log(`[Auto Lock] Game locked - current player index: ${gameToLock.currentPlayerIndex}, player: ${gameToLock.players[gameToLock.currentPlayerIndex]?.username}, isAI: ${gameToLock.players[gameToLock.currentPlayerIndex]?.isAI}`);
 
         // Auto-start action timer for the current player (after blinds and cards dealt)
+        // Timer starts for both human and AI players - AI will act quickly and cancel timer
         const currentPlayer = gameToLock.players[gameToLock.currentPlayerIndex];
         if (currentPlayer) {
+          const { startActionTimer } = await import('./poker-timer-controller');
+          const { POKER_TIMERS } = await import('@/app/poker/lib/config/poker-constants');
+          const { GameActionType } = await import('@/app/poker/lib/definitions/game-actions');
+
+          console.log(`[Auto Lock] Starting timer for current player: ${currentPlayer.username} (AI: ${currentPlayer.isAI})`);
+
           await startActionTimer(
             gameId,
             POKER_TIMERS.ACTION_DURATION_SECONDS,
@@ -206,17 +200,18 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
             currentPlayer.id
           );
 
-          // Check if first player is AI and trigger their turn
+          // If current player is AI, trigger action immediately after timer starts
           if (currentPlayer.isAI) {
-            setImmediate(async () => {
-              try {
-                const { checkAndExecuteAITurn } = await import('./ai-player-manager');
-                await checkAndExecuteAITurn(gameId);
-              } catch (aiError) {
-                console.error('[GameLock] Error checking AI turn:', aiError);
-              }
+            console.log('[Auto Lock] Timer started for AI player - triggering immediate action');
+            const { executeAIActionIfReady } = await import('./ai-player-manager');
+            // Wait a bit longer to ensure client has processed game_locked event
+            await new Promise(resolve => setTimeout(resolve, 200));
+            executeAIActionIfReady(gameId).catch(error => {
+              console.error('[Auto Lock] AI action failed:', error);
             });
           }
+        } else {
+          console.error(`[Auto Lock] ERROR: No current player found at index ${gameToLock.currentPlayerIndex}`);
         }
       } catch (error) {
         // Release lock on error

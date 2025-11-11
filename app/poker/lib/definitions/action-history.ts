@@ -7,7 +7,10 @@ export enum ActionHistoryType {
   PLAYER_JOINED = 'PLAYER_JOINED',
   PLAYER_LEFT = 'PLAYER_LEFT',
   PLAYER_BET = 'PLAYER_BET',
+  PLAYER_RAISE = 'PLAYER_RAISE',
+  PLAYER_CALL = 'PLAYER_CALL',
   PLAYER_FOLD = 'PLAYER_FOLD',
+  PLAYER_ALL_IN = 'PLAYER_ALL_IN',
   CARDS_DEALT = 'CARDS_DEALT',
   STAGE_ADVANCED = 'STAGE_ADVANCED',
   GAME_STARTED = 'GAME_STARTED',
@@ -42,6 +45,9 @@ export interface GameActionHistory {
   // Winner data (for game ended)
   winnerId?: string;
   winnerName?: string;
+  handRank?: string; // Winning hand description (e.g., "Royal Flush", "Two Pair")
+  isTie?: boolean; // Whether the game ended in a tie
+  tiedPlayers?: string[]; // Player names in case of a tie
 }
 
 /**

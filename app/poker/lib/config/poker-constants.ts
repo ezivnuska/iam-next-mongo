@@ -45,10 +45,10 @@ export const POKER_TIMERS = {
   CLIENT_PROCESSING_BUFFER_MS: 1500,
 
   /** Duration in milliseconds for game notifications */
-  NOTIFICATION_DURATION_MS: 2000,
+  NOTIFICATION_DURATION_MS: 5000,
 
   /** Delay in milliseconds after showing notification (notification duration + buffer) */
-  POST_NOTIFICATION_DELAY_MS: 2200,
+  POST_NOTIFICATION_DELAY_MS: 5000,
 
   /** Interval in milliseconds for timer percentage updates */
   TIMER_UPDATE_INTERVAL_MS: 100,

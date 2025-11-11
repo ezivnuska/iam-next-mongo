@@ -54,14 +54,27 @@ export async function savePlayerBalances(players: Player[]) {
  * Supports multiple pots (main pot + side pots) for all-in scenarios
  */
 export function awardPotToWinners(game: PokerGameDoc, winnerInfo: WinnerInfo): void {
-  // Calculate side pots from player bets
-  const sidePots = calculateSidePots(game.players, game.playerBets);
+  // Calculate cumulative bets from game.pot (tracks ALL bets across all stages)
+  // playerBets is reset each stage, so we need to reconstruct total bets from game.pot
+  const cumulativePlayerBets = new Array(game.players.length).fill(0);
+
+  game.pot.forEach((bet: Bet) => {
+    const playerIndex = game.players.findIndex((p: Player) => p.username === bet.player);
+    if (playerIndex !== -1) {
+      cumulativePlayerBets[playerIndex] += bet.chipCount;
+    }
+  });
+
+  console.log(`[AwardPot] Cumulative player bets:`, cumulativePlayerBets);
+
+  // Calculate side pots from cumulative bets (not current stage bets)
+  const sidePots = calculateSidePots(game.players, cumulativePlayerBets);
 
   // Store calculated pots in game for client display
   game.pots = sidePots;
   game.markModified('pots');
 
-  console.log(`[AwardPot] Calculated ${sidePots.length} pot(s) from player bets`);
+  console.log(`[AwardPot] Calculated ${sidePots.length} pot(s) from cumulative bets`);
 
   // If no side pots, fall back to legacy pot distribution
   if (sidePots.length === 0) {

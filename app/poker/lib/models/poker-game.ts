@@ -51,6 +51,8 @@ export interface PokerGameDocument extends Document {
     cardsDealt: boolean;
     notificationsSent: boolean;
   };
+  // NEW: Track if game is in auto-advance mode (all players all-in)
+  autoAdvanceMode?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -137,11 +139,11 @@ const PokerGameSchema = new Schema<PokerGameDocument>(
     pot: { type: [BetSchema], default: [] },
     pots: { type: [PotInfoSchema], required: false }, // NEW: Multiple pots for all-in scenarios
 
-    // Store as Number (0, 1, 2, 3) to match GameStage enum values
+    // Store as Number (0, 1, 2, 3, 4, 5) to match GameStage enum values
     stage: {
       type: Number,
-      enum: [GameStage.Preflop, GameStage.Flop, GameStage.Turn, GameStage.River],
-      default: GameStage.Preflop,
+      enum: [GameStage.Preflop, GameStage.Flop, GameStage.Turn, GameStage.River, GameStage.Showdown, GameStage.End],
+      default: GameStage.Preflop, // Games start at Preflop stage (0)
     },
 
     // NEW: Track stage lifecycle position
@@ -167,6 +169,9 @@ const PokerGameSchema = new Schema<PokerGameDocument>(
       },
       required: false,
     },
+
+    // NEW: Track if game is in auto-advance mode (all players all-in)
+    autoAdvanceMode: { type: Boolean, default: false, required: false },
 
     locked: { type: Boolean, default: false },
     lockTime: { type: Date, required: false },

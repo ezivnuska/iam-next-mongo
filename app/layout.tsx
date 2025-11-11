@@ -2,7 +2,6 @@
 
 import '@/app/ui/global.css';
 import { ubuntu } from '@/app/ui/fonts';
-import Header from '@/app/ui/header/header';
 import { auth } from "@/app/lib/auth";
 import { UserProvider } from "@/app/lib/providers/user-provider";
 import { SocketProvider } from './lib/providers/socket-provider';
@@ -17,10 +16,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <UserProvider initialUser={session?.user ?? null}>
                     <SocketProvider>
                         <TileProvider>
-                            <Header />
-                            <Main>
-                                {children}
-                            </Main>
+                            {children}
                         </TileProvider>
                     </SocketProvider>
                 </UserProvider>
