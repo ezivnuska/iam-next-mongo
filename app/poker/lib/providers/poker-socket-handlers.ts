@@ -4,6 +4,7 @@ import type { Socket } from 'socket.io-client';
 import type { Player, Card, Bet } from '@/app/poker/lib/definitions/poker';
 import type { PokerStateUpdatePayload, PokerGameDeletedPayload } from '@/app/lib/socket/events';
 import type { PokerSoundType } from '../hooks/use-poker-sounds';
+import type { NotificationType } from './notification-provider';
 
 // ============= Socket Handler Factory Functions =============
 
@@ -344,7 +345,7 @@ export const createRoundCompleteHandler = (
   setWinner: (winner: any) => void,
   updatePlayers: (players: Player[]) => void,
   playSound?: (sound: PokerSoundType) => void,
-  showNotification?: (notification: { message: string; type: string; duration: number; onComplete?: () => void; metadata?: any }) => void,
+  showNotification?: (notification: { message: string; type: NotificationType; duration: number; onComplete?: () => void; metadata?: any }) => void,
   gameId?: string | null
 ) => {
   return (payload: any) => {

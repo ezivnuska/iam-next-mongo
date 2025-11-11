@@ -26,6 +26,7 @@ import {
   type StateUpdaters,
 } from './poker-socket-handlers';
 import type { PokerSoundType } from '../hooks/use-poker-sounds';
+import type { NotificationType } from './notification-provider';
 
 /**
  * Dependencies required for socket effects
@@ -48,7 +49,7 @@ export interface PokerSocketEffectsDeps {
   setAutoAdvanceMode: (mode: boolean) => void;
   playSound: (sound: PokerSoundType) => void;
   setCurrentPlayerIndex: (index: number) => void;
-  showNotification?: (notification: { message: string; type: string; duration: number; onComplete?: () => void; metadata?: any }) => void;
+  showNotification?: (notification: { message: string; type: NotificationType; duration: number; onComplete?: () => void; metadata?: any }) => void;
 }
 
 /**
