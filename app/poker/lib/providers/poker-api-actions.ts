@@ -157,10 +157,9 @@ export const createLeaveGameAction = (
         if (data.gameState?.deleted) {
           resetGameState();
           setAvailableGames(prev => prev.filter(g => g.id !== gameId));
-        } else {
-          // Just reset local state
-          resetGameState();
         }
+        // Note: Don't reset local state here - socket events (POKER_PLAYER_LEFT, POKER_STATE_UPDATE)
+        // will update the state properly without causing visual flicker
 
         socket.off('poker:leave_error', errorHandler);
       };
