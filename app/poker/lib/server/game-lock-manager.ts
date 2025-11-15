@@ -28,6 +28,21 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
           return;
         }
 
+        // CRITICAL: Check if we have enough players before locking
+        // A player may have left during the countdown timer, so we need to verify
+        if (gameToLock.players.length < 2) {
+          console.log(`[Auto Lock] ABORTED - insufficient players (${gameToLock.players.length}). Releasing lock.`);
+          gameToLock.processing = false;
+          gameToLock.lockTime = undefined; // Clear lock time since we're not locking
+          await gameToLock.save();
+
+          // Emit state update to sync clients with the aborted lock attempt
+          const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
+          await PokerSocketEmitter.emitStateUpdate(gameToLock);
+
+          return;
+        }
+
         gameToLock.locked = true;
         gameToLock.lockTime = undefined; // Clear lock time since we're locking now
         gameToLock.stage = 0; // Preflop

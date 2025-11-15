@@ -136,31 +136,48 @@ export const createFoldAction = (gameId: string | null) => {
 export const createLeaveGameAction = (
   gameId: string | null,
   resetGameState: () => void,
-  setAvailableGames: React.Dispatch<React.SetStateAction<Array<{ id: string; code: string; creatorId: string | null }>>>
+  setAvailableGames: React.Dispatch<React.SetStateAction<Array<{ id: string; code: string; creatorId: string | null }>>>,
+  socket: any
 ) => {
   return async () => {
-    if (!gameId) {
+    if (!gameId || !socket || !socket.connected) {
+      console.error('[Leave Game] Invalid state - gameId:', gameId, 'socket connected:', socket?.connected);
       return;
     }
+
     try {
-      const response = await fetch('/api/poker/leave', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameId }),
-      });
-      if (response.ok) {
-        const data = await response.json();
+      // Emit socket event to leave game
+      socket.emit('poker:leave_game', { gameId });
+
+      // Listen for success/error responses (one-time listeners)
+      const successHandler = (data: any) => {
+        console.log('[Leave Game] Successfully left game via socket');
 
         // If game was deleted (no players left), reset state and return to lobby
         if (data.gameState?.deleted) {
           resetGameState();
           setAvailableGames(prev => prev.filter(g => g.id !== gameId));
+        } else {
+          // Just reset local state
+          resetGameState();
         }
-      } else {
-        console.error('Failed to leave game');
-      }
+
+        socket.off('poker:leave_error', errorHandler);
+      };
+
+      const errorHandler = (data: any) => {
+        const errorMessage = data.error || 'Failed to leave game';
+        console.error('[Leave Game]', errorMessage);
+        alert(`Failed to leave game: ${errorMessage}`);
+        socket.off('poker:leave_success', successHandler);
+      };
+
+      socket.once('poker:leave_success', successHandler);
+      socket.once('poker:leave_error', errorHandler);
+
     } catch (error) {
       console.error('Error leaving game:', error);
+      alert('Error leaving game. Please try again.');
     }
   };
 };

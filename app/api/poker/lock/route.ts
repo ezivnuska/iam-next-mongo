@@ -260,8 +260,17 @@ export async function lockGameInternal(gameId: string) {
       }
 
       // Check if there are at least 2 players
+      // Handle gracefully by releasing lock and returning early (player may have left during countdown)
       if (game.players.length < 2) {
-        throw new Error('Need at least 2 players to start game');
+        console.log(`[lockGameInternal] ABORTED - insufficient players (${game.players.length}). Releasing lock.`);
+        game.processing = false;
+        game.lockTime = undefined; // Clear lock time
+        await game.save();
+
+        // Emit state update to sync clients
+        await PokerSocketEmitter.emitStateUpdate(game);
+
+        return { success: false, message: 'Insufficient players to start game' };
       }
 
       // Lock the game

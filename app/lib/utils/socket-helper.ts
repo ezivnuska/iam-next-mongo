@@ -256,4 +256,20 @@ export class PokerSocketEmitter {
       throw error;
     }
   }
+
+  /**
+   * Cancel/clear any active notification
+   * Used when game state changes make the notification irrelevant (e.g., player leaves during countdown)
+   */
+  static async emitNotificationCanceled() {
+    console.log('[PokerSocketEmitter] Emitting notification canceled event');
+    try {
+      const result = await emitViaAPI(SOCKET_EVENTS.POKER_NOTIFICATION_CANCELED, {});
+      console.log('[PokerSocketEmitter] Notification canceled event emitted successfully');
+      return result;
+    } catch (error) {
+      console.error('[PokerSocketEmitter] Failed to emit notification canceled:', error);
+      throw error;
+    }
+  }
 }

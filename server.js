@@ -109,6 +109,44 @@ app.prepare().then(() => {
 			}
 		});
 
+		// Handle poker game leave
+		socket.on('poker:leave_game', async ({ gameId }) => {
+			console.log('[Socket] Received poker:leave_game for game:', gameId, 'user:', socket.userId);
+
+			try {
+				// User must be registered first
+				if (!socket.userId) {
+					socket.emit('poker:leave_error', { error: 'Not authenticated - register first' });
+					return;
+				}
+
+				// Delegate to API route which handles all the leave logic
+				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						signal: 'poker:leave_game',
+						gameId,
+						userId: socket.userId
+					}),
+				});
+
+				const result = await response.json();
+
+				if (!response.ok) {
+					console.error('[Socket] Leave failed:', result.error);
+					socket.emit('poker:leave_error', { error: result.error });
+				} else {
+					console.log('[Socket] Successfully left game');
+					// Success event will be sent via emitPlayerLeft
+					socket.emit('poker:leave_success', { gameState: result.gameState });
+				}
+			} catch (error) {
+				console.error('[Socket] Error processing leave_game:', error);
+				socket.emit('poker:leave_error', { error: error.message || 'Failed to leave game' });
+			}
+		});
+
 		// Handle ready for next turn signal from client (after notifications complete)
 		socket.on('poker:ready_for_next_turn', async ({ gameId }) => {
 			console.log('[Socket] Received poker:ready_for_next_turn for game:', gameId);

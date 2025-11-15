@@ -37,6 +37,26 @@ export async function POST(request: NextRequest) {
 				return NextResponse.json({ success: true, gameState: result.gameState });
 			}
 
+			if (signal === 'poker:leave_game' && gameId && userId) {
+				const { handlePlayerLeave } = await import('@/app/poker/lib/server/poker-game-controller');
+
+				const result = await handlePlayerLeave(gameId, userId);
+
+				if (!result.success) {
+					const errorMessage = result.error || 'Failed to leave game';
+					console.error('[Socket Emit Route] Leave error:', errorMessage);
+
+					// Return appropriate error
+					if (errorMessage.includes('not found')) {
+						return NextResponse.json({ error: 'Game or player not found' }, { status: 404 });
+					}
+
+					return NextResponse.json({ error: errorMessage }, { status: 500 });
+				}
+
+				return NextResponse.json({ success: true, gameState: result.gameState });
+			}
+
 			if (signal === 'poker:ready_for_next_turn' && gameId) {
 				const { handleReadyForNextTurn } = await import('@/app/poker/lib/server/turn-handler');
 				await handleReadyForNextTurn(gameId);

@@ -224,6 +224,65 @@ export async function handlePlayerJoin(
   }
 }
 
+/**
+ * Handle complete player leave flow including emissions and notifications
+ * Consolidates logic from /api/poker/leave route
+ */
+export async function handlePlayerLeave(
+  gameId: string,
+  userId: string
+): Promise<{ success: boolean; gameState: any; error?: string }> {
+  try {
+    // Get game state before removing to check timer
+    const gameBefore = await PokerGame.findById(gameId);
+    if (!gameBefore) {
+      return { success: false, gameState: null, error: 'Game not found' };
+    }
+
+    const hadTimer = !!gameBefore.actionTimer;
+
+    // Find player to get username for logging
+    const player = gameBefore.players.find((p: Player) => p.id === userId);
+    if (!player) {
+      return { success: false, gameState: null, error: 'Player not found in game' };
+    }
+
+    // Remove player from game
+    const gameState = await removePlayer(gameId, {
+      id: userId,
+      username: player.username,
+    });
+
+    // If timer was cleared due to insufficient players, notify clients
+    if (hadTimer && !gameState.actionTimer && gameState.players.length < 2) {
+      await PokerSocketEmitter.emitTimerCleared();
+    }
+
+    const { serializeGame } = await import('@/app/lib/utils/game-serialization');
+    const serializedState = serializeGame(gameState);
+
+    // Emit granular player left event with actionHistory
+    await PokerSocketEmitter.emitPlayerLeft({
+      playerId: userId,
+      players: gameState.players,
+      playerCount: gameState.players.length,
+      gameReset: gameState.players.length === 0, // Game resets only if ALL players left
+      actionHistory: gameState.actionHistory || [],
+    });
+
+    // If game was reset (< 2 players remain), send full state update to sync hands, cards, etc.
+    if (gameState.players.length < 2) {
+      await PokerSocketEmitter.emitStateUpdate(gameState);
+    }
+
+    return { success: true, gameState: serializedState };
+  } catch (error: any) {
+    const errorMessage = error?.message || 'Failed to leave game';
+    console.error('[HandlePlayerLeave] Error:', errorMessage);
+    return { success: false, gameState: null, error: errorMessage };
+  }
+}
+
 export async function removePlayer(
   gameId: string,
   user: { id: string; username: string }
@@ -256,6 +315,11 @@ export async function removePlayer(
       game.lockTime = undefined;
       await PokerGame.findByIdAndUpdate(gameId, { lockTime: undefined });
       console.log('[RemovePlayer] Cancelled auto-lock timer - less than 2 players');
+
+      // CRITICAL: Cancel any active "Game starting!" notification
+      // This ensures spectators see the cancellation immediately
+      await PokerSocketEmitter.emitNotificationCanceled();
+      console.log('[RemovePlayer] Cancelled game starting notification - insufficient players');
     } else if (game.players.length >= 2 && !game.locked) {
       // Reset lock timer if 2+ players remain (give them more time after someone leaves)
       const { scheduleGameLock } = await import('./game-lock-manager');

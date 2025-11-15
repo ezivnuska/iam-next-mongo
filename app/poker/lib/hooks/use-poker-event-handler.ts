@@ -27,7 +27,7 @@ import { POKER_TIMERS } from '../config/poker-constants';
 export function usePokerEventHandler(gameId: string | null) {
   const { socket } = useSocket();
   const { user } = useUser();
-  const { showNotification } = useNotifications();
+  const { showNotification, clearNotification } = useNotifications();
   const { signalReadyForNextTurn } = useGameFlowController();
   const { syncPotFromNotification, shouldSyncPot } = usePotSync();
   const { clearTimerOptimistically } = usePokerActions();
@@ -137,12 +137,20 @@ export function usePokerEventHandler(gameId: string | null) {
       }
     };
 
-    // Register socket listener
-    console.log('[PokerEventHandler] Registering poker notification listener for game:', gameId);
+    // Handler for notification cancellation
+    const handleNotificationCanceled = () => {
+      console.log('[PokerEventHandler] *** NOTIFICATION CANCELED - Clearing immediately ***');
+      clearNotification();
+    };
+
+    // Register socket listeners
+    console.log('[PokerEventHandler] Registering poker notification listeners for game:', gameId);
     socket.on(SOCKET_EVENTS.POKER_NOTIFICATION, handlePokerNotification);
+    socket.on(SOCKET_EVENTS.POKER_NOTIFICATION_CANCELED, handleNotificationCanceled);
 
     return () => {
       socket.off(SOCKET_EVENTS.POKER_NOTIFICATION, handlePokerNotification);
+      socket.off(SOCKET_EVENTS.POKER_NOTIFICATION_CANCELED, handleNotificationCanceled);
     };
-  }, [socket, gameId, user, showNotification, signalReadyForNextTurn, syncPotFromNotification, shouldSyncPot, clearTimerOptimistically]);
+  }, [socket, gameId, user, showNotification, clearNotification, signalReadyForNextTurn, syncPotFromNotification, shouldSyncPot, clearTimerOptimistically]);
 }

@@ -35,6 +35,9 @@ export const SOCKET_EVENTS = {
 	POKER_JOIN_GAME: 'poker:join_game', // Client -> Server: Request to join game
 	POKER_JOIN_SUCCESS: 'poker:join_success', // Server -> Client: Join succeeded
 	POKER_JOIN_ERROR: 'poker:join_error', // Server -> Client: Join failed
+	POKER_LEAVE_GAME: 'poker:leave_game', // Client -> Server: Request to leave game
+	POKER_LEAVE_SUCCESS: 'poker:leave_success', // Server -> Client: Leave succeeded
+	POKER_LEAVE_ERROR: 'poker:leave_error', // Server -> Client: Leave failed
 	POKER_PLAYER_JOINED: 'poker:player_joined',
 	POKER_PLAYER_LEFT: 'poker:player_left',
 	POKER_GAME_LOCKED: 'poker:game_locked',
@@ -56,6 +59,7 @@ export const SOCKET_EVENTS = {
 
 	// Poker events - Notification events (new event-based system)
 	POKER_NOTIFICATION: 'poker:notification', // Generic notification event
+	POKER_NOTIFICATION_CANCELED: 'poker:notification_canceled', // Cancel active notification
 } as const
 
 export type SocketEventType = typeof SOCKET_EVENTS[keyof typeof SOCKET_EVENTS]

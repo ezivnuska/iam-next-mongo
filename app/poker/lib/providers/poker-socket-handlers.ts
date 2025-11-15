@@ -359,36 +359,16 @@ export const createRoundCompleteHandler = (
     setWinner(payload.winner);
     updatePlayers(payload.players);
 
-    // If winner is cleared (undefined), game has been reset and is ready to restart
-    // Show "Game starting!" notification (10 second countdown) then trigger game lock
-    if (!payload.winner && showNotification && gameId) {
-      console.log('[RoundCompleteHandler] ✅ Conditions met - showing game starting notification with 10s countdown');
-      const { POKER_GAME_CONFIG } = require('../config/poker-constants');
-      showNotification({
-        message: 'Game starting!',
-        type: 'info',
-        duration: POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS, // 10 seconds
-        onComplete: async () => {
-          console.log('[RoundCompleteHandler] ✅ Game starting notification complete - triggering game lock');
-          try {
-            const response = await fetch('/api/poker/lock', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ gameId }),
-            });
-            console.log('[RoundCompleteHandler] ✅ Game lock API response:', response.status, response.statusText);
-          } catch (error) {
-            console.error('[RoundCompleteHandler] ❌ Failed to trigger game lock:', error);
-          }
-        },
-      });
-    } else {
-      console.log('[RoundCompleteHandler] ❌ Conditions NOT met for restart notification:', {
-        noWinner: !payload.winner,
-        hasShowNotification: !!showNotification,
-        hasGameId: !!gameId,
-      });
-    }
+    // NOTE: Winner sounds are now played when the winner notification is displayed
+    // This ensures sounds play at the same time as the visual notification
+
+    // Game restart flow is now fully server-driven:
+    // 1. Server emits round_complete with winner (10s notification)
+    // 2. Server automatically resets game after notification completes
+    // 3. Server emits round_complete with winner: undefined
+    // 4. Server auto-locks game after AUTO_LOCK_DELAY_MS
+    // 5. Server emits game_locked event
+    // All timing and state transitions handled server-side to avoid client-side fetch calls
 
     // NOTE: Winner sounds are now played when the winner notification is displayed
     // This ensures sounds play at the same time as the visual notification

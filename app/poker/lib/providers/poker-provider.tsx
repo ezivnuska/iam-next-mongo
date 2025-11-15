@@ -367,8 +367,8 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
     }
   }, [foldOriginal, isActionProcessing, user, players, showNotification]);
   const leaveGame = useCallback(
-    createLeaveGameAction(gameId, resetGameState, setAvailableGames),
-    [gameId, resetGameState]
+    createLeaveGameAction(gameId, resetGameState, setAvailableGames, socket),
+    [gameId, resetGameState, socket]
   );
   const deleteGameFromLobby = useCallback(
     createDeleteGameAction(setAvailableGames),
