@@ -79,6 +79,10 @@ export function usePokerEventHandler(gameId: string | null) {
       const isOwnAction = payload.playerId === user?.id;
       const shouldSignal = isPlayerAction && !payload.isAI && isOwnAction; // Only acting player signals for human actions
 
+      // Winner and game_starting notifications are now PURELY VISUAL
+      // The server handles the reset/restart flow automatically (fully server-driven)
+      // This eliminates client-triggered API calls that were causing page refreshes
+
       // Clear timer optimistically for ANY player action (including AI)
       if (isPlayerAction) {
         console.log('[PokerEventHandler] Action notification received - clearing timer optimistically');
@@ -109,15 +113,26 @@ export function usePokerEventHandler(gameId: string | null) {
         // Show the notification normally
         console.log('[PokerEventHandler] *** SHOWING NOTIFICATION IMMEDIATELY ***: message=', message, 'duration=', duration);
 
+        // Determine onComplete callback based on notification type
+        // Only player actions need callbacks now - winner/game_starting are purely visual
+        let onCompleteCallback: (() => void) | undefined = undefined;
+
+        if (shouldSignal) {
+          // Player action notifications signal ready for next turn
+          onCompleteCallback = () => {
+            console.log('[PokerEventHandler] Action notification complete - signaling ready for next turn');
+            signalReadyForNextTurn(gameId);
+          };
+        }
+        // Winner and game_starting notifications have NO callbacks - they're purely informational
+        // The server automatically handles reset/restart in a fully server-driven flow
+
         showNotification({
           message,
           type,
           duration,
           metadata: payload,
-          onComplete: shouldSignal ? () => {
-            console.log('[PokerEventHandler] Action notification complete - signaling ready for next turn');
-            signalReadyForNextTurn(gameId);
-          } : undefined,
+          onComplete: onCompleteCallback,
         });
       }
     };

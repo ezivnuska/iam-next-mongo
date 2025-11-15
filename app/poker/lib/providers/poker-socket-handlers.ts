@@ -349,7 +349,12 @@ export const createRoundCompleteHandler = (
   gameId?: string | null
 ) => {
   return (payload: any) => {
-    console.log('[RoundCompleteHandler] Round complete event received:', { hasWinner: !!payload.winner });
+    console.log('[RoundCompleteHandler] Round complete event received:', {
+      hasWinner: !!payload.winner,
+      winner: payload.winner,
+      hasShowNotification: !!showNotification,
+      gameId: gameId,
+    });
 
     setWinner(payload.winner);
     updatePlayers(payload.players);
@@ -357,25 +362,31 @@ export const createRoundCompleteHandler = (
     // If winner is cleared (undefined), game has been reset and is ready to restart
     // Show "Game starting!" notification (10 second countdown) then trigger game lock
     if (!payload.winner && showNotification && gameId) {
-      console.log('[RoundCompleteHandler] Winner cleared - showing game starting notification with 10s countdown');
+      console.log('[RoundCompleteHandler] ✅ Conditions met - showing game starting notification with 10s countdown');
       const { POKER_GAME_CONFIG } = require('../config/poker-constants');
       showNotification({
         message: 'Game starting!',
         type: 'info',
         duration: POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS, // 10 seconds
         onComplete: async () => {
-          console.log('[RoundCompleteHandler] Game starting notification complete - triggering game lock');
+          console.log('[RoundCompleteHandler] ✅ Game starting notification complete - triggering game lock');
           try {
-            await fetch('/api/poker/lock', {
+            const response = await fetch('/api/poker/lock', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ gameId }),
             });
-            console.log('[RoundCompleteHandler] Game lock triggered successfully');
+            console.log('[RoundCompleteHandler] ✅ Game lock API response:', response.status, response.statusText);
           } catch (error) {
-            console.error('[RoundCompleteHandler] Failed to trigger game lock:', error);
+            console.error('[RoundCompleteHandler] ❌ Failed to trigger game lock:', error);
           }
         },
+      });
+    } else {
+      console.log('[RoundCompleteHandler] ❌ Conditions NOT met for restart notification:', {
+        noWinner: !payload.winner,
+        hasShowNotification: !!showNotification,
+        hasGameId: !!gameId,
       });
     }
 

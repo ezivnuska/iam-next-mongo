@@ -21,6 +21,18 @@ export async function handleReadyForNextTurn(gameId: string): Promise<void> {
     throw new Error('Game not found');
   }
 
+  // Check if game is being processed by another operation (e.g., server-driven reset)
+  if (game.processing) {
+    console.log('[TurnHandler] Game is being processed by another operation - skipping ready_for_next_turn');
+    return;
+  }
+
+  // Ignore ready signal if game is not locked (not in active play)
+  if (!game.locked) {
+    console.log('[TurnHandler] Game is not locked - skipping ready_for_next_turn');
+    return;
+  }
+
   // Check if betting round is complete
   const { TurnManager } = await import('./turn-manager');
   const { StageManager } = await import('./stage-manager');
@@ -43,7 +55,17 @@ export async function handleReadyForNextTurn(gameId: string): Promise<void> {
     if (nextAction === 'end-game') {
       // At River - determine winner
       await StageManager.endGame(game);
-      await game.save();
+
+      try {
+        await game.save();
+      } catch (error: any) {
+        // Ignore version errors - game might be processed by server-driven reset
+        if (error.name === 'VersionError' || error.message?.includes('version')) {
+          console.log('[TurnHandler] Version conflict during save - game likely being processed elsewhere, skipping');
+          return;
+        }
+        throw error;
+      }
 
       const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
       await PokerSocketEmitter.emitStateUpdate(game.toObject());
@@ -58,7 +80,17 @@ export async function handleReadyForNextTurn(gameId: string): Promise<void> {
       // Advance to next stage (Flop/Turn/River/Showdown)
       const previousStage = game.stage;
       await StageManager.advanceToNextStage(game);
-      await game.save();
+
+      try {
+        await game.save();
+      } catch (error: any) {
+        // Ignore version errors - game might be processed by server-driven reset
+        if (error.name === 'VersionError' || error.message?.includes('version')) {
+          console.log('[TurnHandler] Version conflict during save - game likely being processed elsewhere, skipping');
+          return;
+        }
+        throw error;
+      }
 
       const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
       await PokerSocketEmitter.emitStateUpdate(game.toObject());
@@ -68,7 +100,18 @@ export async function handleReadyForNextTurn(gameId: string): Promise<void> {
       if (previousStage === GameStage.River && game.stage === GameStage.Showdown) {
         console.log('[TurnHandler] Advanced to Showdown - ending game immediately');
         await StageManager.endGame(game);
-        await game.save();
+
+        try {
+          await game.save();
+        } catch (error: any) {
+          // Ignore version errors - game might be processed by server-driven reset
+          if (error.name === 'VersionError' || error.message?.includes('version')) {
+            console.log('[TurnHandler] Version conflict during save - game likely being processed elsewhere, skipping');
+            return;
+          }
+          throw error;
+        }
+
         await PokerSocketEmitter.emitStateUpdate(game.toObject());
         return;
       }
@@ -100,7 +143,17 @@ export async function handleReadyForNextTurn(gameId: string): Promise<void> {
     const previousPlayerIndex = game.currentPlayerIndex;
     const { advanceToNextPlayer } = await import('./bet-processor');
     advanceToNextPlayer(game, previousPlayerIndex);
-    await game.save();
+
+    try {
+      await game.save();
+    } catch (error: any) {
+      // Ignore version errors - game might be processed by server-driven reset
+      if (error.name === 'VersionError' || error.message?.includes('version')) {
+        console.log('[TurnHandler] Version conflict during save - game likely being processed elsewhere, skipping');
+        return;
+      }
+      throw error;
+    }
 
     console.log('[TurnHandler] Advanced turn from', previousPlayerIndex, 'to', game.currentPlayerIndex);
 

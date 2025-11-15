@@ -131,7 +131,13 @@ export class PokerSocketEmitter {
     winner: any;
     players: any[];
   }) {
+    console.log('[PokerSocketEmitter] ✅ emitRoundComplete called with payload:', {
+      hasWinner: !!payload.winner,
+      winner: payload.winner,
+      playerCount: payload.players.length,
+    });
     await emitViaAPI(SOCKET_EVENTS.POKER_ROUND_COMPLETE, payload);
+    console.log('[PokerSocketEmitter] ✅ emitRoundComplete API call completed');
   }
 
   /**

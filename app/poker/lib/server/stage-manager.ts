@@ -574,28 +574,36 @@ export class StageManager {
       });
     }
 
-    console.log(`[StageManager] Winner notification sent: ${winnerInfo.winnerName}, waiting for notification to complete`);
+    console.log(`[StageManager] Winner notification sent: ${winnerInfo.winnerName}`);
+    console.log(`[StageManager] Starting fully server-driven restart flow`);
 
-    // Wait for winner notification timer to complete (10 seconds)
+    // FULLY SERVER-DRIVEN RESTART FLOW (eliminates client-triggered API calls that cause page refreshes):
+    // 1. Server emits winner notification (done above)
+    // 2. Client shows winner notification for 10s (purely visual, no callbacks)
+    // 3. Server waits 10s then automatically resets game
+    // 4. Server emits game_starting notification
+    // 5. Client shows "Game starting!" notification for 10s (purely visual, no callbacks)
+    // 6. Server waits 10s then automatically locks and starts new game
+
     const { POKER_GAME_CONFIG } = await import('../config/poker-constants');
+
+    // Wait for winner notification to complete (10 seconds)
+    console.log('[StageManager] Waiting 10 seconds for winner notification to display');
     await new Promise(resolve => setTimeout(resolve, POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS));
 
-    console.log(`[StageManager] Winner notification complete, advancing to End stage`);
+    console.log('[StageManager] Winner notification complete - starting game reset');
 
-    // Advance to End stage (game still locked during this stage)
+    // Advance to End stage
     game.stage = GameStage.End;
     game.markModified('stage');
     await game.save();
 
-    // Emit state update to show End stage
-    await PokerSocketEmitter.emitStateUpdate(game);
+    console.log('[StageManager] Advanced to End stage - calling resetGameForNextRound');
 
-    console.log(`[StageManager] End stage active, game still locked`);
+    // Reset and restart the game (this will emit game_starting and auto-lock after 10s)
+    await StageManager.resetGameForNextRound(game);
 
-    // Now unlock and perform cleanup/reset for next round
-    await this.resetGameForNextRound(game);
-
-    console.log(`[StageManager] Game complete and unlocked. Winner: ${winnerInfo.winnerName}`);
+    console.log('[StageManager] Game reset and restart flow complete');
   }
 
   /**
@@ -606,6 +614,7 @@ export class StageManager {
     console.log('[StageManager] Resetting game for next round...');
 
     const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
+    const { POKER_GAME_CONFIG } = await import('../config/poker-constants');
 
     // Unlock the game
     game.locked = false;
@@ -624,6 +633,9 @@ export class StageManager {
     // Reset game for next round
     const gameToReset = await PokerGame.findById(game._id);
     if (gameToReset) {
+      // Initialize a fresh shuffled deck for the new game
+      const { initializeDeck } = await import('./poker-dealer');
+
       gameToReset.winner = undefined;
       gameToReset.stage = 0; // Back to Preflop (stage 0)
       gameToReset.communalCards = [];
@@ -631,18 +643,61 @@ export class StageManager {
       gameToReset.currentPlayerIndex = 0;
       gameToReset.actionHistory = [];
       gameToReset.pot = [];
-      gameToReset.deck = [];
+      gameToReset.deck = initializeDeck(); // Fresh shuffled deck
       gameToReset.stages = [];
       gameToReset.lockTime = undefined;
 
-      // Reset all-in status and clear all player hands
+      // Remove players with insufficient balance for next game
+      const { BIG_BLIND } = POKER_GAME_CONFIG;
+      const playersBeforeRemoval = gameToReset.players.length;
+
+      console.log('[StageManager] Player balances before removal check:', gameToReset.players.map((p: Player) =>
+        ({ username: p.username, chipCount: p.chipCount, canPlay: p.chipCount >= BIG_BLIND })
+      ));
+
+      // Filter out players who can't afford the big blind
+      gameToReset.players = gameToReset.players.filter((p: Player) => {
+        if (p.chipCount < BIG_BLIND) {
+          console.log(`[StageManager] Removing player ${p.username} - insufficient balance (${p.chipCount} < ${BIG_BLIND})`);
+          return false;
+        }
+        return true;
+      });
+
+      const playersRemoved = playersBeforeRemoval - gameToReset.players.length;
+      if (playersRemoved > 0) {
+        console.log(`[StageManager] Removed ${playersRemoved} player(s) with insufficient balance`);
+      }
+
+      // Check if we have enough players to continue (need at least 2)
+      if (gameToReset.players.length < 2) {
+        console.log(`[StageManager] Insufficient players to restart (${gameToReset.players.length} remaining). Canceling restart.`);
+
+        // Unlock the game and save
+        gameToReset.locked = false;
+        gameToReset.markModified('players');
+        await gameToReset.save();
+
+        // Emit state update to show players have been removed
+        await PokerSocketEmitter.emitStateUpdate(gameToReset);
+
+        console.log('[StageManager] Game unlocked - restart canceled due to insufficient players');
+        return; // Exit early - no restart
+      }
+
+      // Reset player state for next game (keep their balances)
       gameToReset.players = gameToReset.players.map((p: Player) => ({
         ...p,
         hand: [],
         folded: false,
         isAllIn: undefined,
         allInAmount: undefined,
+        // IMPORTANT: Keep existing chipCount - balances persist across games
       }));
+
+      console.log('[StageManager] Player balances for next game:', gameToReset.players.map((p: Player) =>
+        ({ username: p.username, chipCount: p.chipCount })
+      ));
 
       gameToReset.markModified('winner');
       gameToReset.markModified('stage');
@@ -662,14 +717,30 @@ export class StageManager {
 
       console.log('[StageManager] Game reset for next round');
 
-      // Emit round complete event to trigger restart notification/timer
-      // This happens AFTER reset, so players see the clean slate with restart countdown
-      await PokerSocketEmitter.emitRoundComplete({
-        winner: undefined, // Winner already cleared in reset
-        players: gameToReset.players,
+      // Emit "Game starting!" notification to inform players
+      console.log('[StageManager] ✅ Emitting game starting notification');
+
+      await PokerSocketEmitter.emitNotification({
+        notificationType: 'game_starting',
+        category: 'info',
+        countdownSeconds: POKER_GAME_CONFIG.AUTO_LOCK_DELAY_SECONDS, // 10 seconds
       });
 
-      console.log('[StageManager] Round complete event emitted, restart countdown active');
+      console.log('[StageManager] ✅ Game starting notification emitted');
+
+      // Wait for notification duration, then automatically lock the game
+      // This is server-driven to avoid issues with client socket disconnections during page remounts
+      console.log('[StageManager] Waiting 10 seconds before auto-locking game');
+      await new Promise(resolve => setTimeout(resolve, POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS));
+
+      console.log('[StageManager] 10 second countdown complete - auto-locking game');
+
+      // Automatically lock and start the game using internal function (bypasses auth)
+      const gameId = String(gameToReset._id);
+      const { lockGameInternal } = await import('@/app/api/poker/lock/route');
+
+      await lockGameInternal(gameId);
+      console.log('[StageManager] ✅ Game auto-locked and started successfully');
     }
   }
 }

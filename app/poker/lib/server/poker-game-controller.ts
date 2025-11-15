@@ -100,6 +100,18 @@ export async function addPlayer(
     console.log(`[AddPlayer] Created new balance for ${user.username}: ${playerChipCount} chips`);
   }
 
+  // Reset balance to default if insufficient for big blind
+  if (playerChipCount < POKER_GAME_CONFIG.BIG_BLIND) {
+    console.log(`[AddPlayer] Player ${user.username} has insufficient balance (${playerChipCount} < ${POKER_GAME_CONFIG.BIG_BLIND}) - resetting to ${POKER_GAME_CONFIG.DEFAULT_STARTING_CHIPS}`);
+    playerChipCount = POKER_GAME_CONFIG.DEFAULT_STARTING_CHIPS;
+
+    // Update the balance in database
+    await PokerBalance.findOneAndUpdate(
+      { userId: user.id },
+      { $set: { chipCount: playerChipCount } }
+    );
+  }
+
   // Retry logic for version conflicts
   return withRetry(async () => {
     const game = await PokerGame.findById(gameId);
@@ -882,7 +894,6 @@ export async function fold(gameId: string, playerId: string) {
 
       console.log(`[Fold] Winner notification emitted for ${winner.username}`);
 
-
       // Log game ended in action history (for UI display only, not notifications)
       game.actionHistory.push({
         id: require('crypto').randomBytes(8).toString('hex'),
@@ -916,6 +927,44 @@ export async function fold(gameId: string, playerId: string) {
       // Emit full game state update to show winner with timer already cleared
       await PokerSocketEmitter.emitStateUpdate(game.toObject());
 
+      console.log(`[Fold] Fold complete - winner notification emitted`);
+      console.log(`[Fold] Starting fully server-driven restart flow`);
+
+      // FULLY SERVER-DRIVEN RESTART FLOW (eliminates client-triggered API calls that cause page refreshes):
+      // 1. Server emits winner notification (done above)
+      // 2. Client shows winner notification for 10s (purely visual, no callbacks)
+      // 3. Server waits 10s then automatically resets game
+      // 4. Server emits game_starting notification
+      // 5. Client shows "Game starting!" notification for 10s (purely visual, no callbacks)
+      // 6. Server waits 10s then automatically locks and starts new game
+
+      const { POKER_GAME_CONFIG } = await import('../config/poker-constants');
+
+      // Wait for winner notification to complete (10 seconds)
+      console.log('[Fold] Waiting 10 seconds for winner notification to display');
+      await new Promise(resolve => setTimeout(resolve, POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS));
+
+      console.log('[Fold] Winner notification complete - starting game reset');
+
+      // Fetch fresh game state for reset
+      const gameForReset = await PokerGame.findById(gameId);
+      if (!gameForReset) throw new Error('Game not found for reset');
+
+      // Advance to End stage
+      gameForReset.stage = GameStage.End;
+      gameForReset.markModified('stage');
+      await gameForReset.save();
+
+      console.log('[Fold] Advanced to End stage - calling resetGameForNextRound');
+
+      // Reset and restart the game (this will emit game_starting and auto-lock after 10s)
+      const { StageManager } = await import('./stage-manager');
+      await StageManager.resetGameForNextRound(gameForReset);
+
+      console.log('[Fold] Game reset and restart flow complete');
+
+      // Note: We don't wait for the full restart to complete before returning
+      // The fold action is complete; restart happens asynchronously
       return game.toObject();
     } catch (error) {
       // Release lock on error

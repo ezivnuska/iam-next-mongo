@@ -63,18 +63,28 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       message: newNotification.message,
       type: newNotification.type,
       id: newNotification.id,
+      duration: newNotification.duration,
+      hasOnComplete: !!newNotification.onComplete,
     });
 
     setCurrentNotification(newNotification);
 
     // Auto-clear after duration and execute callback
     timerRef.current = setTimeout(() => {
-      console.log('[NotificationProvider] Notification timer expired:', newNotification.message);
+      console.log('[NotificationProvider] ⏰ Notification timer expired:', {
+        message: newNotification.message,
+        hasOnComplete: !!newNotification.onComplete,
+      });
 
       // Execute onComplete callback if present
       if (newNotification.onComplete) {
-        console.log('[NotificationProvider] Executing onComplete callback');
-        newNotification.onComplete();
+        console.log('[NotificationProvider] ✅ Executing onComplete callback for:', newNotification.message);
+        try {
+          newNotification.onComplete();
+          console.log('[NotificationProvider] ✅ onComplete callback executed successfully');
+        } catch (error) {
+          console.error('[NotificationProvider] ❌ onComplete callback error:', error);
+        }
       }
 
       setCurrentNotification(null);
