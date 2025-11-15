@@ -8,6 +8,7 @@ import { useUser } from '@/app/lib/providers/user-provider';
 import { Button } from '@/app/ui/button';
 import clsx from 'clsx';
 import { getChipTotal } from '@/app/poker/lib/utils/poker';
+import { UnifiedBetControl } from './unified-bet-control';
 
 interface PlayerControlsProps {
   onActionTaken?: () => void;
@@ -40,13 +41,14 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
 
   // Set initial selected action based on game state
   const initialAction = canCheck ? 'check' : (hasBetToCall ? 'call' : 'bet');
-  const [selectedAction, setSelectedAction] = useState<'bet' | 'call' | 'raise' | 'fold' | 'check' | 'allin'>(initialAction);
+  const [selectedAction, setSelectedAction] = useState<'bet' | 'call' | 'raise' | 'fold' | 'check'>(initialAction);
   const [timerActive, setTimerActive] = useState(false);
 
-  // Bet amount state - default to minimum bet or call amount
+  // Bet amount state - default to 0 if can check, otherwise minimum bet or call amount
   // Cap call amount at player's available chips (for all-in scenarios)
-  const minBetAmount = hasBetToCall ? Math.min(currentBet, playerChipCount) : 1;
-  const [betAmount, setBetAmount] = useState(minBetAmount);
+  const minBetAmount = hasBetToCall ? Math.min(currentBet, playerChipCount) : 0;
+  const initialBetAmount = canCheck ? 0 : minBetAmount;
+  const [betAmount, setBetAmount] = useState(initialBetAmount);
 
   // Debounce ref for action changes
   const actionChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -54,8 +56,8 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
   // Update selected action and bet amount when bet state or stage changes
   useEffect(() => {
     if (!timerActive) {
-      // Cap call amount at player's available chips
-      const newBetAmount = hasBetToCall ? Math.min(currentBet, playerChipCount) : 1;
+      // Default to 0 if can check, otherwise minimum bet or call amount
+      const newBetAmount = canCheck ? 0 : (hasBetToCall ? Math.min(currentBet, playerChipCount) : 0);
       console.log('[PlayerControls] Bet state changed - hasBetToCall:', hasBetToCall, 'currentBet:', currentBet, 'newBetAmount:', newBetAmount);
       setSelectedAction(canCheck ? 'check' : (hasBetToCall ? 'call' : 'bet'));
       setBetAmount(newBetAmount);
@@ -65,8 +67,8 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
   // Always reset to default action and amount when stage changes (new betting round)
   useEffect(() => {
     const defaultAction = canCheck ? 'check' : (hasBetToCall ? 'call' : 'bet');
-    // Cap call amount at player's available chips
-    const newBetAmount = hasBetToCall ? Math.min(currentBet, playerChipCount) : 1;
+    // Default to 0 if can check, otherwise minimum bet or call amount
+    const newBetAmount = canCheck ? 0 : (hasBetToCall ? Math.min(currentBet, playerChipCount) : 0);
     console.log('[PlayerControls] Stage changed - stage:', stage, 'hasBetToCall:', hasBetToCall, 'currentBet:', currentBet, 'newBetAmount:', newBetAmount);
     setSelectedAction(defaultAction);
     setBetAmount(newBetAmount);
@@ -91,9 +93,7 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
 
     // Determine the actual action type to send to server
     let actionToSet: 'bet' | 'call' | 'raise' | 'fold' | 'check';
-    if (selectedAction === 'allin') {
-      actionToSet = 'bet';
-    } else if (selectedAction === 'bet' || selectedAction === 'raise') {
+    if (selectedAction === 'bet' || selectedAction === 'raise') {
       if (hasBetToCall) {
         // If betAmount equals currentBet, it's a call; otherwise it's a raise
         actionToSet = betAmount === currentBet ? 'call' : 'raise';
@@ -114,8 +114,7 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
       try {
         // Send with bet amount if applicable
         if (actionToSet === 'bet' || actionToSet === 'raise' || actionToSet === 'call') {
-          const amountToSend = selectedAction === 'allin' ? playerChipCount : betAmount;
-          await setTurnTimerAction(actionToSet, amountToSend);
+          await setTurnTimerAction(actionToSet, betAmount);
         } else {
           await setTurnTimerAction(actionToSet);
         }
@@ -146,46 +145,44 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
 //     </svg>
 //   );
 
-  const handleBetOrRaise = async () => {
+  // Unified handler for check/call/bet/raise actions
+  const handleUnifiedBetAction = async () => {
     // Notify parent immediately that action was taken
     onActionTaken?.();
     // Clear timer optimistically for instant UI feedback
     clearTimerOptimistically();
 
-    // Play appropriate sound optimistically for instant feedback
-    // - Call: matching the current bet
-    // - Raise: betting more than current bet OR initial bet when no bet exists
-    const soundToPlay = hasBetToCall
-      ? (betAmount === currentBet ? 'call' : 'raise')
-      : 'raise';
+    // Determine action type and play appropriate sound
+    let soundToPlay: 'check' | 'call' | 'raise' | 'fold' = 'check';
+
+    if (betAmount === 0 && canCheck) {
+      soundToPlay = 'check';
+    } else if (hasBetToCall) {
+      soundToPlay = betAmount === currentBet ? 'call' : 'raise';
+    } else if (betAmount > 0) {
+      soundToPlay = 'raise'; // Initial bet is like a raise
+    }
+
     playSound(soundToPlay);
 
-    console.log('[PlayerControls] Bet/Raise - betAmount:', betAmount, 'currentBet:', currentBet, 'hasBetToCall:', hasBetToCall);
-    // Timer will be automatically cleared by server on bet placement
-    // Use the betAmount state
+    console.log('[PlayerControls] Unified bet action - betAmount:', betAmount, 'currentBet:', currentBet, 'hasBetToCall:', hasBetToCall, 'sound:', soundToPlay);
+
+    // Execute the bet
     placeBet(betAmount);
   };
 
-  const handleCheck = async () => {
-    // Notify parent immediately that action was taken
-    onActionTaken?.();
-    // Clear timer optimistically for instant UI feedback
-    clearTimerOptimistically();
-    // Play sound optimistically for instant feedback
-    playSound('check');
-    // Timer will be automatically cleared by server on bet placement
-    // Check means betting 0 chips (staying in without adding chips)
-    placeBet(0);
-  };
+  // Handler to update bet amount from child component
+  const handleBetAmountChange = (newAmount: number) => {
+    setBetAmount(newAmount);
 
-  const incrementBet = () => {
-    setBetAmount(prev => Math.min(prev + 1, playerChipCount));
-  };
-
-  const decrementBet = () => {
-    // Cap at the lesser of currentBet or playerChipCount
-    const cappedMinBet = hasBetToCall ? Math.min(currentBet, playerChipCount) : 1;
-    setBetAmount(prev => Math.max(prev - 1, cappedMinBet));
+    // Update selected action based on new amount
+    if (newAmount === 0 && canCheck) {
+      setSelectedAction('check');
+    } else if (hasBetToCall) {
+      setSelectedAction(newAmount === currentBet ? 'call' : 'raise');
+    } else {
+      setSelectedAction('bet');
+    }
   };
 
   // Keyboard shortcuts for bet amount
@@ -193,21 +190,22 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (!isMyTurn || isActionProcessing) return;
 
-      // Cap at the lesser of currentBet or playerChipCount
-      const cappedMinBet = hasBetToCall ? Math.min(currentBet, playerChipCount) : 1;
+      const minBet = hasBetToCall ? Math.min(currentBet, playerChipCount) : 0;
 
       if (e.key === 'ArrowUp' || e.key === '+') {
         e.preventDefault();
-        setBetAmount(prev => Math.min(prev + 1, playerChipCount));
+        const newAmount = Math.min(betAmount + 1, playerChipCount);
+        handleBetAmountChange(newAmount);
       } else if (e.key === 'ArrowDown' || e.key === '-') {
         e.preventDefault();
-        setBetAmount(prev => Math.max(prev - 1, cappedMinBet));
+        const newAmount = Math.max(betAmount - 1, minBet);
+        handleBetAmountChange(newAmount);
       }
     };
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [isMyTurn, isActionProcessing, playerChipCount, hasBetToCall, currentBet]);
+  }, [isMyTurn, isActionProcessing, playerChipCount, hasBetToCall, currentBet, betAmount]);
 
   const handleAllIn = async () => {
     // Notify parent immediately that action was taken
@@ -233,7 +231,7 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
     fold();
   };
 
-  const handleActionChange = (action: 'bet' | 'call' | 'raise' | 'fold' | 'check' | 'allin') => {
+  const handleActionChange = (action: 'bet' | 'call' | 'raise' | 'fold' | 'check') => {
     // Just update local state - the consolidated useEffect will handle the API call
     setSelectedAction(action);
   };
@@ -242,110 +240,56 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
     <div id="playerControls" className='flex flex-1 flex-col gap-2 overflow-hidden rounded-lg p-2'>
       {/* Action Buttons with Radio Buttons - Vertical Layout */}
       <div className='flex flex-full flex-row items-center gap-2 justify-between'>
-        {/* Check Button - disabled when there's a bet to call */}
-        {canCheck && (
-          <div className='flex flex-col-reverse sm:flex-row items-center gap-2'>
-            <input
-              type="radio"
-              id="radio-check"
-              name="autoAction"
-              value="check"
-              checked={selectedAction === 'check'}
-              onChange={() => handleActionChange('check')}
-              disabled={isActionProcessing}
-              className='w-4 h-4 cursor-pointer'
-            />
-            <Button
-              size='sm'
-              id="checkButton"
-              onClick={handleCheck}
-              disabled={isActionProcessing}
-              className={`${selectedAction === 'check' ? 'ring-2 ring-yellow-400' : ''}`}
-            >
-              <span>Check</span>
-            </Button>
-          </div>
-        )}
-
-        {/* Bet/Raise Component with Amount Controls */}
-        <div className='flex flex-col-reverse sm:flex-row items-center justify-stretch gap-2'>
-            <input
-              type="radio"
-              id="radio-bet-raise"
-              name="autoAction"
-              value={hasBetToCall ? "raise" : "bet"}
-              checked={selectedAction === 'bet' || selectedAction === 'call' || selectedAction === 'raise'}
-              onChange={() => handleActionChange(hasBetToCall ? 'raise' : 'bet')}
-              disabled={isActionProcessing}
-              className='w-4 h-4 cursor-pointer'
-            />
-            <div className={`flex flex-1 flex-row items-stretch rounded-lg overflow-hidden bg-blue-500 ${(selectedAction === 'bet' || selectedAction === 'call' || selectedAction === 'raise') ? 'ring-2 ring-yellow-400' : ''}`}>
-                {/* Hide increment/decrement buttons when player is all-in */}
-                {!isPlayerAllIn && (
-                    <button
-                        onClick={decrementBet}
-                        disabled={isActionProcessing || betAmount <= minBetAmount}
-                        className='text-white h-8 px-2 text-md'
-                    >
-                        -
-                    </button>
-                )}
-                <button
-                    id="betRaiseButton"
-                    onClick={handleBetOrRaise}
-                    disabled={isActionProcessing}
-                    className='flex-1 h-8 px-1 text-md'
-                >
-                    <span className='flex flex-nowrap text-white px-2'>
-                        {hasBetToCall
-                            ? (betAmount === currentBet
-                                ? `Call ${betAmount}`
-                                : `Raise ${betAmount}`
-                            )
-                            : `Bet ${betAmount}`
-                        }
-                    </span>
-                </button>
-                {/* Hide increment/decrement buttons when player is all-in */}
-                {!isPlayerAllIn && (
-                    <button
-                        onClick={incrementBet}
-                        disabled={isActionProcessing || betAmount >= playerChipCount}
-                        className='text-white h-8 px-2 text-md'
-                    >
-                        +
-                    </button>
-                )}
-            </div>
+        {/* Unified Bet Control - Handles Check/Call/Bet/Raise */}
+        <div className='flex flex-row items-center gap-2'>
+          <input
+            type="radio"
+            id="radio-bet"
+            name="autoAction"
+            value="bet"
+            checked={selectedAction === 'bet' || selectedAction === 'call' || selectedAction === 'raise' || selectedAction === 'check'}
+            onChange={() => {
+              // Determine appropriate action based on state
+              if (canCheck && betAmount === 0) {
+                handleActionChange('check');
+              } else if (hasBetToCall) {
+                handleActionChange(betAmount === currentBet ? 'call' : 'raise');
+              } else {
+                handleActionChange('bet');
+              }
+            }}
+            disabled={isActionProcessing}
+            className='w-4 h-4 cursor-pointer'
+          />
+          <UnifiedBetControl
+            betAmount={betAmount}
+            currentBet={currentBet}
+            playerChipCount={playerChipCount}
+            hasBetToCall={hasBetToCall}
+            canCheck={canCheck}
+            isProcessing={isActionProcessing}
+            isPlayerAllIn={isPlayerAllIn}
+            onBetAmountChange={handleBetAmountChange}
+            onExecuteAction={handleUnifiedBetAction}
+            isSelected={selectedAction === 'bet' || selectedAction === 'call' || selectedAction === 'raise' || selectedAction === 'check'}
+          />
         </div>
 
         {/* All In Button - hidden when player is already all-in or when calling would be an all-in */}
         {!isPlayerAllIn && !callingIsAllIn && (
-          <div className='flex flex-col-reverse sm:flex-row items-center gap-2'>
-            <input
-              type="radio"
-              id="radio-allin"
-              name="autoAction"
-              value="allin"
-              checked={selectedAction === 'allin'}
-              onChange={() => handleActionChange('allin')}
-              disabled={isActionProcessing}
-              className='w-4 h-4 cursor-pointer'
-            />
-            <Button
-              size='sm'
-              id="allinButton"
-              onClick={handleAllIn}
-              disabled={isActionProcessing}
-              className={`bg-red-600 text-white ${selectedAction === 'allin' ? 'ring-2 ring-yellow-400' : ''}`}
-            >
-              <span>All In</span>
-            </Button>
-          </div>
+          <Button
+            size='sm'
+            id="allinButton"
+            onClick={handleAllIn}
+            disabled={isActionProcessing}
+            className='bg-red-600 text-white'
+          >
+            <span>All In</span>
+          </Button>
         )}
 
         {/* Fold Button */}
-        <div className='flex flex-col-reverse sm:flex-row items-center gap-2'>
+        <div className='flex flex-row items-center gap-2'>
           <input
             type="radio"
             id="radio-fold"

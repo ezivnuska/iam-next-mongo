@@ -128,7 +128,7 @@ export default function PokerTable() {
         </div>
         
 
-        <div className='flex flex-1 flex-col shrink-0'>
+        <div className='flex flex-1 flex-col shrink-0 items-between'>
             <div className='flex flex-col h-[60px]'>
 
                 <div className="flex gap-2">
@@ -147,14 +147,14 @@ export default function PokerTable() {
 
                 <div className='flex flex-1 flex-full flex-col items-stretch justify-between gap-4'>
                     {/* Center area with pot and communal cards */}
-                    <div className='flex flex-1 flex-full flex-col sm:flex-row items-center gap-4'>
+                    {/* <div className='flex flex-1 flex-full flex-col sm:flex-row items-center gap-4'> */}
                         <div className='flex flex-1 flex-full flex-row items-center justify-center'>
-                            <Pot />
+                            <div className='flex flex-3 flex-full flex-col items-center justify-center gap-4'>
+                                <Pot />
+                                <CommunalCards />
+                            </div>
                         </div>
-                        <div className='flex flex-3 flex-full flex-row items-center justify-center'>
-                            <CommunalCards />
-                        </div>
-                    </div>
+                    {/* </div> */}
                     {/* <div className='flex flex-row flex-1 items-center justify-center'>
                     </div> */}
                 </div>

@@ -55,6 +55,20 @@ export function ChevronUpIcon({ className = 'w-5 h-5', strokeWidth = 2 }: IconPr
 	)
 }
 
+export function ChevronDownIcon({ className = 'w-5 h-5', strokeWidth = 2 }: IconProps) {
+	return (
+		<svg
+			className={className}
+			fill="none"
+			stroke="currentColor"
+			viewBox="0 0 24 24"
+			strokeWidth={strokeWidth}
+		>
+			<path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+		</svg>
+	)
+}
+
 export function TrashIcon({ className = 'w-5 h-5', strokeWidth = 2 }: IconProps) {
 	return (
 		<svg
