@@ -239,6 +239,11 @@ export async function handlePlayerLeave(
       return { success: false, gameState: null, error: 'Game not found' };
     }
 
+    // Players can only leave when game is unlocked
+    if (gameBefore.locked) {
+      return { success: false, gameState: null, error: 'Cannot leave - game is in progress' };
+    }
+
     const hadTimer = !!gameBefore.actionTimer;
 
     // Find player to get username for logging
@@ -330,13 +335,11 @@ export async function removePlayer(
       console.log(`[RemovePlayer] Reset auto-lock timer - game will lock in ${POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS / 1000} seconds`);
     }
 
-    // If only AI player remains (no humans), reset game state (don't delete - singleton game persists)
+    // If only AI player remains (no humans), just log and continue
+    // Note: Game is guaranteed to be unlocked at this point (enforced by handlePlayerLeave)
     const humanCount = game.players.filter((p: Player) => !p.isAI).length;
     if (humanCount === 0) {
-      console.log('[RemovePlayer] No human players remain - resetting singleton game');
-      const { resetSingletonGame } = await import('./singleton-game');
-      const resetGame = await resetSingletonGame(gameId);
-      return resetGame.toObject();
+      console.log('[RemovePlayer] No human players remain - only AI player left');
     }
 
     // If the leaving player was the current player, advance turn to next player
