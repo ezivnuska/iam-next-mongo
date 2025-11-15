@@ -40,23 +40,3 @@ export function calculateCurrentBet(
 
   return Math.max(0, maxBet - currentPlayerBet);
 }
-
-/**
- * Check if a player needs to match the current bet
- * @param playerBet - The player's current bet amount
- * @param currentBet - The current highest bet
- * @returns True if player has not matched the current bet
- */
-export function needsToMatch(playerBet: number, currentBet: number): boolean {
-  return playerBet < currentBet;
-}
-
-/**
- * Calculate how many chips a player needs to call
- * @param playerBet - The player's current bet amount
- * @param currentBet - The current highest bet
- * @returns Number of chips needed to call
- */
-export function calculateCallAmount(playerBet: number, currentBet: number): number {
-  return Math.max(0, currentBet - playerBet);
-}

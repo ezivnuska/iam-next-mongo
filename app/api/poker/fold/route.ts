@@ -3,8 +3,9 @@
 import { withAuth } from '@/app/lib/api/with-auth';
 import { fold } from '@/app/poker/lib/server/poker-game-controller';
 import { serializeGame } from '@/app/lib/utils/game-serialization';
+import { withRateLimit, RATE_LIMITS } from '@/app/lib/api/rate-limiter';
 
-export const POST = withAuth(async (request, context, session) => {
+export const POST = withRateLimit(RATE_LIMITS.GAME_ACTION, withAuth(async (request, context, session) => {
   const { gameId } = await request.json();
   if (!gameId) {
     return Response.json({ error: 'gameId is required' }, { status: 400 });
@@ -29,4 +30,4 @@ export const POST = withAuth(async (request, context, session) => {
       error: error instanceof Error ? error.message : 'Failed to fold'
     }, { status: 500 });
   }
-});
+}));

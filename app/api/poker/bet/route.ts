@@ -3,8 +3,9 @@
 import { withAuth } from '@/app/lib/api/with-auth';
 import { placeBet } from '@/app/poker/lib/server/poker-game-controller';
 import { PokerSocketEmitter } from '@/app/lib/utils/socket-helper';
+import { withRateLimit, RATE_LIMITS } from '@/app/lib/api/rate-limiter';
 
-export const POST = withAuth(async (request, context, session) => {
+export const POST = withRateLimit(RATE_LIMITS.GAME_ACTION, withAuth(async (request, context, session) => {
   const { chipCount, gameId } = await request.json();
   const id = gameId || process.env.DEFAULT_GAME_ID!;
 
@@ -22,4 +23,4 @@ export const POST = withAuth(async (request, context, session) => {
   await PokerSocketEmitter.emitGameActionResults(result.events);
 
   return Response.json({ success: true });
-});
+}));

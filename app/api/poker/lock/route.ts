@@ -11,8 +11,9 @@ import { withRetry } from '@/app/lib/utils/retry';
 import { startActionTimer } from '@/app/poker/lib/server/poker-timer-controller';
 import { GameActionType } from '@/app/poker/lib/definitions/game-actions';
 import { POKER_TIMERS } from '@/app/poker/lib/config/poker-constants';
+import { withRateLimit, RATE_LIMITS } from '@/app/lib/api/rate-limiter';
 
-export const POST = withAuth(async (request, context, session) => {
+export const POST = withRateLimit(RATE_LIMITS.GAME_ACTION, withAuth(async (request, context, session) => {
   const { gameId } = await request.json();
   const id = gameId || process.env.DEFAULT_GAME_ID!;
 
@@ -198,7 +199,7 @@ export const POST = withAuth(async (request, context, session) => {
       { status: 500 }
     );
   }
-});
+}));
 
 /**
  * Internal lock function that can be called server-side without auth

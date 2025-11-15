@@ -14,6 +14,7 @@ export interface StateSetters {
   setStage: (stage: number) => void;
   setLocked: (locked: boolean) => void;
   setCurrentPlayerIndex: (index: number) => void;
+  setDealerButtonPosition: (position: number) => void;
   setPlayerBets: (bets: number[]) => void;
   setGameStages: (stages: GameStageProps[]) => void;
   setWinner: (winner?: any) => void;
@@ -31,6 +32,7 @@ export const createResetGameState = (setters: StateSetters) => {
     setters.setStage(0);
     setters.setLocked(false);
     setters.setCurrentPlayerIndex(0);
+    setters.setDealerButtonPosition(0);
     setters.setPlayerBets([]);
     setters.setGameStages([]);
     setters.setWinner(undefined);
@@ -109,7 +111,8 @@ export const createUpdateGameState = (
   updateStageState: (stage: number, communalCards: Card[], deck: Card[], stages?: GameStageProps[]) => void,
   updateGameStatus: (locked: boolean, lockTime?: string, winner?: any) => void,
   setActionHistory: (history: any[]) => void,
-  setActionTimer: (timer?: any) => void
+  setActionTimer: (timer?: any) => void,
+  setDealerButtonPosition: (position: number) => void
 ) => {
   return (state: PokerStateUpdatePayload) => {
     // Extract game ID if present
@@ -126,6 +129,10 @@ export const createUpdateGameState = (
     // Set action timer if present in state
     if ((state as any).actionTimer !== undefined) {
       setActionTimer((state as any).actionTimer);
+    }
+    // Set dealer button position if present in state
+    if (state.dealerButtonPosition !== undefined) {
+      setDealerButtonPosition(state.dealerButtonPosition);
     }
   };
 };

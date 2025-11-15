@@ -3,13 +3,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-
-interface ActionTimer {
-  startTime: string;
-  duration: number;
-  targetPlayerId?: string;
-  isPaused: boolean;
-}
+import type { SerializedActionTimer } from '../definitions/poker';
 
 /**
  * Custom hook to calculate and track the timer percentage for action timers
@@ -27,7 +21,7 @@ interface ActionTimer {
  * const percentage = useActionTimerPercentage(actionTimer);
  */
 export function useActionTimerPercentage(
-  actionTimer: ActionTimer | undefined,
+  actionTimer: SerializedActionTimer | undefined,
   targetPlayerId?: string
 ): number {
   const [timePercentage, setTimePercentage] = useState<number>(0);

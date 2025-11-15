@@ -3,12 +3,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-
-interface ActionTimer {
-  startTime: string;
-  duration: number;
-  isPaused: boolean;
-}
+import type { SerializedActionTimer } from '../definitions/poker';
 
 /**
  * Custom hook to calculate and update countdown timer from actionTimer state
@@ -20,7 +15,7 @@ interface ActionTimer {
  * @returns Current countdown in seconds
  */
 export function useActionTimerCountdown(
-  actionTimer?: ActionTimer | null,
+  actionTimer?: SerializedActionTimer | null,
   condition: boolean = true,
   onExpire?: () => void
 ): number {

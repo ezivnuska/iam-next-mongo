@@ -160,21 +160,6 @@ export function getPlayerChipCount(player: Player): number {
 }
 
 /**
- * Determine if a player should go all-in based on available chips and required bet
- */
-export function shouldGoAllIn(player: Player, requiredBet: number): boolean {
-  const availableChips = getPlayerChipCount(player);
-  return availableChips > 0 && availableChips < requiredBet;
-}
-
-/**
- * Calculate the maximum amount a player can bet (all their chips)
- */
-export function getMaxBetAmount(player: Player): number {
-  return getPlayerChipCount(player);
-}
-
-/**
  * Check if all active players are all-in (no more betting possible)
  */
 export function areAllPlayersAllInOrFolded(players: Player[]): boolean {

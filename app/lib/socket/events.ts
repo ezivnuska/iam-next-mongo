@@ -120,6 +120,7 @@ export interface PokerStateUpdatePayload {
 	locked: boolean
 	lockTime?: string
 	currentPlayerIndex: number
+	dealerButtonPosition?: number
 	playerBets: number[]
 	winner?: {
 		winnerId: string
@@ -263,6 +264,7 @@ export interface PokerNotificationPayload {
 	playerName?: string;
 	chipAmount?: number;
 	isAI?: boolean;  // Indicates if the action was taken by an AI player
+	timerTriggered?: boolean;  // Indicates if the action was triggered by timer expiration
 
 	// Blind notifications
 	blindType?: 'small' | 'big';

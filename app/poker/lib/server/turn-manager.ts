@@ -183,25 +183,26 @@ export class TurnManager {
 
     console.log(`[TurnManager] All bets equal: ${allBetsEqual}`);
 
-    // Check if all active players have acted
-    const activePlayerIds = activePlayers.map(p => p.id);
-    const allActivePlayersActed = activePlayerIds.every(id => playersActed.has(id));
+    // Check if all players who CAN ACT have acted (not just active players)
+    // Active players include all-in players who can't act, so we need to check playersWhoCanAct instead
+    const playersWhoCanActIds = playersWhoCanAct.map(p => p.id);
+    const allPlayersWhoCanActHaveActed = playersWhoCanActIds.every(id => playersActed.has(id));
 
-    console.log(`[TurnManager] All active players acted: ${allActivePlayersActed}`);
-    console.log(`[TurnManager] Active player IDs:`, activePlayerIds);
+    console.log(`[TurnManager] All players who can act have acted: ${allPlayersWhoCanActHaveActed}`);
+    console.log(`[TurnManager] Players who can act IDs:`, playersWhoCanActIds);
     console.log(`[TurnManager] Players who acted IDs:`, Array.from(playersActed));
 
-    // Debug: Show which players haven't acted
-    const playersNotActed = activePlayerIds.filter(id => !playersActed.has(id));
-    if (playersNotActed.length > 0) {
-      const notActedNames = playersNotActed.map(id => {
+    // Debug: Show which players who can act haven't acted
+    const playersWhoCanActButHavent = playersWhoCanActIds.filter(id => !playersActed.has(id));
+    if (playersWhoCanActButHavent.length > 0) {
+      const notActedNames = playersWhoCanActButHavent.map(id => {
         const p = game.players.find(player => player.id === id);
         return p ? p.username : 'unknown';
       });
-      console.log(`[TurnManager] Players who haven't acted:`, playersNotActed, notActedNames);
+      console.log(`[TurnManager] Players who can act but haven't:`, playersWhoCanActButHavent, notActedNames);
     }
 
-    const bettingComplete = (allBetsEqual && allActivePlayersActed) || playersWhoCanAct.length === 0;
+    const bettingComplete = (allBetsEqual && allPlayersWhoCanActHaveActed) || playersWhoCanAct.length === 0;
 
     console.log(`[TurnManager] Betting complete: ${bettingComplete}`);
 

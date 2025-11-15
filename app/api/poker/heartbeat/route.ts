@@ -2,6 +2,7 @@
 
 import { withAuth } from '@/app/lib/api/with-auth';
 import { PokerGame } from '@/app/poker/lib/models/poker-game';
+import { withRateLimit, RATE_LIMITS } from '@/app/lib/api/rate-limiter';
 
 /**
  * Player heartbeat endpoint
@@ -9,7 +10,7 @@ import { PokerGame } from '@/app/poker/lib/models/poker-game';
  * Tracks when players were last active to detect disconnections
  * Updates lastHeartbeat timestamp for the player in the game
  */
-export const POST = withAuth(async (request, context, session) => {
+export const POST = withRateLimit(RATE_LIMITS.READ, withAuth(async (request, context, session) => {
   try {
     const { gameId } = await request.json();
 
@@ -50,4 +51,4 @@ export const POST = withAuth(async (request, context, session) => {
       { status: 500 }
     );
   }
-});
+}));

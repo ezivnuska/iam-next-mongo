@@ -86,15 +86,6 @@ export function shuffleDeck(deck: Card[]): Card[] {
 
 /**
  * @deprecated Chips are now represented as simple numbers.
- * Use the chip count directly instead of calling this function.
- * This function is kept for backward compatibility and simply returns the count.
- */
-export function createChips(count: number, value: number = 1): number {
-  return count * value;
-}
-
-/**
- * @deprecated Chips are now represented as simple numbers.
  * This function is kept for backward compatibility and returns the value as-is.
  */
 export function getChipTotal(chipCount: number | Chip[]): number {

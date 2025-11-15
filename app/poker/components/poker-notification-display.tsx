@@ -37,9 +37,9 @@ export default function PokerNotificationDisplay({ notification }: PokerNotifica
         playSound('chips');
       } else if (notification.type === 'action') {
         playSound('chips');
-      } else if (notification.type === 'deal') {
-        playSound('card-deal');
       }
+      // Note: 'deal' type notifications do not play sounds here
+      // Card sounds are played by the stage coordinator when cards are revealed
     }
 
     // Update progress bar every 16ms (~60fps)
@@ -74,7 +74,7 @@ export default function PokerNotificationDisplay({ notification }: PokerNotifica
   const bgStyle = typeStyles[notification.type] || typeStyles.info;
 
   return (
-    <div className="relative w-full overflow-hidden rounded-lg shadow-lg">
+    <div className="relative w-full overflow-hidden rounded-full shadow-lg">
       {/* Notification content */}
       <div className={`relative px-4 py-3 ${bgStyle} font-semibold text-center`}>
         {/* Progress bar background */}
@@ -91,12 +91,12 @@ export default function PokerNotificationDisplay({ notification }: PokerNotifica
       </div>
 
       {/* Timer progress indicator */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-300">
+      {/* <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-300">
         <div
           className="h-full bg-white transition-all duration-100 ease-linear"
           style={{ width: `${progress}%` }}
         />
-      </div>
+      </div> */}
     </div>
   );
 }

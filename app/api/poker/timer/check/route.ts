@@ -15,6 +15,7 @@ import { validatePlayerExists } from '@/app/poker/lib/utils/player-helpers';
 export async function POST(request: Request) {
   try {
     const { gameId } = await request.json();
+    console.log('[Timer Check API] Received request for gameId:', gameId);
 
     let game;
 
@@ -29,15 +30,18 @@ export async function POST(request: Request) {
     }
 
     if (!game) {
+      console.log('[Timer Check API] Game not found');
       return NextResponse.json({ error: 'Game not found - no gameId provided and no game found for current user' }, { status: 404 });
     }
 
     // Check if there's an active timer
     if (!game.actionTimer) {
+      console.log('[Timer Check API] No active timer');
       return NextResponse.json({ message: 'No active timer' }, { status: 200 });
     }
 
     if (game.actionTimer.isPaused) {
+      console.log('[Timer Check API] Timer is paused');
       return NextResponse.json({ message: 'Timer is paused' }, { status: 200 });
     }
 
@@ -45,6 +49,8 @@ export async function POST(request: Request) {
 
     // Check if timer has expired
     const elapsed = (Date.now() - new Date(startTime).getTime()) / 1000;
+
+    console.log('[Timer Check API] Timer status:', { elapsed, duration, hasExpired: elapsed >= duration - 0.5 });
 
     if (elapsed >= duration - 0.5) { // Small buffer for timing issues
 
@@ -74,7 +80,7 @@ export async function POST(request: Request) {
           switch (actionToExecute) {
             case 'fold':
               const { fold } = await import('@/app/poker/lib/server/poker-game-controller');
-              const foldResult = await fold(actualGameId, targetPlayerId);
+              const foldResult = await fold(actualGameId, targetPlayerId, true); // timerTriggered = true
 
               // Emit granular events instead of full state update
               // 1. Emit player left with fold action in history
@@ -122,8 +128,8 @@ export async function POST(request: Request) {
               break;
           }
 
-          // Execute bet action
-          const result = await placeBet(actualGameId, targetPlayerId, betAmount);
+          // Execute bet action (with timerTriggered flag)
+          const result = await placeBet(actualGameId, targetPlayerId, betAmount, true);
 
           // Emit socket events to notify all clients of the state change
           await PokerSocketEmitter.emitGameActionResults(result.events);

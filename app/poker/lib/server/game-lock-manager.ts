@@ -25,7 +25,7 @@ export async function executePreGameSequence(game: any, delayMs: number): Promis
   const { randomBytes } = await import('crypto');
   const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
 
-  // STEP 1: Place small blind
+  // STEP 1: Place small blind (no border - blinds are automatic)
   const smallBlindInfo = placeSmallBlind(game);
   console.log(`[PreGame] Small blind posted by ${smallBlindInfo.player.username}: ${smallBlindInfo.amount} chips`);
 
@@ -49,7 +49,7 @@ export async function executePreGameSequence(game: any, delayMs: number): Promis
   // Wait for notification to display
   await new Promise(resolve => setTimeout(resolve, delayMs));
 
-  // STEP 2: Place big blind
+  // STEP 2: Place big blind (no border - blinds are automatic)
   const bigBlindInfo = placeBigBlind(game);
   console.log(`[PreGame] Big blind posted by ${bigBlindInfo.player.username}: ${bigBlindInfo.amount} chips`);
 
@@ -97,6 +97,18 @@ export async function executePreGameSequence(game: any, delayMs: number): Promis
     category: 'deal',
   });
 
+  // Emit cards dealt event immediately so cards appear at start of notification
+  await PokerSocketEmitter.emitCardsDealt({
+    stage: game.stage,
+    communalCards: game.communalCards,
+    players: game.players.map(p => ({
+      ...p.toObject(),
+      hand: p.hand, // Include hole cards in player data
+    })),
+    deck: game.deck,
+    currentPlayerIndex: game.currentPlayerIndex,
+  });
+
   // Wait for notification to display
   await new Promise(resolve => setTimeout(resolve, delayMs));
 
@@ -140,7 +152,11 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
         gameToLock.lockTime = undefined; // Clear lock time since we're locking now
         gameToLock.stage = 0; // Preflop
         gameToLock.playerBets = initializeBets(gameToLock.players.length);
-        gameToLock.currentPlayerIndex = 0;
+
+        // Set currentPlayerIndex to small blind position (border will show during entire locked phase)
+        const buttonPosition = gameToLock.dealerButtonPosition || 0;
+        const isHeadsUp = gameToLock.players.length === 2;
+        gameToLock.currentPlayerIndex = isHeadsUp ? buttonPosition : (buttonPosition + 1) % gameToLock.players.length;
 
         // Initialize dealer button position if not set (first hand starts at position 0)
         if (gameToLock.dealerButtonPosition === undefined) {
@@ -185,10 +201,9 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
         const { getBlindConfig } = await import('./blinds-manager');
         const { smallBlind, bigBlind } = getBlindConfig();
 
-        // Calculate which players will post blinds based on button position
-        const buttonPosition = gameToLock.dealerButtonPosition || 0;
-        const smallBlindPos = gameToLock.players.length === 2 ? buttonPosition : (buttonPosition + 1) % gameToLock.players.length;
-        const bigBlindPos = (buttonPosition + 1) % gameToLock.players.length;
+        // Calculate which players will post blinds based on button position (already declared above)
+        const smallBlindPos = isHeadsUp ? buttonPosition : (buttonPosition + 1) % gameToLock.players.length;
+        const bigBlindPos = isHeadsUp ? (buttonPosition + 1) % gameToLock.players.length : (buttonPosition + 2) % gameToLock.players.length;
 
         const smallBlindPlayerChips = gameToLock.players[smallBlindPos]?.chipCount || 0;
         const bigBlindPlayerChips = gameToLock.players[bigBlindPos]?.chipCount || 0;

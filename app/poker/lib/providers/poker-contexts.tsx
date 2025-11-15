@@ -13,6 +13,7 @@ export interface GameStateContextValue {
   stages: GameStageProps[];
   locked: boolean;
   currentPlayerIndex: number;
+  dealerButtonPosition: number;
   currentBet: number;
   playerBets: number[];
   communalCards: Card[];

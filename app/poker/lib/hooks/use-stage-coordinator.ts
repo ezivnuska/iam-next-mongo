@@ -25,7 +25,6 @@
 
 import { useCallback, useRef, useEffect } from 'react';
 import { useNotifications } from '../providers/notification-provider';
-import { useGameFlowController } from './use-game-flow-controller';
 import type { Card, Player } from '../definitions/poker';
 import { POKER_TIMERS } from '../config/poker-constants';
 
@@ -39,7 +38,6 @@ type PlaySoundFn = (soundType: 'card-deal' | 'single-card') => void;
 
 export function useStageCoordinator(gameId: string | null, playSound?: PlaySoundFn) {
   const { isActionNotificationActive } = useNotifications();
-  const { signalReadyForNextStage } = useGameFlowController();
   const currentStageRef = useRef<number>(0);
   const pendingStageUpdateRef = useRef<{ data: StageUpdateData; callbacks: any } | null>(null);
 
@@ -125,30 +123,12 @@ export function useStageCoordinator(gameId: string | null, playSound?: PlaySound
     }
     currentStageRef.current = stage;
 
-    // Play sound when cards are actually displayed
-    if (playSound) {
-      if (stage === 0) {
-        playSound('card-deal'); // Preflop (hole cards)
-      } else if (stage === 1) {
-        playSound('card-deal'); // Flop (3 cards)
-      } else if (stage === 2 || stage === 3) {
-        playSound('single-card'); // Turn or River (1 card)
-      }
-    }
+    // NOTE: Sound effects are now played in the CardsDealtHandler when POKER_CARDS_DEALT event is received
+    // This ensures sounds play at the right time based on what cards are actually being dealt
 
-    // Signal server based on mode
-    if (gameId) {
-      if (autoAdvanceMode) {
-        // In auto-advance mode, signal to continue the sequence
-        console.log('[StageCoordinator] Auto-advance mode: signaling ready to continue');
-        signalReadyForNextStage(gameId);
-      } else {
-        // Normal mode: signal ready for next action
-        signalReadyForNextStage(gameId);
-      }
-    }
+    // NOTE: Server handles turn advancement automatically with 2-second delay - no client signaling needed
     console.log(`[StageCoordinator] Stage update applied: ${stageName}`);
-  }, [signalReadyForNextStage, gameId, isActionNotificationActive]);
+  }, [gameId, isActionNotificationActive]);
 
 
   /**
@@ -194,21 +174,10 @@ export function useStageCoordinator(gameId: string | null, playSound?: PlaySound
         }
         currentStageRef.current = data.stage;
 
-        // Play sound when cards are actually displayed
-        if (playSound) {
-          if (data.stage === 0) {
-            playSound('card-deal'); // Preflop (hole cards)
-          } else if (data.stage === 1) {
-            playSound('card-deal'); // Flop (3 cards)
-          } else if (data.stage === 2 || data.stage === 3) {
-            playSound('single-card'); // Turn or River (1 card)
-          }
-        }
+        // NOTE: Sound effects are now played in the CardsDealtHandler when POKER_CARDS_DEALT event is received
+        // This ensures sounds play at the right time based on what cards are actually being dealt
 
-        // Signal server that we're ready for next action
-        if (gameId) {
-          signalReadyForNextStage(gameId);
-        }
+        // NOTE: Server handles turn advancement automatically - no client signaling needed
         console.log(`[StageCoordinator] Deferred stage update applied: ${stageName}`);
       } else {
         // Non-advancing stage update (e.g., card dealing at same stage) - apply immediately
@@ -224,7 +193,7 @@ export function useStageCoordinator(gameId: string | null, playSound?: PlaySound
         // Sounds only play when stage actually advances (new cards revealed)
       }
     }
-  }, [isActionNotificationActive, signalReadyForNextStage, gameId, playSound]);
+  }, [isActionNotificationActive, gameId, playSound]);
 
   return { applyStageUpdate, resetCoordinator };
 }

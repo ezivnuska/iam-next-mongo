@@ -93,8 +93,11 @@ export async function startActionTimer(
  * Internal function - handles auto-bet when timer runs out
  */
 async function executeScheduledAction(gameId: string) {
+  console.log('[Timer] executeScheduledAction called for game:', gameId);
+
   const game = await PokerGame.findById(gameId);
   if (!game || !game.actionTimer || game.actionTimer.isPaused) {
+    console.log('[Timer] Skipping execution - no game, timer, or timer is paused');
     return;
   }
 
@@ -104,10 +107,15 @@ async function executeScheduledAction(gameId: string) {
   const elapsed = Date.now() - game.actionTimer.startTime.getTime();
   const expectedDuration = game.actionTimer.duration * 1000;
 
+  console.log('[Timer] Timer check:', { elapsed, expectedDuration, hasExpired: elapsed >= expectedDuration - 100 });
+
   if (elapsed < expectedDuration - 100) {
     // Timer hasn't actually expired yet, skip execution
+    console.log('[Timer] Timer has not expired yet, skipping');
     return;
   }
+
+  console.log('[Timer] Timer has expired, executing action for player:', targetPlayerId);
 
   if (actionType === GameActionType.PLAYER_BET && targetPlayerId) {
     try {
@@ -122,6 +130,14 @@ async function executeScheduledAction(gameId: string) {
       const selectedAction = game.actionTimer.selectedAction || defaultAction;
       const selectedBetAmount = game.actionTimer.selectedBetAmount;
 
+      console.log('[Timer] Executing action:', {
+        actionToExecute: selectedAction,
+        defaultAction,
+        selectedAction: game.actionTimer.selectedAction,
+        currentBet,
+        selectedBetAmount
+      });
+
       // CRITICAL: Clear timer BEFORE executing to prevent duplicate execution
       // (both server setTimeout and client fallback might trigger)
       const actionToExecute = selectedAction;
@@ -134,9 +150,10 @@ async function executeScheduledAction(gameId: string) {
 
       switch (actionToExecute) {
         case 'fold':
+          console.log('[Timer] Executing FOLD for player:', targetPlayerId);
           // Execute fold action
           const { fold } = await import('./poker-game-controller');
-          const foldResult = await fold(gameId, targetPlayerId);
+          const foldResult = await fold(gameId, targetPlayerId, true); // timerTriggered = true
 
           // Emit granular events instead of full state update
           const { PokerSocketEmitter: EmitterFold } = await import('@/app/lib/utils/socket-helper');
@@ -156,31 +173,36 @@ async function executeScheduledAction(gameId: string) {
               players: foldResult.players,
             });
           }
+          console.log('[Timer] FOLD executed successfully');
           break;
 
         case 'call':
           // Match the current bet (use stored amount if available, otherwise calculate)
           betAmount = selectedBetAmount !== undefined ? selectedBetAmount : currentBet;
+          console.log('[Timer] Executing CALL for player:', targetPlayerId, 'with amount:', betAmount);
           const { placeBet: placeBetCall } = await import('./poker-game-controller');
-          const resultCall = await placeBetCall(gameId, targetPlayerId, betAmount);
+          const resultCall = await placeBetCall(gameId, targetPlayerId, betAmount, true); // timerTriggered = true
           const { PokerSocketEmitter: EmitterCall } = await import('@/app/lib/utils/socket-helper');
           await EmitterCall.emitGameActionResults(resultCall.events);
+          console.log('[Timer] CALL executed successfully');
           break;
 
         case 'check':
           // Check is equivalent to calling with 0 (no bet to match)
           betAmount = 0;
+          console.log('[Timer] Executing CHECK for player:', targetPlayerId);
           const { placeBet: placeBetCheck } = await import('./poker-game-controller');
-          const resultCheck = await placeBetCheck(gameId, targetPlayerId, betAmount);
+          const resultCheck = await placeBetCheck(gameId, targetPlayerId, betAmount, true); // timerTriggered = true
           const { PokerSocketEmitter: EmitterCheck } = await import('@/app/lib/utils/socket-helper');
           await EmitterCheck.emitGameActionResults(resultCheck.events);
+          console.log('[Timer] CHECK executed successfully');
           break;
 
         case 'bet':
           // Use stored bet amount if available, otherwise default to 1 chip
           betAmount = selectedBetAmount !== undefined ? selectedBetAmount : 1;
           const { placeBet: placeBetBet } = await import('./poker-game-controller');
-          const resultBet = await placeBetBet(gameId, targetPlayerId, betAmount);
+          const resultBet = await placeBetBet(gameId, targetPlayerId, betAmount, true); // timerTriggered = true
           const { PokerSocketEmitter: EmitterBet } = await import('@/app/lib/utils/socket-helper');
           await EmitterBet.emitGameActionResults(resultBet.events);
           break;
@@ -189,7 +211,7 @@ async function executeScheduledAction(gameId: string) {
           // Use stored bet amount if available, otherwise default to currentBet + 1
           betAmount = selectedBetAmount !== undefined ? selectedBetAmount : (currentBet + 1);
           const { placeBet: placeBetRaise } = await import('./poker-game-controller');
-          const resultRaise = await placeBetRaise(gameId, targetPlayerId, betAmount);
+          const resultRaise = await placeBetRaise(gameId, targetPlayerId, betAmount, true); // timerTriggered = true
           const { PokerSocketEmitter: EmitterRaise } = await import('@/app/lib/utils/socket-helper');
           await EmitterRaise.emitGameActionResults(resultRaise.events);
           break;
@@ -198,7 +220,7 @@ async function executeScheduledAction(gameId: string) {
           // Use stored bet amount if available, otherwise default to 1 chip
           betAmount = selectedBetAmount !== undefined ? selectedBetAmount : 1;
           const { placeBet } = await import('./poker-game-controller');
-          const result = await placeBet(gameId, targetPlayerId, betAmount);
+          const result = await placeBet(gameId, targetPlayerId, betAmount, true); // timerTriggered = true
           const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
           await PokerSocketEmitter.emitGameActionResults(result.events);
       }

@@ -17,6 +17,7 @@ export interface SerializedGame {
   locked: boolean;
   lockTime?: string;
   currentPlayerIndex: number;
+  dealerButtonPosition?: number;
   currentBet: number;
   playerBets: number[];
   stages: any[];

@@ -5,6 +5,8 @@
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { usePlayers, useGameState, useViewers, usePokerActions } from '@/app/poker/lib/providers/poker-provider';
 import { useUser } from '@/app/lib/providers/user-provider';
+import { useSocket } from '@/app/lib/providers/socket-provider';
+import { SOCKET_EVENTS } from '@/app/lib/socket/events';
 import PlayerSlots from './player-slots';
 import CommunalCards from './communal-cards';
 import Pot from './pot';
@@ -19,6 +21,7 @@ export default function PokerTable() {
   const { gameId } = useViewers();
   const { joinGame, leaveGame, resetSingleton } = usePokerActions();
   const { user } = useUser();
+  const { socket } = useSocket();
 
   // Track if an action has been triggered during the current turn
   const [actionTriggered, setActionTriggered] = useState(false);
@@ -29,7 +32,8 @@ export default function PokerTable() {
   const userGameInfo = useMemo(() => {
     const currentUserPlayerIndex = players.findIndex(p => p.id === user?.id);
     const isUserInGame = currentUserPlayerIndex !== -1;
-    const isUserTurn = currentUserPlayerIndex === currentPlayerIndex;
+    const currentPlayer = players[currentPlayerIndex];
+    const isUserTurn = currentUserPlayerIndex === currentPlayerIndex && !currentPlayer?.isAI;
 
     return {
       isUserInGame,
@@ -56,6 +60,25 @@ export default function PokerTable() {
       prevStageRef.current = stage;
     }
   }, [stage]);
+
+  // Listen for timer-triggered action notifications to hide controls
+  useEffect(() => {
+    if (!socket || !user?.id) return;
+
+    const handleTimerTriggeredAction = (payload: any) => {
+      // Check if this is a timer-triggered action for the current user
+      if (payload.timerTriggered && payload.playerId === user.id) {
+        console.log('[PokerTable] Timer-triggered action received - hiding controls');
+        setActionTriggered(true);
+      }
+    };
+
+    socket.on(SOCKET_EVENTS.POKER_NOTIFICATION, handleTimerTriggeredAction);
+
+    return () => {
+      socket.off(SOCKET_EVENTS.POKER_NOTIFICATION, handleTimerTriggeredAction);
+    };
+  }, [socket, user?.id]);
 
   // Determine if player controls should be shown
   const showPlayerControls = locked &&
@@ -113,7 +136,7 @@ export default function PokerTable() {
             )}
         </div>
 
-        <div id='poker-table' className='flex flex-1 flex-col sm:flex-row gap-2 rounded-xl p-2 bg-green-700'>
+        <div id='poker-table' className='flex flex-1 flex-col sm:flex-row gap-2 rounded-tl-full bg-green-700'>
             {/* Player slots sidebar */}
             <div id='players' className='flex sm:flex-3'>
                 <PlayerSlots

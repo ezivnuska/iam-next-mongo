@@ -8,6 +8,7 @@ import { Button } from '@/app/ui/button';
 import type { Player as PlayerType } from '@/app/poker/lib/definitions/poker';
 import { useUser } from '@/app/lib/providers/user-provider';
 import UserAvatar from '@/app/ui/user/user-avatar';
+import { useGameState } from '@/app/poker/lib/providers/poker-provider';
 
 interface PlayerSlotsProps {
   players: PlayerType[];
@@ -19,12 +20,35 @@ interface PlayerSlotsProps {
   onLeaveGame: () => void;
 }
 
+/**
+ * Calculate blind positions based on dealer button
+ */
+function getBlindPositions(dealerButtonPosition: number, playerCount: number) {
+  if (playerCount < 2) {
+    return { smallBlindPos: -1, bigBlindPos: -1 };
+  }
+
+  const smallBlindPos = playerCount === 2
+    ? dealerButtonPosition
+    : (dealerButtonPosition + 1) % playerCount;
+
+  const bigBlindPos = playerCount === 2
+    ? (dealerButtonPosition + 1) % playerCount
+    : (dealerButtonPosition + 2) % playerCount;
+
+  return { smallBlindPos, bigBlindPos };
+}
+
 function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameId, onJoinGame, onLeaveGame }: PlayerSlotsProps) {
   const MAX_SLOTS = 5;
   const slots = Array.from({ length: MAX_SLOTS }, (_, i) => i);
 
-  const { user } = useUser()
+  const { user } = useUser();
+  const { dealerButtonPosition } = useGameState();
   const isUserInGame = players.some(p => p.id === currentUserId);
+
+  // Calculate blind positions
+  const { smallBlindPos, bigBlindPos } = getBlindPositions(dealerButtonPosition, players.length);
 
   // Check if there are any human players
   const humanPlayers = players.filter(p => !p.isAI);
@@ -42,11 +66,9 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
           <Player
             player={aiPlayer}
             index={0}
-            locked={locked}
             currentPlayerIndex={currentPlayerIndex}
             potContribution={0}
             isCurrentUser={false}
-            totalPlayers={players.length}
           />
         </li>
       )} */}
@@ -66,17 +88,19 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
         //     return null;
         //   }
 
+          // Determine if this player has the dealer button
+          const isDealer = slotIndex === dealerButtonPosition;
+
           // Show actual player wrapped in <li>
           return (
             <li key={player.id} className='flex'>
               <Player
                 player={player}
                 index={slotIndex}
-                locked={locked}
                 currentPlayerIndex={currentPlayerIndex}
                 potContribution={0}
                 isCurrentUser={isCurrentUser}
-                totalPlayers={players.length}
+                isDealer={isDealer}
               />
             </li>
           );

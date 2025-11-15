@@ -210,7 +210,9 @@ export const createGameLockedHandler = (
   return (payload: any) => {
     updatePlayers(payload.players); // Players with empty hands (cards dealt later)
     updateGameStatus(true, payload.lockTime, undefined);
-    setStage(payload.stage);
+    // Don't set stage here - let POKER_CARDS_DEALT event handle it through the stage coordinator
+    // This ensures stage advancement is detected and sounds play correctly
+    // setStage(payload.stage);
 
     // Update betting state with blinds if present
     if (payload.pot !== undefined && payload.playerBets !== undefined) {
@@ -326,6 +328,25 @@ export const createCardsDealtHandler = (
       updatePlayers(payload.players);
     }
 
+    // Play sound effect based on what cards are being dealt
+    if (playSound) {
+      const communalCardsCount = payload.communalCards?.length || 0;
+
+      if (payload.stage === 0 && communalCardsCount === 0) {
+        // Hole cards (Preflop stage with no communal cards)
+        console.log('[CardsDealtHandler] Playing card-deal sound for hole cards');
+        playSound('card-deal');
+      } else if (payload.stage === 1 && communalCardsCount === 3) {
+        // Flop (3 communal cards)
+        console.log('[CardsDealtHandler] Playing card-deal sound for Flop');
+        playSound('card-deal');
+      } else if ((payload.stage === 2 || payload.stage === 3) && communalCardsCount > 0) {
+        // Turn or River (1 card each)
+        console.log('[CardsDealtHandler] Playing single-card sound for Turn/River');
+        playSound('single-card');
+      }
+    }
+
     // Route stage and communal cards through the coordinated update system
     // This will queue the notification and delay the card display until notification completes
     console.log('[CardsDealtHandler] Routing stage/card update through coordinator');
@@ -335,9 +356,6 @@ export const createCardsDealtHandler = (
       payload.deck || [],
       payload.stages
     );
-
-    // NOTE: Sound is now played by the stage coordinator when stage is actually updated
-    // This ensures sound plays at the same time cards are displayed to the user
   };
 };
 

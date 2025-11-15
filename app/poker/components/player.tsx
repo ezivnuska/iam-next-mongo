@@ -6,7 +6,7 @@ import Hand from './hand';
 import { getChipTotal } from '@/app/poker/lib/utils/poker';
 import type { Player as PlayerType } from '@/app/poker/lib/definitions/poker';
 import clsx from 'clsx';
-import { useGameState, usePokerActions } from '@/app/poker/lib/providers/poker-provider';
+import { useGameState } from '@/app/poker/lib/providers/poker-provider';
 import { usePlayerNotifications } from '@/app/poker/lib/providers/player-notification-provider';
 import UserAvatar from '@/app/ui/user/user-avatar';
 import PlayerConnectionStatus from './player-connection-status';
@@ -15,14 +15,13 @@ import { useActionTimerPercentage } from '@/app/poker/lib/hooks/use-action-timer
 interface PlayerProps {
   index: number;
   player: PlayerType;
-  locked: boolean;
   currentPlayerIndex: number;
   potContribution: number;
   isCurrentUser?: boolean;
-  totalPlayers: number;
+  isDealer?: boolean;
 }
 
-export default function Player({ player, locked, index, currentPlayerIndex, potContribution, isCurrentUser, totalPlayers }: PlayerProps) {
+export default function Player({ player, index, currentPlayerIndex, potContribution, isCurrentUser, isDealer }: PlayerProps) {
   const chipTotal = player.chipCount;
   const isCurrentPlayer = index === currentPlayerIndex;
   const { winner, actionTimer } = useGameState();
@@ -39,9 +38,9 @@ export default function Player({ player, locked, index, currentPlayerIndex, potC
   return (
     <div
         className={clsx(
-            'flex flex-1 rounded-xl overflow-hidden bg-green-800 relative py-1',
+            'flex rounded-r-full overflow-hidden bg-green-800 relative',
             {
-              'bg-green-600 border-2 border-white': isCurrentPlayer,
+              'bg-green-600 border-2 border-white border-l-0': isCurrentPlayer,
             },
           )}
     >
@@ -55,15 +54,20 @@ export default function Player({ player, locked, index, currentPlayerIndex, potC
       )}
 
       <div
-        className='relative z-30 flex flex-1 flex-row gap-1 px-2 py-1 items-center'
+        className='relative z-30 flex flex-1 flex-row gap-1 pl-3 pr-6 py-4 items-center justify-end'
       >
             <div className='flex flex-1 flex-row items-center gap-2 justify-between'>
-                <div className='flex flex-row gap-2 items-start text-white'>
+                <div className='flex flex-1 flex-row gap-4 text-white'>
                     <UserAvatar size={40} username={player.username} />
                     <div id='player-action-status' className='flex flex-col'>
                         <div className='flex flex-row gap-1 items-center'>
                             <span className='text-md'>{player.username}</span>
                             <span className='text-md'>({chipTotal})</span>
+                            {isDealer && (
+                                <span className='text-xs font-bold px-1.5 py-0.5 rounded bg-yellow-500 text-black'>
+                                    D
+                                </span>
+                            )}
                             {potContribution > 0 && (
                                 <span className="text-xs text-gray-700">Pot: ${potContribution}</span>
                             )}
@@ -83,16 +87,8 @@ export default function Player({ player, locked, index, currentPlayerIndex, potC
                             ALL-IN
                         </span>
                     )}
-
-                    {/* {locked && (
-                        <PlayerConnectionStatus
-                            playerId={player.id}
-                            lastHeartbeat={player.lastHeartbeat}
-                            isCurrentPlayer={isCurrentPlayer}
-                        />
-                    )} */}
                 </div>
-                {(isCurrentUser || isWinner) && player.hand.length > 0 && <Hand cards={player.hand} />}
+                {player.hand.length > 0 && <Hand cards={player.hand} hidden={!(isCurrentUser || isWinner)} />}
             </div>
         </div>
     </div>

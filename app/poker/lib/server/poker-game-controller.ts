@@ -26,6 +26,7 @@ import { acquireGameLock, releaseGameLock } from './game-lock-utils';
 import {
   logBetAction,
   logFoldAction,
+  logPlayerJoinAction,
   logPlayerLeftAction,
   logGameRestartAction
 } from '@/app/poker/lib/utils/action-history-helpers';
@@ -179,18 +180,12 @@ export async function handlePlayerJoin(
     // Find the newly joined player
     const joinedPlayer = gameState.players.find((p: any) => p.id === userId);
 
-    // Log player join action
-    const { logPlayerJoined } = await import('@/app/poker/lib/utils/action-history');
-    const currentStage = gameState.locked ? gameState.stage : -1;
-    await logPlayerJoined(
-      gameState._id.toString(),
-      userId,
-      username || 'Guest',
-      currentStage
-    );
-
-    // Fetch updated game state with new action history
+    // Fetch game document and log player join action
     const updatedGame = await PokerGame.findById(gameId);
+    if (updatedGame) {
+      logPlayerJoinAction(updatedGame, userId, username || 'Guest');
+      await updatedGame.save();
+    }
     const { serializeGame } = await import('@/app/lib/utils/game-serialization');
     const serializedState = serializeGame(updatedGame);
 
@@ -212,9 +207,6 @@ export async function handlePlayerJoin(
         countdownSeconds: POKER_GAME_CONFIG.AUTO_LOCK_DELAY_SECONDS,
       });
     }
-
-    // Also emit full state to sync AI player changes and timer
-    await PokerSocketEmitter.emitStateUpdate(gameState);
 
     return { success: true, gameState: serializedState };
   } catch (error: any) {
@@ -443,7 +435,7 @@ function getBettingRoundStartIndex(game: PokerGameDocument): number {
   }
 }
 
-export async function placeBet(gameId: string, playerId: string, chipCount = 1) {
+export async function placeBet(gameId: string, playerId: string, chipCount = 1, timerTriggered = false) {
   // Retry with fresh state fetch on each attempt to avoid double-betting
   // Use more retries for high-contention scenarios (concurrent bets, round completion)
   return withRetry(async () => {
@@ -619,6 +611,7 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
           playerName: player.username,
           chipAmount: chipCount,
           isAI: player.isAI || false,  // Include AI flag so client knows not to signal ready
+          timerTriggered,  // Include flag to indicate if action was timer-triggered
           // Include pot sync data
           pot: JSON.parse(JSON.stringify(game.pot)),
           playerBets: [...game.playerBets],
@@ -659,20 +652,18 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
       const { PokerSocketEmitter: Emitter } = await import('@/app/lib/utils/socket-helper');
       await Emitter.emitStateUpdate(game.toObject());
 
-      // If this was an AI action, wait for notification to complete before advancing
-      // Human players will signal ready from the client after viewing the notification
-      if (player.isAI) {
-        console.log('[PlaceBet] AI action - waiting for notification to complete before advancing turn');
+      // ALL actions (AI, timer-triggered, AND manual) wait for notification to complete before advancing
+      // This ensures consistent, server-driven turn advancement for all action types
+      console.log(`[PlaceBet] ${player.isAI ? 'AI' : timerTriggered ? 'Timer-triggered' : 'Manual'} action - waiting for notification to complete before advancing turn`);
 
-        const { POKER_TIMERS } = await import('../config/poker-constants');
-        // Wait for player action notification duration (2 seconds) before advancing
-        await new Promise(resolve => setTimeout(resolve, POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS));
+      const { POKER_TIMERS } = await import('../config/poker-constants');
+      // Wait for player action notification duration (2 seconds) before advancing
+      await new Promise(resolve => setTimeout(resolve, POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS));
 
-        console.log('[PlaceBet] AI action notification complete - advancing turn');
-        const { handleReadyForNextTurn } = await import('./turn-handler');
-        await handleReadyForNextTurn(gameId);
-        console.log('[PlaceBet] AI turn advancement completed');
-      }
+      console.log(`[PlaceBet] ${player.isAI ? 'AI' : timerTriggered ? 'Timer-triggered' : 'Manual'} action notification complete - advancing turn`);
+      const { handleReadyForNextTurn } = await import('./turn-handler');
+      await handleReadyForNextTurn(gameId);
+      console.log('[PlaceBet] Turn advancement completed');
 
       // Return result in expected format
       return {
@@ -881,7 +872,7 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
   }, POKER_RETRY_CONFIG);
 }
 
-export async function fold(gameId: string, playerId: string) {
+export async function fold(gameId: string, playerId: string, timerTriggered = false) {
   return withRetry(async () => {
     // ATOMIC LOCK ACQUISITION
     const game = await acquireGameLock(gameId);
@@ -935,14 +926,15 @@ export async function fold(gameId: string, playerId: string) {
         playerId: playerId,
         playerName: foldingPlayer.username,
         isAI: foldingPlayer.isAI || false,
+        timerTriggered,  // Include flag to indicate if fold was timer-triggered
       });
 
-      console.log(`[Fold] Fold notification emitted for ${foldingPlayer.username} (AI: ${foldingPlayer.isAI})`);
+      console.log(`[Fold] Fold notification emitted for ${foldingPlayer.username} (AI: ${foldingPlayer.isAI}, timerTriggered: ${timerTriggered})`);
 
-      // If AI folded, wait for notification to complete before emitting winner
-      // Human players will trigger winner notification after fold notification completes on client
-      if (foldingPlayer.isAI) {
-        console.log('[Fold] AI fold - waiting for fold notification to complete before emitting winner');
+      // If AI folded or timer-triggered fold, wait for notification to complete before emitting winner
+      // Human players who manually folded will trigger winner notification after fold notification completes on client
+      if (foldingPlayer.isAI || timerTriggered) {
+        console.log(`[Fold] ${foldingPlayer.isAI ? 'AI' : 'Timer-triggered'} fold - waiting for fold notification to complete before emitting winner`);
         const { POKER_TIMERS } = await import('../config/poker-constants');
         // Wait for player action notification duration (2 seconds) before emitting winner
         await new Promise(resolve => setTimeout(resolve, POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS));

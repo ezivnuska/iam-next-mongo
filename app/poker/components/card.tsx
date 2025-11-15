@@ -11,9 +11,10 @@ interface CardProps {
   card: CardType;
   index: number;
   size?: CardSize;
+  hidden: boolean;
 }
 
-export default function Card({ card, index, size = 'md' }: CardProps) {
+export default function Card({ card, index, size = 'md', hidden = false }: CardProps) {
     const cardSizeClasses = {
         sm: 'w-[36px] h-[54px] items-center justify-center',
         md: 'flex w-[72px] h-[108px] py-2 justify-start items-start',
@@ -34,13 +35,15 @@ export default function Card({ card, index, size = 'md' }: CardProps) {
         >
             {/* <div className='shrink bg-amber-600'> */}
                 {/* <div className='flex flex-col shrink justify-center items-start border'> */}
-                    <p className={clsx(
-                        'flex flex-col items-center justify-center',
-                        cardTextClasses[size],
-                    )}>
-                        <span className='text-black'>{card.label}</span>
-                        <span className='-mt-2 text-2xl' style={{ color: card.color }}>{card.symbol}</span>
-                    </p>
+                    {!hidden && (
+                        <p className={clsx(
+                            'flex flex-col items-center justify-center',
+                            cardTextClasses[size],
+                        )}>
+                            <span className='text-black'>{card.label}</span>
+                            <span className='-mt-2 text-2xl' style={{ color: card.color }}>{card.symbol}</span>
+                        </p>
+                    )}
                 {/* </div> */}
             {/* </div> */}
         </div>

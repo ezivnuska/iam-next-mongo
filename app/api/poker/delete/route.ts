@@ -3,8 +3,9 @@
 import { withAuth } from '@/app/lib/api/with-auth';
 import { deleteGame } from '@/app/poker/lib/server/poker-game-controller';
 import { PokerSocketEmitter } from '@/app/lib/utils/socket-helper';
+import { withRateLimit, RATE_LIMITS } from '@/app/lib/api/rate-limiter';
 
-export const DELETE = withAuth(async (request, context, session) => {
+export const DELETE = withRateLimit(RATE_LIMITS.DESTRUCTIVE, withAuth(async (request, context, session) => {
   const { gameId } = await request.json();
   if (!gameId) {
     return Response.json({ error: 'gameId is required' }, { status: 400 });
@@ -21,4 +22,4 @@ export const DELETE = withAuth(async (request, context, session) => {
       error: error instanceof Error ? error.message : 'Failed to delete game'
     }, { status: 500 });
   }
-});
+}));

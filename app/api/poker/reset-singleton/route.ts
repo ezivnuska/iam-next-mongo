@@ -3,12 +3,13 @@
 import { withAuth } from '@/app/lib/api/with-auth';
 import { resetSingletonGame } from '@/app/poker/lib/server/singleton-game';
 import { PokerSocketEmitter } from '@/app/lib/utils/socket-helper';
+import { withRateLimit, RATE_LIMITS } from '@/app/lib/api/rate-limiter';
 
 /**
  * Reset the singleton poker game to initial state
  * Only accessible to authenticated users
  */
-export const POST = withAuth(async (request, context, session) => {
+export const POST = withRateLimit(RATE_LIMITS.DESTRUCTIVE, withAuth(async (request, context, session) => {
   try {
     const { gameId } = await request.json();
 
@@ -42,4 +43,4 @@ export const POST = withAuth(async (request, context, session) => {
       { status: 500 }
     );
   }
-});
+}));

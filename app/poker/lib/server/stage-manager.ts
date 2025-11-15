@@ -292,6 +292,15 @@ export class StageManager {
         // Save state before emitting notification
         await game.save();
 
+        // Reset betting round and set first player to act BEFORE emitting events
+        game.playerBets = new Array(game.players.length).fill(0);
+        game.markModified('playerBets');
+        this.setFirstToAct(game);
+
+        // Save game after resetting playerBets and setting currentPlayerIndex
+        // This ensures timer-triggered actions read correct state from database
+        await game.save();
+
         // Emit dealing notification for visual feedback
         if (result.stageName) {
           await PokerSocketEmitter.emitNotification({
@@ -300,28 +309,19 @@ export class StageManager {
             stageName: result.stageName, // Include stage name for appropriate message
           });
 
+          // Emit cards dealt event immediately so cards appear at start of notification
+          await PokerSocketEmitter.emitCardsDealt({
+            stage: newStage,
+            communalCards: game.communalCards,
+            deckCount: game.deck.length,
+            players: game.players,
+            currentPlayerIndex: game.currentPlayerIndex, // Include currentPlayerIndex so clients know whose turn it is
+          });
+
           // Wait for dealing notification to display
           await new Promise(resolve => setTimeout(resolve, POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS));
         }
       }
-    }
-
-    // Reset betting round
-    game.playerBets = new Array(game.players.length).fill(0);
-    game.markModified('playerBets');
-
-    // Set first player to act (postflop rules) BEFORE emitting events
-    this.setFirstToAct(game);
-
-    // Emit cards dealt event AFTER setting currentPlayerIndex so clients get the correct value
-    if (newStage > GameStage.Preflop) {
-      await PokerSocketEmitter.emitCardsDealt({
-        stage: newStage,
-        communalCards: game.communalCards,
-        deckCount: game.deck.length,
-        players: game.players,
-        currentPlayerIndex: game.currentPlayerIndex, // Include currentPlayerIndex so clients know whose turn it is
-      });
     }
 
     // Mark stage as active
@@ -334,6 +334,9 @@ export class StageManager {
 
     game.markModified('stageStatus');
     game.markModified('stageCompletionChecks');
+
+    // Save final stage state
+    await game.save();
 
     console.log(`[StageManager] Stage ${newStage} now ACTIVE`);
   }
@@ -547,6 +550,10 @@ export class StageManager {
     // Save player balances
     await savePlayerBalances(game.players);
 
+    // Clear currentPlayerIndex to remove white border (round is complete, no more turns)
+    game.currentPlayerIndex = undefined;
+    game.markModified('currentPlayerIndex');
+
     // Add action history for game end (for UI display only, not notifications)
     game.actionHistory.push({
       id: randomBytes(8).toString('hex'),
@@ -727,18 +734,20 @@ export class StageManager {
 
       await gameToReset.save();
 
-      // Emit state update with reset game
-      await PokerSocketEmitter.emitStateUpdate(gameToReset);
-
       console.log('[StageManager] Game reset for next round');
 
-      // Emit "Game starting!" notification to inform players
-      console.log('[StageManager] ✅ Emitting game starting notification');
+      // Emit "Game starting!" notification with reset data to inform players
+      // Include minimal reset data in notification payload to avoid full state update
+      console.log('[StageManager] ✅ Emitting game starting notification with reset data');
 
       await PokerSocketEmitter.emitNotification({
         notificationType: 'game_starting',
         category: 'info',
         countdownSeconds: POKER_GAME_CONFIG.AUTO_LOCK_DELAY_SECONDS, // 10 seconds
+        // Include reset indicators so clients can clear UI without full state update
+        stage: 0, // Reset to preflop
+        pot: [], // Empty pot
+        playerBets: [], // Empty bets
       });
 
       console.log('[StageManager] ✅ Game starting notification emitted');

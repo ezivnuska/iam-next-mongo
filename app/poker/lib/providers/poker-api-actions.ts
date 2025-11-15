@@ -207,10 +207,10 @@ export const createStartTimerAction = (gameId: string | null) => {
   return async () => {
     if (!gameId) return;
     try {
-      await fetch('/api/poker/timer/start', {
+      await fetch('/api/poker/timer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameId }),
+        body: JSON.stringify({ gameId, action: 'start' }),
       });
     } catch (error) {
       console.error('Error starting timer:', error);
@@ -222,10 +222,10 @@ export const createPauseTimerAction = (gameId: string | null) => {
   return async () => {
     if (!gameId) return;
     try {
-      await fetch('/api/poker/timer/pause', {
+      await fetch('/api/poker/timer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameId }),
+        body: JSON.stringify({ gameId, action: 'pause' }),
       });
     } catch (error) {
       console.error('Error pausing timer:', error);
@@ -237,10 +237,10 @@ export const createResumeTimerAction = (gameId: string | null) => {
   return async () => {
     if (!gameId) return;
     try {
-      await fetch('/api/poker/timer/resume', {
+      await fetch('/api/poker/timer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameId }),
+        body: JSON.stringify({ gameId, action: 'resume' }),
       });
     } catch (error) {
       console.error('Error resuming timer:', error);
@@ -252,10 +252,10 @@ export const createClearTimerAction = (gameId: string | null) => {
   return async () => {
     if (!gameId) return;
     try {
-      await fetch('/api/poker/timer/clear', {
+      await fetch('/api/poker/timer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameId }),
+        body: JSON.stringify({ gameId, action: 'clear' }),
       });
     } catch (error) {
       console.error('Error clearing timer:', error);
@@ -264,13 +264,13 @@ export const createClearTimerAction = (gameId: string | null) => {
 };
 
 export const createSetTurnTimerAction = (gameId: string | null) => {
-  return async (action: 'fold' | 'call' | 'check' | 'bet' | 'raise', betAmount?: number) => {
+  return async (timerAction: 'fold' | 'call' | 'check' | 'bet' | 'raise', betAmount?: number) => {
     if (!gameId) return;
     try {
-      await fetch('/api/poker/timer/set-action', {
+      await fetch('/api/poker/timer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameId, action, betAmount }),
+        body: JSON.stringify({ gameId, action: 'set-action', timerAction, betAmount }),
       });
     } catch (error) {
       console.error('Error setting turn timer action:', error);

@@ -50,11 +50,16 @@ export function usePokerSounds() {
 
   // Play a sound
   const playSound = useCallback((type: PokerSoundType) => {
-    if (!enabledRef.current) return;
+    console.log('[PokerSounds] playSound called for:', type, 'enabled:', enabledRef.current);
+
+    if (!enabledRef.current) {
+      console.log('[PokerSounds] Sounds are disabled');
+      return;
+    }
 
     const buffer = audioBuffersRef.current.get(type);
     if (!buffer) {
-      console.warn(`Sound not loaded: ${type}`);
+      console.warn(`[PokerSounds] Sound not loaded: ${type}`);
       return;
     }
 
@@ -70,8 +75,9 @@ export function usePokerSounds() {
       gainNode.connect(context.destination);
 
       source.start(0);
+      console.log('[PokerSounds] Successfully played sound:', type);
     } catch (error) {
-      console.error(`Failed to play sound: ${type}`, error);
+      console.error(`[PokerSounds] Failed to play sound: ${type}`, error);
     }
   }, [getAudioContext]);
 
@@ -87,6 +93,7 @@ export function usePokerSounds() {
 
   // Initialize sounds - load all sound files
   const initSounds = useCallback(async () => {
+    console.log('[PokerSounds] Initializing sounds...');
     const soundMap: Record<PokerSoundType, string> = {
       'card-deal': '/sounds/poker/card-deal.mp3',
       'single-card': '/sounds/poker/single-card.mp3',
@@ -105,6 +112,7 @@ export function usePokerSounds() {
         loadSound(type as PokerSoundType, url)
       )
     );
+    console.log('[PokerSounds] All sounds initialized. Loaded buffers:', Array.from(audioBuffersRef.current.keys()));
   }, [loadSound]);
 
   return {
