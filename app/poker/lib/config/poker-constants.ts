@@ -33,22 +33,22 @@ export const POKER_GAME_CONFIG = {
 
 export const POKER_TIMERS = {
   /** Duration in seconds for player action timer */
-  ACTION_DURATION_SECONDS: 30,
+  ACTION_DURATION_SECONDS: 15,
 
   /** Small delay in milliseconds to ensure write propagation after lock acquisition */
   LOCK_ACQUISITION_DELAY_MS: 10,
 
   /** Delay in milliseconds before advancing to next stage (for paced transitions) */
-  STAGE_TRANSITION_DELAY_MS: 5000,
+  STAGE_TRANSITION_DELAY_MS: 4000,
 
   /** Buffer delay in milliseconds to ensure client has time to process previous stage */
   CLIENT_PROCESSING_BUFFER_MS: 1500,
 
   /** Duration in milliseconds for game notifications */
-  NOTIFICATION_DURATION_MS: 5000,
+  NOTIFICATION_DURATION_MS: 4000,
 
   /** Delay in milliseconds after showing notification (notification duration + buffer) */
-  POST_NOTIFICATION_DELAY_MS: 5000,
+  POST_NOTIFICATION_DELAY_MS: 4000,
 
   /** Interval in milliseconds for timer percentage updates */
   TIMER_UPDATE_INTERVAL_MS: 100,

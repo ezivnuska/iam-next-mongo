@@ -75,18 +75,19 @@ export default function PokerNotificationDisplay({ notification }: PokerNotifica
 
   return (
     <div className="relative w-full overflow-hidden rounded-lg shadow-lg">
-      {/* Progress bar background */}
-      <div
-        className="absolute inset-0 bg-gray-200 transition-all duration-100 ease-linear"
-        style={{
-          width: `${progress}%`,
-          opacity: 0.3,
-        }}
-      />
-
       {/* Notification content */}
-      <div className={`relative z-10 px-4 py-3 ${bgStyle} font-semibold text-center`}>
-        {notification.message}
+      <div className={`relative px-4 py-3 ${bgStyle} font-semibold text-center`}>
+        {/* Progress bar background */}
+        <div
+          className="absolute inset-0 bg-gray-200 transition-all duration-100 ease-linear"
+          style={{
+            width: `${progress}%`,
+            opacity: 0.1,
+          }}
+        />
+
+        {/* Message text */}
+        <span className="relative z-10">{notification.message}</span>
       </div>
 
       {/* Timer progress indicator */}
