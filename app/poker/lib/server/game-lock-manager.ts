@@ -11,6 +11,99 @@ import { logGameStartedAction } from '@/app/poker/lib/utils/action-history-helpe
 const lockTimers = new Map<string, NodeJS.Timeout>();
 
 /**
+ * Execute the pre-game sequence with paced notifications
+ * 1. Small blind posted → notification → delay
+ * 2. Big blind posted → notification → delay
+ * 3. Hole cards dealt → notification → delay
+ *
+ * Exported for use in both initial game lock and restart flows
+ */
+export async function executePreGameSequence(game: any, delayMs: number): Promise<void> {
+  const { placeSmallBlind, placeBigBlind } = await import('./blinds-manager');
+  const { dealPlayerCards } = await import('./poker-dealer');
+  const { ActionHistoryType } = await import('@/app/poker/lib/definitions/action-history');
+  const { randomBytes } = await import('crypto');
+  const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
+
+  // STEP 1: Place small blind
+  const smallBlindInfo = placeSmallBlind(game);
+  console.log(`[PreGame] Small blind posted by ${smallBlindInfo.player.username}: ${smallBlindInfo.amount} chips`);
+
+  // Save state after small blind
+  await game.save();
+
+  // Emit small blind notification
+  await PokerSocketEmitter.emitNotification({
+    notificationType: 'blind_posted',
+    category: 'blind',
+    playerId: smallBlindInfo.player.id,
+    playerName: smallBlindInfo.player.username,
+    chipAmount: smallBlindInfo.amount,
+    blindType: 'small',
+    // Include pot sync data
+    pot: JSON.parse(JSON.stringify(game.pot)),
+    playerBets: [...game.playerBets],
+    currentPlayerIndex: game.currentPlayerIndex,
+  });
+
+  // Wait for notification to display
+  await new Promise(resolve => setTimeout(resolve, delayMs));
+
+  // STEP 2: Place big blind
+  const bigBlindInfo = placeBigBlind(game);
+  console.log(`[PreGame] Big blind posted by ${bigBlindInfo.player.username}: ${bigBlindInfo.amount} chips`);
+
+  // Save state after big blind
+  await game.save();
+
+  // Emit big blind notification
+  await PokerSocketEmitter.emitNotification({
+    notificationType: 'blind_posted',
+    category: 'blind',
+    playerId: bigBlindInfo.player.id,
+    playerName: bigBlindInfo.player.username,
+    chipAmount: bigBlindInfo.amount,
+    blindType: 'big',
+    // Include pot sync data
+    pot: JSON.parse(JSON.stringify(game.pot)),
+    playerBets: [...game.playerBets],
+    currentPlayerIndex: game.currentPlayerIndex,
+  });
+
+  // Wait for notification to display
+  await new Promise(resolve => setTimeout(resolve, delayMs));
+
+  // STEP 3: Deal hole cards
+  dealPlayerCards(game.deck, game.players, 2);
+  game.markModified('deck');
+  game.markModified('players');
+
+  // Add action history for dealing hole cards
+  game.actionHistory.push({
+    id: randomBytes(8).toString('hex'),
+    timestamp: new Date(),
+    stage: 0, // Preflop
+    actionType: ActionHistoryType.CARDS_DEALT,
+    cardsDealt: 2,
+  });
+  game.markModified('actionHistory');
+
+  // Save state after dealing cards
+  await game.save();
+
+  // Emit cards dealt notification
+  await PokerSocketEmitter.emitNotification({
+    notificationType: 'cards_dealt',
+    category: 'deal',
+  });
+
+  // Wait for notification to display
+  await new Promise(resolve => setTimeout(resolve, delayMs));
+
+  console.log('[PreGame] Pre-game sequence complete');
+}
+
+/**
  * Initialize game when it's locked (2+ players ready to play)
  * Uses distributed locking to prevent race conditions with manual "Start Now" clicks
  */
@@ -121,34 +214,10 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
           console.log(`[Auto Lock] Big blind player will go all-in: ${bigBlindPlayerChips}/${bigBlind} chips`);
         }
 
-        // Place blinds and deal cards automatically without notifications
-        const { placeSmallBlind, placeBigBlind } = await import('./blinds-manager');
-        const { dealPlayerCards } = await import('./poker-dealer');
-        const { ActionHistoryType } = await import('@/app/poker/lib/definitions/action-history');
-        const { randomBytes } = await import('crypto');
-
-        // PLACE SMALL BLIND automatically without notification
-        const smallBlindInfo = placeSmallBlind(gameToLock);
-        console.log(`[Auto Lock] Small blind posted by ${smallBlindInfo.player.username}: ${smallBlindInfo.amount} chips`);
-
-        // PLACE BIG BLIND automatically without notification
-        const bigBlindInfo = placeBigBlind(gameToLock);
-        console.log(`[Auto Lock] Big blind posted by ${bigBlindInfo.player.username}: ${bigBlindInfo.amount} chips`);
-
-        // DEAL HOLE CARDS automatically after blinds (no notification)
-        dealPlayerCards(gameToLock.deck, gameToLock.players, 2);
-        gameToLock.markModified('deck');
-        gameToLock.markModified('players');
-
-        // Add action history for dealing hole cards
-        gameToLock.actionHistory.push({
-          id: randomBytes(8).toString('hex'),
-          timestamp: new Date(),
-          stage: 0, // Preflop
-          actionType: ActionHistoryType.CARDS_DEALT,
-          cardsDealt: 2,
-        });
-        gameToLock.markModified('actionHistory');
+        // PACED PRE-GAME FLOW WITH NOTIFICATIONS
+        // This creates a better UX by showing what's happening step-by-step
+        const { POKER_TIMERS } = await import('@/app/poker/lib/config/poker-constants');
+        await executePreGameSequence(gameToLock, POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS);
 
         console.log(`[Auto Lock] Hole cards dealt to all players`);
 

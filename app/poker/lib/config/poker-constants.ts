@@ -44,8 +44,11 @@ export const POKER_TIMERS = {
   /** Buffer delay in milliseconds to ensure client has time to process previous stage */
   CLIENT_PROCESSING_BUFFER_MS: 1500,
 
-  /** Duration in milliseconds for game notifications */
+  /** Duration in milliseconds for general game notifications (stage changes, etc.) */
   NOTIFICATION_DURATION_MS: 4000,
+
+  /** Duration in milliseconds for player action notifications (bet, fold, call, etc.) */
+  PLAYER_ACTION_NOTIFICATION_DURATION_MS: 2000,
 
   /** Delay in milliseconds after showing notification (notification duration + buffer) */
   POST_NOTIFICATION_DELAY_MS: 4000,

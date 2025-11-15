@@ -7,6 +7,7 @@ import { getChipTotal } from '@/app/poker/lib/utils/poker';
 import type { Player as PlayerType } from '@/app/poker/lib/definitions/poker';
 import clsx from 'clsx';
 import { useGameState, usePokerActions } from '@/app/poker/lib/providers/poker-provider';
+import { usePlayerNotifications } from '@/app/poker/lib/providers/player-notification-provider';
 import UserAvatar from '@/app/ui/user/user-avatar';
 import PlayerConnectionStatus from './player-connection-status';
 import { useActionTimerPercentage } from '@/app/poker/lib/hooks/use-action-timer-percentage';
@@ -26,10 +27,14 @@ export default function Player({ player, locked, index, currentPlayerIndex, potC
   const isCurrentPlayer = index === currentPlayerIndex;
   const { winner, actionTimer } = useGameState();
   const isWinner = player.id === winner?.winnerId;
+  const { getPlayerNotification } = usePlayerNotifications();
 
   // Timer progress bar - only show for current player
   const timerForCurrentPlayer = isCurrentPlayer ? actionTimer : undefined;
   const timePercentage = useActionTimerPercentage(timerForCurrentPlayer, player.id);
+
+  // Get active notification for this player
+  const activeNotification = getPlayerNotification(player.id);
 
   return (
     <div
@@ -53,13 +58,23 @@ export default function Player({ player, locked, index, currentPlayerIndex, potC
         className='relative z-30 flex flex-1 flex-row gap-1 px-2 py-1 items-center'
       >
             <div className='flex flex-1 flex-row items-center gap-2 justify-between'>
-                <div className='flex flex-row gap-2 items-center text-white'>
-                    <UserAvatar size={44} username={player.username} />
-                    <div className='flex flex-row gap-1 sm:gap-0 sm:flex-col items-center'>
-                        <span className='text-md'>{player.username}</span>
-                        <span className='text-md'>({chipTotal})</span>
-                        {potContribution > 0 && (
-                            <span className="text-xs text-gray-700">Pot: ${potContribution}</span>
+                <div className='flex flex-row gap-2 items-start text-white'>
+                    <UserAvatar size={40} username={player.username} />
+                    <div id='player-action-status' className='flex flex-col'>
+                        <div className='flex flex-row gap-1 items-center'>
+                            <span className='text-md'>{player.username}</span>
+                            <span className='text-md'>({chipTotal})</span>
+                            {potContribution > 0 && (
+                                <span className="text-xs text-gray-700">Pot: ${potContribution}</span>
+                            )}
+                        </div>
+                        {/* Player's active action notification (displays for 2 seconds) */}
+                        {activeNotification && (
+                            <div className='flex flex-row gap-1 items-center mt-0.5'>
+                                <span className='text-xs text-yellow-300 font-semibold'>
+                                    {activeNotification.message}
+                                </span>
+                            </div>
                         )}
                     </div>
 

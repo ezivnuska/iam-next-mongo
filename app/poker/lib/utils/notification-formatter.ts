@@ -60,12 +60,29 @@ export function formatNotificationMessage(payload: PokerNotificationPayload): st
     //   return payload.countdownSeconds ? 'Shuffling...' : 'Game starting!';
 
     case 'blind_posted':
-      return payload.blindType === 'small'
-        ? `${payload.playerName} posted small blind`
-        : `${payload.playerName} posted big blind`;
+      // Blind notifications show on player card, so no need to include player name
+      if (payload.blindType === 'small') {
+        return payload.chipAmount
+          ? `Posted small blind ($${payload.chipAmount})`
+          : `Posted small blind`;
+      } else {
+        return payload.chipAmount
+          ? `Posted big blind ($${payload.chipAmount})`
+          : `Posted big blind`;
+      }
 
     case 'cards_dealt':
-      return 'Cards dealt';
+      // Stage name indicates which cards are being dealt
+      if (payload.stageName === 'FLOP') {
+        return 'Dealing the flop...';
+      } else if (payload.stageName === 'TURN') {
+        return 'Dealing the turn...';
+      } else if (payload.stageName === 'RIVER') {
+        return 'Dealing the river...';
+      } else {
+        // Default: hole cards (preflop)
+        return 'Dealing hole cards...';
+      }
 
     default:
       console.warn('[NotificationFormatter] Unknown notification type:', payload.notificationType);

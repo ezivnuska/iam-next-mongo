@@ -50,6 +50,7 @@ export interface PokerSocketEffectsDeps {
   playSound: (sound: PokerSoundType) => void;
   setCurrentPlayerIndex: (index: number) => void;
   showNotification?: (notification: { message: string; type: NotificationType; duration: number; onComplete?: () => void; metadata?: any }) => void;
+  clearAllPlayerNotifications?: () => void;
 }
 
 /**
@@ -105,6 +106,7 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
     playSound,
     setCurrentPlayerIndex,
     showNotification,
+    clearAllPlayerNotifications,
   } = deps;
 
   useEffect(() => {

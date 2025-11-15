@@ -39,6 +39,7 @@ export function logBetAction(
     playerId,
     playerName,
     chipAmount,
+    isBlind: false, // Explicitly mark as NOT a blind action
   });
 }
 

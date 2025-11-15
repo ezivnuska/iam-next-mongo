@@ -665,8 +665,8 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1) 
         console.log('[PlaceBet] AI action - waiting for notification to complete before advancing turn');
 
         const { POKER_TIMERS } = await import('../config/poker-constants');
-        // Use setTimeout wrapped in Promise to properly await the delay
-        await new Promise(resolve => setTimeout(resolve, POKER_TIMERS.NOTIFICATION_DURATION_MS));
+        // Wait for player action notification duration (2 seconds) before advancing
+        await new Promise(resolve => setTimeout(resolve, POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS));
 
         console.log('[PlaceBet] AI action notification complete - advancing turn');
         const { handleReadyForNextTurn } = await import('./turn-handler');
@@ -944,7 +944,8 @@ export async function fold(gameId: string, playerId: string) {
       if (foldingPlayer.isAI) {
         console.log('[Fold] AI fold - waiting for fold notification to complete before emitting winner');
         const { POKER_TIMERS } = await import('../config/poker-constants');
-        await new Promise(resolve => setTimeout(resolve, POKER_TIMERS.NOTIFICATION_DURATION_MS));
+        // Wait for player action notification duration (2 seconds) before emitting winner
+        await new Promise(resolve => setTimeout(resolve, POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS));
       } else {
         // For human folds, add small buffer to ensure fold notification is sent first
         await new Promise(resolve => setTimeout(resolve, 100));

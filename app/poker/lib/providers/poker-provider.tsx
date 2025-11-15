@@ -53,7 +53,9 @@ import { usePokerSocketEffects } from './use-poker-socket-effects';
 import { usePokerSounds } from '../hooks/use-poker-sounds';
 import { usePlayerConnectionMonitor } from '../hooks/use-player-connection-monitor';
 import { NotificationProvider, useNotifications } from './notification-provider';
+import { PlayerNotificationProvider, usePlayerNotifications } from './player-notification-provider';
 import { useStageCoordinator } from '../hooks/use-stage-coordinator';
+import { useGameFlowController } from '../hooks/use-game-flow-controller';
 
 // ============= Inner Provider Component (with NotificationProvider access) =============
 
@@ -87,6 +89,8 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
   // This must be inside NotificationProvider
   const { applyStageUpdate, resetCoordinator } = useStageCoordinator(gameId, playSound);
   const { resetNotifications, showNotification } = useNotifications();
+  const { showPlayerNotification, clearAllPlayerNotifications } = usePlayerNotifications();
+  const { signalReadyForNextTurn } = useGameFlowController();
 
   // --- Server-synced timer state ---
   const [actionTimer, setActionTimer] = useState<{
@@ -193,6 +197,16 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
     deck: Card[],
     stages?: GameStageProps[]
   ) => {
+    // Only clear player action notifications when stage ACTUALLY CHANGES (advances)
+    // This ensures notifications persist during normal betting within the same stage
+    const currentStage = stateRef.current.stage;
+    const isStageAdvancing = stage > currentStage;
+
+    if (isStageAdvancing && stage > 0) { // Clear only for actual stage advancement (Flop, Turn, River, Showdown)
+      console.log('[UpdateStageState] Stage advancing from', currentStage, 'to', stage, '- Clearing all player notifications');
+      clearAllPlayerNotifications();
+    }
+
     // Always update deck and game stages immediately
     setDeck(deck);
     if (stages) setGameStages(stages);
@@ -206,7 +220,7 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
       undefined,
       autoAdvanceMode
     );
-  }, [applyStageUpdate, autoAdvanceMode]);
+  }, [applyStageUpdate, autoAdvanceMode, clearAllPlayerNotifications]);
   const updateGameStatus = useCallback(
     createUpdateGameStatus(setLocked, setWinner),
     []
@@ -250,23 +264,30 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Determine action message
+    // Determine action message (without player name - will show on their card)
     let actionMessage = '';
     if (chipCount === 0) {
-      actionMessage = `${currentPlayer.username} checks`;
+      actionMessage = 'Checked';
     } else if (actionType === 'bet') {
-      actionMessage = `${currentPlayer.username} bets $${chipCount}`;
+      actionMessage = `Bet $${chipCount}`;
     } else if (actionType === 'raise') {
-      actionMessage = `${currentPlayer.username} raises to $${chipCount}`;
+      actionMessage = `Raised to $${chipCount}`;
     } else if (actionType === 'call') {
-      actionMessage = `${currentPlayer.username} calls`;
+      actionMessage = 'Called';
     }
 
-    // Show notification immediately (optimistically)
-    showNotification({
+    // Show notification on player card immediately (optimistically)
+    showPlayerNotification({
+      playerId: user.id,
       message: actionMessage,
-      type: 'action',
-      duration: 5000,
+      timestamp: Date.now(),
+      onComplete: () => {
+        // Signal ready for next turn after notification completes (2 seconds)
+        console.log('[PlaceBet] Optimistic notification complete - signaling ready for next turn');
+        if (gameId) {
+          signalReadyForNextTurn(gameId);
+        }
+      },
     });
 
     // Optimistically update pot, playerBets, and player chips IMMEDIATELY on acting client
@@ -325,7 +346,7 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
       setPendingAction(null);
       console.error('Error placing bet:', error);
     }
-  }, [placeBetOriginal, isActionProcessing, user, currentBet, players, showNotification, setPot, setPlayerBets, setPlayers]);
+  }, [placeBetOriginal, isActionProcessing, user, currentBet, players, showPlayerNotification, setPot, setPlayerBets, setPlayers, gameId, signalReadyForNextTurn]);
 
   // Wrap fold to set processing state
   const foldOriginal = useCallback(createFoldAction(gameId), [gameId]);
@@ -339,11 +360,18 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Show notification immediately (optimistically)
-    showNotification({
-      message: `${currentPlayer.username} folds`,
-      type: 'action',
-      duration: 5000,
+    // Show notification on player card immediately (optimistically)
+    showPlayerNotification({
+      playerId: user.id,
+      message: 'Folded',
+      timestamp: Date.now(),
+      onComplete: () => {
+        // Signal ready for next turn after notification completes (2 seconds)
+        console.log('[Fold] Optimistic notification complete - signaling ready for next turn');
+        if (gameId) {
+          signalReadyForNextTurn(gameId);
+        }
+      },
     });
 
     // Execute fold action immediately (not waiting for notification)
@@ -365,7 +393,7 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
       setPendingAction(null);
       console.error('Error folding:', error);
     }
-  }, [foldOriginal, isActionProcessing, user, players, showNotification]);
+  }, [foldOriginal, isActionProcessing, user, players, showPlayerNotification, gameId, signalReadyForNextTurn]);
   const leaveGame = useCallback(
     createLeaveGameAction(gameId, resetGameState, setAvailableGames, socket),
     [gameId, resetGameState, socket]
@@ -494,6 +522,7 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
     playSound,
     setCurrentPlayerIndex,
     showNotification,
+    clearAllPlayerNotifications,
   });
 
   // --- Memoized context values ---
@@ -597,9 +626,11 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
 export function PokerProvider({ children }: { children: ReactNode }) {
   return (
     <NotificationProvider>
-      <PokerProviderInner>
-        {children}
-      </PokerProviderInner>
+      <PlayerNotificationProvider>
+        <PokerProviderInner>
+          {children}
+        </PokerProviderInner>
+      </PlayerNotificationProvider>
     </NotificationProvider>
   );
 }

@@ -288,6 +288,21 @@ export class StageManager {
           cardsDealt: numCardsDealt,
         });
         game.markModified('actionHistory');
+
+        // Save state before emitting notification
+        await game.save();
+
+        // Emit dealing notification for visual feedback
+        if (result.stageName) {
+          await PokerSocketEmitter.emitNotification({
+            notificationType: 'cards_dealt',
+            category: 'deal',
+            stageName: result.stageName, // Include stage name for appropriate message
+          });
+
+          // Wait for dealing notification to display
+          await new Promise(resolve => setTimeout(resolve, POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS));
+        }
       }
     }
 

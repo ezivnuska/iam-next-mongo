@@ -88,7 +88,7 @@ export default function PokerTable() {
   }
 
   return (
-    <div className='flex flex-1 flex-col bg-green-700'>
+    <div className='flex flex-1 flex-col bg-black'>
         <div className='flex flex-row items-center justify-between'>
             <SoftHeader color='white' />
             {gameId && (
@@ -113,54 +113,54 @@ export default function PokerTable() {
             )}
         </div>
 
-      <div id='poker-table' className='flex flex-1 flex-col sm:flex-row gap-2 rounded-xl p-2'>
-        {/* Player slots sidebar */}
-        <div id='players' className='flex'>
-          <PlayerSlots
-            players={players}
-            locked={locked}
-            currentPlayerIndex={currentPlayerIndex}
-            currentUserId={user?.id}
-            gameId={gameId}
-            onJoinGame={() => gameId && joinGame(gameId)}
-            onLeaveGame={leaveGame}
-          />
-        </div>
-        
+        <div id='poker-table' className='flex flex-1 flex-col sm:flex-row gap-2 rounded-xl p-2 bg-green-700'>
+            {/* Player slots sidebar */}
+            <div id='players' className='flex sm:flex-3'>
+                <PlayerSlots
+                    players={players}
+                    locked={locked}
+                    currentPlayerIndex={currentPlayerIndex}
+                    currentUserId={user?.id}
+                    gameId={gameId}
+                    onJoinGame={() => gameId && joinGame(gameId)}
+                    onLeaveGame={leaveGame}
+                />
+            </div>
+            
 
-        <div className='flex flex-1 flex-col shrink-0 items-between'>
-            <div className='flex flex-col h-[60px]'>
+            <div className='flex flex-1 sm:flex-4 flex-col shrink-0 items-stretch'>
+                <div className='flex flex-1 flex-col h-[60px]'>
 
-                <div className="flex gap-2">
-                    <GameNotification />
+                    <div className="flex gap-2">
+                        <GameNotification />
+                    </div>
+
+                    {/* Game notification - always visible, not just when locked */}
+                    {showPlayerControls && (
+                        <PlayerControls onActionTaken={handleActionTaken} />
+                    )}
+                    
                 </div>
 
-                {/* Game notification - always visible, not just when locked */}
-                {showPlayerControls && (
-                    <PlayerControls onActionTaken={handleActionTaken} />
-                )}
-                
-            </div>
+                {/* Main table area */}
+                <div id='table' className='flex w-full flex-col grow items-stretch justify-between'>
 
-            {/* Main table area */}
-            <div id='table' className='flex flex-1 w-full flex-col items-stretch justify-between'>
-
-                <div className='flex flex-1 flex-full flex-col items-stretch justify-between gap-4'>
-                    {/* Center area with pot and communal cards */}
-                    {/* <div className='flex flex-1 flex-full flex-col sm:flex-row items-center gap-4'> */}
-                        <div className='flex flex-1 flex-full flex-row items-center justify-center'>
-                            <div className='flex flex-3 flex-full flex-col items-center justify-center gap-4'>
-                                <Pot />
-                                <CommunalCards />
+                    <div className='flex flex-1 flex-full flex-col items-stretch justify-between gap-4'>
+                        {/* Center area with pot and communal cards */}
+                        {/* <div className='flex flex-1 flex-full flex-col sm:flex-row items-center gap-4'> */}
+                            <div className='flex flex-1 flex-full flex-row items-center justify-center'>
+                                <div className='flex flex-3 flex-full flex-col items-center justify-center gap-4'>
+                                    <Pot />
+                                    <CommunalCards />
+                                </div>
                             </div>
-                        </div>
-                    {/* </div> */}
-                    {/* <div className='flex flex-row flex-1 items-center justify-center'>
-                    </div> */}
+                        {/* </div> */}
+                        {/* <div className='flex flex-row flex-1 items-center justify-center'>
+                        </div> */}
+                    </div>
                 </div>
             </div>
         </div>
-      </div>
     </div>
   );
 }

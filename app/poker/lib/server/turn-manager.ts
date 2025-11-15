@@ -135,14 +135,17 @@ export class TurnManager {
     console.log(`[TurnManager] Starting player index: ${startingPlayerIndex}`);
     console.log(`[TurnManager] Total action history entries: ${game.actionHistory.length}`);
 
-    // Get all actions in current stage (excluding blinds)
+    // Get all actions in current stage
+    // For preflop (stage 0), include blind posts as they count as the blind players having acted
+    // For postflop stages, exclude blinds (there are no blinds postflop anyway)
+    const isPreflop = game.stage === 0;
     const actionsInStage = game.actionHistory.filter(
-      action => action.stage === game.stage && !action.isBlind
+      action => action.stage === game.stage && (isPreflop || !action.isBlind)
     );
 
-    console.log(`[TurnManager] Actions in current stage (excluding blinds): ${actionsInStage.length}`);
+    console.log(`[TurnManager] Actions in current stage (${isPreflop ? 'including' : 'excluding'} blinds): ${actionsInStage.length}`);
     actionsInStage.forEach(action => {
-      console.log(`[TurnManager]   - ${action.playerName} (${action.playerId}): ${action.actionType}, chips: ${action.chipAmount}`);
+      console.log(`[TurnManager]   - ${action.playerName} (${action.playerId}): ${action.actionType}, chips: ${action.chipAmount}, isBlind: ${action.isBlind || false}`);
     });
 
     const playersActed = new Set(
@@ -185,6 +188,18 @@ export class TurnManager {
     const allActivePlayersActed = activePlayerIds.every(id => playersActed.has(id));
 
     console.log(`[TurnManager] All active players acted: ${allActivePlayersActed}`);
+    console.log(`[TurnManager] Active player IDs:`, activePlayerIds);
+    console.log(`[TurnManager] Players who acted IDs:`, Array.from(playersActed));
+
+    // Debug: Show which players haven't acted
+    const playersNotActed = activePlayerIds.filter(id => !playersActed.has(id));
+    if (playersNotActed.length > 0) {
+      const notActedNames = playersNotActed.map(id => {
+        const p = game.players.find(player => player.id === id);
+        return p ? p.username : 'unknown';
+      });
+      console.log(`[TurnManager] Players who haven't acted:`, playersNotActed, notActedNames);
+    }
 
     const bettingComplete = (allBetsEqual && allActivePlayersActed) || playersWhoCanAct.length === 0;
 

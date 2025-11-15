@@ -17,6 +17,7 @@ import { useEffect } from 'react';
 import { useSocket } from '@/app/lib/providers/socket-provider';
 import { useUser } from '@/app/lib/providers/user-provider';
 import { useNotifications } from '../providers/notification-provider';
+import { usePlayerNotifications } from '../providers/player-notification-provider';
 import { useGameFlowController } from './use-game-flow-controller';
 import { usePotSync } from './use-pot-sync';
 import { usePokerActions } from '../providers/poker-provider';
@@ -28,6 +29,7 @@ export function usePokerEventHandler(gameId: string | null) {
   const { socket } = useSocket();
   const { user } = useUser();
   const { showNotification, clearNotification } = useNotifications();
+  const { showPlayerNotification, clearAllPlayerNotifications } = usePlayerNotifications();
   const { signalReadyForNextTurn } = useGameFlowController();
   const { syncPotFromNotification, shouldSyncPot } = usePotSync();
   const { clearTimerOptimistically } = usePokerActions();
@@ -60,20 +62,28 @@ export function usePokerEventHandler(gameId: string | null) {
       const { POKER_GAME_CONFIG } = require('../config/poker-constants');
       let duration: number;
 
+      // Check if this is a player action notification
+      const playerActions = ['player_bet', 'player_raise', 'player_call', 'player_check', 'player_fold', 'player_all_in'];
+      const isPlayerAction = playerActions.includes(payload.notificationType);
+
+      // Check if this is a pre-game notification (blinds, cards dealt)
+      const isPreGameNotification = payload.notificationType === 'blind_posted' || payload.notificationType === 'cards_dealt';
+
       if (payload.notificationType === 'game_starting' && payload.countdownSeconds) {
         // Game starting with countdown (from player join)
         duration = payload.countdownSeconds * 1000;
       } else if (payload.notificationType === 'winner_determined' || payload.notificationType === 'game_tied') {
         // Winner notifications use 10 second duration
         duration = POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS; // 10 seconds
+      } else if (isPlayerAction || isPreGameNotification) {
+        // Player action and pre-game notifications use 2 second duration
+        duration = POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS; // 2 seconds
       } else {
-        // Default duration for all other notifications
-        duration = POKER_TIMERS.NOTIFICATION_DURATION_MS; // 5 seconds
+        // Default duration for all other notifications (stage changes, etc.)
+        duration = POKER_TIMERS.NOTIFICATION_DURATION_MS; // 4 seconds
       }
 
       // Determine if we need to signal server after notification completes
-      const playerActions = ['player_bet', 'player_raise', 'player_call', 'player_check', 'player_fold', 'player_all_in'];
-      const isPlayerAction = playerActions.includes(payload.notificationType);
       // IMPORTANT: Only the acting player should signal ready, not spectators/other players
       // Otherwise multiple clients would signal ready causing multiple turn advancements
       const isOwnAction = payload.playerId === user?.id;
@@ -91,9 +101,8 @@ export function usePokerEventHandler(gameId: string | null) {
 
       if (isOwnAction && isPlayerAction) {
         // This is the acting user receiving their own action notification via socket
-        // Don't show the notification (they already saw it optimistically)
-        // But still sync pot and signal ready after the delay
-        console.log('[PokerEventHandler] Received own action notification - skipping display but syncing pot and will signal ready');
+        // Skip display - notification already shown optimistically when action was taken
+        console.log('[PokerEventHandler] Received own action notification - skipping display (already shown optimistically) but syncing pot and will signal ready');
 
         // Sync pot from socket event to correct any discrepancies with optimistic update
         if (shouldSyncPot(payload.notificationType)) {
@@ -101,17 +110,25 @@ export function usePokerEventHandler(gameId: string | null) {
           syncPotFromNotification(payload);
         }
 
-        if (shouldSignal) {
-          // Set up timer to signal ready after notification duration
-          setTimeout(() => {
-            console.log('[PokerEventHandler] Own action timer complete - signaling ready for next turn');
-            signalReadyForNextTurn(gameId);
-          }, duration);
-        }
+        // Note: The optimistic notification display (shown when action was taken) handles signaling ready
+        // So we don't need to set up a timer here
       } else {
         // This is for another player's action or a non-action event
-        // Show the notification normally
-        console.log('[PokerEventHandler] *** SHOWING NOTIFICATION IMMEDIATELY ***: message=', message, 'duration=', duration);
+        console.log('[PokerEventHandler] *** SHOWING NOTIFICATION ***: message=', message, 'duration=', duration);
+
+        // Clear all player notifications before showing ANY dealing notifications
+        // This ensures player action notifications disappear before dealing (hole cards, flop, turn, river)
+        const isDealingNotification = payload.notificationType === 'cards_dealt';
+        if (isDealingNotification) {
+          console.log('[PokerEventHandler] Clearing all player notifications before showing dealing notification');
+          clearAllPlayerNotifications();
+        }
+
+        // Sync pot for blind notifications and other player actions
+        if (shouldSyncPot(payload.notificationType)) {
+          console.log('[PokerEventHandler] Syncing pot from notification:', payload.notificationType);
+          syncPotFromNotification(payload);
+        }
 
         // Determine onComplete callback based on notification type
         // Only player actions need callbacks now - winner/game_starting are purely visual
@@ -124,16 +141,28 @@ export function usePokerEventHandler(gameId: string | null) {
             signalReadyForNextTurn(gameId);
           };
         }
-        // Winner and game_starting notifications have NO callbacks - they're purely informational
-        // The server automatically handles reset/restart in a fully server-driven flow
 
-        showNotification({
-          message,
-          type,
-          duration,
-          metadata: payload,
-          onComplete: onCompleteCallback,
-        });
+        // Route player actions and blinds to player-specific notifications
+        const isBlindNotification = payload.notificationType === 'blind_posted';
+
+        if ((isPlayerAction || isBlindNotification) && payload.playerId) {
+          console.log('[PokerEventHandler] Routing to player notification for player:', payload.playerId);
+          showPlayerNotification({
+            playerId: payload.playerId,
+            message,
+            timestamp: Date.now(),
+            onComplete: onCompleteCallback,
+          });
+        } else {
+          // Non-player-action events (winner, game_starting, cards dealt, etc.) go to central notification
+          showNotification({
+            message,
+            type,
+            duration,
+            metadata: payload,
+            onComplete: onCompleteCallback,
+          });
+        }
       }
     };
 
@@ -152,5 +181,5 @@ export function usePokerEventHandler(gameId: string | null) {
       socket.off(SOCKET_EVENTS.POKER_NOTIFICATION, handlePokerNotification);
       socket.off(SOCKET_EVENTS.POKER_NOTIFICATION_CANCELED, handleNotificationCanceled);
     };
-  }, [socket, gameId, user, showNotification, clearNotification, signalReadyForNextTurn, syncPotFromNotification, shouldSyncPot, clearTimerOptimistically]);
+  }, [socket, gameId, user, showNotification, showPlayerNotification, clearNotification, signalReadyForNextTurn, syncPotFromNotification, shouldSyncPot, clearTimerOptimistically]);
 }

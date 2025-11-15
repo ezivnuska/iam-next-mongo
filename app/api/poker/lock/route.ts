@@ -8,11 +8,9 @@ import { ActionHistoryType } from '@/app/poker/lib/definitions/action-history';
 import { randomBytes } from 'crypto';
 import { PokerSocketEmitter } from '@/app/lib/utils/socket-helper';
 import { withRetry } from '@/app/lib/utils/retry';
-import { placeSmallBlind, placeBigBlind } from '@/app/poker/lib/server/blinds-manager';
 import { startActionTimer } from '@/app/poker/lib/server/poker-timer-controller';
 import { GameActionType } from '@/app/poker/lib/definitions/game-actions';
 import { POKER_TIMERS } from '@/app/poker/lib/config/poker-constants';
-import { dealPlayerCards } from '@/app/poker/lib/server/poker-dealer';
 
 export const POST = withAuth(async (request, context, session) => {
   const { gameId } = await request.json();
@@ -123,32 +121,11 @@ export const POST = withAuth(async (request, context, session) => {
           throw new Error(`Cannot start game - players do not have enough chips for blinds`);
         }
 
-        // PLACE SMALL BLIND automatically without notification
-        const smallBlindInfo = placeSmallBlind(game);
-        console.log(`[Game Lock] Small blind posted by ${smallBlindInfo.player.username}: ${smallBlindInfo.amount} chips`);
+        // PACED PRE-GAME FLOW WITH NOTIFICATIONS
+        const { executePreGameSequence } = await import('@/app/poker/lib/server/game-lock-manager');
+        await executePreGameSequence(game, POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS);
 
-        // PLACE BIG BLIND automatically without notification
-        const bigBlindInfo = placeBigBlind(game);
-        console.log(`[Game Lock] Big blind posted by ${bigBlindInfo.player.username}: ${bigBlindInfo.amount} chips`);
-
-        // DEAL HOLE CARDS automatically after blinds (no notification)
-        dealPlayerCards(game.deck, game.players, 2);
-        game.markModified('deck');
-        game.markModified('players');
-
-        // Add action history for dealing hole cards
-        game.actionHistory.push({
-          id: randomBytes(8).toString('hex'),
-          timestamp: new Date(),
-          stage: 0, // Preflop
-          actionType: ActionHistoryType.CARDS_DEALT,
-          cardsDealt: 2,
-        });
-        game.markModified('actionHistory');
-
-        console.log(`[Game Lock] Hole cards dealt to all players`);
-
-        await game.save();
+        console.log(`[Game Lock] Pre-game sequence complete - blinds posted and cards dealt`);
 
         // Emit game locked event to all clients with blinds and cards already dealt
         await PokerSocketEmitter.emitGameLocked({
@@ -323,30 +300,11 @@ export async function lockGameInternal(gameId: string) {
         throw new Error(`Cannot start game - players do not have enough chips for blinds`);
       }
 
-      // Place blinds
-      const smallBlindInfo = placeSmallBlind(game);
-      console.log(`[lockGameInternal] Small blind posted by ${smallBlindInfo.player.username}`);
+      // PACED PRE-GAME FLOW WITH NOTIFICATIONS (consistent with first game)
+      const { executePreGameSequence } = await import('@/app/poker/lib/server/game-lock-manager');
+      await executePreGameSequence(game, POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS);
 
-      const bigBlindInfo = placeBigBlind(game);
-      console.log(`[lockGameInternal] Big blind posted by ${bigBlindInfo.player.username}`);
-
-      // Deal cards
-      dealPlayerCards(game.deck, game.players, 2);
-      game.markModified('deck');
-      game.markModified('players');
-
-      game.actionHistory.push({
-        id: randomBytes(8).toString('hex'),
-        timestamp: new Date(),
-        stage: 0,
-        actionType: ActionHistoryType.CARDS_DEALT,
-        cardsDealt: 2,
-      });
-      game.markModified('actionHistory');
-
-      console.log(`[lockGameInternal] Hole cards dealt to all players`);
-
-      await game.save();
+      console.log(`[lockGameInternal] Pre-game sequence complete - blinds posted and cards dealt`);
 
       // Emit game locked event
       await PokerSocketEmitter.emitGameLocked({
