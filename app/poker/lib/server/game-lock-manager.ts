@@ -48,10 +48,8 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
         gameToLock.stage = 0; // Preflop
         gameToLock.playerBets = initializeBets(gameToLock.players.length);
 
-        // Set currentPlayerIndex to small blind position (border will show during entire locked phase)
         const buttonPosition = gameToLock.dealerButtonPosition || 0;
         const isHeadsUp = gameToLock.players.length === 2;
-        gameToLock.currentPlayerIndex = isHeadsUp ? buttonPosition : (buttonPosition + 1) % gameToLock.players.length;
 
         // Initialize dealer button position if not set (first hand starts at position 0)
         if (gameToLock.dealerButtonPosition === undefined) {
@@ -124,8 +122,8 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
           console.log(`[Auto Lock] Big blind player will go all-in: ${bigBlindPlayerChips}/${bigBlind} chips`);
         }
 
-        // Calculate initial current player index (before blinds/cards)
-        // This is just for UI display - step system will manage actual turn flow
+        // Calculate initial current player index for first-to-act
+        // Betting cycle will use this to determine who acts first
         const initialPosition = gameToLock.players.length === 2
           ? buttonPosition  // Heads-up: button (small blind) acts first preflop
           : (bigBlindPos + 1) % gameToLock.players.length;  // 3+: player after big blind (UTG)

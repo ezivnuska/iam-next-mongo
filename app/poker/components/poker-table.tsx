@@ -115,29 +115,29 @@ export default function PokerTable() {
     <div className='flex flex-1 flex-col bg-black'>
         <div className='flex flex-row items-center justify-between'>
             <SoftHeader color='white' />
-            {gameId && (
-                <div className='flex flex-row items-center px-2 gap-2'>
+            <div className='flex flex-row items-center px-2 gap-2'>
+                {gameId && (
                     <Button
                         onClick={resetSingleton}
                         // variant='outline'
                         size='sm'
                         className='bg-red-600 hover:bg-red-700 text-white'
                     >
-                        Reset Game
+                        Reset
                     </Button>
-                    {!locked && (
-                        <>
-                            {userGameInfo.isUserInGame
-                                ? <Button size='sm' onClick={leaveGame} className='text-sm'>Leave</Button>
-                                : <Button size='sm' onClick={() => joinGame(gameId)} className='text-sm'>Join</Button>
-                            }
-                        </>
-                    )}
+                )}
+                {!locked && (
+                    <>
+                        {userGameInfo.isUserInGame
+                            ? <Button size='sm' onClick={leaveGame} className='text-sm'>Leave</Button>
+                            : <Button size='sm' onClick={() => joinGame(gameId)} className='text-sm'>Join</Button>
+                        }
+                    </>
+                )}
                 </div>
-            )}
         </div>
 
-        <div id='poker-table' className='flex flex-1 flex-col sm:flex-row gap-2 rounded-tl-full bg-green-700'>
+        <div id='poker-table' className='flex flex-1 flex-col sm:flex-row gap-2 rounded-tl-full bg-green-700 p-2'>
             {/* Player slots sidebar */}
             <div id='players' className='flex sm:flex-3'>
                 <PlayerSlots
@@ -151,7 +151,6 @@ export default function PokerTable() {
                 />
             </div>
             
-
             <div className='flex flex-1 sm:flex-4 flex-col shrink-0 items-stretch'>
                 <div className='flex flex-1 flex-col h-[60px]'>
 

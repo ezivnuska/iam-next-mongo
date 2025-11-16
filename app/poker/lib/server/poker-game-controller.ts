@@ -364,6 +364,7 @@ export async function removePlayer(
       game.lockTime = undefined;
       game.winner = undefined;
       game.pot = [];
+      game.pots = [];
       game.stage = 0;
       game.currentPlayerIndex = 0;
       game.playerBets = [];
@@ -917,6 +918,7 @@ export async function fold(gameId: string, playerId: string, timerTriggered = fa
 
       // Clear pot and end game
       game.pot = [];
+      game.pots = [];
       game.locked = false;
 
       // Save all players' chip balances

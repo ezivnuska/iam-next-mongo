@@ -73,6 +73,7 @@ export async function resetSingletonGame(gameId: string) {
   game.deck = initializeDeck();
   game.communalCards = [];
   game.pot = [];
+  game.pots = [];
   game.players = [];
   game.stage = Number(GameStage.Preflop);
   game.locked = false;

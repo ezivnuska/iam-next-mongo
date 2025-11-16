@@ -546,6 +546,13 @@ export class StageManager {
 
     game.winner = winnerInfo;
     awardPotToWinners(game, winnerInfo);
+    game.markModified('players'); // Mark players array as modified so Mongoose saves chip count changes
+
+    // Clear pot after distribution
+    game.pot = [];
+    game.pots = [];
+    game.markModified('pot');
+    game.markModified('pots');
 
     // Save player balances
     await savePlayerBalances(game.players);
@@ -677,6 +684,7 @@ export class StageManager {
       gameToReset.currentPlayerIndex = 0;
       gameToReset.actionHistory = [];
       gameToReset.pot = [];
+      gameToReset.pots = [];
       gameToReset.deck = initializeDeck(); // Fresh shuffled deck
       gameToReset.stages = [];
       gameToReset.lockTime = undefined;

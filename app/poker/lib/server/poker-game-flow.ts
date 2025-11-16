@@ -73,6 +73,7 @@ export function awardPotToWinners(game: PokerGameDoc, winnerInfo: WinnerInfo): v
   // Store calculated pots in game for client display
   game.pots = sidePots;
   game.markModified('pots');
+  game.markModified('players'); // Mark players as modified since we'll update chipCount
 
   console.log(`[AwardPot] Calculated ${sidePots.length} pot(s) from cumulative bets`);
 

@@ -21,23 +21,31 @@ export function formatNotificationMessage(payload: PokerNotificationPayload): st
   switch (payload.notificationType) {
     case 'player_bet':
       return payload.chipAmount === 0
-        ? `${payload.playerName} checked`
-        : `${payload.playerName} bet $${payload.chipAmount}`;
+        ? `Checked`
+        : `Bet $${payload.chipAmount}`;
+    //   return payload.chipAmount === 0
+    //     ? `${payload.playerName} checked`
+    //     : `${payload.playerName} bet $${payload.chipAmount}`;
 
     case 'player_raise':
-      return `${payload.playerName} raised to $${payload.chipAmount}`;
+      return `Raised to $${payload.chipAmount}`;
+    //   return `${payload.playerName} raised to $${payload.chipAmount}`;
 
     case 'player_call':
-      return `${payload.playerName} called`;
+      return `Called`;
+    //   return `${payload.playerName} called`;
 
     case 'player_check':
-      return `${payload.playerName} checked`;
+      return `Checked`;
+    //   return `${payload.playerName} checked`;
 
     case 'player_fold':
-      return `${payload.playerName} folded`;
+      return `Folded`;
+    //   return `${payload.playerName} folded`;
 
     case 'player_all_in':
-      return `${payload.playerName} went all-in!`;
+      return `All-in!`;
+    //   return `${payload.playerName} went all-in!`;
 
     case 'player_thinking':
       return `Thinking...`;
@@ -88,7 +96,8 @@ export function formatNotificationMessage(payload: PokerNotificationPayload): st
       }
 
     case 'player_joined':
-      return `${payload.playerName} joined`;
+      return `Joined`;
+    //   return `${payload.playerName} joined`;
 
     default:
       console.warn('[NotificationFormatter] Unknown notification type:', payload.notificationType);

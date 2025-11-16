@@ -22,6 +22,7 @@ import {
   type GameStep
 } from './step-definitions';
 import { queueCardsDealtNotification } from './notification-queue-manager';
+import { POKER_TIMERS } from '../config/poker-constants';
 
 /**
  * Initialize step tracking for a new game
@@ -279,10 +280,6 @@ async function executePostSmallBlind(gameId: string): Promise<number> {
 
   const smallBlindInfo = placeSmallBlind(game);
 
-  // Update currentPlayerIndex to show small blind player
-  game.currentPlayerIndex = smallBlindInfo.position;
-  game.markModified('currentPlayerIndex');
-
   await game.save();
 
   // Emit notification
@@ -295,11 +292,8 @@ async function executePostSmallBlind(gameId: string): Promise<number> {
     blindType: 'small',
     pot: JSON.parse(JSON.stringify(game.pot)),
     playerBets: [...game.playerBets],
-    currentPlayerIndex: game.currentPlayerIndex,
+    currentPlayerIndex: -1, // No active player during blind posting
   });
-
-  // Emit state update so UI shows border on small blind player
-  await PokerSocketEmitter.emitStateUpdate(game.toObject());
 
   // Mark requirements as complete
   await completeRequirement(gameId, RequirementType.BLINDS_POSTED);
@@ -322,10 +316,6 @@ async function executePostBigBlind(gameId: string): Promise<number> {
 
   const bigBlindInfo = placeBigBlind(game);
 
-  // Update currentPlayerIndex to show big blind player
-  game.currentPlayerIndex = bigBlindInfo.position;
-  game.markModified('currentPlayerIndex');
-
   await game.save();
 
   // Emit notification
@@ -338,11 +328,8 @@ async function executePostBigBlind(gameId: string): Promise<number> {
     blindType: 'big',
     pot: JSON.parse(JSON.stringify(game.pot)),
     playerBets: [...game.playerBets],
-    currentPlayerIndex: game.currentPlayerIndex,
+    currentPlayerIndex: -1, // No active player during blind posting
   });
-
-  // Emit state update so UI shows border on big blind player
-  await PokerSocketEmitter.emitStateUpdate(game.toObject());
 
   // Mark requirements as complete
   await completeRequirement(gameId, RequirementType.BLINDS_POSTED);
@@ -403,7 +390,7 @@ async function executeDealHoleCards(gameId: string): Promise<number> {
 
   console.log('[StepManager] Hole cards dealt');
 
-  return 0; // Queue manager handles notification timing
+  return POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS;
 }
 
 /**
@@ -439,7 +426,7 @@ async function executeDealFlop(gameId: string): Promise<number> {
 
   console.log('[StepManager] Flop dealt (3 cards)');
 
-  return 0; // Queue manager handles notification timing
+  return POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS;
 }
 
 /**
@@ -474,7 +461,7 @@ async function executeDealTurn(gameId: string): Promise<number> {
 
   console.log('[StepManager] Turn dealt (1 card)');
 
-  return 0; // Queue manager handles notification timing
+  return POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS;
 }
 
 /**
@@ -509,7 +496,7 @@ async function executeDealRiver(gameId: string): Promise<number> {
 
   console.log('[StepManager] River dealt (1 card)');
 
-  return 0; // Queue manager handles notification timing
+  return POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS;
 }
 
 /**
@@ -661,6 +648,7 @@ async function executeResetGame(gameId: string): Promise<number> {
   game.winner = undefined;
   game.communalCards = [];
   game.pot = [];
+  game.pots = [];
   game.playerBets = [];
   game.players.forEach((p: any) => {
     p.hand = [];

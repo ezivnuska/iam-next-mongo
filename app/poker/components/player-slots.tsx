@@ -9,6 +9,7 @@ import type { Player as PlayerType } from '@/app/poker/lib/definitions/poker';
 import { useUser } from '@/app/lib/providers/user-provider';
 import UserAvatar from '@/app/ui/user/user-avatar';
 import { useGameState } from '@/app/poker/lib/providers/poker-provider';
+import PlayerCircle from './player-circle';
 
 interface PlayerSlotsProps {
   players: PlayerType[];
@@ -94,7 +95,7 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
           // Show actual player wrapped in <li>
           return (
             <li key={player.id} className='flex'>
-              <Player
+              <PlayerCircle
                 player={player}
                 index={slotIndex}
                 currentPlayerIndex={currentPlayerIndex}
