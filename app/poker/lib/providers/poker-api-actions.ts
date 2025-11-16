@@ -174,66 +174,6 @@ export const createDeleteGameAction = (
   };
 };
 
-export const createStartTimerAction = (gameId: string | null) => {
-  return async () => {
-    if (!gameId) return;
-    try {
-      await fetch('/api/poker/timer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameId, action: 'start' }),
-      });
-    } catch (error) {
-      console.error('Error starting timer:', error);
-    }
-  };
-};
-
-export const createPauseTimerAction = (gameId: string | null) => {
-  return async () => {
-    if (!gameId) return;
-    try {
-      await fetch('/api/poker/timer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameId, action: 'pause' }),
-      });
-    } catch (error) {
-      console.error('Error pausing timer:', error);
-    }
-  };
-};
-
-export const createResumeTimerAction = (gameId: string | null) => {
-  return async () => {
-    if (!gameId) return;
-    try {
-      await fetch('/api/poker/timer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameId, action: 'resume' }),
-      });
-    } catch (error) {
-      console.error('Error resuming timer:', error);
-    }
-  };
-};
-
-export const createClearTimerAction = (gameId: string | null) => {
-  return async () => {
-    if (!gameId) return;
-    try {
-      await fetch('/api/poker/timer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameId, action: 'clear' }),
-      });
-    } catch (error) {
-      console.error('Error clearing timer:', error);
-    }
-  };
-};
-
 export const createSetTurnTimerAction = (gameId: string | null) => {
   return async (timerAction: 'fold' | 'call' | 'check' | 'bet' | 'raise', betAmount?: number) => {
     if (!gameId) return;
@@ -241,7 +181,7 @@ export const createSetTurnTimerAction = (gameId: string | null) => {
       await fetch('/api/poker/timer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameId, action: 'set-action', timerAction, betAmount }),
+        body: JSON.stringify({ gameId, timerAction, betAmount }),
       });
     } catch (error) {
       console.error('Error setting turn timer action:', error);

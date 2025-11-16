@@ -64,10 +64,6 @@ export interface ActionsContextValue {
   leaveGame: () => Promise<void>;
   deleteGameFromLobby: (gameId: string) => Promise<void>;
   fetchCurrentGame: () => void;
-  startTimer: () => Promise<void>;
-  pauseTimer: () => Promise<void>;
-  resumeTimer: () => Promise<void>;
-  clearTimer: () => Promise<void>;
   resetSingleton: () => Promise<void>;
   setTurnTimerAction: (action: 'fold' | 'call' | 'check' | 'bet' | 'raise', betAmount?: number) => Promise<void>;
   clearTimerOptimistically: () => void;

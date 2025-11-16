@@ -37,10 +37,6 @@ import {
   createFoldAction,
   createLeaveGameAction,
   createDeleteGameAction,
-  createStartTimerAction,
-  createPauseTimerAction,
-  createResumeTimerAction,
-  createClearTimerAction,
   createSetTurnTimerAction,
   createResetSingletonAction,
   initializeGames,
@@ -407,10 +403,6 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
     createDeleteGameAction(setAvailableGames),
     []
   );
-  const startTimer = useCallback(createStartTimerAction(gameId), [gameId]);
-  const pauseTimer = useCallback(createPauseTimerAction(gameId), [gameId]);
-  const resumeTimer = useCallback(createResumeTimerAction(gameId), [gameId]);
-  const clearTimer = useCallback(createClearTimerAction(gameId), [gameId]);
   const setTurnTimerAction = useCallback(createSetTurnTimerAction(gameId), [gameId]);
   const resetSingleton = useCallback(
     createResetSingletonAction(gameId, updateGameState),
@@ -435,36 +427,8 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Check for expired timers when actionTimer changes or on mount
-  useEffect(() => {
-    if (!actionTimer || !gameId || actionTimer.isPaused) return;
-
-    // Calculate if timer has expired
-    const startTime = new Date(actionTimer.startTime).getTime();
-    const elapsed = (Date.now() - startTime) / 1000;
-    const remaining = actionTimer.duration - elapsed;
-
-    console.log('[PokerProvider] Timer check:', { elapsed, remaining, duration: actionTimer.duration });
-
-    // If timer has expired, call the check API to execute the action
-    if (remaining <= 0) {
-      console.log('[PokerProvider] Timer expired, calling check API');
-      const checkExpiredTimer = async () => {
-        try {
-          const response = await fetch('/api/poker/timer/check', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ gameId }),
-          });
-          const data = await response.json();
-          console.log('[PokerProvider] Timer check API response:', data);
-        } catch (error) {
-          console.error('[PokerProvider] Error checking expired timer:', error);
-        }
-      };
-      checkExpiredTimer();
-    }
-  }, [actionTimer, gameId]);
+  // Timer expiration is now fully handled server-side via setTimeout in poker-timer-controller
+  // No client-side fallback needed - server executes action when timer expires
 
   useEffect(() => {
     // Clear winner when returning to preflop stage (game reset)
@@ -592,10 +556,6 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
     leaveGame,
     deleteGameFromLobby,
     fetchCurrentGame,
-    startTimer,
-    pauseTimer,
-    resumeTimer,
-    clearTimer,
     setTurnTimerAction,
     resetSingleton,
     clearTimerOptimistically,
@@ -608,7 +568,7 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
     setCommunalCards,
     setLocked,
     setWinner,
-  }), [joinGame, placeBet, fold, leaveGame, deleteGameFromLobby, startTimer, pauseTimer, resumeTimer, clearTimer, setTurnTimerAction, resetSingleton, clearTimerOptimistically, playSound, setPot, setPlayerBets, setPlayers, setCurrentPlayerIndex, setCommunalCards, setLocked, setWinner]);
+  }), [joinGame, placeBet, fold, leaveGame, deleteGameFromLobby, setTurnTimerAction, resetSingleton, clearTimerOptimistically, playSound, setPot, setPlayerBets, setPlayers, setCurrentPlayerIndex, setCommunalCards, setLocked, setWinner]);
 
   const processingValue = useMemo(() => ({
     isActionProcessing,

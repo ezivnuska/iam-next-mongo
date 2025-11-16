@@ -80,7 +80,5 @@ export {
   createFoldAction,
   createLeaveGameAction,
   createDeleteGameAction,
-  createPauseTimerAction,
-  createResumeTimerAction,
   initializeGames,
 } from './poker-api-actions';
