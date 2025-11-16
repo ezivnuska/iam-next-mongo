@@ -147,6 +147,24 @@ export function usePokerEventHandler(gameId: string | null) {
           // Player actions and blinds: Show on player card
           console.log('[PokerEventHandler] Showing player notification for:', payload.playerId);
 
+          // Play appropriate sound for this action
+          if (isBlindNotification) {
+            // Blinds are automatic - always play sound regardless of who posted
+            playSound('chips');
+          } else if (!isOwnAction || payload.timerTriggered) {
+            // For player actions, skip if it's own action (already played optimistically)
+            if (payload.notificationType === 'player_fold') {
+              playSound('fold');
+            } else if (payload.notificationType === 'player_check') {
+              // No sound for check
+            } else if (payload.notificationType === 'player_call' ||
+                       payload.notificationType === 'player_bet' ||
+                       payload.notificationType === 'player_raise' ||
+                       payload.notificationType === 'player_all_in') {
+              playSound('chips'); // All betting actions = chips sound
+            }
+          }
+
           showPlayerNotification({
             playerId: payload.playerId,
             message,
@@ -155,6 +173,12 @@ export function usePokerEventHandler(gameId: string | null) {
           }, playSound);
         } else {
           // Winner, game_starting, cards dealt: Show as central notification
+
+          // Play winner sound
+          if (isWinnerNotification) {
+            playSound('winner');
+          }
+
           const onComplete = isWinnerNotification ? () => {
             console.log('[PokerEventHandler] Winner notification complete - clearing player action notifications');
             clearAllPlayerNotifications();

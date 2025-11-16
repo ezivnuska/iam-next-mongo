@@ -85,18 +85,8 @@ export const createStateUpdateHandler = (deps: SocketHandlerDeps) => {
         // Check if second-to-last action was a fold (last is usually GAME_ENDED)
         const secondLastAction = actionHistory.length > 1 ? actionHistory[actionHistory.length - 2] : null;
 
-        if (secondLastAction?.actionType === 'PLAYER_FOLD') {
-          // Only play sound if this fold was NOT from the current user
-          const isActingPlayer = deps.userId && secondLastAction.playerId === deps.userId;
-          if (!isActingPlayer) {
-            deps.playSound('fold');
-          } else {
-            console.log('[StateUpdateHandler] Skipping fold sound for acting player (already played optimistically)');
-          }
-        }
-
-        // NOTE: Winner sounds are now played when the winner notification is displayed
-        // This ensures sounds play at the same time as the visual notification
+        // NOTE: Sounds are now handled centrally by notification system (use-poker-event-handler.ts)
+        // This prevents duplicate sounds and ensures consistent timing
       }
     }
 
@@ -178,18 +168,7 @@ export const createPlayerLeftHandler = (
     // Update action history if provided
     if (payload.actionHistory) {
       setActionHistory(payload.actionHistory);
-
-      // Play fold sound if the last action was a fold
-      const lastAction = payload.actionHistory[payload.actionHistory.length - 1];
-      if (lastAction?.actionType === 'PLAYER_FOLD' && playSound) {
-        // Only play sound if this fold was NOT from the current user
-        const isActingPlayer = userId && lastAction.playerId === userId;
-        if (!isActingPlayer) {
-          playSound('fold');
-        } else {
-          console.log('[PlayerLeftHandler] Skipping fold sound for acting player (already played optimistically)');
-        }
-      }
+      // NOTE: Sounds handled by notification system
     }
 
     // If game was reset (all players left), reset game status
@@ -254,38 +233,10 @@ export const createBetPlacedHandler = (
       updatePlayers(payload.players);
     }
 
-    // Update action history and play sound
+    // Update action history
     if (payload.actionHistory && payload.actionHistory.length > 0) {
       setActionHistory(payload.actionHistory);
-
-      // Find the most recent PLAYER_BET action
-      const lastBetAction = [...payload.actionHistory]
-        .reverse()
-        .find((action: any) => action.actionType === 'PLAYER_BET');
-
-      if (lastBetAction) {
-        // Only play sound if this action was NOT from the current user
-        // (acting player already heard the sound optimistically)
-        const isActingPlayer = userId && lastBetAction.playerId === userId;
-
-        if (!isActingPlayer) {
-          // chipAmount might be 0, so we check for null/undefined specifically
-          const chipAmount = lastBetAction.chipAmount;
-
-          if (chipAmount !== undefined && chipAmount !== null) {
-            // Simple sound logic:
-            // - 0 chips = check
-            // - Any chips = call/raise sound
-            if (chipAmount === 0) {
-              playSound('check');
-            } else {
-              playSound('call');
-            }
-          }
-        } else {
-          console.log('[BetPlacedHandler] Skipping sound for acting player (already played optimistically)');
-        }
-      }
+      // NOTE: Sounds handled by notification system
     }
 
     // Clear action processing state (bet/call/raise actions trigger this event)
@@ -377,8 +328,7 @@ export const createRoundCompleteHandler = (
     setWinner(payload.winner);
     updatePlayers(payload.players);
 
-    // NOTE: Winner sounds are now played when the winner notification is displayed
-    // This ensures sounds play at the same time as the visual notification
+    // NOTE: Sounds handled by notification system
 
     // Game restart flow is now fully server-driven:
     // 1. Server emits round_complete with winner (10s notification)
@@ -387,9 +337,6 @@ export const createRoundCompleteHandler = (
     // 4. Server auto-locks game after AUTO_LOCK_DELAY_MS
     // 5. Server emits game_locked event
     // All timing and state transitions handled server-side to avoid client-side fetch calls
-
-    // NOTE: Winner sounds are now played when the winner notification is displayed
-    // This ensures sounds play at the same time as the visual notification
   };
 };
 
