@@ -90,7 +90,7 @@ return (
                     />
                 )} */}
             </div>
-            {(isCurrentUser || isWinner) && player.hand.length > 0 && <Hand cards={player.hand} />}
+            {(isCurrentUser || isWinner) && player.hand.length > 0 && <Hand cards={player.hand} hidden={false} />}
             
             {!locked && isUserInGame && (
                 <Button

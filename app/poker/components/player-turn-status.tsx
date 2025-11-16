@@ -3,15 +3,11 @@
 'use client';
 
 import { useActionTimerPercentage } from '@/app/poker/lib/hooks/use-action-timer-percentage';
+import type { SerializedActionTimer } from '@/app/poker/lib/definitions/poker';
 
 interface PlayerTurnStatusProps {
   playerName: string;
-  actionTimer?: {
-    startTime: string;
-    duration: number;
-    targetPlayerId?: string;
-    isPaused: boolean;
-  };
+  actionTimer?: SerializedActionTimer;
 }
 
 /**

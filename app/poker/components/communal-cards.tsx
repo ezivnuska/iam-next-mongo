@@ -22,7 +22,7 @@ return (
                 className='absolute'
                 style={{ left: `${index * 36}px`, zIndex: index }}
             >
-                <Card key={`${card.id}-${index}`} index={index} card={card} size='md' />
+                <Card key={`${card.id}-${index}`} index={index} card={card} size='md' hidden={false} />
             </div>
         ))}
     </div>

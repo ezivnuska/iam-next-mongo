@@ -101,11 +101,11 @@ export async function executePreGameSequence(game: any, delayMs: number): Promis
   await PokerSocketEmitter.emitCardsDealt({
     stage: game.stage,
     communalCards: game.communalCards,
-    players: game.players.map(p => ({
+    players: game.players.map((p: any) => ({
       ...p.toObject(),
       hand: p.hand, // Include hole cards in player data
     })),
-    deck: game.deck,
+    deckCount: game.deck.length,
     currentPlayerIndex: game.currentPlayerIndex,
   });
 

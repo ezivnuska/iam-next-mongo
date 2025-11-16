@@ -3,7 +3,7 @@
 import type { Player, Bet } from '@/app/poker/lib/definitions/poker';
 import type { PokerGameDocument } from '@/app/poker/lib/models/poker-game';
 import { initializeBets } from '@/app/poker/lib/utils/betting-helpers';
-import { getPlayerChipCount, shouldGoAllIn, getMaxBetAmount } from '@/app/poker/lib/utils/side-pot-calculator';
+import { getPlayerChipCount } from '@/app/poker/lib/utils/side-pot-calculator';
 
 /**
  * Initialize player bets array if not properly set

@@ -30,7 +30,7 @@ export function usePokerEventHandler(gameId: string | null) {
   const { showNotification, clearNotification } = useNotifications();
   const { showPlayerNotification, clearAllPlayerNotifications } = usePlayerNotifications();
   const { syncPotFromNotification, shouldSyncPot } = usePotSync();
-  const { clearTimerOptimistically, playSound, setCommunalCards, setPlayers, setWinner } = usePokerActions();
+  const { clearTimerOptimistically, playSound, setCommunalCards, setPlayers } = usePokerActions();
 
   useEffect(() => {
     if (!socket || !gameId) {
@@ -134,7 +134,7 @@ export function usePokerEventHandler(gameId: string | null) {
           console.log('[PokerEventHandler] Processing game reset from game_starting notification');
           syncPotFromNotification(payload); // Clear pot and playerBets
           setCommunalCards([]); // Clear communal cards
-          setWinner(undefined); // Clear winner
+          // Winner state will be reset through server state updates
           // Clear player hands by mapping current players to empty hands
           setPlayers((prev: any[]) => prev.map((p: any) => ({ ...p, hand: [], folded: false, isAllIn: false })));
         }
@@ -186,5 +186,5 @@ export function usePokerEventHandler(gameId: string | null) {
       socket.off(SOCKET_EVENTS.POKER_NOTIFICATION, handlePokerNotification);
       socket.off(SOCKET_EVENTS.POKER_NOTIFICATION_CANCELED, handleNotificationCanceled);
     };
-  }, [socket, gameId, user, showNotification, showPlayerNotification, clearNotification, syncPotFromNotification, shouldSyncPot, clearTimerOptimistically, clearAllPlayerNotifications, playSound, setCommunalCards, setPlayers, setWinner]);
+  }, [socket, gameId, user, showNotification, showPlayerNotification, clearNotification, syncPotFromNotification, shouldSyncPot, clearTimerOptimistically, clearAllPlayerNotifications, playSound, setCommunalCards, setPlayers]);
 }

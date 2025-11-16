@@ -551,7 +551,7 @@ export class StageManager {
     await savePlayerBalances(game.players);
 
     // Clear currentPlayerIndex to remove white border (round is complete, no more turns)
-    game.currentPlayerIndex = undefined;
+    game.currentPlayerIndex = -1;
     game.markModified('currentPlayerIndex');
 
     // Add action history for game end (for UI display only, not notifications)
@@ -761,7 +761,7 @@ export class StageManager {
 
       // Automatically lock and start the game using internal function (bypasses auth)
       const gameId = String(gameToReset._id);
-      const { lockGameInternal } = await import('@/app/api/poker/lock/route');
+      const { lockGameInternal } = await import('./lock-game-internal');
 
       await lockGameInternal(gameId);
       console.log('[StageManager] ✅ Game auto-locked and started successfully');
