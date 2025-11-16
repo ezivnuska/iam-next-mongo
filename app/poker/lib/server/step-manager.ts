@@ -341,6 +341,54 @@ async function executePostBigBlind(gameId: string): Promise<number> {
 }
 
 /**
+ * Helper function to calculate the first player to act for current betting round
+ * Works for both pre-flop and post-flop stages
+ * Skips folded and all-in players to find first active player
+ */
+function calculateFirstToActForBettingRound(game: any): number {
+  const buttonPosition = game.dealerButtonPosition || 0;
+  const isHeadsUp = game.players.length === 2;
+
+  let firstToAct: number;
+
+  if (game.stage === 0) {
+    // Pre-flop: First to act is different
+    // Heads-up: Small blind (button) acts first
+    // 3+: UTG (player after big blind) acts first
+    const bigBlindPos = isHeadsUp
+      ? (buttonPosition + 1) % game.players.length
+      : (buttonPosition + 2) % game.players.length;
+
+    firstToAct = isHeadsUp
+      ? buttonPosition  // Heads-up: button (SB) acts first
+      : (bigBlindPos + 1) % game.players.length;  // 3+: UTG (after BB)
+  } else {
+    // Post-flop: Small blind acts first (or first active player after SB)
+    const smallBlindPos = isHeadsUp
+      ? buttonPosition
+      : (buttonPosition + 1) % game.players.length;
+
+    firstToAct = smallBlindPos;
+  }
+
+  // Find first active player starting from firstToAct position
+  // Skip any players who are folded or all-in
+  let attempts = 0;
+  let currentIndex = firstToAct;
+
+  while (attempts < game.players.length) {
+    const candidate = game.players[currentIndex];
+    if (!candidate.isAllIn && !candidate.folded) {
+      break; // Found an active player
+    }
+    currentIndex = (currentIndex + 1) % game.players.length;
+    attempts++;
+  }
+
+  return currentIndex;
+}
+
+/**
  * Execute deal hole cards step
  */
 async function executeDealHoleCards(gameId: string): Promise<number> {
@@ -406,6 +454,12 @@ async function executeDealFlop(gameId: string): Promise<number> {
   dealCommunalCards(game.deck, game.communalCards, 3);
   game.markModified('deck');
   game.markModified('communalCards');
+
+  // Calculate and set first player to act BEFORE emitting cards dealt
+  // This ensures the correct player is highlighted during the dealing animation
+  game.currentPlayerIndex = calculateFirstToActForBettingRound(game);
+  game.markModified('currentPlayerIndex');
+
   await game.save();
 
   // Queue notification
@@ -417,14 +471,14 @@ async function executeDealFlop(gameId: string): Promise<number> {
     communalCards: game.communalCards,
     players: game.players,
     deckCount: game.deck.length,
-    currentPlayerIndex: game.currentPlayerIndex,
+    currentPlayerIndex: game.currentPlayerIndex, // Now correctly points to first-to-act player
   });
 
   // Mark requirements
   await completeRequirement(gameId, RequirementType.CARDS_DEALT);
   await completeRequirement(gameId, RequirementType.NOTIFICATION_COMPLETE);
 
-  console.log('[StepManager] Flop dealt (3 cards)');
+  console.log(`[StepManager] Flop dealt (3 cards) - first to act: player ${game.currentPlayerIndex}`);
 
   return POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS;
 }
@@ -442,6 +496,12 @@ async function executeDealTurn(gameId: string): Promise<number> {
   dealCommunalCards(game.deck, game.communalCards, 1);
   game.markModified('deck');
   game.markModified('communalCards');
+
+  // Calculate and set first player to act BEFORE emitting cards dealt
+  // This ensures the correct player is highlighted during the dealing animation
+  game.currentPlayerIndex = calculateFirstToActForBettingRound(game);
+  game.markModified('currentPlayerIndex');
+
   await game.save();
 
   // Queue notification
@@ -453,13 +513,13 @@ async function executeDealTurn(gameId: string): Promise<number> {
     communalCards: game.communalCards,
     players: game.players,
     deckCount: game.deck.length,
-    currentPlayerIndex: game.currentPlayerIndex,
+    currentPlayerIndex: game.currentPlayerIndex, // Now correctly points to first-to-act player
   });
 
   await completeRequirement(gameId, RequirementType.CARDS_DEALT);
   await completeRequirement(gameId, RequirementType.NOTIFICATION_COMPLETE);
 
-  console.log('[StepManager] Turn dealt (1 card)');
+  console.log(`[StepManager] Turn dealt (1 card) - first to act: player ${game.currentPlayerIndex}`);
 
   return POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS;
 }
@@ -477,6 +537,12 @@ async function executeDealRiver(gameId: string): Promise<number> {
   dealCommunalCards(game.deck, game.communalCards, 1);
   game.markModified('deck');
   game.markModified('communalCards');
+
+  // Calculate and set first player to act BEFORE emitting cards dealt
+  // This ensures the correct player is highlighted during the dealing animation
+  game.currentPlayerIndex = calculateFirstToActForBettingRound(game);
+  game.markModified('currentPlayerIndex');
+
   await game.save();
 
   // Queue notification
@@ -488,13 +554,13 @@ async function executeDealRiver(gameId: string): Promise<number> {
     communalCards: game.communalCards,
     players: game.players,
     deckCount: game.deck.length,
-    currentPlayerIndex: game.currentPlayerIndex,
+    currentPlayerIndex: game.currentPlayerIndex, // Now correctly points to first-to-act player
   });
 
   await completeRequirement(gameId, RequirementType.CARDS_DEALT);
   await completeRequirement(gameId, RequirementType.NOTIFICATION_COMPLETE);
 
-  console.log('[StepManager] River dealt (1 card)');
+  console.log(`[StepManager] River dealt (1 card) - first to act: player ${game.currentPlayerIndex}`);
 
   return POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS;
 }
@@ -516,45 +582,9 @@ async function executeBettingCycle(gameId: string): Promise<number> {
     console.log(`[StepManager] Reset playerBets for stage ${game.stage} betting cycle`);
   }
 
-  // Calculate first player to act based on stage and player count
-  const buttonPosition = game.dealerButtonPosition || 0;
-  const isHeadsUp = game.players.length === 2;
-
-  let firstToAct: number;
-
-  if (game.stage === 0) {
-    // Pre-flop: First to act is different
-    // Heads-up: Small blind (button) acts first
-    // 3+: UTG (player after big blind) acts first
-    const bigBlindPos = isHeadsUp
-      ? (buttonPosition + 1) % game.players.length
-      : (buttonPosition + 2) % game.players.length;
-
-    firstToAct = isHeadsUp
-      ? buttonPosition  // Heads-up: button (SB) acts first
-      : (bigBlindPos + 1) % game.players.length;  // 3+: UTG (after BB)
-  } else {
-    // Post-flop: Small blind acts first (or first active player after SB)
-    const smallBlindPos = isHeadsUp
-      ? buttonPosition
-      : (buttonPosition + 1) % game.players.length;
-
-    firstToAct = smallBlindPos;
-  }
-
-  // Find first active player starting from firstToAct position
-  // Skip any players who are folded or all-in
-  let attempts = 0;
-  let currentIndex = firstToAct;
-
-  while (attempts < game.players.length) {
-    const candidate = game.players[currentIndex];
-    if (!candidate.isAllIn && !candidate.folded) {
-      break; // Found an active player
-    }
-    currentIndex = (currentIndex + 1) % game.players.length;
-    attempts++;
-  }
+  // Calculate first player to act using shared helper function
+  // This ensures consistency with dealing steps
+  const currentIndex = calculateFirstToActForBettingRound(game);
 
   // Update currentPlayerIndex to first player to act
   game.currentPlayerIndex = currentIndex;
