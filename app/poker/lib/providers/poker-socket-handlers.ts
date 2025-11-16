@@ -193,12 +193,11 @@ export const createGameLockedHandler = (
     // This ensures stage advancement is detected and sounds play correctly
     // setStage(payload.stage);
 
-    // Update betting state with blinds if present
-    if (payload.pot !== undefined && payload.playerBets !== undefined) {
-      updateBettingState(payload.pot, payload.playerBets, payload.currentPlayerIndex || 0);
-    }
+    // NOTE: pot and playerBets are no longer included in game locked event
+    // They're synced via blind_posted notifications and state updates from step flow
+    // This prevents race condition where empty betting state overwrites blinds
 
-    // Update action history with blind bets if present
+    // Update action history if present
     if (payload.actionHistory !== undefined) {
       setActionHistory(payload.actionHistory);
     }
@@ -340,6 +339,15 @@ export const createRoundCompleteHandler = (
   };
 };
 
+export const createDealerButtonMovedHandler = (
+  setDealerButtonPosition: (position: number) => void
+) => {
+  return (payload: { dealerButtonPosition: number }) => {
+    console.log('[DealerButtonMovedHandler] Dealer button moved to position:', payload.dealerButtonPosition);
+    setDealerButtonPosition(payload.dealerButtonPosition);
+  };
+};
+
 export const createTimerStartedHandler = (
   setActionTimer: React.Dispatch<React.SetStateAction<any>>
 ) => {
@@ -404,6 +412,7 @@ export const registerSocketHandlers = (
     handleBetPlaced: (payload: any) => void;
     handleCardsDealt: (payload: any) => void;
     handleRoundComplete: (payload: any) => void;
+    handleDealerButtonMoved: (payload: any) => void;
     handleTimerStarted: (payload: any) => void;
     handleTimerPaused: (payload: any) => void;
     handleTimerResumed: (payload: any) => void;
@@ -422,6 +431,7 @@ export const registerSocketHandlers = (
   socket.on(SOCKET_EVENTS.POKER_BET_PLACED, handlers.handleBetPlaced);
   socket.on(SOCKET_EVENTS.POKER_CARDS_DEALT, handlers.handleCardsDealt);
   socket.on(SOCKET_EVENTS.POKER_ROUND_COMPLETE, handlers.handleRoundComplete);
+  socket.on(SOCKET_EVENTS.POKER_DEALER_BUTTON_MOVED, handlers.handleDealerButtonMoved);
   socket.on(SOCKET_EVENTS.POKER_ACTION_TIMER_STARTED, handlers.handleTimerStarted);
   socket.on(SOCKET_EVENTS.POKER_ACTION_TIMER_PAUSED, handlers.handleTimerPaused);
   socket.on(SOCKET_EVENTS.POKER_ACTION_TIMER_RESUMED, handlers.handleTimerResumed);
@@ -439,6 +449,7 @@ export const registerSocketHandlers = (
     socket.off(SOCKET_EVENTS.POKER_BET_PLACED, handlers.handleBetPlaced);
     socket.off(SOCKET_EVENTS.POKER_CARDS_DEALT, handlers.handleCardsDealt);
     socket.off(SOCKET_EVENTS.POKER_ROUND_COMPLETE, handlers.handleRoundComplete);
+    socket.off(SOCKET_EVENTS.POKER_DEALER_BUTTON_MOVED, handlers.handleDealerButtonMoved);
     socket.off(SOCKET_EVENTS.POKER_ACTION_TIMER_STARTED, handlers.handleTimerStarted);
     socket.off(SOCKET_EVENTS.POKER_ACTION_TIMER_PAUSED, handlers.handleTimerPaused);
     socket.off(SOCKET_EVENTS.POKER_ACTION_TIMER_RESUMED, handlers.handleTimerResumed);

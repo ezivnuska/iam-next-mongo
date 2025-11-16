@@ -141,6 +141,15 @@ export class PokerSocketEmitter {
   }
 
   /**
+   * Emit dealer button moved event (granular update)
+   */
+  static async emitDealerButtonMoved(payload: {
+    dealerButtonPosition: number;
+  }) {
+    await emitViaAPI(SOCKET_EVENTS.POKER_DEALER_BUTTON_MOVED, payload);
+  }
+
+  /**
    * Emit action timer started event
    */
   static async emitTimerStarted(payload: {

@@ -15,6 +15,8 @@
 export {
   initializeDeck,
   dealPlayerCards,
+  dealCommunalCards,
+  dealCommunalCardsByStage,
   collectAllCards,
   reshuffleAllCards,
   ensureCommunalCardsComplete,
@@ -24,7 +26,7 @@ export {
 export {
   savePlayerBalances,
   awardPotToWinners,
-  dealCommunalCards,
+  dealCommunalCards as dealCommunalCardsWithStageUpdate,
   resetBettingRound,
 } from './poker-game-flow';
 
@@ -45,6 +47,5 @@ export {
   removePlayer,
   placeBet,
   fold,
-  restart,
   deleteGame,
 } from './poker-game-controller';

@@ -4,35 +4,6 @@ import type { PokerStateUpdatePayload } from '@/app/lib/socket/events';
 
 // ============= API Action Functions =============
 
-export const createRestartAction = (
-  gameId: string | null,
-  updateGameState: (state: PokerStateUpdatePayload) => void
-) => {
-  return async () => {
-    if (!gameId) return;
-    try {
-      const response = await fetch('/api/poker/restart', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameId }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.gameState) {
-          // Immediately update local state with response
-          // This ensures the client who initiated restart sees updates immediately
-          updateGameState(data.gameState);
-        }
-      } else {
-        console.error('Failed to restart game');
-      }
-    } catch (error) {
-      console.error('Error restarting game:', error);
-    }
-  };
-};
-
 export const fetchCurrentGame = async () => {
   try {
     const response = await fetch('/api/poker/current');
@@ -274,22 +245,6 @@ export const createSetTurnTimerAction = (gameId: string | null) => {
       });
     } catch (error) {
       console.error('Error setting turn timer action:', error);
-    }
-  };
-};
-
-export const createForceLockGameAction = (gameId: string | null) => {
-  return async () => {
-    if (!gameId) return;
-    try {
-      const response = await fetch('/api/poker/lock', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameId }),
-      });
-      if (!response.ok) console.error('Failed to force lock game');
-    } catch (error) {
-      console.error('Error force locking game:', error);
     }
   };
 };

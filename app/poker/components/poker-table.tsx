@@ -17,7 +17,7 @@ import { Button } from '@/app/ui/button';
 
 export default function PokerTable() {
   const { players } = usePlayers();
-  const { stage, locked, currentPlayerIndex, winner, isLoading } = useGameState();
+  const { stage, locked, currentPlayerIndex, winner, isLoading, canPlayerAct } = useGameState();
   const { gameId } = useViewers();
   const { joinGame, leaveGame, resetSingleton } = usePokerActions();
   const { user } = useUser();
@@ -42,15 +42,15 @@ export default function PokerTable() {
     };
   }, [players, user?.id, currentPlayerIndex]);
 
-  // Reset actionTriggered when it becomes the user's turn (new turn started)
-  // This only triggers on FALSE→TRUE transition (when turn advances TO the user)
+  // Reset actionTriggered when player can act (new turn started AND notifications complete)
+  // This only triggers on FALSE→TRUE transition (when turn advances TO the user AND notifications complete)
   useEffect(() => {
-    if (userGameInfo.isUserTurn && !prevIsUserTurnRef.current) {
-      console.log('[PokerTable] User turn started - resetting actionTriggered');
+    if (canPlayerAct && !prevIsUserTurnRef.current) {
+      console.log('[PokerTable] Player can act - resetting actionTriggered');
       setActionTriggered(false);
     }
-    prevIsUserTurnRef.current = userGameInfo.isUserTurn;
-  }, [userGameInfo.isUserTurn]);
+    prevIsUserTurnRef.current = canPlayerAct;
+  }, [canPlayerAct]);
 
   // Reset actionTriggered when stage changes (new betting round)
   useEffect(() => {
@@ -81,8 +81,9 @@ export default function PokerTable() {
   }, [socket, user?.id]);
 
   // Determine if player controls should be shown
+  // Only show when it's player's turn AND all notifications have completed
   const showPlayerControls = locked &&
-    userGameInfo.isUserTurn &&
+    canPlayerAct &&
     !actionTriggered &&
     !winner &&
     stage < 4; // Hide controls during Showdown (stage 4) and End (stage 5)
@@ -92,12 +93,12 @@ export default function PokerTable() {
     console.log('[PokerTable] Player controls visibility:', {
       showPlayerControls,
       locked,
-      isUserTurn: userGameInfo.isUserTurn,
+      canPlayerAct,
       actionTriggered,
       winner: !!winner,
       stage,
     });
-  }, [showPlayerControls, locked, userGameInfo.isUserTurn, actionTriggered, winner, stage]);
+  }, [showPlayerControls, locked, canPlayerAct, actionTriggered, winner, stage]);
 
   // Callback to notify when action is taken (called immediately on button click)
   const handleActionTaken = () => {

@@ -17,6 +17,7 @@ import {
   createBetPlacedHandler,
   createCardsDealtHandler,
   createRoundCompleteHandler,
+  createDealerButtonMovedHandler,
   createTimerStartedHandler,
   createTimerPausedHandler,
   createTimerResumedHandler,
@@ -49,6 +50,7 @@ export interface PokerSocketEffectsDeps {
   setAutoAdvanceMode: (mode: boolean) => void;
   playSound: (sound: PokerSoundType) => void;
   setCurrentPlayerIndex: (index: number) => void;
+  setDealerButtonPosition: (position: number) => void;
   showNotification?: (notification: { message: string; type: NotificationType; duration: number; onComplete?: () => void; metadata?: any }) => void;
   clearAllPlayerNotifications?: () => void;
 }
@@ -105,6 +107,7 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
     setAutoAdvanceMode,
     playSound,
     setCurrentPlayerIndex,
+    setDealerButtonPosition,
     showNotification,
     clearAllPlayerNotifications,
   } = deps;
@@ -148,6 +151,7 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
 
     const handleCardsDealt = createCardsDealtHandler(updaters.updateStageState, updaters.updatePlayers, playSound, setCurrentPlayerIndex);
     const handleRoundComplete = createRoundCompleteHandler(setWinner, updaters.updatePlayers, playSound, showNotification, gameId);
+    const handleDealerButtonMoved = createDealerButtonMovedHandler(setDealerButtonPosition);
     const handleTimerStarted = createTimerStartedHandler(setActionTimer);
     const handleTimerPaused = createTimerPausedHandler(setActionTimer);
     const handleTimerResumed = createTimerResumedHandler(setActionTimer);
@@ -168,6 +172,7 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
         handleBetPlaced,
         handleCardsDealt,
         handleRoundComplete,
+        handleDealerButtonMoved,
         handleTimerStarted,
         handleTimerPaused,
         handleTimerResumed,
@@ -193,5 +198,6 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
     setPendingAction,
     playSound,
     setCurrentPlayerIndex,
+    setDealerButtonPosition,
   ]);
 }

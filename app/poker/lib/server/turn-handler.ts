@@ -14,22 +14,39 @@ import { GameStage } from '../definitions/poker';
 export async function handleReadyForNextTurn(gameId: string): Promise<void> {
   console.log('[TurnHandler] Processing ready_for_next_turn for game:', gameId);
 
-  // Fetch the game
-  const game = await PokerGame.findById(gameId);
-  if (!game) {
-    console.error('[TurnHandler] Game not found:', gameId);
-    throw new Error('Game not found');
-  }
-
-  // Check if game is being processed by another operation (e.g., server-driven reset)
-  if (game.processing) {
-    console.log('[TurnHandler] Game is being processed by another operation - skipping ready_for_next_turn');
+  // Acquire game lock to prevent concurrent turn advancements
+  const { acquireGameLock } = await import('./game-lock-utils');
+  let game;
+  try {
+    game = await acquireGameLock(gameId);
+  } catch (error: any) {
+    // If lock acquisition fails, another operation is processing the game
+    console.log('[TurnHandler] Could not acquire lock - game is being processed:', error.message);
     return;
   }
 
   // Ignore ready signal if game is not locked (not in active play)
   if (!game.locked) {
     console.log('[TurnHandler] Game is not locked - skipping ready_for_next_turn');
+    game.processing = false;
+    await game.save();
+    return;
+  }
+
+  // Check for early completion first (all folded except one, or all-in situation)
+  const { checkEarlyCompletion, completeRequirement } = await import('./step-manager');
+  const { RequirementType } = await import('./step-definitions');
+  const earlyCompletion = await checkEarlyCompletion(gameId);
+
+  if (earlyCompletion) {
+    console.log('[TurnHandler] Early completion detected - all players folded/all-in except one');
+    game.processing = false;
+    await game.save();
+
+    // Signal step orchestrator to skip to winner
+    await completeRequirement(gameId, RequirementType.ALL_PLAYERS_ACTED);
+    const { onBettingCycleComplete } = await import('./step-orchestrator');
+    await onBettingCycleComplete(gameId);
     return;
   }
 
@@ -45,9 +62,26 @@ export async function handleReadyForNextTurn(gameId: string): Promise<void> {
   });
 
   if (roundState.bettingComplete) {
-    // Round is complete - advance stage or end game
-    console.log('[TurnHandler] Betting round complete - determining next action');
+    // Round is complete - wait briefly to ensure last action notification completes
+    // This prevents the deal notification from overlapping with the final action notification
+    console.log('[TurnHandler] Betting round complete - waiting for last notification to complete before stage advancement');
 
+    // Release lock before signaling orchestrator (orchestrator will acquire its own locks as needed)
+    game.processing = false;
+    await game.save();
+
+    // Add a small buffer delay to ensure the last action notification has fully completed
+    // This gives clients time to process and display the notification before stage advances
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // *** NEW STEP-BASED FLOW ***
+    // Signal the step orchestrator that betting cycle is complete
+    const { onBettingCycleComplete, onPlayerAction } = await import('./step-orchestrator');
+    await onBettingCycleComplete(gameId);
+    console.log('[TurnHandler] Step orchestrator signaled - will handle stage advancement');
+    return; // Step orchestrator handles all advancement logic now
+
+    // OLD CODE BELOW (kept for reference but unreachable)
     StageManager.completeStage(game);
     const nextAction = StageManager.getNextAction(game);
     console.log('[TurnHandler] Next action:', nextAction);
@@ -144,6 +178,8 @@ export async function handleReadyForNextTurn(gameId: string): Promise<void> {
     const { advanceToNextPlayer } = await import('./bet-processor');
     advanceToNextPlayer(game, previousPlayerIndex);
 
+    // Release lock and save
+    game.processing = false;
     try {
       await game.save();
     } catch (error: any) {

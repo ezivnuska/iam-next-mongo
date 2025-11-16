@@ -112,25 +112,45 @@ async function executeAIAction(gameId: string): Promise<void> {
     // Check if AI is still current player (game might have advanced)
     if (currentPlayer.folded || currentPlayer.isAllIn) return;
 
-    // Timer already started in checkAndExecuteAITurn
-    // Now the AI makes its decision immediately
+    // Emit "thinking" notification to show AI is processing
+    const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
+    await PokerSocketEmitter.emitNotification({
+      notificationType: 'player_thinking',
+      category: 'action',
+      playerId: currentPlayer.id,
+      playerName: currentPlayer.username,
+      isAI: true,
+    });
+
+    console.log(`[AI Manager] ${currentPlayer.username} is thinking...`);
+
+    // Wait for thinking notification to display before making decision
+    const { POKER_TIMERS } = await import('../config/poker-constants');
+    await new Promise(resolve => setTimeout(resolve, POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS));
+
+    // Re-fetch game to ensure we have latest state after delay
+    const freshGame = await PokerGame.findById(gameId);
+    if (!freshGame || !freshGame.locked) {
+      console.log('[AI Manager] Game state changed during thinking delay - aborting action');
+      return;
+    }
 
     // Calculate current game state
-    const potSize = getPotTotal(game.pot);
-    const playerBet = game.playerBets[game.currentPlayerIndex] || 0;
+    const potSize = getPotTotal(freshGame.pot);
+    const playerBet = freshGame.playerBets[freshGame.currentPlayerIndex] || 0;
 
     // Find the highest bet to determine currentBet
-    const maxBet = Math.max(...game.playerBets);
+    const maxBet = Math.max(...freshGame.playerBets);
     const currentBet = maxBet - playerBet;
 
     // Get AI decision
     const decision = makeAIDecision(
       currentPlayer,
-      game.communalCards,
+      freshGame.communalCards,
       currentBet,
       potSize,
       playerBet,
-      game.stage,
+      freshGame.stage,
       AI_PLAYER_CONFIG.DEFAULT_AGGRESSION
     );
 

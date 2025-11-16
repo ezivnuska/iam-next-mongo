@@ -28,14 +28,27 @@ export function dealPlayerCards(deck: Card[], players: Player[], cardsPerPlayer:
 }
 
 /**
- * Deal communal cards based on current stage
+ * Deal a specific number of communal cards
+ * Used by step-based system
+ */
+export function dealCommunalCards(
+  deck: Card[],
+  communalCards: Card[],
+  numCards: number
+): void {
+  // Deal cards from deck to communal cards
+  communalCards.push(...deck.splice(0, numCards));
+}
+
+/**
+ * Deal communal cards based on current stage (legacy)
  * - Preflop → Flop: Deal 3 cards
  * - Flop → Turn: Deal 1 card
  * - Turn → River: Deal 1 card
  *
  * Returns the number of cards dealt and stage name
  */
-export function dealCommunalCards(
+export function dealCommunalCardsByStage(
   deck: Card[],
   communalCards: Card[],
   currentStage: GameStage

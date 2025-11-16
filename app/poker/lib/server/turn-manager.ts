@@ -120,8 +120,14 @@ export class TurnManager {
         return (buttonPosition + 3) % playerCount;
       }
     } else {
-      // Postflop: Small blind (first player after button) acts first
-      return (buttonPosition + 1) % playerCount;
+      // Postflop: Small blind acts first
+      if (isHeadsUp) {
+        // Heads-up postflop: Button (small blind) acts first
+        return buttonPosition;
+      } else {
+        // 3+ players postflop: First player after button (small blind) acts first
+        return (buttonPosition + 1) % playerCount;
+      }
     }
   }
 
@@ -135,27 +141,27 @@ export class TurnManager {
     console.log(`[TurnManager] Starting player index: ${startingPlayerIndex}`);
     console.log(`[TurnManager] Total action history entries: ${game.actionHistory.length}`);
 
-    // Get all actions in current stage
-    // For preflop (stage 0), include blind posts as they count as the blind players having acted
-    // For postflop stages, exclude blinds (there are no blinds postflop anyway)
-    const isPreflop = game.stage === 0;
-    const actionsInStage = game.actionHistory.filter(
-      action => action.stage === game.stage && (isPreflop || !action.isBlind)
+    // Get all VOLUNTARY actions in current stage
+    // IMPORTANT: Blinds are FORCED bets, not voluntary actions
+    // For betting completion, only count voluntary actions (bet/call/raise/check/fold)
+    // This ensures the big blind player gets "option" after action comes back to them
+    const voluntaryActions = game.actionHistory.filter(
+      action => action.stage === game.stage && !action.isBlind
     );
 
-    console.log(`[TurnManager] Actions in current stage (${isPreflop ? 'including' : 'excluding'} blinds): ${actionsInStage.length}`);
-    actionsInStage.forEach(action => {
-      console.log(`[TurnManager]   - ${action.playerName} (${action.playerId}): ${action.actionType}, chips: ${action.chipAmount}, isBlind: ${action.isBlind || false}`);
+    console.log(`[TurnManager] Voluntary actions in current stage: ${voluntaryActions.length}`);
+    voluntaryActions.forEach(action => {
+      console.log(`[TurnManager]   - ${action.playerName} (${action.playerId}): ${action.actionType}, chips: ${action.chipAmount}`);
     });
 
     const playersActed = new Set(
-      actionsInStage
+      voluntaryActions
         .map(action => action.playerId)
         .filter((id): id is string => id !== undefined)
     );
 
     const playerActions = new Map();
-    actionsInStage.forEach(action => {
+    voluntaryActions.forEach(action => {
       if (action.playerId) {
         // Store the most recent action for each player
         playerActions.set(action.playerId, this.mapActionTypeToPlayerAction(action.actionType));

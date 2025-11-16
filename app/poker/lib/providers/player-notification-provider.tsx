@@ -10,6 +10,8 @@ export interface PlayerNotification {
   message: string;
   timestamp: number;
   isBlind?: boolean; // Flag to identify blind notifications for sound effects
+  duration?: number; // Auto-clear after duration (ms) - optional
+  onComplete?: () => void; // Callback when timer completes - optional
 }
 
 interface PlayerNotificationContextType {
@@ -24,28 +26,74 @@ const PlayerNotificationContext = createContext<PlayerNotificationContextType | 
 
 export function PlayerNotificationProvider({ children }: { children: ReactNode }) {
   const [activeNotifications, setActiveNotifications] = useState<Map<string, PlayerNotification>>(new Map());
+  const timersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   // Show a notification for a specific player
   const showPlayerNotification = useCallback((notification: PlayerNotification, playSound?: (sound: PokerSoundType) => void) => {
-    const { playerId } = notification;
+    const { playerId, duration, onComplete } = notification;
 
-    console.log('[PlayerNotificationProvider] Showing notification for player:', playerId, notification.message);
+    console.log('[PlayerNotificationProvider] Showing notification for player:', playerId, notification.message, {
+      hasDuration: !!duration,
+      hasOnComplete: !!onComplete,
+    });
 
     // Sound effects removed - player actions are silent in notification provider
     // Individual sounds are handled by:
     // - Optimistic feedback in player-controls.tsx for user's own actions
     // - Socket handlers in poker-socket-handlers.ts for other players' actions
 
-    // Set notification (persists until cleared by stage advance)
+    // Clear any existing timer for this player
+    const existingTimer = timersRef.current.get(playerId);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+      timersRef.current.delete(playerId);
+    }
+
+    // Set notification (persists until cleared by stage advance or timer)
     setActiveNotifications(prev => {
       const next = new Map(prev);
       next.set(playerId, notification);
       return next;
     });
+
+    // If duration is specified, auto-clear after duration
+    if (duration) {
+      const timer = setTimeout(() => {
+        console.log('[PlayerNotificationProvider] Auto-clearing notification for player:', playerId);
+
+        // Execute onComplete callback if present
+        if (onComplete) {
+          console.log('[PlayerNotificationProvider] Executing onComplete callback for:', playerId);
+          try {
+            onComplete();
+          } catch (error) {
+            console.error('[PlayerNotificationProvider] onComplete callback error:', error);
+          }
+        }
+
+        // Clear notification
+        setActiveNotifications(prev => {
+          const next = new Map(prev);
+          next.delete(playerId);
+          return next;
+        });
+
+        timersRef.current.delete(playerId);
+      }, duration);
+
+      timersRef.current.set(playerId, timer);
+    }
   }, []);
 
   // Clear notification for a specific player
   const clearPlayerNotification = useCallback((playerId: string) => {
+    // Clear timer if exists
+    const timer = timersRef.current.get(playerId);
+    if (timer) {
+      clearTimeout(timer);
+      timersRef.current.delete(playerId);
+    }
+
     setActiveNotifications(prev => {
       const next = new Map(prev);
       next.delete(playerId);
@@ -56,6 +104,11 @@ export function PlayerNotificationProvider({ children }: { children: ReactNode }
   // Clear all player notifications (called on stage advance)
   const clearAllPlayerNotifications = useCallback(() => {
     console.log('[PlayerNotificationProvider] Clearing all player notifications');
+
+    // Clear all timers
+    timersRef.current.forEach(timer => clearTimeout(timer));
+    timersRef.current.clear();
+
     setActiveNotifications(new Map());
   }, []);
 
@@ -63,6 +116,14 @@ export function PlayerNotificationProvider({ children }: { children: ReactNode }
   const getPlayerNotification = useCallback((playerId: string) => {
     return activeNotifications.get(playerId);
   }, [activeNotifications]);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      timersRef.current.forEach(timer => clearTimeout(timer));
+      timersRef.current.clear();
+    };
+  }, []);
 
   const value = {
     activeNotifications,

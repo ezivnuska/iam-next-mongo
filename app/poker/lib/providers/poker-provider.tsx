@@ -31,7 +31,6 @@ import {
 } from './poker-state-updaters';
 
 import {
-  createRestartAction,
   fetchCurrentGame,
   createJoinGameAction,
   createPlaceBetAction,
@@ -43,7 +42,6 @@ import {
   createResumeTimerAction,
   createClearTimerAction,
   createSetTurnTimerAction,
-  createForceLockGameAction,
   createResetSingletonAction,
   initializeGames,
 } from './poker-api-actions';
@@ -62,6 +60,7 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
   const { socket } = useSocket();
   const { user } = useUser();
   const { playSound, initSounds } = usePokerSounds();
+  const { isActionNotificationActive } = useNotifications();
 
   // --- Game state (synced from server) ---
   const [gameId, setGameId] = useState<string | null>(null);
@@ -119,6 +118,22 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
   const currentBet = useMemo(() => {
     return calculateCurrentBet(playerBets, currentPlayerIndex, players);
   }, [playerBets, currentPlayerIndex, players]);
+
+  // Determine if the current user can act (it's their turn AND notifications are complete)
+  const canPlayerAct = useMemo(() => {
+    if (!user) return false;
+    const currentPlayer = players[currentPlayerIndex];
+    const isCurrentPlayer = currentPlayer?.id === user.id;
+    const notificationsActive = isActionNotificationActive();
+
+    // In Pre-Flop (stage 0), player must have hole cards dealt before they can act
+    if (stage === 0) {
+      const hasCards = currentPlayer?.hand && currentPlayer.hand.length > 0;
+      return isCurrentPlayer && !notificationsActive && hasCards;
+    }
+
+    return isCurrentPlayer && !notificationsActive;
+  }, [user, players, currentPlayerIndex, isActionNotificationActive, stage]);
 
   // Refs to access current state in socket handlers without re-subscribing
   const stateRef = useRef({
@@ -248,10 +263,6 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
   );
 
   // --- Create API actions ---
-  const restart = useCallback(
-    createRestartAction(gameId, updateGameState),
-    [gameId, updateGameState]
-  );
   const joinGame = useCallback(
     createJoinGameAction(setGameId, socket, user?.username || user?.email),
     [socket, user]
@@ -401,7 +412,6 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
   const resumeTimer = useCallback(createResumeTimerAction(gameId), [gameId]);
   const clearTimer = useCallback(createClearTimerAction(gameId), [gameId]);
   const setTurnTimerAction = useCallback(createSetTurnTimerAction(gameId), [gameId]);
-  const forceLockGame = useCallback(createForceLockGameAction(gameId), [gameId]);
   const resetSingleton = useCallback(
     createResetSingletonAction(gameId, updateGameState),
     [gameId, updateGameState]
@@ -520,6 +530,7 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
     setAutoAdvanceMode,
     playSound,
     setCurrentPlayerIndex,
+    setDealerButtonPosition,
     showNotification,
     clearAllPlayerNotifications,
   });
@@ -541,7 +552,8 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
     isLoading,
     selectedAction,
     setSelectedAction,
-  }), [stage, gameStages, locked, currentPlayerIndex, dealerButtonPosition, currentBet, playerBets, communalCards, deck, winner, actionTimer, actionHistory, isLoading, selectedAction]);
+    canPlayerAct,
+  }), [stage, gameStages, locked, currentPlayerIndex, dealerButtonPosition, currentBet, playerBets, communalCards, deck, winner, actionTimer, actionHistory, isLoading, selectedAction, canPlayerAct]);
 
   const potValue = useMemo(() => {
     // Calculate total pot value
@@ -575,7 +587,6 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
 
   const actionsValue = useMemo(() => ({
     joinGame,
-    restart,
     placeBet,
     fold,
     leaveGame,
@@ -586,7 +597,6 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
     resumeTimer,
     clearTimer,
     setTurnTimerAction,
-    forceLockGame,
     resetSingleton,
     clearTimerOptimistically,
     playSound,
@@ -598,7 +608,7 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
     setCommunalCards,
     setLocked,
     setWinner,
-  }), [joinGame, restart, placeBet, fold, leaveGame, deleteGameFromLobby, startTimer, pauseTimer, resumeTimer, clearTimer, setTurnTimerAction, forceLockGame, resetSingleton, clearTimerOptimistically, playSound, setPot, setPlayerBets, setPlayers, setCurrentPlayerIndex, setCommunalCards, setLocked, setWinner]);
+  }), [joinGame, placeBet, fold, leaveGame, deleteGameFromLobby, startTimer, pauseTimer, resumeTimer, clearTimer, setTurnTimerAction, resetSingleton, clearTimerOptimistically, playSound, setPot, setPlayerBets, setPlayers, setCurrentPlayerIndex, setCommunalCards, setLocked, setWinner]);
 
   const processingValue = useMemo(() => ({
     isActionProcessing,

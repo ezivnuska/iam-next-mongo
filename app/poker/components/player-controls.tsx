@@ -15,7 +15,7 @@ interface PlayerControlsProps {
 
 function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
   const { players } = usePlayers();
-  const { playerBets, currentBet, actionTimer, currentPlayerIndex, stage } = useGameState();
+  const { playerBets, currentBet, actionTimer, currentPlayerIndex, stage, canPlayerAct } = useGameState();
   const { placeBet, fold, setTurnTimerAction, clearTimerOptimistically, playSound } = usePokerActions();
   const { user } = useUser();
   const { isActionProcessing, pendingAction } = useProcessing();
@@ -27,7 +27,7 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
   // Determine if player can check (no bet to match, including when currentBet is undefined)
   const canCheck = currentBet === undefined || currentBet === 0;
 
-  // Check if current user is the active player
+  // Check if current user is the active player (for getting player data)
   const isMyTurn = user && players[currentPlayerIndex]?.id === user.id;
 
   // Get current player's chip count and all-in status
@@ -179,7 +179,8 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
   // Keyboard shortcuts for bet amount
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (!isMyTurn || isActionProcessing) return;
+      // Only allow keyboard input when player can actually act (turn + notifications complete)
+      if (!canPlayerAct || isActionProcessing) return;
 
       const minBet = hasBetToCall ? Math.min(currentBet, playerChipCount) : 0;
 
@@ -196,7 +197,7 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [isMyTurn, isActionProcessing, playerChipCount, hasBetToCall, currentBet, betAmount]);
+  }, [canPlayerAct, isActionProcessing, playerChipCount, hasBetToCall, currentBet, betAmount]);
 
   const handleAllIn = async () => {
     // Notify parent immediately that action was taken

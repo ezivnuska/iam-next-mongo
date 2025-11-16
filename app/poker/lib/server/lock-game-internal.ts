@@ -110,42 +110,29 @@ export async function lockGameInternal(gameId: string) {
         throw new Error(`Cannot start game - players do not have enough chips for blinds`);
       }
 
-      // PACED PRE-GAME FLOW WITH NOTIFICATIONS (consistent with first game)
-      const { executePreGameSequence } = await import('@/app/poker/lib/server/game-lock-manager');
-      await executePreGameSequence(game, POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS);
-
-      console.log(`[lockGameInternal] Pre-game sequence complete - blinds posted and cards dealt`);
-
       // Emit game locked event
+      // NOTE: pot and playerBets are intentionally omitted here as they're empty at lock time.
+      // Blinds will be posted via step flow and synced via blind notifications + state updates.
       await PokerSocketEmitter.emitGameLocked({
         locked: true,
         stage: game.stage,
         players: game.players,
         currentPlayerIndex: game.currentPlayerIndex,
         lockTime: undefined,
-        pot: game.pot,
-        playerBets: game.playerBets,
         actionHistory: game.actionHistory,
       });
 
-      // Start action timer
-      const currentPlayer = game.players[game.currentPlayerIndex];
-      if (currentPlayer) {
-        await startActionTimer(
-          gameId,
-          POKER_TIMERS.ACTION_DURATION_SECONDS,
-          GameActionType.PLAYER_BET,
-          currentPlayer.id
-        );
+      console.log(`[lockGameInternal] Game locked - starting step-based flow`);
 
-        if (currentPlayer.isAI) {
-          console.log('[lockGameInternal] Timer started for AI player - triggering action');
-          const { executeAIActionIfReady } = await import('@/app/poker/lib/server/ai-player-manager');
-          executeAIActionIfReady(gameId).catch(error => {
-            console.error('[lockGameInternal] AI action failed:', error);
-          });
-        }
-      }
+      // *** USE STEP-BASED FLOW (consistent with first game) ***
+      // Start the step orchestrator which will handle the entire game flow:
+      // 1. Post small blind
+      // 2. Post big blind
+      // 3. Deal hole cards
+      // 4. Betting cycle
+      // ... and all subsequent stages
+      const { startStepFlow } = await import('./step-orchestrator');
+      await startStepFlow(gameId);
 
       console.log('[lockGameInternal] ✅ Game successfully locked and started');
 

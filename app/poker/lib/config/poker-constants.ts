@@ -15,11 +15,17 @@ export const POKER_GAME_CONFIG = {
   /** Value of each chip for display purposes */
   CHIP_VALUE: 1,
 
-  /** Delay in milliseconds before game auto-locks after 2nd player joins */
-  AUTO_LOCK_DELAY_MS: 10000,
+  /** Duration in milliseconds for player joined notification */
+  PLAYER_JOINED_NOTIFICATION_DURATION_MS: 2000,  // 2 seconds
+
+  /** Delay in milliseconds before game starts after players join (game starting notification) */
+  AUTO_LOCK_DELAY_MS: 10000,  // 10 seconds
 
   /** Delay in seconds before game auto-locks (for timer display) */
-  AUTO_LOCK_DELAY_SECONDS: 10,
+  AUTO_LOCK_DELAY_SECONDS: 10,  // 10 seconds
+
+  /** Duration in milliseconds for winner notification before resetting */
+  WINNER_NOTIFICATION_DURATION_MS: 10000,  // 10 seconds
 
   /** Minimum bet amount in chips */
   MIN_BET_AMOUNT: 1,

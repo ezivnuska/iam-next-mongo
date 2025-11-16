@@ -5,7 +5,7 @@ import type { Bet, Player, GameStageProps, WinnerInfo, PotInfo } from '@/app/pok
 import { GameStage } from '@/app/poker/lib/definitions/poker';
 import { PokerBalance } from '@/app/poker/lib/models/poker-balance';
 import { findPlayerByUsername } from '@/app/poker/lib/utils/player-helpers';
-import { dealPlayerCards, dealCommunalCards as dealCommunalCardsFromDealer, ensureCommunalCardsComplete } from './poker-dealer';
+import { dealPlayerCards, dealCommunalCardsByStage as dealCommunalCardsFromDealer, ensureCommunalCardsComplete } from './poker-dealer';
 import { ActionHistoryType, type GameActionHistory } from '@/app/poker/lib/definitions/action-history';
 import { randomBytes } from 'crypto';
 import { calculateSidePots } from '@/app/poker/lib/utils/side-pot-calculator';

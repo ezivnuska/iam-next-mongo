@@ -39,6 +39,7 @@ export interface GameStateContextValue {
   isLoading: boolean;
   selectedAction: 'bet' | 'call' | 'raise' | 'fold' | 'check' | 'allin' | null;
   setSelectedAction: (action: 'bet' | 'call' | 'raise' | 'fold' | 'check' | 'allin' | null) => void;
+  canPlayerAct: boolean; // True only when it's player's turn AND all notifications have completed
 }
 
 export interface PotContextValue {
@@ -58,7 +59,6 @@ export interface ViewersContextValue {
 
 export interface ActionsContextValue {
   joinGame: (gameId: string) => Promise<void>;
-  restart: () => Promise<void>;
   placeBet: (chipCount: number) => Promise<void>;
   fold: () => Promise<void>;
   leaveGame: () => Promise<void>;
@@ -68,7 +68,6 @@ export interface ActionsContextValue {
   pauseTimer: () => Promise<void>;
   resumeTimer: () => Promise<void>;
   clearTimer: () => Promise<void>;
-  forceLockGame: () => Promise<void>;
   resetSingleton: () => Promise<void>;
   setTurnTimerAction: (action: 'fold' | 'call' | 'check' | 'bet' | 'raise', betAmount?: number) => Promise<void>;
   clearTimerOptimistically: () => void;

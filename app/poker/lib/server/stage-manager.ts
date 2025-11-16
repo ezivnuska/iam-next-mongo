@@ -4,7 +4,7 @@ import type { PokerGameDocument } from '../models/poker-game';
 import { PokerGame } from '../models/poker-game';
 import { GameStage, StageStatus, type Player } from '../definitions/poker';
 import { POKER_TIMERS } from '../config/poker-constants';
-import { dealCommunalCards as dealCommunalCardsFromDealer, ensureCommunalCardsComplete } from './poker-dealer';
+import { dealCommunalCardsByStage as dealCommunalCardsFromDealer, ensureCommunalCardsComplete } from './poker-dealer';
 import { determineWinner } from '../utils/poker';
 import { awardPotToWinners, savePlayerBalances } from './poker-game-flow';
 import { randomBytes } from 'crypto';
@@ -638,6 +638,18 @@ export class StageManager {
     const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
     const { POKER_GAME_CONFIG } = await import('../config/poker-constants');
 
+    // ADVANCE DEALER BUTTON FIRST (before reset) - standard poker rules
+    game.dealerButtonPosition = ((game.dealerButtonPosition || 0) + 1) % game.players.length;
+    game.markModified('dealerButtonPosition');
+    console.log(`[StageManager] Dealer button advanced to position ${game.dealerButtonPosition}`);
+
+    // Save and emit granular update so clients see the button move BEFORE reset
+    await game.save();
+    await PokerSocketEmitter.emitDealerButtonMoved({
+      dealerButtonPosition: game.dealerButtonPosition,
+    });
+    console.log('[StageManager] Dealer button advancement emitted to clients');
+
     // Unlock the game
     game.locked = false;
     await game.save();
@@ -736,18 +748,16 @@ export class StageManager {
 
       console.log('[StageManager] Game reset for next round');
 
-      // Emit "Game starting!" notification with reset data to inform players
-      // Include minimal reset data in notification payload to avoid full state update
-      console.log('[StageManager] ✅ Emitting game starting notification with reset data');
+      // Emit "Game starting!" notification to inform players
+      // NOTE: pot and playerBets are intentionally omitted here to avoid race condition.
+      // These will be synced via blind notifications and state updates from step flow.
+      console.log('[StageManager] ✅ Emitting game starting notification');
 
       await PokerSocketEmitter.emitNotification({
         notificationType: 'game_starting',
         category: 'info',
         countdownSeconds: POKER_GAME_CONFIG.AUTO_LOCK_DELAY_SECONDS, // 10 seconds
-        // Include reset indicators so clients can clear UI without full state update
         stage: 0, // Reset to preflop
-        pot: [], // Empty pot
-        playerBets: [], // Empty bets
       });
 
       console.log('[StageManager] ✅ Game starting notification emitted');

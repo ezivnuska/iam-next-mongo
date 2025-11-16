@@ -31,56 +31,48 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const [currentNotification, setCurrentNotification] = useState<Notification | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const currentNotificationRef = useRef<Notification | null>(null);
+  const notificationQueueRef = useRef<Notification[]>([]);
+  const isProcessingRef = useRef(false);
 
   // Keep ref in sync
   useEffect(() => {
     currentNotificationRef.current = currentNotification;
   }, [currentNotification]);
 
-  // Show a new notification immediately (replaces any current notification)
-  const showNotification = useCallback((
-    notification: Omit<Notification, 'id' | 'timestamp'>
-  ) => {
-    // Clear existing timer if there is one and execute its callback
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-      // Execute previous notification's callback if it exists
-      const prevNotification = currentNotificationRef.current;
-      if (prevNotification?.onComplete) {
-        prevNotification.onComplete();
-      }
+  // Process the notification queue
+  const processQueue = useCallback(() => {
+    // If already processing or queue is empty, return
+    if (isProcessingRef.current || notificationQueueRef.current.length === 0) {
+      return;
     }
 
-    const newNotification: Notification = {
-      ...notification,
-      id: `${Date.now()}-${Math.random()}`,
-      timestamp: Date.now(),
-      duration: notification.duration ?? 5000, // Default 5 seconds
-    };
+    isProcessingRef.current = true;
 
-    console.log('[NotificationProvider] Showing notification immediately:', {
-      message: newNotification.message,
-      type: newNotification.type,
-      id: newNotification.id,
-      duration: newNotification.duration,
-      hasOnComplete: !!newNotification.onComplete,
+    const nextNotification = notificationQueueRef.current.shift()!;
+
+    console.log('[NotificationProvider] Processing queued notification:', {
+      message: nextNotification.message,
+      type: nextNotification.type,
+      id: nextNotification.id,
+      duration: nextNotification.duration,
+      queueLength: notificationQueueRef.current.length,
+      hasOnComplete: !!nextNotification.onComplete,
     });
 
-    setCurrentNotification(newNotification);
+    setCurrentNotification(nextNotification);
 
     // Auto-clear after duration and execute callback
     timerRef.current = setTimeout(() => {
       console.log('[NotificationProvider] ⏰ Notification timer expired:', {
-        message: newNotification.message,
-        hasOnComplete: !!newNotification.onComplete,
+        message: nextNotification.message,
+        hasOnComplete: !!nextNotification.onComplete,
       });
 
       // Execute onComplete callback if present
-      if (newNotification.onComplete) {
-        console.log('[NotificationProvider] ✅ Executing onComplete callback for:', newNotification.message);
+      if (nextNotification.onComplete) {
+        console.log('[NotificationProvider] ✅ Executing onComplete callback for:', nextNotification.message);
         try {
-          newNotification.onComplete();
+          nextNotification.onComplete();
           console.log('[NotificationProvider] ✅ onComplete callback executed successfully');
         } catch (error) {
           console.error('[NotificationProvider] ❌ onComplete callback error:', error);
@@ -89,10 +81,41 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
       setCurrentNotification(null);
       timerRef.current = null;
-    }, newNotification.duration);
+      isProcessingRef.current = false;
+
+      // Process next notification in queue
+      processQueue();
+    }, nextNotification.duration);
   }, []);
 
-  // Clear current notification
+  // Add a new notification to the queue
+  const showNotification = useCallback((
+    notification: Omit<Notification, 'id' | 'timestamp'>
+  ) => {
+    const newNotification: Notification = {
+      ...notification,
+      id: `${Date.now()}-${Math.random()}`,
+      timestamp: Date.now(),
+      duration: notification.duration ?? 5000, // Default 5 seconds
+    };
+
+    console.log('[NotificationProvider] Queuing notification:', {
+      message: newNotification.message,
+      type: newNotification.type,
+      id: newNotification.id,
+      duration: newNotification.duration,
+      currentQueueLength: notificationQueueRef.current.length,
+      hasOnComplete: !!newNotification.onComplete,
+    });
+
+    // Add to queue
+    notificationQueueRef.current.push(newNotification);
+
+    // Start processing if not already processing
+    processQueue();
+  }, [processQueue]);
+
+  // Clear current notification and process next in queue
   const clearNotification = useCallback(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
@@ -106,7 +129,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
 
     setCurrentNotification(null);
-  }, []);
+    isProcessingRef.current = false;
+
+    // Process next notification in queue
+    processQueue();
+  }, [processQueue]);
 
   // Reset all notifications (for game reset)
   const resetNotifications = useCallback(() => {
@@ -117,12 +144,19 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       timerRef.current = null;
     }
 
+    // Clear the queue
+    notificationQueueRef.current = [];
+    isProcessingRef.current = false;
+
     setCurrentNotification(null);
   }, []);
 
   // Check if an action notification is currently active
+  // Includes action, blind, and deal (card dealing) notifications
   const isActionNotificationActive = useCallback(() => {
-    return currentNotification?.type === 'action' || currentNotification?.type === 'blind';
+    return currentNotification?.type === 'action' ||
+           currentNotification?.type === 'blind' ||
+           currentNotification?.type === 'deal';
   }, [currentNotification]);
 
   // Cleanup on unmount

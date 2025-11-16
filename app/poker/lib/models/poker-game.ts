@@ -33,6 +33,14 @@ export interface PokerGameDocument extends Document {
     isTie: boolean;
     tiedPlayers?: string[];
   };
+  // NEW: Step-based flow tracking
+  currentStep?: {
+    stageNumber: number;
+    stepNumber: number;
+    stepId: string;
+    startedAt: Date;
+    completedRequirements: string[];  // Array of completed requirement types
+  };
   // Server-side timer state (timestamp-based for client synchronization)
   actionTimer?: {
     startTime: Date;           // When current action started
@@ -189,6 +197,16 @@ const PokerGameSchema = new Schema<PokerGameDocument>(
         handRank: String,
         isTie: Boolean,
         tiedPlayers: [String],
+      },
+      required: false,
+    },
+    currentStep: {
+      type: {
+        stageNumber: Number,
+        stepNumber: Number,
+        stepId: String,
+        startedAt: Date,
+        completedRequirements: [String],
       },
       required: false,
     },

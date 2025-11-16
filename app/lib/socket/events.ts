@@ -46,6 +46,7 @@ export const SOCKET_EVENTS = {
 	POKER_BET_PLACED: 'poker:bet_placed',
 	POKER_CARDS_DEALT: 'poker:cards_dealt',
 	POKER_ROUND_COMPLETE: 'poker:round_complete',
+	POKER_DEALER_BUTTON_MOVED: 'poker:dealer_button_moved',
 
 	// Poker events - Action timer
 	POKER_ACTION_TIMER_STARTED: 'poker:action_timer_started',
@@ -247,11 +248,13 @@ export type PokerNotificationType =
 	| 'player_check'
 	| 'player_fold'
 	| 'player_all_in'
+	| 'player_thinking'
 	| 'blind_posted'
 	| 'cards_dealt'
 	| 'winner_determined'
 	| 'game_tied'
 	| 'stage_advanced'
+	| 'player_joined'
 	| 'game_starting'
 	| 'game_shuffling';
 

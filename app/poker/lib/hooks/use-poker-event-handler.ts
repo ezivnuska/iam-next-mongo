@@ -61,7 +61,7 @@ export function usePokerEventHandler(gameId: string | null) {
       let duration: number;
 
       // Check if this is a player action notification
-      const playerActions = ['player_bet', 'player_raise', 'player_call', 'player_check', 'player_fold', 'player_all_in'];
+      const playerActions = ['player_bet', 'player_raise', 'player_call', 'player_check', 'player_fold', 'player_all_in', 'player_thinking'];
       const isPlayerAction = playerActions.includes(payload.notificationType);
 
       // Check if this is a pre-game notification (blinds, cards dealt)
@@ -73,6 +73,9 @@ export function usePokerEventHandler(gameId: string | null) {
       } else if (payload.notificationType === 'winner_determined' || payload.notificationType === 'game_tied') {
         // Winner notifications use 10 second duration
         duration = POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS; // 10 seconds
+      } else if (payload.notificationType === 'player_joined') {
+        // Player joined notifications use 2 second duration
+        duration = POKER_GAME_CONFIG.PLAYER_JOINED_NOTIFICATION_DURATION_MS; // 2 seconds
       } else if (isPlayerAction || isPreGameNotification) {
         // Player action and pre-game notifications use 2 second duration
         duration = POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS; // 2 seconds
@@ -129,10 +132,11 @@ export function usePokerEventHandler(gameId: string | null) {
           syncPotFromNotification(payload);
         }
 
-        // Handle game_starting notification with reset data (avoid full state update)
+        // Handle game_starting notification - reset UI state for new round
         if (payload.notificationType === 'game_starting' && payload.stage === 0) {
           console.log('[PokerEventHandler] Processing game reset from game_starting notification');
-          syncPotFromNotification(payload); // Clear pot and playerBets
+          // NOTE: pot and playerBets are NOT synced here to avoid race condition.
+          // They will be properly synced via blind notifications and state updates from step flow.
           setCommunalCards([]); // Clear communal cards
           // Winner state will be reset through server state updates
           // Clear player hands by mapping current players to empty hands
@@ -141,10 +145,11 @@ export function usePokerEventHandler(gameId: string | null) {
 
         // Route to appropriate notification display
         const isBlindNotification = payload.notificationType === 'blind_posted';
+        const isPlayerJoinedNotification = payload.notificationType === 'player_joined';
         const isWinnerNotification = payload.notificationType === 'winner_determined' || payload.notificationType === 'game_tied';
 
-        if ((isPlayerAction || isBlindNotification) && payload.playerId) {
-          // Player actions and blinds: Show on player card
+        if ((isPlayerAction || isBlindNotification || isPlayerJoinedNotification) && payload.playerId) {
+          // Player actions, blinds, and player joined: Show on player card
           console.log('[PokerEventHandler] Showing player notification for:', payload.playerId);
 
           // Play appropriate sound for this action
@@ -170,6 +175,8 @@ export function usePokerEventHandler(gameId: string | null) {
             message,
             timestamp: Date.now(),
             isBlind: isBlindNotification,
+            // Set duration for player actions and player joined (2s), leave undefined for blinds (manual clear)
+            duration: (isPlayerJoinedNotification || isPlayerAction) ? duration : undefined,
           }, playSound);
         } else {
           // Winner, game_starting, cards dealt: Show as central notification

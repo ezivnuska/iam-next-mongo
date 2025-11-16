@@ -39,6 +39,9 @@ export function formatNotificationMessage(payload: PokerNotificationPayload): st
     case 'player_all_in':
       return `${payload.playerName} went all-in!`;
 
+    case 'player_thinking':
+      return `Thinking...`;
+
     case 'winner_determined':
       if (payload.handRank) {
         return `${payload.winnerName} wins with ${payload.handRank}!`;
@@ -83,6 +86,9 @@ export function formatNotificationMessage(payload: PokerNotificationPayload): st
         // Default: hole cards (preflop)
         return 'Dealing hole cards...';
       }
+
+    case 'player_joined':
+      return `${payload.playerName} joined`;
 
     default:
       console.warn('[NotificationFormatter] Unknown notification type:', payload.notificationType);
