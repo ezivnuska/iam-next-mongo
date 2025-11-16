@@ -130,7 +130,7 @@ export default function PokerTable() {
                     <>
                         {userGameInfo.isUserInGame
                             ? <Button size='sm' onClick={leaveGame} className='text-sm'>Leave</Button>
-                            : <Button size='sm' onClick={() => joinGame(gameId)} className='text-sm'>Join</Button>
+                            : <Button size='sm' onClick={() => gameId && joinGame(gameId)} className='text-sm'>Join</Button>
                         }
                     </>
                 )}
