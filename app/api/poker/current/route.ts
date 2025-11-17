@@ -1,7 +1,7 @@
 // app/api/poker/current/route.ts
 
 import { withAuth } from '@/app/lib/api/with-auth';
-import { getUserCurrentGame } from '@/app/poker/lib/server/poker-game-controller';
+import { getUserCurrentGame } from '@/app/poker/lib/server/actions/poker-game-controller';
 import { serializeGame } from '@/app/lib/utils/game-serialization';
 
 export const GET = withAuth(async (request, context, session) => {

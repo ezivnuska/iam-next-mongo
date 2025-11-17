@@ -1,18 +1,18 @@
 // app/poker/lib/server/stage-manager.ts
 
-import type { PokerGameDocument } from '../models/poker-game';
-import { PokerGame } from '../models/poker-game';
-import { GameStage, StageStatus, type Player } from '../definitions/poker';
-import { POKER_TIMERS } from '../config/poker-constants';
+import type { PokerGameDocument } from '../../models/poker-game';
+import { PokerGame } from '../../models/poker-game';
+import { GameStage, StageStatus, type Player } from '../../definitions/poker';
+import { POKER_TIMERS } from '../../config/poker-constants';
 import { dealCommunalCardsByStage as dealCommunalCardsFromDealer, ensureCommunalCardsComplete } from './poker-dealer';
-import { determineWinner } from '../utils/poker';
+import { determineWinner } from '../../utils/poker';
 import { awardPotToWinners, savePlayerBalances } from './poker-game-flow';
 import { randomBytes } from 'crypto';
-import { ActionHistoryType } from '../definitions/action-history';
-import { getActivePlayers, getPlayersWhoCanAct } from '../utils/player-helpers';
+import { ActionHistoryType } from '../../definitions/action-history';
+import { getActivePlayers, getPlayersWhoCanAct } from '../../utils/player-helpers';
 import { StageValidators } from './stage-validators';
-import { TurnManager } from './turn-manager';
-import type { ValidationResult } from '../definitions/validation';
+import { TurnManager } from '../turn/turn-manager';
+import type { ValidationResult } from '../../definitions/validation';
 
 /**
  * StageManager - Single source of truth for stage lifecycle
@@ -475,7 +475,7 @@ export class StageManager {
     console.log('[StageManager] Starting auto-advance sequence (all players all-in)');
 
     const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
-    const { POKER_TIMERS } = await import('../config/poker-constants');
+    const { POKER_TIMERS } = await import('../../config/poker-constants');
 
     // Mark game as in auto-advance mode
     game.autoAdvanceMode = true;
@@ -614,7 +614,7 @@ export class StageManager {
     // 5. Client shows "Game starting!" notification for 10s (purely visual, no callbacks)
     // 6. Server waits 10s then automatically locks and starts new game
 
-    const { POKER_GAME_CONFIG } = await import('../config/poker-constants');
+    const { POKER_GAME_CONFIG } = await import('../../config/poker-constants');
 
     // Wait for winner notification to complete (10 seconds)
     console.log('[StageManager] Waiting 10 seconds for winner notification to display');
@@ -643,7 +643,7 @@ export class StageManager {
     console.log('[StageManager] Resetting game for next round...');
 
     const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
-    const { POKER_GAME_CONFIG } = await import('../config/poker-constants');
+    const { POKER_GAME_CONFIG } = await import('../../config/poker-constants');
 
     // ADVANCE DEALER BUTTON FIRST (before reset) - standard poker rules
     game.dealerButtonPosition = ((game.dealerButtonPosition || 0) + 1) % game.players.length;
@@ -663,7 +663,7 @@ export class StageManager {
 
     // Clear any existing action timer (game ended)
     try {
-      const { clearActionTimer } = await import('./poker-timer-controller');
+      const { clearActionTimer } = await import('../timers/poker-timer-controller');
       const gameId = String(game._id);
       await clearActionTimer(gameId);
     } catch (timerError) {
@@ -779,7 +779,7 @@ export class StageManager {
 
       // Automatically lock and start the game using internal function (bypasses auth)
       const gameId = String(gameToReset._id);
-      const { lockGameInternal } = await import('./lock-game-internal');
+      const { lockGameInternal } = await import('../locking/lock-game-internal');
 
       await lockGameInternal(gameId);
       console.log('[StageManager] ✅ Game auto-locked and started successfully');

@@ -10,19 +10,19 @@ import { ActionHistoryType } from '@/app/poker/lib/definitions/action-history';
 import { randomBytes } from 'crypto';
 
 // Import extracted modules
-import { savePlayerBalances, awardPotToWinners } from './poker-game-flow';
-import { dealPlayerCards, reshuffleAllCards, initializeDeck } from './poker-dealer';
-import { startActionTimer, clearActionTimer, pauseActionTimer, resumeActionTimer } from './poker-timer-controller';
+import { savePlayerBalances, awardPotToWinners } from '../flow/poker-game-flow';
+import { dealPlayerCards, reshuffleAllCards, initializeDeck } from '../flow/poker-dealer';
+import { startActionTimer, clearActionTimer, pauseActionTimer, resumeActionTimer } from '../timers/poker-timer-controller';
 import { ensurePlayerBetsInitialized, processBetTransaction, updateGameAfterBet } from './bet-processor';
 import { validatePlayerExists, getActivePlayerUsernames, findOtherPlayer } from '@/app/poker/lib/utils/player-helpers';
-import { shouldStartLockTimer } from './game-lock-manager';
+import { shouldStartLockTimer } from '../locking/game-lock-manager';
 import { getPlayerChipCount } from '@/app/poker/lib/utils/side-pot-calculator';
-import { TurnManager } from './turn-manager';
+import { TurnManager } from '../turn/turn-manager';
 import { PokerSocketEmitter } from '@/app/lib/utils/socket-helper';
 
 // Import refactored utilities
 import { POKER_GAME_CONFIG, POKER_TIMERS, POKER_RETRY_CONFIG } from '@/app/poker/lib/config/poker-constants';
-import { acquireGameLock, releaseGameLock } from './game-lock-utils';
+import { acquireGameLock, releaseGameLock } from '../locking/game-lock-utils';
 import {
   logBetAction,
   logFoldAction,
@@ -204,7 +204,7 @@ export async function handlePlayerJoin(
       console.log('[HandlePlayerJoin] Queueing notification sequence for player join');
 
       // Import notification queue manager
-      const { queuePlayerJoinedNotification } = await import('./notification-queue-manager');
+      const { queuePlayerJoinedNotification } = await import('../notifications/notification-queue-manager');
 
       // Queue player joined notification (this will automatically handle game_starting notification)
       await queuePlayerJoinedNotification(gameId, username, userId);
@@ -311,7 +311,7 @@ function removePlayerFromGame(
 async function manageLockTimerAfterRemoval(game: any, gameId: string): Promise<void> {
   if (game.players.length < 2) {
     // Cancel lock timer if player count drops below 2
-    const { cancelGameLock } = await import('./game-lock-manager');
+    const { cancelGameLock } = await import('../locking/game-lock-manager');
     cancelGameLock(gameId);
     game.lockTime = undefined;
     await PokerGame.findByIdAndUpdate(gameId, { lockTime: undefined });
@@ -651,7 +651,7 @@ async function finalizeBetAction(
   console.log('[PlaceBet] Timer cleared from game object');
 
   // Cancel server-side setTimeout
-  const { activeTimers } = await import('./poker-timer-controller');
+  const { activeTimers } = await import('../timers/poker-timer-controller');
   const existingTimer = activeTimers.get(gameId);
   if (existingTimer) {
     clearTimeout(existingTimer);
@@ -667,7 +667,7 @@ async function finalizeBetAction(
   await PokerSocketEmitter.emitStateUpdate(game.toObject());
 
   // Signal step orchestrator
-  const { onPlayerAction } = await import('./step-orchestrator');
+  const { onPlayerAction } = await import('../flow/step-orchestrator');
   await onPlayerAction(gameId, playerId, 'bet');
 
   // Schedule turn advancement after notification completes
@@ -675,7 +675,7 @@ async function finalizeBetAction(
 
   setTimeout(async () => {
     console.log('[PlaceBet] Notification complete - advancing turn');
-    const { handleReadyForNextTurn } = await import('./turn-handler');
+    const { handleReadyForNextTurn } = await import('../turn/turn-handler');
     try {
       await handleReadyForNextTurn(gameId);
       console.log('[PlaceBet] Turn advancement completed');
@@ -903,7 +903,7 @@ async function finalizeFoldAndTriggerRestart(
   console.log('[Fold] Timer cleared from game object');
 
   // Cancel the server-side setTimeout if it exists
-  const { activeTimers } = await import('./poker-timer-controller');
+  const { activeTimers } = await import('../timers/poker-timer-controller');
   const existingTimer = activeTimers.get(gameId);
   if (existingTimer) {
     clearTimeout(existingTimer);
@@ -939,7 +939,7 @@ async function finalizeFoldAndTriggerRestart(
   console.log('[Fold] Advanced to End stage - calling resetGameForNextRound');
 
   // Reset and restart the game (this will emit game_starting and auto-lock after 10s)
-  const { StageManager } = await import('./stage-manager');
+  const { StageManager } = await import('../flow/stage-manager');
   await StageManager.resetGameForNextRound(gameForReset);
 
   console.log('[Fold] Game reset and restart flow complete');
@@ -981,4 +981,4 @@ export async function deleteGame(gameId: string) {
 }
 
 // Re-export timer functions for backward compatibility
-export { startActionTimer, clearActionTimer, pauseActionTimer, resumeActionTimer, setTurnTimerAction } from './poker-timer-controller';
+export { startActionTimer, clearActionTimer, pauseActionTimer, resumeActionTimer, setTurnTimerAction } from '../timers/poker-timer-controller';

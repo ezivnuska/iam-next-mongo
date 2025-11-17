@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 			console.log('[Socket Emit Route] Received signal:', signal, 'for game:', gameId);
 
 			if (signal === 'poker:join_game' && gameId && userId) {
-				const { handlePlayerJoin } = await import('@/app/poker/lib/server/poker-game-controller');
+				const { handlePlayerJoin } = await import('@/app/poker/lib/server/actions/poker-game-controller');
 
 				const result = await handlePlayerJoin(gameId, userId, username || 'Guest');
 
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 			}
 
 			if (signal === 'poker:leave_game' && gameId && userId) {
-				const { handlePlayerLeave } = await import('@/app/poker/lib/server/poker-game-controller');
+				const { handlePlayerLeave } = await import('@/app/poker/lib/server/actions/poker-game-controller');
 
 				const result = await handlePlayerLeave(gameId, userId);
 
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
 			}
 
 			if (signal === 'poker:ready_for_next_turn' && gameId) {
-				const { handleReadyForNextTurn } = await import('@/app/poker/lib/server/turn-handler');
+				const { handleReadyForNextTurn } = await import('@/app/poker/lib/server/turn/turn-handler');
 				await handleReadyForNextTurn(gameId);
 				return NextResponse.json({ success: true });
 			}

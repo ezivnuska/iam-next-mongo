@@ -12,8 +12,8 @@
  */
 
 import { PokerSocketEmitter } from '@/app/lib/utils/socket-helper';
-import { POKER_GAME_CONFIG, POKER_TIMERS } from '../config/poker-constants';
-import { scheduleGameLock, cancelGameLock } from './game-lock-manager';
+import { POKER_GAME_CONFIG, POKER_TIMERS } from '../../config/poker-constants';
+import { scheduleGameLock, cancelGameLock } from '../locking/game-lock-manager';
 
 interface NotificationQueueItem {
   type: 'player_joined' | 'game_starting' | 'cards_dealt';
@@ -289,7 +289,7 @@ async function processQueue(gameId: string): Promise<void> {
 
       // After countdown completes, schedule the actual game lock
       console.log(`[NotificationQueue] Game starting countdown complete - scheduling game lock`);
-      const { PokerGame } = await import('../models/poker-game');
+      const { PokerGame } = await import('../../models/poker-game');
       const game = await PokerGame.findById(gameId);
 
       if (game && !game.locked) {

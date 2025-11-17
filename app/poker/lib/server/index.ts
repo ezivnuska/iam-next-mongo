@@ -20,14 +20,14 @@ export {
   collectAllCards,
   reshuffleAllCards,
   ensureCommunalCardsComplete,
-} from './poker-dealer';
+} from './flow/poker-dealer';
 
 // Export game flow functions
 export {
   savePlayerBalances,
   awardPotToWinners,
   dealCommunalCards as dealCommunalCardsWithStageUpdate,
-} from './poker-game-flow';
+} from './flow/poker-game-flow';
 
 // Export timer management functions
 export {
@@ -35,7 +35,7 @@ export {
   clearActionTimer,
   pauseActionTimer,
   resumeActionTimer,
-} from './poker-timer-controller';
+} from './timers/poker-timer-controller';
 
 // Export main controller functions (re-exported for convenience)
 export {
@@ -47,4 +47,4 @@ export {
   placeBet,
   fold,
   deleteGame,
-} from './poker-game-controller';
+} from './actions/poker-game-controller';

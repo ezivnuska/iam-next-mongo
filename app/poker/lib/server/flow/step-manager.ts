@@ -11,7 +11,7 @@
  * - Execute step actions
  */
 
-import { PokerGame } from '../models/poker-game';
+import { PokerGame } from '../../models/poker-game';
 import {
   getStepDefinition,
   getCurrentStep,
@@ -21,8 +21,8 @@ import {
   RequirementType,
   type GameStep
 } from './step-definitions';
-import { queueCardsDealtNotification } from './notification-queue-manager';
-import { POKER_TIMERS } from '../config/poker-constants';
+import { queueCardsDealtNotification } from '../notifications/notification-queue-manager';
+import { POKER_TIMERS } from '../../config/poker-constants';
 
 /**
  * Initialize step tracking for a new game
@@ -275,7 +275,7 @@ async function executePostSmallBlind(gameId: string): Promise<number> {
   const game = await PokerGame.findById(gameId);
   if (!game) return 0;
 
-  const { placeSmallBlind } = await import('./blinds-manager');
+  const { placeSmallBlind } = await import('../actions/blinds-manager');
   const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
 
   const smallBlindInfo = placeSmallBlind(game);
@@ -311,7 +311,7 @@ async function executePostBigBlind(gameId: string): Promise<number> {
   const game = await PokerGame.findById(gameId);
   if (!game) return 0;
 
-  const { placeBigBlind } = await import('./blinds-manager');
+  const { placeBigBlind } = await import('../actions/blinds-manager');
   const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
 
   const bigBlindInfo = placeBigBlind(game);
@@ -398,7 +398,7 @@ async function executeDealHoleCards(gameId: string): Promise<number> {
   const { dealPlayerCards } = await import('./poker-dealer');
   const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
   const { randomBytes } = await import('crypto');
-  const { ActionHistoryType } = await import('../definitions/action-history');
+  const { ActionHistoryType } = await import('../../definitions/action-history');
 
   dealPlayerCards(game.deck, game.players, 2);
   game.markModified('deck');
@@ -598,9 +598,9 @@ async function executeBettingCycle(gameId: string): Promise<number> {
   await PokerSocketEmitter.emitStateUpdate(game.toObject());
 
   // Start timer for first player
-  const { startActionTimer } = await import('./poker-timer-controller');
-  const { POKER_TIMERS } = await import('../config/poker-constants');
-  const { GameActionType } = await import('../definitions/game-actions');
+  const { startActionTimer } = await import('../timers/poker-timer-controller');
+  const { POKER_TIMERS } = await import('../../config/poker-constants');
+  const { GameActionType } = await import('../../definitions/game-actions');
 
   const currentPlayer = game.players[game.currentPlayerIndex];
   if (currentPlayer) {
@@ -613,7 +613,7 @@ async function executeBettingCycle(gameId: string): Promise<number> {
 
     // If AI, trigger action
     if (currentPlayer.isAI) {
-      const { executeAIActionIfReady } = await import('./ai-player-manager');
+      const { executeAIActionIfReady } = await import('../ai/ai-player-manager');
       setTimeout(() => {
         executeAIActionIfReady(gameId).catch(error => {
           console.error('[StepManager] AI action failed:', error);

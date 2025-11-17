@@ -1,6 +1,6 @@
 // app/api/poker/singleton/route.ts
 
-import { getOrCreateSingletonGame } from '@/app/poker/lib/server/singleton-game';
+import { getOrCreateSingletonGame } from '@/app/poker/lib/server/game/singleton-game';
 import { serializeGame } from '@/app/lib/utils/game-serialization';
 import { requireAuth } from '@/app/lib/utils/auth-utils';
 

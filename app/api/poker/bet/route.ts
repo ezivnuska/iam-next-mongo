@@ -1,7 +1,7 @@
 // app/api/poker/bet/route.ts
 
 import { withAuth } from '@/app/lib/api/with-auth';
-import { placeBet } from '@/app/poker/lib/server/poker-game-controller';
+import { placeBet } from '@/app/poker/lib/server/actions/poker-game-controller';
 import { PokerSocketEmitter } from '@/app/lib/utils/socket-helper';
 import { withRateLimit, RATE_LIMITS } from '@/app/lib/api/rate-limiter';
 

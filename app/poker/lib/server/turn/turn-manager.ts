@@ -4,12 +4,12 @@
  * Manages the state of the current betting round
  */
 
-import type { PokerGameDocument } from '../models/poker-game';
-import type { Player } from '../definitions/poker';
-import type { ValidationResult, TurnContext, BettingRoundState } from '../definitions/validation';
-import { validationSuccess, validationFailure } from '../definitions/validation';
-import { getPlayersWhoCanAct, getActivePlayers } from '../utils/player-helpers';
-import { calculateFirstToActForBettingRound } from './step-manager';
+import type { PokerGameDocument } from '../../models/poker-game';
+import type { Player } from '../../definitions/poker';
+import type { ValidationResult, TurnContext, BettingRoundState } from '../../definitions/validation';
+import { validationSuccess, validationFailure } from '../../definitions/validation';
+import { getPlayersWhoCanAct, getActivePlayers } from '../../utils/player-helpers';
+import { calculateFirstToActForBettingRound } from '../flow/step-manager';
 
 export class TurnManager {
   /**

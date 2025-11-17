@@ -6,7 +6,7 @@ import { ActionHistoryType } from '@/app/poker/lib/definitions/action-history';
 import { randomBytes } from 'crypto';
 import { PokerSocketEmitter } from '@/app/lib/utils/socket-helper';
 import { withRetry } from '@/app/lib/utils/retry';
-import { startActionTimer } from '@/app/poker/lib/server/poker-timer-controller';
+import { startActionTimer } from '../timers/poker-timer-controller';
 import { GameActionType } from '@/app/poker/lib/definitions/game-actions';
 import { POKER_TIMERS } from '@/app/poker/lib/config/poker-constants';
 
@@ -94,7 +94,7 @@ export async function lockGameInternal(gameId: string) {
       await game.save();
 
       // Validate chips before placing blinds
-      const { getBlindConfig } = await import('@/app/poker/lib/server/blinds-manager');
+      const { getBlindConfig } = await import('../actions/blinds-manager');
       const { smallBlind, bigBlind } = getBlindConfig();
 
       // Blind positions already calculated above (smallBlindPos, bigBlindPos)
@@ -131,7 +131,7 @@ export async function lockGameInternal(gameId: string) {
       // 3. Deal hole cards
       // 4. Betting cycle
       // ... and all subsequent stages
-      const { startStepFlow } = await import('./step-orchestrator');
+      const { startStepFlow } = await import('../flow/step-orchestrator');
       await startStepFlow(gameId);
 
       console.log('[lockGameInternal] ✅ Game successfully locked and started');

@@ -91,7 +91,7 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
 
         // Validate players have enough chips before placing blinds
         const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
-        const { getBlindConfig } = await import('./blinds-manager');
+        const { getBlindConfig } = await import('../actions/blinds-manager');
         const { smallBlind, bigBlind } = getBlindConfig();
 
         // Calculate which players will post blinds based on button position (already declared above)
@@ -155,7 +155,7 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
         // 4. Deal hole cards
         // 5. Betting cycle
         // ... and all subsequent stages
-        const { startStepFlow } = await import('./step-orchestrator');
+        const { startStepFlow } = await import('../flow/step-orchestrator');
         await startStepFlow(gameId);
       } catch (error) {
         // Release lock on error

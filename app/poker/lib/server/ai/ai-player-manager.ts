@@ -125,7 +125,7 @@ async function executeAIAction(gameId: string): Promise<void> {
     console.log(`[AI Manager] ${currentPlayer.username} is thinking...`);
 
     // Wait for thinking notification to display before making decision
-    const { POKER_TIMERS } = await import('../config/poker-constants');
+    const { POKER_TIMERS } = await import('../../config/poker-constants');
     await new Promise(resolve => setTimeout(resolve, POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS));
 
     // Re-fetch game to ensure we have latest state after delay
@@ -158,7 +158,7 @@ async function executeAIAction(gameId: string): Promise<void> {
 
     // Execute the actual action using game controllers
     // The controllers will emit notifications and clear timers automatically
-    const { placeBet: placeBetController, fold: foldController } = await import('./poker-game-controller');
+    const { placeBet: placeBetController, fold: foldController } = await import('../actions/poker-game-controller');
 
     let result;
 

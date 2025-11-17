@@ -1,7 +1,7 @@
 // app/api/poker/reset-singleton/route.ts
 
 import { withAuth } from '@/app/lib/api/with-auth';
-import { resetSingletonGame } from '@/app/poker/lib/server/singleton-game';
+import { resetSingletonGame } from '@/app/poker/lib/server/game/singleton-game';
 import { PokerSocketEmitter } from '@/app/lib/utils/socket-helper';
 import { withRateLimit, RATE_LIMITS } from '@/app/lib/api/rate-limiter';
 

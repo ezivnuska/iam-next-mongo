@@ -4,11 +4,11 @@
  * Each stage has entry and exit validation to ensure game state integrity
  */
 
-import type { PokerGameDocument } from '../models/poker-game';
-import { GameStage } from '../definitions/poker';
-import type { ValidationResult } from '../definitions/validation';
-import { validationSuccess, validationFailure, combineValidations } from '../definitions/validation';
-import { getPlayersWhoCanAct, getActivePlayers } from '../utils/player-helpers';
+import type { PokerGameDocument } from '../../models/poker-game';
+import { GameStage } from '../../definitions/poker';
+import type { ValidationResult } from '../../definitions/validation';
+import { validationSuccess, validationFailure, combineValidations } from '../../definitions/validation';
+import { getPlayersWhoCanAct, getActivePlayers } from '../../utils/player-helpers';
 
 export class StageValidators {
   /**

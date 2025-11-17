@@ -5,17 +5,17 @@
  * Starts the action timer for the current player.
  */
 
-import { PokerGame } from '../models/poker-game';
-import { startActionTimer } from './poker-timer-controller';
-import { POKER_TIMERS } from '../config/poker-constants';
-import { GameActionType } from '../definitions/game-actions';
-import { GameStage } from '../definitions/poker';
+import { PokerGame } from '../../models/poker-game';
+import { startActionTimer } from '../timers/poker-timer-controller';
+import { POKER_TIMERS } from '../../config/poker-constants';
+import { GameActionType } from '../../definitions/game-actions';
+import { GameStage } from '../../definitions/poker';
 
 export async function handleReadyForNextTurn(gameId: string): Promise<void> {
   console.log('[TurnHandler] Processing ready_for_next_turn for game:', gameId);
 
   // Acquire game lock to prevent concurrent turn advancements
-  const { acquireGameLock } = await import('./game-lock-utils');
+  const { acquireGameLock } = await import('../locking/game-lock-utils');
   let game;
   try {
     game = await acquireGameLock(gameId);
@@ -34,8 +34,8 @@ export async function handleReadyForNextTurn(gameId: string): Promise<void> {
   }
 
   // Check for early completion first (all folded except one, or all-in situation)
-  const { checkEarlyCompletion, completeRequirement } = await import('./step-manager');
-  const { RequirementType } = await import('./step-definitions');
+  const { checkEarlyCompletion, completeRequirement } = await import('../flow/step-manager');
+  const { RequirementType } = await import('../flow/step-definitions');
   const earlyCompletion = await checkEarlyCompletion(gameId);
 
   if (earlyCompletion) {
@@ -45,14 +45,14 @@ export async function handleReadyForNextTurn(gameId: string): Promise<void> {
 
     // Signal step orchestrator to skip to winner
     await completeRequirement(gameId, RequirementType.ALL_PLAYERS_ACTED);
-    const { onBettingCycleComplete } = await import('./step-orchestrator');
+    const { onBettingCycleComplete } = await import('../flow/step-orchestrator');
     await onBettingCycleComplete(gameId);
     return;
   }
 
   // Check if betting round is complete
   const { TurnManager } = await import('./turn-manager');
-  const { StageManager } = await import('./stage-manager');
+  const { StageManager } = await import('../flow/stage-manager');
   const roundState = TurnManager.getBettingRoundState(game);
 
   console.log('[TurnHandler] Betting round state:', {
@@ -76,7 +76,7 @@ export async function handleReadyForNextTurn(gameId: string): Promise<void> {
 
     // *** NEW STEP-BASED FLOW ***
     // Signal the step orchestrator that betting cycle is complete
-    const { onBettingCycleComplete, onPlayerAction } = await import('./step-orchestrator');
+    const { onBettingCycleComplete, onPlayerAction } = await import('../flow/step-orchestrator');
     await onBettingCycleComplete(gameId);
     console.log('[TurnHandler] Step orchestrator signaled - will handle stage advancement');
     return; // Step orchestrator handles all advancement logic now
@@ -86,7 +86,7 @@ export async function handleReadyForNextTurn(gameId: string): Promise<void> {
     console.log('[TurnHandler] Round continues - advancing to next player');
 
     const previousPlayerIndex = game.currentPlayerIndex;
-    const { advanceToNextPlayer } = await import('./bet-processor');
+    const { advanceToNextPlayer } = await import('../actions/bet-processor');
     advanceToNextPlayer(game, previousPlayerIndex);
 
     // Release lock and save
@@ -130,7 +130,7 @@ export async function handleReadyForNextTurn(gameId: string): Promise<void> {
     // If current player is AI, trigger action immediately after timer starts
     if (currentPlayer.isAI) {
       console.log('[TurnHandler] Timer started for AI player - triggering immediate action');
-      const { executeAIActionIfReady } = await import('./ai-player-manager');
+      const { executeAIActionIfReady } = await import('../ai/ai-player-manager');
       executeAIActionIfReady(gameId).catch(error => {
         console.error('[TurnHandler] AI action failed:', error);
       });

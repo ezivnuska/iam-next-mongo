@@ -21,7 +21,7 @@ import {
   completeRequirement
 } from './step-manager';
 import { StepType, RequirementType } from './step-definitions';
-import { PokerGame } from '../models/poker-game';
+import { PokerGame } from '../../models/poker-game';
 
 /**
  * Start the step-based game flow

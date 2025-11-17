@@ -1,7 +1,7 @@
 // app/lib/server/poker/singleton-game.ts
 
 import { PokerGame } from '@/app/poker/lib/models/poker-game';
-import { initializeDeck } from './poker-dealer';
+import { initializeDeck } from '../flow/poker-dealer';
 import { GameStage } from '@/app/poker/lib/definitions/poker';
 
 /**
@@ -34,7 +34,7 @@ export async function getOrCreateSingletonGame() {
 
       // Add AI player to new singleton game
       try {
-        const { addAIPlayerToGame } = await import('./ai-player-manager');
+        const { addAIPlayerToGame } = await import('../ai/ai-player-manager');
         await addAIPlayerToGame(game._id.toString());
         // Refresh game to get updated player list
         game = await PokerGame.findById(game._id);
@@ -89,7 +89,7 @@ export async function resetSingletonGame(gameId: string) {
 
   // Add AI player to reset game
   try {
-    const { addAIPlayerToGame } = await import('./ai-player-manager');
+    const { addAIPlayerToGame } = await import('../ai/ai-player-manager');
     await addAIPlayerToGame(gameId);
     // Refresh game to get updated player list
     const refreshedGame = await PokerGame.findById(gameId);
