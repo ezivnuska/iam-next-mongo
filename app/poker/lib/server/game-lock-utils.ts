@@ -11,9 +11,8 @@ import { POKER_TIMERS } from '@/app/poker/lib/config/poker-constants';
  * @throws Error if game not found or already being processed by recent operation
  */
 export async function acquireGameLock(gameId: string): Promise<any> {
-  const LOCK_TIMEOUT_MS = 10000; // 10 seconds - consider lock stale after this time
   const now = new Date();
-  const lockExpiry = new Date(now.getTime() - LOCK_TIMEOUT_MS);
+  const lockExpiry = new Date(now.getTime() - POKER_TIMERS.GAME_LOCK_TIMEOUT_MS);
 
   // Try to acquire lock (either processing=false OR processing timestamp is old/stale)
   const lockResult = await PokerGame.findOneAndUpdate(

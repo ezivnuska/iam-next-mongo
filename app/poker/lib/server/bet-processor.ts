@@ -129,9 +129,3 @@ export function advanceToNextPlayer(game: PokerGameDocument, currentPlayerIndex:
   }
 }
 
-/**
- * Calculate next player index
- */
-export function getNextPlayerIndex(currentIndex: number, totalPlayers: number): number {
-  return (currentIndex + 1) % totalPlayers;
-}

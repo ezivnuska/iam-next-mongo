@@ -196,63 +196,6 @@ export function dealCommunalCards(game: PokerGameDoc, currentStage: GameStage): 
   // Note: Action logging will be done by caller which has access to gameId
 }
 
-/**
- * Reset betting state for a new betting round
- */
-export function resetBettingRound(game: PokerGameDoc): void {
-  game.playerBets = new Array(game.players.length).fill(0);
-
-  // Standard poker position rules for postflop:
-  // - First to act is the first player left of the button who is still in
-  // - In heads-up: Big blind acts first postflop
-  // - In 3+ players: Small blind (button + 1) acts first postflop
-  const isHeadsUp = game.players.length === 2;
-  const isPostflop = game.stage > 0;
-  const buttonPosition = game.dealerButtonPosition || 0;
-
-  if (isPostflop) {
-    let startPosition: number;
-
-    if (isHeadsUp) {
-      // Heads-up postflop: Big blind acts first (non-button player)
-      startPosition = (buttonPosition + 1) % game.players.length;
-    } else {
-      // 3+ players postflop: Small blind acts first (left of button)
-      startPosition = (buttonPosition + 1) % game.players.length;
-    }
-
-    // Find first active player starting from startPosition
-    // This ensures we skip any players who are all-in or folded
-    let nextIndex = startPosition;
-    let foundValidPlayer = false;
-    let attempts = 0;
-
-    while (attempts < game.players.length) {
-      const candidate = game.players[nextIndex];
-      if (!candidate.isAllIn && !candidate.folded) {
-        foundValidPlayer = true;
-        break; // Found an active player
-      }
-      nextIndex = (nextIndex + 1) % game.players.length;
-      attempts++;
-    }
-
-    // Only update currentPlayerIndex if we found a valid player
-    // If all players are all-in/folded, leave currentPlayerIndex as-is
-    if (foundValidPlayer) {
-      game.currentPlayerIndex = nextIndex;
-    } else {
-      console.log('[resetBettingRound] All players all-in/folded, not updating currentPlayerIndex');
-    }
-  } else {
-    // Preflop: currentPlayerIndex already set by placeBigBlind
-    // Don't override it here
-  }
-
-  // Mark paths as modified for Mongoose to track changes
-  game.markModified('playerBets');
-  game.markModified('currentPlayerIndex');
-}
 
 
 

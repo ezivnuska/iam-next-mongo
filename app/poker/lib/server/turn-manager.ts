@@ -9,6 +9,7 @@ import type { Player } from '../definitions/poker';
 import type { ValidationResult, TurnContext, BettingRoundState } from '../definitions/validation';
 import { validationSuccess, validationFailure } from '../definitions/validation';
 import { getPlayersWhoCanAct, getActivePlayers } from '../utils/player-helpers';
+import { calculateFirstToActForBettingRound } from './step-manager';
 
 export class TurnManager {
   /**
@@ -101,41 +102,10 @@ export class TurnManager {
   }
 
   /**
-   * Get the starting player index for the current betting round
-   */
-  static getBettingRoundStartIndex(game: PokerGameDocument): number {
-    const buttonPosition = game.dealerButtonPosition || 0;
-    const playerCount = game.players.length;
-    const isHeadsUp = playerCount === 2;
-    const isPreflop = game.stage === 0; // Preflop is stage 0
-
-    if (isPreflop) {
-      // Preflop: First to act is after big blind
-      if (isHeadsUp) {
-        // Heads-up preflop: Button (small blind) acts first
-        return buttonPosition;
-      } else {
-        // 3+ players preflop: Player after big blind acts first
-        // Big blind is at buttonPosition + 2, so first to act is buttonPosition + 3
-        return (buttonPosition + 3) % playerCount;
-      }
-    } else {
-      // Postflop: Small blind acts first
-      if (isHeadsUp) {
-        // Heads-up postflop: Button (small blind) acts first
-        return buttonPosition;
-      } else {
-        // 3+ players postflop: First player after button (small blind) acts first
-        return (buttonPosition + 1) % playerCount;
-      }
-    }
-  }
-
-  /**
    * Get betting round state - tracks who has acted
    */
   static getBettingRoundState(game: PokerGameDocument): BettingRoundState {
-    const startingPlayerIndex = this.getBettingRoundStartIndex(game);
+    const startingPlayerIndex = calculateFirstToActForBettingRound(game);
 
     console.log(`[TurnManager] Getting betting round state for stage ${game.stage}`);
     console.log(`[TurnManager] Starting player index: ${startingPlayerIndex}`);
@@ -336,7 +306,7 @@ export class TurnManager {
    * Check if we've wrapped back to the starting position
    */
   static hasWrappedToStartingPlayer(game: PokerGameDocument): boolean {
-    const startIndex = this.getBettingRoundStartIndex(game);
+    const startIndex = calculateFirstToActForBettingRound(game);
     const roundState = this.getBettingRoundState(game);
 
     // Must be back at starting position

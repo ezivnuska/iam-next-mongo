@@ -8,10 +8,6 @@ import type { Player } from '@/app/poker/lib/definitions/poker';
  * @param id - Player ID to search for
  * @returns Tuple of [player, index] or [undefined, -1] if not found
  */
-export function findPlayerById(players: Player[], id: string): [Player | undefined, number] {
-  const index = players.findIndex((p) => p.id === id);
-  return index === -1 ? [undefined, -1] : [players[index], index];
-}
 
 /**
  * Find a player by their username
@@ -82,23 +78,3 @@ export function getActivePlayers(players: Player[]): Player[] {
  * @param startIndex - Index to start searching from
  * @returns Object with the next active player's index and whether one was found
  */
-export function findNextActivePlayer(
-  players: Player[],
-  startIndex: number
-): { index: number; found: boolean } {
-  const totalPlayers = players.length;
-
-  // Search through all players starting from startIndex + 1
-  for (let i = 1; i <= totalPlayers; i++) {
-    const currentIndex = (startIndex + i) % totalPlayers;
-    const player = players[currentIndex];
-
-    // Check if player can act (not folded and not all-in)
-    if (!player.folded && !player.isAllIn) {
-      return { index: currentIndex, found: true };
-    }
-  }
-
-  // No active player found
-  return { index: startIndex, found: false };
-}

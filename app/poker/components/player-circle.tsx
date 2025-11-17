@@ -71,7 +71,17 @@ export default function PlayerCircle({ player, index, currentPlayerIndex, potCon
             <div className='flex flex-full relative'>
                 <div className='absolute top-0 left-0 z-10'>
                     <div className=' w-[60px] flex flex-1 flex-col items-center justify-center gap-2 relative'>
-                        <UserAvatar size={54} username={player.username} />
+                        <div
+                            className={clsx(
+                                'rounded-full overflow-visible',
+                                // 'flex flex-row gap-4 rounded-full overflow-visible bg-green-800 relative px-2 py-2 pr-4',
+                                {
+                                  'border-2 border-white': isCurrentPlayer,
+                                },
+                            )}
+                        >
+                            <UserAvatar size={54} username={player.username} />
+                        </div>
                         {player.isAllIn && !winner ? (
                             <span className="text-white px-1.5 py-0.5 bg-red-500 overflow-hidden rounded text-xs font-bold">
                                 ALL-IN
@@ -109,41 +119,3 @@ export default function PlayerCircle({ player, index, currentPlayerIndex, potCon
   );
 }
 
-    //   <div
-    //     className='relative z-30 flex flex-1 flex-row gap-1 pl-3 pr-6 py-4 items-center justify-end'
-    //   >
-    //         <div className='flex flex-1 flex-row items-center gap-2 justify-between'>
-    //             <div className='flex flex-1 flex-row gap-4 text-white'>
-    //                 {/* <UserAvatar size={40} username={player.username} /> */}
-    //                 <div id='player-action-status' className='flex flex-col'>
-    //                     <div className='flex flex-row gap-1 items-center'>
-    //                         <span className='text-md'>{player.username}</span>
-    //                         <span className='text-md'>({chipTotal})</span>
-    //                         {isDealer && (
-    //                             <span className='text-xs font-bold px-1.5 py-0.5 rounded bg-yellow-500 text-black'>
-    //                                 D
-    //                             </span>
-    //                         )}
-    //                         {potContribution > 0 && (
-    //                             <span className="text-xs text-gray-700">Pot: ${potContribution}</span>
-    //                         )}
-    //                     </div>
-    //                     {/* Player's active action notification (displays for 2 seconds) */}
-    //                     {activeNotification && (
-    //                         <div className='flex flex-row gap-1 items-center mt-0.5'>
-    //                             <span className='text-xs text-yellow-300 font-semibold'>
-    //                                 {activeNotification.message}
-    //                             </span>
-    //                         </div>
-    //                     )}
-    //                 </div>
-
-    //                 {player.isAllIn && !winner && (
-    //                     <span className="bg-red-500 text-white px-1.5 py-0.5 rounded text-xs font-bold">
-    //                         ALL-IN
-    //                     </span>
-    //                 )}
-    //             </div>
-    //             {player.hand.length > 0 && <Hand cards={player.hand} hidden={!(isCurrentUser || isWinner)} />}
-    //         </div>
-    //     </div>

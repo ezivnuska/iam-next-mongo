@@ -44,6 +44,9 @@ export const POKER_TIMERS = {
   /** Small delay in milliseconds to ensure write propagation after lock acquisition */
   LOCK_ACQUISITION_DELAY_MS: 10,
 
+  /** Timeout in milliseconds for acquiring game lock */
+  GAME_LOCK_TIMEOUT_MS: 10000,
+
   /** Delay in milliseconds before advancing to next stage (for paced transitions) */
   STAGE_TRANSITION_DELAY_MS: 4000,
 
@@ -61,6 +64,9 @@ export const POKER_TIMERS = {
 
   /** Interval in milliseconds for timer percentage updates */
   TIMER_UPDATE_INTERVAL_MS: 100,
+
+  /** Time window in milliseconds for deduplicating action history entries */
+  ACTION_HISTORY_DEDUP_WINDOW_MS: 1000,
 } as const;
 
 export const POKER_RETRY_CONFIG = {

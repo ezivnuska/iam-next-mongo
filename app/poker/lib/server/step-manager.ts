@@ -345,7 +345,7 @@ async function executePostBigBlind(gameId: string): Promise<number> {
  * Works for both pre-flop and post-flop stages
  * Skips folded and all-in players to find first active player
  */
-function calculateFirstToActForBettingRound(game: any): number {
+export function calculateFirstToActForBettingRound(game: any): number {
   const buttonPosition = game.dealerButtonPosition || 0;
   const isHeadsUp = game.players.length === 2;
 
