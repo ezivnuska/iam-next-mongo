@@ -42,6 +42,17 @@ export const SOCKET_EVENTS = {
 	POKER_PLAYER_LEFT: 'poker:player_left',
 	POKER_GAME_LOCKED: 'poker:game_locked',
 
+	// Poker events - Game actions (Client -> Server)
+	POKER_BET: 'poker:bet', // Client -> Server: Place bet
+	POKER_BET_SUCCESS: 'poker:bet_success', // Server -> Client: Bet succeeded
+	POKER_BET_ERROR: 'poker:bet_error', // Server -> Client: Bet failed
+	POKER_FOLD: 'poker:fold', // Client -> Server: Fold
+	POKER_FOLD_SUCCESS: 'poker:fold_success', // Server -> Client: Fold succeeded
+	POKER_FOLD_ERROR: 'poker:fold_error', // Server -> Client: Fold failed
+	POKER_SET_TIMER_ACTION: 'poker:set_timer_action', // Client -> Server: Set timer action
+	POKER_TIMER_SUCCESS: 'poker:timer_success', // Server -> Client: Timer action set succeeded
+	POKER_TIMER_ERROR: 'poker:timer_error', // Server -> Client: Timer action set failed
+
 	// Poker events - Granular gameplay updates
 	POKER_BET_PLACED: 'poker:bet_placed',
 	POKER_CARDS_DEALT: 'poker:cards_dealt',
@@ -229,6 +240,48 @@ export interface PokerActionTimerResumedPayload {
 export interface PokerActionTimerActionSetPayload {
 	playerId: string           // Player who set the action
 	action: 'fold' | 'call' | 'check' | 'bet' | 'raise'  // Selected action
+}
+
+// Game action payloads (Client -> Server)
+export interface PokerBetPayload {
+	gameId: string
+	chipCount: number
+}
+
+export interface PokerFoldPayload {
+	gameId: string
+}
+
+export interface PokerSetTimerActionPayload {
+	gameId: string
+	timerAction: 'fold' | 'call' | 'check' | 'bet' | 'raise'
+	betAmount?: number
+}
+
+// Game action success payloads (Server -> Client)
+export interface PokerBetSuccessPayload {
+	success: true
+}
+
+export interface PokerFoldSuccessPayload {
+	success: true
+}
+
+export interface PokerTimerSuccessPayload {
+	success: true
+}
+
+// Game action error payloads (Server -> Client)
+export interface PokerBetErrorPayload {
+	error: string
+}
+
+export interface PokerFoldErrorPayload {
+	error: string
+}
+
+export interface PokerTimerErrorPayload {
+	error: string
 }
 
 export interface PokerGameNotificationPayload {

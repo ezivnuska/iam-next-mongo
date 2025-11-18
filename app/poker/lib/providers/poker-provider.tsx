@@ -31,7 +31,6 @@ import {
 } from './poker-state-updaters';
 
 import {
-  fetchCurrentGame,
   createJoinGameAction,
   createPlaceBetAction,
   createFoldAction,
@@ -265,7 +264,7 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
   );
 
   // Wrap placeBet to set processing state and update optimistically
-  const placeBetOriginal = useCallback(createPlaceBetAction(gameId), [gameId]);
+  const placeBetOriginal = useCallback(createPlaceBetAction(gameId, socket), [gameId, socket]);
 
   const placeBet = useCallback(async (chipCount: number) => {
     if (isActionProcessing || !user?.id) return;
@@ -357,7 +356,7 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
   }, [placeBetOriginal, isActionProcessing, user, currentBet, players, showPlayerNotification, setPot, setPlayerBets, setPlayers, gameId, playSound]);
 
   // Wrap fold to set processing state
-  const foldOriginal = useCallback(createFoldAction(gameId), [gameId]);
+  const foldOriginal = useCallback(createFoldAction(gameId, socket), [gameId, socket]);
   const fold = useCallback(async () => {
     if (isActionProcessing || !user?.id) return;
 
@@ -403,7 +402,7 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
     createDeleteGameAction(setAvailableGames),
     []
   );
-  const setTurnTimerAction = useCallback(createSetTurnTimerAction(gameId), [gameId]);
+  const setTurnTimerAction = useCallback(createSetTurnTimerAction(gameId, socket), [gameId, socket]);
   const resetSingleton = useCallback(
     createResetSingletonAction(gameId, updateGameState),
     [gameId, updateGameState]
@@ -555,7 +554,6 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
     fold,
     leaveGame,
     deleteGameFromLobby,
-    fetchCurrentGame,
     setTurnTimerAction,
     resetSingleton,
     clearTimerOptimistically,

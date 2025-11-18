@@ -95,25 +95,8 @@ export function usePlayerConnectionMonitor({
     };
   }, [isMyTurn, isUserInGame]);
 
-  // Send heartbeat to track active players
-  useEffect(() => {
-    if (!isUserInGame || !gameId) return;
-
-    // Send heartbeat every 10 seconds to track active connections
-    const heartbeatInterval = setInterval(async () => {
-      try {
-        await fetch('/api/poker/heartbeat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ gameId }),
-        });
-      } catch (error) {
-        console.error('Heartbeat failed:', error);
-      }
-    }, 10000);
-
-    return () => clearInterval(heartbeatInterval);
-  }, [isUserInGame, gameId]);
+  // Note: Heartbeat tracking removed - Socket.io provides built-in connection tracking
+  // Connection status is monitored via socket 'connect' and 'disconnect' events
 }
 
 /**

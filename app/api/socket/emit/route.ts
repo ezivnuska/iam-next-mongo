@@ -3,6 +3,7 @@
 // Also handles incoming client signals that trigger server-side actions
 
 import { NextRequest, NextResponse } from 'next/server'
+import { checkSocketRateLimit, SOCKET_RATE_LIMITS } from '@/app/lib/api/socket-rate-limiter'
 
 export async function POST(request: NextRequest) {
 	try {
@@ -63,7 +64,108 @@ export async function POST(request: NextRequest) {
 				return NextResponse.json({ success: true });
 			}
 
-			return NextResponse.json({ error: 'Unknown signal' }, { status: 400 });
+			if (signal === 'poker:bet' && gameId && userId) {
+			// Check rate limit
+			const rateLimit = checkSocketRateLimit(userId, 'poker:bet', SOCKET_RATE_LIMITS.GAME_ACTION);
+			if (rateLimit.isLimited) {
+				const retryAfter = Math.ceil((rateLimit.resetTime - Date.now()) / 1000);
+				console.warn(`[Socket Emit] Rate limit exceeded for user ${userId} on poker:bet`);
+				return NextResponse.json(
+					{ error: 'Too many bet requests. Please slow down.' },
+					{
+						status: 429,
+						headers: {
+							'Retry-After': retryAfter.toString(),
+						}
+					}
+				);
+			}
+
+			const { placeBet } = await import('@/app/poker/lib/server/actions/poker-game-controller');
+			const { chipCount } = body;
+
+			try {
+				const result = await placeBet(gameId, userId, chipCount ?? 1);
+				const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
+
+				// Emit granular events based on what happened
+				await PokerSocketEmitter.emitGameActionResults(result.events);
+
+				return NextResponse.json({ success: true });
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : 'Failed to place bet';
+				console.error('[Socket Emit Route] Bet error:', errorMessage);
+				return NextResponse.json({ error: errorMessage }, { status: 500 });
+			}
+		}
+
+		if (signal === 'poker:fold' && gameId && userId) {
+			// Check rate limit
+			const rateLimit = checkSocketRateLimit(userId, 'poker:fold', SOCKET_RATE_LIMITS.GAME_ACTION);
+			if (rateLimit.isLimited) {
+				const retryAfter = Math.ceil((rateLimit.resetTime - Date.now()) / 1000);
+				console.warn(`[Socket Emit] Rate limit exceeded for user ${userId} on poker:fold`);
+				return NextResponse.json(
+					{ error: 'Too many fold requests. Please slow down.' },
+					{
+						status: 429,
+						headers: {
+							'Retry-After': retryAfter.toString(),
+						}
+					}
+				);
+			}
+
+			const { fold } = await import('@/app/poker/lib/server/actions/poker-game-controller');
+
+			try {
+				await fold(gameId, userId);
+				return NextResponse.json({ success: true });
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : 'Failed to fold';
+				console.error('[Socket Emit Route] Fold error:', errorMessage);
+				return NextResponse.json({ error: errorMessage }, { status: 500 });
+			}
+		}
+
+		if (signal === 'poker:set_timer_action' && gameId && userId) {
+			// Check rate limit
+			const rateLimit = checkSocketRateLimit(userId, 'poker:set_timer_action', SOCKET_RATE_LIMITS.TIMER);
+			if (rateLimit.isLimited) {
+				const retryAfter = Math.ceil((rateLimit.resetTime - Date.now()) / 1000);
+				console.warn(`[Socket Emit] Rate limit exceeded for user ${userId} on poker:set_timer_action`);
+				return NextResponse.json(
+					{ error: 'Too many timer action requests. Please slow down.' },
+					{
+						status: 429,
+						headers: {
+							'Retry-After': retryAfter.toString(),
+						}
+					}
+				);
+			}
+
+			const { setTurnTimerAction } = await import('@/app/poker/lib/server/actions/poker-game-controller');
+			const { timerAction, betAmount } = body;
+
+			if (!timerAction || !['fold', 'call', 'check', 'bet', 'raise'].includes(timerAction)) {
+				return NextResponse.json(
+					{ error: 'Invalid timerAction. Must be one of: fold, call, check, bet, raise' },
+					{ status: 400 }
+				);
+			}
+
+			try {
+				await setTurnTimerAction(gameId, userId, timerAction, betAmount);
+				return NextResponse.json({ success: true });
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : 'Failed to set timer action';
+				console.error('[Socket Emit Route] Timer action error:', errorMessage);
+				return NextResponse.json({ error: errorMessage }, { status: 500 });
+			}
+		}
+
+		return NextResponse.json({ error: 'Unknown signal' }, { status: 400 });
 		}
 
 		console.log('[Socket Emit Route] Received emit request:', { event, room, hasData: !!data, excludeUserId });

@@ -74,7 +74,6 @@ export {
 
 // Export API action factories
 export {
-  fetchCurrentGame,
   createJoinGameAction,
   createPlaceBetAction,
   createFoldAction,

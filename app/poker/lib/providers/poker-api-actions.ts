@@ -4,19 +4,7 @@ import type { PokerStateUpdatePayload } from '@/app/lib/socket/events';
 
 // ============= API Action Functions =============
 
-export const fetchCurrentGame = async () => {
-  try {
-    const response = await fetch('/api/poker/current');
-    if (response.ok) {
-      const data = await response.json();
-      return data.game || null;
-    }
-  } catch (error) {
-    console.error('Error fetching current game:', error);
-  }
-  return null;
-};
-
+// NOTE: fetchCurrentGame removed - redundant with singleton pattern
 // NOTE: createAndJoinGameAction removed - using singleton game pattern instead
 
 export const createJoinGameAction = (
@@ -72,34 +60,68 @@ export const createJoinGameAction = (
   };
 };
 
-export const createPlaceBetAction = (gameId: string | null) => {
+export const createPlaceBetAction = (gameId: string | null, socket: any) => {
   return async (chipCount: number = 1) => {
-    if (!gameId) return;
+    if (!gameId || !socket || !socket.connected) {
+      console.error('[Place Bet] Invalid state - gameId:', gameId, 'socket connected:', socket?.connected);
+      return;
+    }
+
     try {
-      const response = await fetch('/api/poker/bet', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameId, chipCount }),
-      });
-      if (!response.ok) console.error('Failed to place bet');
+      // Emit socket event to place bet
+      socket.emit('poker:bet', { gameId, chipCount });
+
+      // Listen for success/error responses (one-time listeners)
+      const successHandler = () => {
+        console.log('[Place Bet] Successfully placed bet via socket');
+        socket.off('poker:bet_error', errorHandler);
+      };
+
+      const errorHandler = (data: any) => {
+        const errorMessage = data.error || 'Failed to place bet';
+        console.error('[Place Bet]', errorMessage);
+        alert(`Failed to place bet: ${errorMessage}`);
+        socket.off('poker:bet_success', successHandler);
+      };
+
+      socket.once('poker:bet_success', successHandler);
+      socket.once('poker:bet_error', errorHandler);
     } catch (error) {
       console.error('Error placing bet:', error);
+      alert('Error placing bet. Please try again.');
     }
   };
 };
 
-export const createFoldAction = (gameId: string | null) => {
+export const createFoldAction = (gameId: string | null, socket: any) => {
   return async () => {
-    if (!gameId) return;
+    if (!gameId || !socket || !socket.connected) {
+      console.error('[Fold] Invalid state - gameId:', gameId, 'socket connected:', socket?.connected);
+      return;
+    }
+
     try {
-      const response = await fetch('/api/poker/fold', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameId }),
-      });
-      if (!response.ok) console.error('Failed to fold');
+      // Emit socket event to fold
+      socket.emit('poker:fold', { gameId });
+
+      // Listen for success/error responses (one-time listeners)
+      const successHandler = () => {
+        console.log('[Fold] Successfully folded via socket');
+        socket.off('poker:fold_error', errorHandler);
+      };
+
+      const errorHandler = (data: any) => {
+        const errorMessage = data.error || 'Failed to fold';
+        console.error('[Fold]', errorMessage);
+        alert(`Failed to fold: ${errorMessage}`);
+        socket.off('poker:fold_success', successHandler);
+      };
+
+      socket.once('poker:fold_success', successHandler);
+      socket.once('poker:fold_error', errorHandler);
     } catch (error) {
       console.error('Error folding:', error);
+      alert('Error folding. Please try again.');
     }
   };
 };
@@ -174,15 +196,31 @@ export const createDeleteGameAction = (
   };
 };
 
-export const createSetTurnTimerAction = (gameId: string | null) => {
+export const createSetTurnTimerAction = (gameId: string | null, socket: any) => {
   return async (timerAction: 'fold' | 'call' | 'check' | 'bet' | 'raise', betAmount?: number) => {
-    if (!gameId) return;
+    if (!gameId || !socket || !socket.connected) {
+      console.error('[Timer] Invalid state - gameId:', gameId, 'socket connected:', socket?.connected);
+      return;
+    }
+
     try {
-      await fetch('/api/poker/timer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameId, timerAction, betAmount }),
-      });
+      // Emit socket event to set timer action
+      socket.emit('poker:set_timer_action', { gameId, timerAction, betAmount });
+
+      // Listen for success/error responses (one-time listeners)
+      const successHandler = () => {
+        console.log('[Timer] Successfully set timer action via socket');
+        socket.off('poker:timer_error', errorHandler);
+      };
+
+      const errorHandler = (data: any) => {
+        const errorMessage = data.error || 'Failed to set timer action';
+        console.error('[Timer]', errorMessage);
+        socket.off('poker:timer_success', successHandler);
+      };
+
+      socket.once('poker:timer_success', successHandler);
+      socket.once('poker:timer_error', errorHandler);
     } catch (error) {
       console.error('Error setting turn timer action:', error);
     }

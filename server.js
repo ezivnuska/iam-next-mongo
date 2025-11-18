@@ -170,6 +170,120 @@ app.prepare().then(() => {
 			}
 		});
 
+		// Handle poker bet action
+		socket.on('poker:bet', async ({ gameId, chipCount }) => {
+			console.log('[Socket] Received poker:bet for game:', gameId, 'user:', socket.userId, 'chips:', chipCount);
+
+			try {
+				// User must be registered first
+				if (!socket.userId) {
+					socket.emit('poker:bet_error', { error: 'Not authenticated - register first' });
+					return;
+				}
+
+				// Delegate to API route which handles all the bet logic
+				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						signal: 'poker:bet',
+						gameId,
+						userId: socket.userId,
+						chipCount
+					}),
+				});
+
+				const result = await response.json();
+
+				if (!response.ok) {
+					console.error('[Socket] Bet failed:', result.error);
+					socket.emit('poker:bet_error', { error: result.error });
+				} else {
+					console.log('[Socket] Successfully processed bet');
+					socket.emit('poker:bet_success', { success: true });
+				}
+			} catch (error) {
+				console.error('[Socket] Error processing bet:', error);
+				socket.emit('poker:bet_error', { error: error.message || 'Failed to place bet' });
+			}
+		});
+
+		// Handle poker fold action
+		socket.on('poker:fold', async ({ gameId }) => {
+			console.log('[Socket] Received poker:fold for game:', gameId, 'user:', socket.userId);
+
+			try {
+				// User must be registered first
+				if (!socket.userId) {
+					socket.emit('poker:fold_error', { error: 'Not authenticated - register first' });
+					return;
+				}
+
+				// Delegate to API route which handles all the fold logic
+				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						signal: 'poker:fold',
+						gameId,
+						userId: socket.userId
+					}),
+				});
+
+				const result = await response.json();
+
+				if (!response.ok) {
+					console.error('[Socket] Fold failed:', result.error);
+					socket.emit('poker:fold_error', { error: result.error });
+				} else {
+					console.log('[Socket] Successfully processed fold');
+					socket.emit('poker:fold_success', { success: true });
+				}
+			} catch (error) {
+				console.error('[Socket] Error processing fold:', error);
+				socket.emit('poker:fold_error', { error: error.message || 'Failed to fold' });
+			}
+		});
+
+		// Handle poker timer action pre-selection
+		socket.on('poker:set_timer_action', async ({ gameId, timerAction, betAmount }) => {
+			console.log('[Socket] Received poker:set_timer_action for game:', gameId, 'user:', socket.userId, 'action:', timerAction);
+
+			try {
+				// User must be registered first
+				if (!socket.userId) {
+					socket.emit('poker:timer_error', { error: 'Not authenticated - register first' });
+					return;
+				}
+
+				// Delegate to API route which handles all the timer logic
+				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						signal: 'poker:set_timer_action',
+						gameId,
+						userId: socket.userId,
+						timerAction,
+						betAmount
+					}),
+				});
+
+				const result = await response.json();
+
+				if (!response.ok) {
+					console.error('[Socket] Set timer action failed:', result.error);
+					socket.emit('poker:timer_error', { error: result.error });
+				} else {
+					console.log('[Socket] Successfully set timer action');
+					socket.emit('poker:timer_success', { success: true });
+				}
+			} catch (error) {
+				console.error('[Socket] Error setting timer action:', error);
+				socket.emit('poker:timer_error', { error: error.message || 'Failed to set timer action' });
+			}
+		});
+
 		socket.on('disconnect', () => {
 			if (socket.userId) {
 				const userId = socket.userId
