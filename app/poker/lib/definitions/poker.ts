@@ -4,6 +4,16 @@ import type { GameActionType } from './game-actions';
 
 export type Suit = 'hearts' | 'clubs' | 'diamonds' | 'spades';
 
+/**
+ * Player component orientation for strategic table positioning
+ * Controls the layout direction of avatar and hand
+ */
+export type PlayerOrientation = 'ltr' | 'rtl' | 'ttb' | 'btt';
+// ltr: left-to-right (avatar left, hand right)
+// rtl: right-to-left (hand left, avatar right)
+// ttb: top-to-bottom (avatar top, hand below)
+// btt: bottom-to-top (hand top, avatar below)
+
 export interface Card {
   id: string;
   type: number;

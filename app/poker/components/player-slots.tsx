@@ -5,12 +5,82 @@
 import { memo } from 'react';
 import Player from './player';
 import { Button } from '@/app/ui/button';
-import type { Player as PlayerType } from '@/app/poker/lib/definitions/poker';
+import type { Player as PlayerType, PlayerOrientation } from '@/app/poker/lib/definitions/poker';
 import { useUser } from '@/app/lib/providers/user-provider';
 import UserAvatar from '@/app/ui/user/user-avatar';
 import { useGameState } from '@/app/poker/lib/providers/poker-provider';
 import clsx from 'clsx';
 // import PlayerCircle from './player-new';
+
+/**
+ * Slot configuration for strategic player positioning
+ * Each slot has position classes and orientation for mobile and desktop
+ */
+interface SlotConfig {
+  position: string;  // Tailwind classes for positioning (responsive)
+  mobileOrientation: PlayerOrientation;
+  desktopOrientation: PlayerOrientation;
+}
+
+/**
+ * Strategic slot configurations for 5-player table layout
+ * Positions create a circular arrangement around the table
+ * Orientations ensure players face toward the table center
+ */
+const SLOT_CONFIGS: SlotConfig[] = [
+  // Slot 0: Bottom-left (typical "hero" position for current user)
+  {
+    position: 'bottom-[5%] left-[5%] sm:bottom-[10%] sm:left-[5%]',
+    mobileOrientation: 'ltr',
+    desktopOrientation: 'ltr',
+  },
+  // Slot 1: Left side
+  {
+    position: 'top-[25%] left-[2%] sm:top-[30%] sm:left-[2%]',
+    mobileOrientation: 'ltr',
+    desktopOrientation: 'ltr',
+  },
+  // Slot 2: Top-left
+  {
+    position: 'top-[5%] left-[9%] sm:top-[5%] sm:left-[25%]',
+    mobileOrientation: 'ttb',
+    desktopOrientation: 'ttb',
+  },
+  // Slot 3: Top-right
+  {
+    position: 'top-[5%] right-[9%] sm:top-[5%] sm:right-[25%]',
+    mobileOrientation: 'ttb',
+    desktopOrientation: 'ttb',
+  },
+  // Slot 4: Right side
+  {
+    position: 'top-[25%] right-[2%] sm:top-[30%] sm:right-[2%]',
+    mobileOrientation: 'rtl',
+    desktopOrientation: 'rtl',
+  },
+];
+
+/**
+ * Calculate which slot a player should occupy based on player count
+ * - 5 players: First player starts at slot 0
+ * - 4 players: First player starts at slot 1
+ * - 3 players: First player starts at slot 1
+ * - 2 players: First player starts at slot 2
+ * - 1 player: First player starts at slot 2
+ */
+function getSlotIndexForPlayer(playerIndex: number, playerCount: number): number {
+  let startSlot: number;
+
+  if (playerCount === 5) {
+    startSlot = 0;
+  } else if (playerCount >= 3) {
+    startSlot = 1;
+  } else {
+    startSlot = 2;
+  }
+
+  return (startSlot + playerIndex) % 5;
+}
 
 interface PlayerSlotsProps {
   players: PlayerType[];
@@ -43,7 +113,6 @@ function getBlindPositions(dealerButtonPosition: number, playerCount: number) {
 
 function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameId, onJoinGame, onLeaveGame }: PlayerSlotsProps) {
   const MAX_SLOTS = 5;
-  const slots = Array.from({ length: MAX_SLOTS }, (_, i) => i);
 
   const { user } = useUser();
   const { dealerButtonPosition } = useGameState();
@@ -59,58 +128,37 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
 
   // Show button if user is not in game, game is not locked (in progress), and table is not full
   const canJoin = !isUserInGame && !locked && players.length < MAX_SLOTS;
-  
-  const slotPositions = [
-    'top-0 left-[2%] sm:top-[60%] sm:left-[2%]',
-    'top-[10%] left-[35%] sm:top-[15%] sm:left-[15%]',
-    'top-[25%] left-[60%] sm:-top-1 sm:left-[38%]',
-    'top-[60%] left-[70%] sm:top-0 sm:left-[45%]',
-    'top-[80%] left-[2%] sm:top-0 sm:left-[70%]',
-  ]
 
   return (
     <ul className='flex h-full w-full relative'>
+      {players.map((player, playerIndex) => {
+        const slotIndex = getSlotIndexForPlayer(playerIndex, players.length);
+        const slotConfig = SLOT_CONFIGS[slotIndex];
 
-      {slots.map((slotIndex) => {
-        const player = players[slotIndex];
+        if (!slotConfig) return null;
 
-        if (player) {
-          const isCurrentUser = player.id === currentUserId;
+        const isCurrentUser = player.id === currentUserId;
 
-          // Determine if this player has the dealer button
-          const isDealer = slotIndex === dealerButtonPosition;
+        // Determine if this player has the dealer button
+        const isDealer = playerIndex === dealerButtonPosition;
 
-          // Show actual player wrapped in <li>
-          return (
-            <li key={player.id} className={clsx(
-                'absolute',
-                slotPositions[slotIndex],
-            )}>
-              <Player
-                player={player}
-                index={slotIndex}
-                currentPlayerIndex={currentPlayerIndex}
-                potContribution={0}
-                isCurrentUser={isCurrentUser}
-                isDealer={isDealer}
-              />
-            </li>
-          );
-        }
-
-        // // Show empty slot with current user and Join button
-        // const isFirstEmptySlot = slotIndex === players.length;
-
-        // return !isUserInGame && isFirstEmptySlot && user && (
-        //     <li key={slotIndex} className='flex'>
-        //         <div className='flex flex-row gap-2 items-center text-white'>
-        //             <UserAvatar size={44} username={user.username} />
-        //             <div className='flex flex-row gap-1 sm:gap-0 sm:flex-col items-center'>
-        //                 <span className='text-md'>{user.username}</span>
-        //             </div>
-        //         </div>
-        //     </li>
-        // );
+        return (
+          <li key={player.id} className={clsx(
+              'absolute',
+              slotConfig.position,
+          )}>
+            <Player
+              player={player}
+              index={playerIndex}
+              currentPlayerIndex={currentPlayerIndex}
+              potContribution={0}
+              isCurrentUser={isCurrentUser}
+              isDealer={isDealer}
+              mobileOrientation={slotConfig.mobileOrientation}
+              desktopOrientation={slotConfig.desktopOrientation}
+            />
+          </li>
+        );
       })}
     </ul>
   );

@@ -20,35 +20,35 @@ export function formatNotificationMessage(payload: PokerNotificationPayload): st
 
   switch (payload.notificationType) {
     case 'player_bet':
-      return payload.chipAmount === 0
-        ? `Checked`
-        : `Bet $${payload.chipAmount}`;
     //   return payload.chipAmount === 0
-    //     ? `${payload.playerName} checked`
-    //     : `${payload.playerName} bet $${payload.chipAmount}`;
+    //     ? `Checked`
+    //     : `Bet $${payload.chipAmount}`;
+      return payload.chipAmount === 0
+        ? `${payload.playerName} checked`
+        : `${payload.playerName} bet $${payload.chipAmount}`;
 
     case 'player_raise':
-      return `Raised to $${payload.chipAmount}`;
-    //   return `${payload.playerName} raised to $${payload.chipAmount}`;
+    //   return `Raised to $${payload.chipAmount}`;
+      return `${payload.playerName} raised to $${payload.chipAmount}`;
 
     case 'player_call':
-      return `Called`;
-    //   return `${payload.playerName} called`;
+    //   return `Called`;
+      return `${payload.playerName} called`;
 
     case 'player_check':
-      return `Checked`;
-    //   return `${payload.playerName} checked`;
+    //   return `Checked`;
+      return `${payload.playerName} checked`;
 
     case 'player_fold':
-      return `Folded`;
-    //   return `${payload.playerName} folded`;
+    //   return `Folded`;
+      return `${payload.playerName} folded`;
 
     case 'player_all_in':
-      return `All-in!`;
-    //   return `${payload.playerName} went all-in!`;
+    //   return `All-in!`;
+      return `${payload.playerName} went all-in!`;
 
     case 'player_thinking':
-      return `Thinking...`;
+      return `${payload.playerName} thinking...`;
 
     case 'winner_determined':
       if (payload.handRank) {
@@ -74,12 +74,12 @@ export function formatNotificationMessage(payload: PokerNotificationPayload): st
       // Blind notifications show on player card, so no need to include player name
       if (payload.blindType === 'small') {
         return payload.chipAmount
-          ? `Posted small blind ($${payload.chipAmount})`
-          : `Posted small blind`;
+          ? `${payload.playerName} posted small blind ($${payload.chipAmount})`
+          : `${payload.playerName} posted small blind`;
       } else {
         return payload.chipAmount
-          ? `Posted big blind ($${payload.chipAmount})`
-          : `Posted big blind`;
+          ? `${payload.playerName} posted big blind ($${payload.chipAmount})`
+          : `${payload.playerName} posted big blind`;
       }
 
     case 'cards_dealt':
@@ -96,8 +96,8 @@ export function formatNotificationMessage(payload: PokerNotificationPayload): st
       }
 
     case 'player_joined':
-      return `Joined`;
-    //   return `${payload.playerName} joined`;
+    //   return `Joined`;
+      return `${payload.playerName} joined`;
 
     default:
       console.warn('[NotificationFormatter] Unknown notification type:', payload.notificationType);

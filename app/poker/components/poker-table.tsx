@@ -151,7 +151,7 @@ export default function PokerTable() {
             <div className='absolute top-0 right-0 bottom-0 left-0 z-5'>
 
                 {/* Main table area */}
-                <div id='table' className='flex h-full flex-row items-center sm:items-end justify-start sm:justify-center'>
+                <div id='table' className='flex h-full flex-row items-center sm:items-end justify-center sm:justify-center'>
                     <div className='flex flex-col items-center justify-center gap-4 m-5'>
                         <Pot />
                         <CommunalCards />

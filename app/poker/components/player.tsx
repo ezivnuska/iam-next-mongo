@@ -4,10 +4,9 @@
 
 import Hand from './hand';
 import { getChipTotal } from '@/app/poker/lib/utils/poker';
-import type { Player as PlayerType } from '@/app/poker/lib/definitions/poker';
+import type { Player as PlayerType, PlayerOrientation } from '@/app/poker/lib/definitions/poker';
 import clsx from 'clsx';
 import { useGameState } from '@/app/poker/lib/providers/poker-provider';
-import { usePlayerNotifications } from '@/app/poker/lib/providers/player-notification-provider';
 import UserAvatar from '@/app/ui/user/user-avatar';
 import PlayerConnectionStatus from './player-connection-status';
 import { useActionTimerPercentage } from '@/app/poker/lib/hooks/use-action-timer-percentage';
@@ -19,103 +18,100 @@ interface PlayerProps {
   potContribution: number;
   isCurrentUser?: boolean;
   isDealer?: boolean;
+  mobileOrientation?: PlayerOrientation;
+  desktopOrientation?: PlayerOrientation;
 }
 
-export default function Player({ player, index, currentPlayerIndex, potContribution, isCurrentUser, isDealer }: PlayerProps) {
+/**
+ * Get flex direction classes based on orientation
+ * Maps orientation to Tailwind flex classes
+ */
+function getOrientationClasses(mobileOrientation: PlayerOrientation, desktopOrientation: PlayerOrientation): string {
+  const mobileClass = {
+    'ltr': 'flex-row',
+    'rtl': 'flex-row-reverse',
+    'ttb': 'flex-col',
+    'btt': 'flex-col-reverse',
+  }[mobileOrientation];
+
+  const desktopClass = {
+    'ltr': 'sm:flex-row',
+    'rtl': 'sm:flex-row-reverse',
+    'ttb': 'sm:flex-col',
+    'btt': 'sm:flex-col-reverse',
+  }[desktopOrientation];
+
+  return `${mobileClass} ${desktopClass}`;
+}
+
+export default function Player({
+    player,
+    index,
+    currentPlayerIndex,
+    potContribution,
+    isCurrentUser,
+    isDealer,
+    mobileOrientation = 'ltr',
+    desktopOrientation = 'ltr',
+}: PlayerProps) {
     const chipTotal = player.chipCount;
     const isCurrentPlayer = index === currentPlayerIndex;
     const { winner, actionTimer } = useGameState();
     const isWinner = player.id === winner?.winnerId;
-    const { getPlayerNotification } = usePlayerNotifications();
 
     // Timer progress bar - only show for current player
     const timerForCurrentPlayer = isCurrentPlayer ? actionTimer : undefined;
     const timePercentage = useActionTimerPercentage(timerForCurrentPlayer, player.id);
 
-    // Get active notification for this player
-    const activeNotification = getPlayerNotification(player.id);
+    // Get orientation classes for layout
+    const orientationClasses = getOrientationClasses(mobileOrientation, desktopOrientation);
 
     return (
         <div
             className={clsx(
-                'flex flex-col gap-4 h-[90px] overflow-visible p-1 transition-opacity duration-300',
-                // 'flex flex-row gap-4 rounded-full overflow-visible bg-green-800 relative px-2 py-2 pr-4',
-                // {
-                //   'bg-green-600 border-2 border-white': isCurrentPlayer,
-                // },
+                'flex gap-2 overflow-visible p-1 transition-opacity duration-300',
+                orientationClasses,
                 {
                     'opacity-50': player.isAway,
                 },
             )}
         >
         
-            {/* Timer progress bar - shown at top when player is taking their turn */}
-            {/* {timePercentage > 0 && (
-                <div
-                className="absolute left-0 top-0 h-full rounded-full overflow-hidden bg-blue-600 transition-all duration-100 ease-linear z-20"
-                style={{ width: `${timePercentage}%` }}
-                aria-hidden="true"
-                />
-            )} */}
-
-            <div className='flex flex-1 h-full w-full flex-row-reverse sm:flex-row gap-2 items-stretch'>
-                <div className='flex flex-full flex-col gap-1 relative'>
-                    {/* <div className='absolute top-0 left-0 z-10'> */}
-                        <div className='flex flex-col gap-1'>
-                            <div
-                                className={clsx(
-                                    'rounded-full border-2 relative overflow-visible',
-                                    // 'flex flex-row gap-4 rounded-full overflow-visible bg-green-800 relative px-2 py-2 pr-4',
-                                    {
-                                        'border-white': isCurrentPlayer,
-                                    },
-                                )}
-                            >
-                                <UserAvatar size={50} username={player.username} />
-                            </div>
-
-                            {isDealer && (
-                                <div className='absolute top-0 right-0 z-20 rounded-full bg-yellow-500 text-black overflow-hidden border-1'>
-                                    <span className='text-xs font-bold px-1.5 py-0.5 text-black'>
-                                        D
-                                    </span>
-                                </div>
+            {/* Avatar section with dealer button and chip count */}
+            <div className='flex flex-col gap-1'>
+                <div className='flex flex-row gap-2'>
+                    <div className='flex flex-col gap-1 relative'>
+                        <div
+                            className={clsx(
+                                'rounded-full border-2 relative overflow-visible',
+                                {
+                                    'border-white': isCurrentPlayer,
+                                },
                             )}
+                        >
+                            <UserAvatar size={50} username={player.username} />
                         </div>
+
+                        {isDealer && (
+                            <div className='absolute top-0 right-0 z-20 rounded-full bg-yellow-500 text-black overflow-hidden border-1'>
+                                <span className='text-xs font-bold px-1.5 py-0.5 text-black'>
+                                    D
+                                </span>
+                            </div>
+                        )}
                         {player.isAllIn && !winner ? (
-                            <span className="text-white px-1.5 py-0.5 bg-red-500 overflow-hidden rounded text-xs font-bold">
+                            <span className="text-white px-1.5 py-0.5 bg-red-500 overflow-hidden rounded text-xs font-bold text-center">
                                 ALL-IN
                             </span>
-                        ) : <span className='text-sm text-white px-1'>{chipTotal}</span>}
-                    {/* </div> */}
-                </div>
-
-                <div>
-                    <div className='h-6 border-1 border-white'>
-                        {activeNotification && (
-                            <span className='text-xs text-yellow-300 font-semibold'>
-                                {activeNotification.message}
-                            </span>
-                        )}
+                        ) : <span className='text-sm text-white px-1 text-center'>{chipTotal}</span>}
                     </div>
                     {player.hand.length > 0 && !player.folded && (
-                        <div className='w-[60px] border-1 border-white'>
-                        {/* <div className='absolute top-[35%] -left-[100%] sm:left-[80%]'> */}
+                        <div className='w-[60px]'>
                             <Hand cards={player.hand} hidden={!(isCurrentUser || winner)} />
                         </div>
                     )}
-                </div>              
-                {/* <div className='flex flex-1 flex-col items-stretch justify-between gap-1'> */}
-                    {/* <span className='text-md'>{player.username}</span> */}
-                    {/* Player's active action notification (displays for 2 seconds) */}
-                    {/* <div className='h-6'> */}
-                        {/* {activeNotification && (
-                            <span className='h-6 text-xs text-yellow-300 font-semibold'>
-                                {activeNotification.message}
-                            </span>
-                        )} */}
-                    {/* </div> */}
-                {/* </div> */}
+                </div>
+
             </div>
         </div>
     );
