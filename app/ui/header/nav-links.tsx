@@ -13,6 +13,7 @@ import clsx from 'clsx';
 import { useUser } from '@/app/lib/providers/user-provider';
 import UserAvatar from '@/app/ui/user/user-avatar';
 import NotificationsButton from '@/app/ui/header/notifications-button';
+import PokerNavButton from '@/app/ui/header/poker-nav-button';
 
 const links = [
     {
@@ -81,6 +82,7 @@ export default function NavLinks() {
                     </Link>
                 );
             })}
+            <PokerNavButton />
             <NotificationsButton />
         </div>
     );

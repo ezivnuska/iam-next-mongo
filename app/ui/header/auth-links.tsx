@@ -4,25 +4,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 import { useUser } from "@/app/lib/providers/user-provider";
-import { ArrowRightIcon, PowerIcon } from "@heroicons/react/24/outline";
+import { ArrowRightIcon } from "@heroicons/react/24/outline";
 
 export default function AuthLinks() {
-  const { status, user, signOut } = useUser();
+  const { status } = useUser();
   const pathname = usePathname();
-  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const hideAuthLinks = pathname === "/signin" || pathname === "/signup";
-
-  const handleSignOut = async () => {
-    setIsSigningOut(true);
-    try {
-      await signOut(); // UserProvider handles clearing state + next-auth
-    } finally {
-      setIsSigningOut(false);
-    }
-  };
 
   if (hideAuthLinks) return null;
 
