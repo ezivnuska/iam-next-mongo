@@ -331,28 +331,29 @@ export const createDealerButtonMovedHandler = (
 };
 
 export const createPlayerPresenceUpdatedHandler = (
-  updatePlayers: (updater: (players: Player[]) => Player[]) => void
+  updatePlayers: (players: Player[]) => void,
+  getPlayers: () => Player[]
 ) => {
   return (payload: { playerId: string; isAway: boolean }) => {
     console.log('[PlayerPresenceUpdatedHandler] Player presence updated:', payload.playerId, 'isAway:', payload.isAway);
-    updatePlayers((players) =>
-      players.map(p =>
-        p.id === payload.playerId
-          ? { ...p, isAway: payload.isAway }
-          : p
-      )
+    const currentPlayers = getPlayers();
+    const updatedPlayers = currentPlayers.map(p =>
+      p.id === payload.playerId
+        ? { ...p, isAway: payload.isAway }
+        : p
     );
+    updatePlayers(updatedPlayers);
   };
 };
 
 export const createGameUnlockedHandler = (
-  updateGameStatus: (updater: (status: { locked: boolean; winner: any }) => { locked: boolean; winner: any }) => void,
+  updateGameStatus: (locked: boolean, lockTime?: string, winner?: any) => void,
   setStage: (stage: number) => void,
   setDealerButtonPosition: (position: number) => void
 ) => {
   return (payload: { locked: false; stage: number; dealerButtonPosition: number }) => {
     console.log('[GameUnlockedHandler] Game unlocked:', payload);
-    updateGameStatus(() => ({ locked: false, winner: undefined }));
+    updateGameStatus(false, undefined, undefined);
     setStage(payload.stage);
     setDealerButtonPosition(payload.dealerButtonPosition);
   };

@@ -424,7 +424,7 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
 
   // Keep refs updated
   useEffect(() => {
-    presenceRef.current = { socket, gameId, isUserInGame };
+    presenceRef.current = { socket, gameId, isUserInGame: !!isUserInGame };
     if (isUserInGame) {
       console.log('[PokerProvider] Ref updated - isUserInGame:', isUserInGame, 'gameId:', gameId);
     }
