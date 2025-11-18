@@ -10,7 +10,7 @@ import { SOCKET_EVENTS } from '@/app/lib/socket/events';
 import PlayerSlots from './player-slots';
 import CommunalCards from './communal-cards';
 import Pot from './pot';
-import PlayerControls from './player-controls';
+import PlayerControls from './player-controls-vertical';
 import GameNotification from './game-notification';
 import SoftHeader from '@/app/ui/header/soft-header';
 import { Button } from '@/app/ui/button';
@@ -139,7 +139,7 @@ export default function PokerTable() {
 
         <div id='poker-table' className='flex flex-1 flex-col sm:flex-row gap-2 rounded-tl-full bg-green-700 p-2'>
             {/* Player slots sidebar */}
-            <div id='players' className='flex sm:flex-3'>
+            <div id='players' className='flex sm:flex-3 border-1 border-white'>
                 <PlayerSlots
                     players={players}
                     locked={locked}
@@ -166,7 +166,7 @@ export default function PokerTable() {
                 </div>
 
                 {/* Main table area */}
-                <div id='table' className='flex w-full flex-col grow items-stretch justify-between'>
+                <div id='table' className='flex w-full flex-col grow items-stretch justify-between border-1 border-white'>
 
                     <div className='flex flex-1 flex-full flex-col items-stretch justify-between gap-4'>
                         {/* Center area with pot and communal cards */}

@@ -22,75 +22,94 @@ interface PlayerProps {
 }
 
 export default function Player({ player, index, currentPlayerIndex, potContribution, isCurrentUser, isDealer }: PlayerProps) {
-  const chipTotal = player.chipCount;
-  const isCurrentPlayer = index === currentPlayerIndex;
-  const { winner, actionTimer } = useGameState();
-  const isWinner = player.id === winner?.winnerId;
-  const { getPlayerNotification } = usePlayerNotifications();
+    const chipTotal = player.chipCount;
+    const isCurrentPlayer = index === currentPlayerIndex;
+    const { winner, actionTimer } = useGameState();
+    const isWinner = player.id === winner?.winnerId;
+    const { getPlayerNotification } = usePlayerNotifications();
 
-  // Timer progress bar - only show for current player
-  const timerForCurrentPlayer = isCurrentPlayer ? actionTimer : undefined;
-  const timePercentage = useActionTimerPercentage(timerForCurrentPlayer, player.id);
+    // Timer progress bar - only show for current player
+    const timerForCurrentPlayer = isCurrentPlayer ? actionTimer : undefined;
+    const timePercentage = useActionTimerPercentage(timerForCurrentPlayer, player.id);
 
-  // Get active notification for this player
-  const activeNotification = getPlayerNotification(player.id);
+    // Get active notification for this player
+    const activeNotification = getPlayerNotification(player.id);
 
-  return (
-    <div
-        className={clsx(
-            'flex rounded-r-full overflow-hidden bg-green-800 relative',
-            {
-              'bg-green-600 border-2 border-white border-l-0': isCurrentPlayer,
-            },
-          )}
-    >
-      {/* Timer progress bar - shown at top when player is taking their turn */}
-      {timePercentage > 0 && (
+    return (
         <div
-          className="absolute left-0 top-0 h-full bg-blue-600 transition-all duration-100 ease-linear z-20"
-          style={{ width: `${timePercentage}%` }}
-          aria-hidden="true"
-        />
-      )}
+            className={clsx(
+                'flex flex-row gap-4 h-[90px] overflow-visible p-1 bg-amber-600',
+                // 'flex flex-row gap-4 rounded-full overflow-visible bg-green-800 relative px-2 py-2 pr-4',
+                // {
+                //   'bg-green-600 border-2 border-white': isCurrentPlayer,
+                // },
+            )}
+        >
+        
+            {/* Timer progress bar - shown at top when player is taking their turn */}
+            {/* {timePercentage > 0 && (
+                <div
+                className="absolute left-0 top-0 h-full rounded-full overflow-hidden bg-blue-600 transition-all duration-100 ease-linear z-20"
+                style={{ width: `${timePercentage}%` }}
+                aria-hidden="true"
+                />
+            )} */}
 
-      <div
-        className='relative z-30 flex flex-1 flex-row gap-1 pl-3 pr-6 py-4 items-center justify-end'
-      >
-            <div className='flex flex-1 flex-row items-center gap-2 justify-between'>
-                <div className='flex flex-1 flex-row gap-4 text-white'>
-                    <UserAvatar size={40} username={player.username} />
-                    <div id='player-action-status' className='flex flex-col'>
-                        <div className='flex flex-row gap-1 items-center'>
-                            <span className='text-md'>{player.username}</span>
-                            <span className='text-md'>({chipTotal})</span>
+            <div className='flex flex-1 h-full w-full flex-row gap-2 items-stretch justify-center border-1 border-white'>
+                <div className='flex flex-full flex-col items-center gap-1'>
+                    {/* <div className='absolute top-0 left-0 z-10'> */}
+                        <div className='flex flex-col items-center gap-2 p-1 relative'>
+                            <div
+                                className={clsx(
+                                    'rounded-full overflow-hidden border-2',
+                                    // 'flex flex-row gap-4 rounded-full overflow-visible bg-green-800 relative px-2 py-2 pr-4',
+                                    {
+                                        'border-white': isCurrentPlayer,
+                                    },
+                                )}
+                            >
+                                <UserAvatar size={36} username={player.username} />
+                            </div>
+
                             {isDealer && (
-                                <span className='text-xs font-bold px-1.5 py-0.5 rounded bg-yellow-500 text-black'>
-                                    D
-                                </span>
-                            )}
-                            {potContribution > 0 && (
-                                <span className="text-xs text-gray-700">Pot: ${potContribution}</span>
+                                // <div className='absolute top-0 right-0 z-20 rounded-full bg-yellow-500 text-black overflow-hidden'>
+                                    <span className='absolute top-0 right-0 z-20 text-xs font-bold px-1.5 py-0.5 rounded-full bg-yellow-500 text-black border'>
+                                        D
+                                    </span>
+                                // </div>
                             )}
                         </div>
-                        {/* Player's active action notification (displays for 2 seconds) */}
-                        {activeNotification && (
-                            <div className='flex flex-row gap-1 items-center mt-0.5'>
-                                <span className='text-xs text-yellow-300 font-semibold'>
-                                    {activeNotification.message}
-                                </span>
-                            </div>
+                        {player.isAllIn && !winner ? (
+                            <span className="text-white px-1.5 py-0.5 bg-red-500 overflow-hidden rounded text-xs font-bold">
+                                ALL-IN
+                            </span>
+                        ) : <span className='text-sm text-white'>({chipTotal})</span>}
+                    {/* </div> */}
+                </div>
+                <div className='flex flex-1 flex-col items-stretch justify-between gap-1'>
+                    {/* <span className='text-md'>{player.username}</span> */}
+                    {/* Player's active action notification (displays for 2 seconds) */}
+                    {/* <div className='h-6'> */}
+                        {/* {activeNotification && (
+                            <span className='h-6 text-xs text-yellow-300 font-semibold'>
+                                {activeNotification.message}
+                            </span>
+                        )} */}
+                    {/* </div> */}
+                    <div className='flex h-full'>
+                        {player.hand.length > 0 && !player.folded && (
+                            <Hand cards={player.hand} hidden={!(isCurrentUser || winner)} />
                         )}
                     </div>
-
-                    {player.isAllIn && !winner && (
-                        <span className="bg-red-500 text-white px-1.5 py-0.5 rounded text-xs font-bold">
-                            ALL-IN
+                    
+                    {activeNotification && (
+                        <span className='text-xs text-yellow-300 font-semibold'>
+                            {activeNotification.message}
                         </span>
                     )}
                 </div>
-                {player.hand.length > 0 && <Hand cards={player.hand} hidden={!(isCurrentUser || isWinner)} />}
             </div>
         </div>
-    </div>
-  );
+    );
 }
+

@@ -9,7 +9,7 @@ import type { Player as PlayerType } from '@/app/poker/lib/definitions/poker';
 import { useUser } from '@/app/lib/providers/user-provider';
 import UserAvatar from '@/app/ui/user/user-avatar';
 import { useGameState } from '@/app/poker/lib/providers/poker-provider';
-import PlayerCircle from './player-circle';
+// import PlayerCircle from './player-new';
 
 interface PlayerSlotsProps {
   players: PlayerType[];
@@ -61,18 +61,6 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
 
   return (
     <ul className='flex flex-1 flex-col gap-2'>
-      {/* Show AI player as first item if no human players have joined */}
-      {/* {!hasHumanPlayers && aiPlayer && (
-        <li key={aiPlayer.id}>
-          <Player
-            player={aiPlayer}
-            index={0}
-            currentPlayerIndex={currentPlayerIndex}
-            potContribution={0}
-            isCurrentUser={false}
-          />
-        </li>
-      )} */}
 
       {slots.map((slotIndex) => {
         const player = players[slotIndex];
@@ -80,22 +68,13 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
         if (player) {
           const isCurrentUser = player.id === currentUserId;
 
-          // If no human players, skip AI here (already shown above)
-        //   if (!hasHumanPlayers && player.isAI) {
-        //     return null;
-        //   }
-
-        //   if (!isUserInGame) {
-        //     return null;
-        //   }
-
           // Determine if this player has the dealer button
           const isDealer = slotIndex === dealerButtonPosition;
 
           // Show actual player wrapped in <li>
           return (
-            <li key={player.id} className='flex'>
-              <PlayerCircle
+            <li key={player.id} className='flex border-1 border-white'>
+              <Player
                 player={player}
                 index={slotIndex}
                 currentPlayerIndex={currentPlayerIndex}

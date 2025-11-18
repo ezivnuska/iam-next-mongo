@@ -123,12 +123,28 @@ export function useStageCoordinator(gameId: string | null, playSound?: PlaySound
     }
     currentStageRef.current = stage;
 
-    // NOTE: Sound effects are now played in the CardsDealtHandler when POKER_CARDS_DEALT event is received
-    // This ensures sounds play at the right time based on what cards are actually being dealt
+    // Play sound effect based on what cards are being dealt
+    if (playSound) {
+      const communalCardsCount = communalCards?.length || 0;
+
+      if (stage === 0 && communalCardsCount === 0) {
+        // Hole cards (Preflop stage with no communal cards)
+        console.log('[StageCoordinator] Playing card-deal sound for hole cards');
+        playSound('card-deal');
+      } else if (stage === 1 && communalCardsCount === 3) {
+        // Flop (3 communal cards)
+        console.log('[StageCoordinator] Playing card-deal sound for Flop');
+        playSound('card-deal');
+      } else if ((stage === 2 || stage === 3) && communalCardsCount > 0) {
+        // Turn or River (1 card each)
+        console.log('[StageCoordinator] Playing single-card sound for Turn/River');
+        playSound('single-card');
+      }
+    }
 
     // NOTE: Server handles turn advancement automatically with 2-second delay - no client signaling needed
     console.log(`[StageCoordinator] Stage update applied: ${stageName}`);
-  }, [gameId, isActionNotificationActive]);
+  }, [gameId, isActionNotificationActive, playSound]);
 
 
   /**
@@ -174,8 +190,24 @@ export function useStageCoordinator(gameId: string | null, playSound?: PlaySound
         }
         currentStageRef.current = data.stage;
 
-        // NOTE: Sound effects are now played in the CardsDealtHandler when POKER_CARDS_DEALT event is received
-        // This ensures sounds play at the right time based on what cards are actually being dealt
+        // Play sound effect based on what cards are being dealt
+        if (playSound) {
+          const communalCardsCount = data.communalCards?.length || 0;
+
+          if (data.stage === 0 && communalCardsCount === 0) {
+            // Hole cards (Preflop stage with no communal cards)
+            console.log('[StageCoordinator] Playing card-deal sound for hole cards');
+            playSound('card-deal');
+          } else if (data.stage === 1 && communalCardsCount === 3) {
+            // Flop (3 communal cards)
+            console.log('[StageCoordinator] Playing card-deal sound for Flop');
+            playSound('card-deal');
+          } else if ((data.stage === 2 || data.stage === 3) && communalCardsCount > 0) {
+            // Turn or River (1 card each)
+            console.log('[StageCoordinator] Playing single-card sound for Turn/River');
+            playSound('single-card');
+          }
+        }
 
         // NOTE: Server handles turn advancement automatically - no client signaling needed
         console.log(`[StageCoordinator] Deferred stage update applied: ${stageName}`);

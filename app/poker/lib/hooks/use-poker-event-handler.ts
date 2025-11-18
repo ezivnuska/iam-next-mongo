@@ -20,7 +20,7 @@ import { useNotifications } from '../providers/notification-provider';
 import { usePlayerNotifications } from '../providers/player-notification-provider';
 import { usePotSync } from './use-pot-sync';
 import { usePokerActions } from '../providers/poker-provider';
-import { SOCKET_EVENTS, type PokerNotificationPayload } from '@/app/lib/socket/events';
+import { SOCKET_EVENTS, type PokerNotificationPayload, type PokerActionTimerStartedPayload } from '@/app/lib/socket/events';
 import { formatNotificationMessage } from '../utils/notification-formatter';
 import { POKER_TIMERS } from '../config/poker-constants';
 
@@ -28,7 +28,7 @@ export function usePokerEventHandler(gameId: string | null) {
   const { socket } = useSocket();
   const { user } = useUser();
   const { showNotification, clearNotification } = useNotifications();
-  const { showPlayerNotification, clearAllPlayerNotifications } = usePlayerNotifications();
+  const { showPlayerNotification, clearAllPlayerNotifications, clearPlayerNotification } = usePlayerNotifications();
   const { syncPotFromNotification, shouldSyncPot } = usePotSync();
   const { clearTimerOptimistically, playSound, setCommunalCards, setPlayers } = usePokerActions();
 
@@ -161,7 +161,7 @@ export function usePokerEventHandler(gameId: string | null) {
             if (payload.notificationType === 'player_fold') {
               playSound('fold');
             } else if (payload.notificationType === 'player_check') {
-              // No sound for check
+              playSound('check');
             } else if (payload.notificationType === 'player_call' ||
                        payload.notificationType === 'player_bet' ||
                        payload.notificationType === 'player_raise' ||
@@ -175,8 +175,10 @@ export function usePokerEventHandler(gameId: string | null) {
             message,
             timestamp: Date.now(),
             isBlind: isBlindNotification,
-            // Set duration for player actions and player joined (2s), leave undefined for blinds (manual clear)
-            duration: (isPlayerJoinedNotification || isPlayerAction) ? duration : undefined,
+            // Player joined: auto-clear after 2s
+            // Player actions: persist until their next turn or stage advance
+            // Blinds: manual clear (no duration)
+            duration: isPlayerJoinedNotification ? duration : undefined,
           }, playSound);
         } else {
           // Winner, game_starting, cards dealt: Show as central notification
@@ -208,14 +210,25 @@ export function usePokerEventHandler(gameId: string | null) {
       clearNotification();
     };
 
+    // Handler for timer started - clear the player's previous action notification
+    // This ensures notifications persist until the player's next turn
+    const handleTimerStarted = (payload: PokerActionTimerStartedPayload) => {
+      if (payload.targetPlayerId) {
+        console.log('[PokerEventHandler] Timer started for player:', payload.targetPlayerId, '- clearing their previous notification');
+        clearPlayerNotification(payload.targetPlayerId);
+      }
+    };
+
     // Register socket listeners
     console.log('[PokerEventHandler] Registering poker notification listeners for game:', gameId);
     socket.on(SOCKET_EVENTS.POKER_NOTIFICATION, handlePokerNotification);
     socket.on(SOCKET_EVENTS.POKER_NOTIFICATION_CANCELED, handleNotificationCanceled);
+    socket.on(SOCKET_EVENTS.POKER_ACTION_TIMER_STARTED, handleTimerStarted);
 
     return () => {
       socket.off(SOCKET_EVENTS.POKER_NOTIFICATION, handlePokerNotification);
       socket.off(SOCKET_EVENTS.POKER_NOTIFICATION_CANCELED, handleNotificationCanceled);
+      socket.off(SOCKET_EVENTS.POKER_ACTION_TIMER_STARTED, handleTimerStarted);
     };
-  }, [socket, gameId, user, showNotification, showPlayerNotification, clearNotification, syncPotFromNotification, shouldSyncPot, clearTimerOptimistically, clearAllPlayerNotifications, playSound, setCommunalCards, setPlayers]);
+  }, [socket, gameId, user, showNotification, showPlayerNotification, clearNotification, clearPlayerNotification, syncPotFromNotification, shouldSyncPot, clearTimerOptimistically, clearAllPlayerNotifications, playSound, setCommunalCards, setPlayers]);
 }

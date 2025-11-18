@@ -157,13 +157,23 @@ export async function getCurrentStepInfo(gameId: string): Promise<GameStep | nul
 
 /**
  * Check if only one player remains (for early completion)
+ * Returns true only when all other players have FOLDED (not just all-in)
+ * All-in players are still in the hand and should go to showdown
  */
 export async function checkEarlyCompletion(gameId: string): Promise<boolean> {
   const game = await PokerGame.findById(gameId);
   if (!game) return false;
 
-  const activePlayers = game.players.filter((p: any) => !p.folded && !p.isAllIn);
-  return activePlayers.length === 1;
+  // Count players who haven't folded (includes all-in players)
+  const playersInHand = game.players.filter((p: any) => !p.folded);
+
+  // Early completion only if exactly one player remains (everyone else folded)
+  if (playersInHand.length === 1) {
+    console.log(`[StepManager] Early completion: only ${playersInHand[0].username} remains (all others folded)`);
+    return true;
+  }
+
+  return false;
 }
 
 /**

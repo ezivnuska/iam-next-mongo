@@ -14,7 +14,7 @@ import { savePlayerBalances, awardPotToWinners } from '../flow/poker-game-flow';
 import { dealPlayerCards, reshuffleAllCards, initializeDeck } from '../flow/poker-dealer';
 import { startActionTimer, clearActionTimer, pauseActionTimer, resumeActionTimer } from '../timers/poker-timer-controller';
 import { ensurePlayerBetsInitialized, processBetTransaction, updateGameAfterBet } from './bet-processor';
-import { validatePlayerExists, getActivePlayerUsernames, findOtherPlayer } from '@/app/poker/lib/utils/player-helpers';
+import { validatePlayerExists, getActivePlayerUsernames, findOtherPlayer, getActivePlayers } from '@/app/poker/lib/utils/player-helpers';
 import { shouldStartLockTimer } from '../locking/game-lock-manager';
 import { getPlayerChipCount } from '@/app/poker/lib/utils/side-pot-calculator';
 import { TurnManager } from '../turn/turn-manager';
@@ -776,17 +776,32 @@ async function validateFoldRequest(
 ): Promise<{
   playerIndex: number;
   foldingPlayer: Player;
-  winner: Player;
-  otherPlayerIndex: number;
 }> {
   const playerIndex = validatePlayerExists(game.players, playerId);
   const foldingPlayer = game.players[playerIndex];
 
-  // Find the other player (winner)
-  const [winner, otherPlayerIndex] = findOtherPlayer(game.players, playerId);
-  if (!winner) throw new Error('No other player found');
+  // Check that player hasn't already folded
+  if (foldingPlayer.folded) {
+    throw new Error('Player has already folded');
+  }
 
-  return { playerIndex, foldingPlayer, winner, otherPlayerIndex };
+  return { playerIndex, foldingPlayer };
+}
+
+/**
+ * Find the last remaining active player (winner by fold)
+ */
+function findLastActivePlayer(game: any): { winner: Player; winnerIndex: number } | null {
+  const activePlayers = getActivePlayers(game.players);
+
+  if (activePlayers.length !== 1) {
+    return null;
+  }
+
+  const winner = activePlayers[0];
+  const winnerIndex = game.players.findIndex((p: Player) => p.id === winner.id);
+
+  return { winner, winnerIndex };
 }
 
 /**
@@ -869,7 +884,60 @@ async function emitFoldNotifications(
 }
 
 /**
- * Finalize fold action: log history, clear timer, save game, trigger restart
+ * Finalize fold when game continues (multiple active players remain)
+ * Similar to finalizeBetAction - schedules turn advancement
+ */
+async function finalizeFoldAndContinue(
+  game: any,
+  gameId: string,
+  playerId: string,
+  foldingPlayer: Player
+): Promise<void> {
+  // Log fold action in history
+  logFoldAction(game, playerId, foldingPlayer.username);
+
+  // Clear timer from game object
+  game.actionTimer = undefined;
+  game.markModified('actionTimer');
+  console.log('[Fold] Timer cleared from game object');
+
+  // Cancel server-side setTimeout
+  const { activeTimers } = await import('../timers/poker-timer-controller');
+  const existingTimer = activeTimers.get(gameId);
+  if (existingTimer) {
+    clearTimeout(existingTimer);
+    activeTimers.delete(gameId);
+    console.log('[Fold] Canceled server-side timer');
+  }
+
+  // Release lock and save
+  game.processing = false;
+  await game.save();
+
+  // Emit state update
+  await PokerSocketEmitter.emitStateUpdate(game.toObject());
+
+  // Signal step orchestrator
+  const { onPlayerAction } = await import('../flow/step-orchestrator');
+  await onPlayerAction(gameId, playerId, 'fold');
+
+  // Schedule turn advancement after notification completes
+  console.log(`[Fold] Game continues - scheduling turn advancement after notification (${POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS}ms)`);
+
+  setTimeout(async () => {
+    console.log('[Fold] Notification complete - advancing turn');
+    const { handleReadyForNextTurn } = await import('../turn/turn-handler');
+    try {
+      await handleReadyForNextTurn(gameId);
+      console.log('[Fold] Turn advancement completed');
+    } catch (error) {
+      console.error('[Fold] Turn advancement error:', error);
+    }
+  }, POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS);
+}
+
+/**
+ * Finalize fold action when game ends: log history, clear timer, save game, trigger restart
  */
 async function finalizeFoldAndTriggerRestart(
   game: any,
@@ -952,18 +1020,48 @@ export async function fold(gameId: string, playerId: string, timerTriggered = fa
 
     try {
       // STEP 1: Validate fold request and get player context
-      const { playerIndex, foldingPlayer, winner, otherPlayerIndex } = await validateFoldRequest(game, playerId);
+      const { playerIndex, foldingPlayer } = await validateFoldRequest(game, playerId);
 
-      // STEP 2: Process fold and determine winner
-      const winnerInfo = processFoldAndDetermineWinner(game, winner, foldingPlayer);
+      // STEP 2: Mark player as folded
+      game.players[playerIndex].folded = true;
+      game.markModified('players');
 
-      // STEP 3: Emit fold and winner notifications with proper timing
-      await emitFoldNotifications(playerId, foldingPlayer, winner, winnerInfo, timerTriggered);
+      console.log(`[Fold] Player ${foldingPlayer.username} folded`);
 
-      // STEP 4: Finalize fold action and trigger restart flow
-      // Note: This is async but we don't wait for the full restart to complete
-      // The fold action is complete; restart happens in the background
-      await finalizeFoldAndTriggerRestart(game, gameId, playerId, foldingPlayer, winner, winnerInfo);
+      // STEP 3: Check how many active players remain
+      const activePlayers = getActivePlayers(game.players);
+      console.log(`[Fold] Active players remaining: ${activePlayers.length}`);
+
+      if (activePlayers.length === 1) {
+        // Only one player left - they win by fold
+        const winner = activePlayers[0];
+        console.log(`[Fold] Last active player is ${winner.username} - they win by fold`);
+
+        // Process fold and determine winner
+        const winnerInfo = processFoldAndDetermineWinner(game, winner, foldingPlayer);
+
+        // Emit fold and winner notifications with proper timing
+        await emitFoldNotifications(playerId, foldingPlayer, winner, winnerInfo, timerTriggered);
+
+        // Finalize fold action and trigger restart flow
+        await finalizeFoldAndTriggerRestart(game, gameId, playerId, foldingPlayer, winner, winnerInfo);
+      } else {
+        // Multiple active players remain - game continues
+        console.log(`[Fold] Game continues with ${activePlayers.length} active players`);
+
+        // Emit fold notification (event-based)
+        await PokerSocketEmitter.emitNotification({
+          notificationType: 'player_fold',
+          category: 'action',
+          playerId: playerId,
+          playerName: foldingPlayer.username,
+          isAI: foldingPlayer.isAI || false,
+          timerTriggered,
+        });
+
+        // Finalize and continue the game (advance to next player)
+        await finalizeFoldAndContinue(game, gameId, playerId, foldingPlayer);
+      }
 
       return game.toObject();
     } catch (error) {

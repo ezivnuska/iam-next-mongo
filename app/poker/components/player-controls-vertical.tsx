@@ -231,7 +231,7 @@ function PlayerControlsVertical({ onActionTaken }: PlayerControlsVerticalProps =
   return (
     <div id="playerControls" className='flex flex-1 flex-col gap-2 overflow-hidden rounded-lg p-2'>
       {/* Action Buttons with Radio Buttons - Vertical Layout */}
-      <div className='flex flex-full flex-row items-center gap-2 justify-between'>
+      <div className='flex flex-col gap-2 items-start'>
         {/* Unified Bet Control - Handles Check/Call/Bet/Raise */}
         <div className='flex flex-row items-center gap-2'>
           <input

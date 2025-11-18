@@ -278,27 +278,9 @@ export const createCardsDealtHandler = (
       updatePlayers(payload.players);
     }
 
-    // Play sound effect based on what cards are being dealt
-    if (playSound) {
-      const communalCardsCount = payload.communalCards?.length || 0;
-
-      if (payload.stage === 0 && communalCardsCount === 0) {
-        // Hole cards (Preflop stage with no communal cards)
-        console.log('[CardsDealtHandler] Playing card-deal sound for hole cards');
-        playSound('card-deal');
-      } else if (payload.stage === 1 && communalCardsCount === 3) {
-        // Flop (3 communal cards)
-        console.log('[CardsDealtHandler] Playing card-deal sound for Flop');
-        playSound('card-deal');
-      } else if ((payload.stage === 2 || payload.stage === 3) && communalCardsCount > 0) {
-        // Turn or River (1 card each)
-        console.log('[CardsDealtHandler] Playing single-card sound for Turn/River');
-        playSound('single-card');
-      }
-    }
-
     // Route stage and communal cards through the coordinated update system
     // This will queue the notification and delay the card display until notification completes
+    // NOTE: Sound effects are played by the stage coordinator when cards are actually displayed
     console.log('[CardsDealtHandler] Routing stage/card update through coordinator');
     updateStageState(
       payload.stage,

@@ -29,6 +29,7 @@ export function PlayerNotificationProvider({ children }: { children: ReactNode }
   const timersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   // Show a notification for a specific player
+  // New notifications automatically replace any existing notification for the same player
   const showPlayerNotification = useCallback((notification: PlayerNotification, playSound?: (sound: PokerSoundType) => void) => {
     const { playerId, duration, onComplete } = notification;
 
@@ -42,11 +43,12 @@ export function PlayerNotificationProvider({ children }: { children: ReactNode }
     // - Optimistic feedback in player-controls.tsx for user's own actions
     // - Socket handlers in poker-socket-handlers.ts for other players' actions
 
-    // Clear any existing timer for this player
+    // Clear any existing timer for this player (handles replacement case)
     const existingTimer = timersRef.current.get(playerId);
     if (existingTimer) {
       clearTimeout(existingTimer);
       timersRef.current.delete(playerId);
+      console.log('[PlayerNotificationProvider] Cleared existing timer for player:', playerId);
     }
 
     // Set notification (persists until cleared by stage advance or timer)
