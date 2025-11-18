@@ -38,11 +38,14 @@ export default function Player({ player, index, currentPlayerIndex, potContribut
     return (
         <div
             className={clsx(
-                'flex flex-row gap-4 h-[90px] overflow-visible p-1',
+                'flex flex-col gap-4 h-[90px] overflow-visible p-1 transition-opacity duration-300',
                 // 'flex flex-row gap-4 rounded-full overflow-visible bg-green-800 relative px-2 py-2 pr-4',
                 // {
                 //   'bg-green-600 border-2 border-white': isCurrentPlayer,
                 // },
+                {
+                    'opacity-50': player.isAway,
+                },
             )}
         >
         
@@ -55,7 +58,7 @@ export default function Player({ player, index, currentPlayerIndex, potContribut
                 />
             )} */}
 
-            <div className='flex flex-1 h-full w-full flex-row gap-2 items-stretch'>
+            <div className='flex flex-1 h-full w-full flex-row-reverse sm:flex-row gap-2 items-stretch'>
                 <div className='flex flex-full flex-col gap-1 relative'>
                     {/* <div className='absolute top-0 left-0 z-10'> */}
                         <div className='flex flex-col gap-1'>
@@ -69,12 +72,6 @@ export default function Player({ player, index, currentPlayerIndex, potContribut
                                 )}
                             >
                                 <UserAvatar size={50} username={player.username} />
-                                
-                                {player.hand.length > 0 && !player.folded && (
-                                    <div className='absolute top-[35%] -left-[100%] sm:left-[80%]'>
-                                        <Hand cards={player.hand} hidden={!(isCurrentUser || winner)} />
-                                    </div>
-                                )}
                             </div>
 
                             {isDealer && (
@@ -92,11 +89,22 @@ export default function Player({ player, index, currentPlayerIndex, potContribut
                         ) : <span className='text-sm text-white px-1'>{chipTotal}</span>}
                     {/* </div> */}
                 </div>
-                {activeNotification && (
-                    <span className='text-xs text-yellow-300 font-semibold'>
-                        {activeNotification.message}
-                    </span>
-                )}
+
+                <div>
+                    <div className='h-6 border-1 border-white'>
+                        {activeNotification && (
+                            <span className='text-xs text-yellow-300 font-semibold'>
+                                {activeNotification.message}
+                            </span>
+                        )}
+                    </div>
+                    {player.hand.length > 0 && !player.folded && (
+                        <div className='w-[60px] border-1 border-white'>
+                        {/* <div className='absolute top-[35%] -left-[100%] sm:left-[80%]'> */}
+                            <Hand cards={player.hand} hidden={!(isCurrentUser || winner)} />
+                        </div>
+                    )}
+                </div>              
                 {/* <div className='flex flex-1 flex-col items-stretch justify-between gap-1'> */}
                     {/* <span className='text-md'>{player.username}</span> */}
                     {/* Player's active action notification (displays for 2 seconds) */}

@@ -63,6 +63,16 @@ export class PokerSocketEmitter {
   }
 
   /**
+   * Emit player presence updated event
+   */
+  static async emitPlayerPresenceUpdated(payload: {
+    playerId: string;
+    isAway: boolean;
+  }) {
+    await emitViaAPI(SOCKET_EVENTS.POKER_PLAYER_PRESENCE_UPDATED, payload);
+  }
+
+  /**
    * Emit game locked event (game starting)
    */
   static async emitGameLocked(payload: {
@@ -76,6 +86,17 @@ export class PokerSocketEmitter {
     actionHistory?: any[];
   }) {
     await emitViaAPI(SOCKET_EVENTS.POKER_GAME_LOCKED, payload);
+  }
+
+  /**
+   * Emit game unlocked event (game ended/canceled)
+   */
+  static async emitGameUnlocked(payload: {
+    locked: false;
+    stage: number;
+    dealerButtonPosition: number;
+  }) {
+    await emitViaAPI(SOCKET_EVENTS.POKER_GAME_UNLOCKED, payload);
   }
 
   /**

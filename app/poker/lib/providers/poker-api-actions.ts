@@ -227,6 +227,23 @@ export const createSetTurnTimerAction = (gameId: string | null, socket: any) => 
   };
 };
 
+export const createSetPresenceAction = (gameId: string | null, socket: any) => {
+  return async (isAway: boolean) => {
+    if (!gameId || !socket || !socket.connected) {
+      console.error('[Presence] Invalid state - gameId:', gameId, 'socket connected:', socket?.connected);
+      return;
+    }
+
+    try {
+      // Emit socket event to set presence
+      socket.emit('poker:set_presence', { gameId, isAway });
+      console.log(`[Presence] Set presence to ${isAway ? 'away' : 'present'}`);
+    } catch (error) {
+      console.error('Error setting presence:', error);
+    }
+  };
+};
+
 export const createResetSingletonAction = (
   gameId: string | null,
   updateGameState: (state: PokerStateUpdatePayload) => void

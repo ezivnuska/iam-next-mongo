@@ -29,6 +29,16 @@ export async function startActionTimer(
 
   const startTime = new Date();
 
+  // Check if target player is away - default to fold if so
+  const targetPlayer = targetPlayerId
+    ? game.players.find((p: any) => p.id === targetPlayerId)
+    : null;
+  const defaultAction = targetPlayer?.isAway ? 'fold' : undefined;
+
+  if (defaultAction) {
+    console.log(`[Timer] Player ${targetPlayerId} is away - defaulting to fold`);
+  }
+
   // Use atomic update to avoid version conflicts
   const updatedGame = await PokerGame.findByIdAndUpdate(
     gameId,
@@ -42,6 +52,7 @@ export async function startActionTimer(
           actionType,
           targetPlayerId,
           isPaused: false,
+          selectedAction: defaultAction,
         }
       }
     },

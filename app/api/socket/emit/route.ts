@@ -165,6 +165,20 @@ export async function POST(request: NextRequest) {
 			}
 		}
 
+		if (signal === 'poker:set_presence' && gameId && userId) {
+			const { setPlayerPresence } = await import('@/app/poker/lib/server/actions/poker-game-controller');
+			const { isAway } = body;
+
+			try {
+				await setPlayerPresence(gameId, userId, isAway);
+				return NextResponse.json({ success: true });
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : 'Failed to set presence';
+				console.error('[Socket Emit Route] Presence error:', errorMessage);
+				return NextResponse.json({ error: errorMessage }, { status: 500 });
+			}
+		}
+
 		return NextResponse.json({ error: 'Unknown signal' }, { status: 400 });
 		}
 

@@ -18,7 +18,7 @@ export default function SoftHeader({ color = 'white' }: SoftHeaderProps) {
     const showNavLinks = status === "authenticated";
 
     return (
-        <div className={`flex flex-row items-center gap-2 px-2 h-[50px]`}>
+        <div className={`flex flex-row items-center gap-2 px-2 h-[60px]`}>
             {/* <div className="flex"> */}
             <Link href='/'>
                 <ArrowLeftIcon className={`h-6 w-6 text-${color}`} />

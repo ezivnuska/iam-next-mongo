@@ -61,10 +61,10 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
   const canJoin = !isUserInGame && !locked && players.length < MAX_SLOTS;
   
   const slotPositions = [
-    'top-0 left-[15%] sm:top-[60%] sm:left-[2%]',
-    'top-[10%] left-[55%] sm:top-[15%] sm:left-[15%]',
-    'top-[40%] left-[70%] sm:-top-1 sm:left-[38%]',
-    'top-[60%] left-[60%] sm:top-0 sm:left-[45%]',
+    'top-0 left-[2%] sm:top-[60%] sm:left-[2%]',
+    'top-[10%] left-[35%] sm:top-[15%] sm:left-[15%]',
+    'top-[25%] left-[60%] sm:-top-1 sm:left-[38%]',
+    'top-[60%] left-[70%] sm:top-0 sm:left-[45%]',
     'top-[80%] left-[2%] sm:top-0 sm:left-[70%]',
   ]
 

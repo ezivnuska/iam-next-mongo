@@ -37,6 +37,7 @@ import {
   createLeaveGameAction,
   createDeleteGameAction,
   createSetTurnTimerAction,
+  createSetPresenceAction,
   createResetSingletonAction,
   initializeGames,
 } from './poker-api-actions';
@@ -403,10 +404,64 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
     []
   );
   const setTurnTimerAction = useCallback(createSetTurnTimerAction(gameId, socket), [gameId, socket]);
+  const setPresence = useCallback(createSetPresenceAction(gameId, socket), [gameId, socket]);
   const resetSingleton = useCallback(
     createResetSingletonAction(gameId, updateGameState),
     [gameId, updateGameState]
   );
+
+  // Track if player is a human player in the game
+  const isUserInGame = useMemo(() => {
+    return user && players.some(p => p.id === user.id && !p.isAI);
+  }, [user, players]);
+
+  // Refs to store values for cleanup function
+  const presenceRef = useRef<{ socket: typeof socket; gameId: string | null; isUserInGame: boolean }>({
+    socket: null,
+    gameId: null,
+    isUserInGame: false,
+  });
+
+  // Keep refs updated
+  useEffect(() => {
+    presenceRef.current = { socket, gameId, isUserInGame };
+    if (isUserInGame) {
+      console.log('[PokerProvider] Ref updated - isUserInGame:', isUserInGame, 'gameId:', gameId);
+    }
+  }, [socket, gameId, isUserInGame]);
+
+  // Track player presence when navigating to/from the /poker route
+  useEffect(() => {
+    if (!isUserInGame || !socket?.connected || !gameId) return;
+
+    // Mark as present when entering the route
+    setPresence(false);
+    console.log('[PokerProvider] Marked player as present');
+
+    // Mark as away when leaving the route (cleanup)
+    // Use ref to get current values at cleanup time
+    return () => {
+      const { socket: currentSocket, gameId: currentGameId, isUserInGame: wasInGame } = presenceRef.current;
+      console.log('[PokerProvider] Cleanup running - wasInGame:', wasInGame, 'hasSocket:', !!currentSocket, 'socketConnected:', currentSocket?.connected, 'gameId:', currentGameId);
+
+      if (!wasInGame || !currentSocket || !currentGameId) {
+        console.log('[PokerProvider] Skipping away presence - not in game or no socket');
+        return;
+      }
+
+      if (!currentSocket.connected) {
+        console.log('[PokerProvider] Socket disconnected - cannot send away presence');
+        return;
+      }
+
+      try {
+        currentSocket.emit('poker:set_presence', { gameId: currentGameId, isAway: true });
+        console.log('[PokerProvider] Sent away presence on cleanup for gameId:', currentGameId);
+      } catch (error) {
+        console.error('[PokerProvider] Failed to send away presence:', error);
+      }
+    };
+  }, [isUserInGame, socket, gameId, setPresence]);
 
   // Optimistically clear timer locally without waiting for server
   const clearTimerOptimistically = useCallback(() => {

@@ -330,6 +330,34 @@ export const createDealerButtonMovedHandler = (
   };
 };
 
+export const createPlayerPresenceUpdatedHandler = (
+  updatePlayers: (updater: (players: Player[]) => Player[]) => void
+) => {
+  return (payload: { playerId: string; isAway: boolean }) => {
+    console.log('[PlayerPresenceUpdatedHandler] Player presence updated:', payload.playerId, 'isAway:', payload.isAway);
+    updatePlayers((players) =>
+      players.map(p =>
+        p.id === payload.playerId
+          ? { ...p, isAway: payload.isAway }
+          : p
+      )
+    );
+  };
+};
+
+export const createGameUnlockedHandler = (
+  updateGameStatus: (updater: (status: { locked: boolean; winner: any }) => { locked: boolean; winner: any }) => void,
+  setStage: (stage: number) => void,
+  setDealerButtonPosition: (position: number) => void
+) => {
+  return (payload: { locked: false; stage: number; dealerButtonPosition: number }) => {
+    console.log('[GameUnlockedHandler] Game unlocked:', payload);
+    updateGameStatus(() => ({ locked: false, winner: undefined }));
+    setStage(payload.stage);
+    setDealerButtonPosition(payload.dealerButtonPosition);
+  };
+};
+
 export const createTimerStartedHandler = (
   setActionTimer: React.Dispatch<React.SetStateAction<any>>
 ) => {
@@ -390,7 +418,9 @@ export const registerSocketHandlers = (
     handleGameDeleted: (payload: PokerGameDeletedPayload) => void;
     handlePlayerJoined: (payload: any) => void;
     handlePlayerLeft: (payload: any) => void;
+    handlePlayerPresenceUpdated: (payload: any) => void;
     handleGameLocked: (payload: any) => void;
+    handleGameUnlocked: (payload: any) => void;
     handleBetPlaced: (payload: any) => void;
     handleCardsDealt: (payload: any) => void;
     handleRoundComplete: (payload: any) => void;
@@ -409,7 +439,9 @@ export const registerSocketHandlers = (
   socket.on(SOCKET_EVENTS.POKER_GAME_DELETED, handlers.handleGameDeleted);
   socket.on(SOCKET_EVENTS.POKER_PLAYER_JOINED, handlers.handlePlayerJoined);
   socket.on(SOCKET_EVENTS.POKER_PLAYER_LEFT, handlers.handlePlayerLeft);
+  socket.on(SOCKET_EVENTS.POKER_PLAYER_PRESENCE_UPDATED, handlers.handlePlayerPresenceUpdated);
   socket.on(SOCKET_EVENTS.POKER_GAME_LOCKED, handlers.handleGameLocked);
+  socket.on(SOCKET_EVENTS.POKER_GAME_UNLOCKED, handlers.handleGameUnlocked);
   socket.on(SOCKET_EVENTS.POKER_BET_PLACED, handlers.handleBetPlaced);
   socket.on(SOCKET_EVENTS.POKER_CARDS_DEALT, handlers.handleCardsDealt);
   socket.on(SOCKET_EVENTS.POKER_ROUND_COMPLETE, handlers.handleRoundComplete);
@@ -427,7 +459,9 @@ export const registerSocketHandlers = (
     socket.off(SOCKET_EVENTS.POKER_GAME_DELETED, handlers.handleGameDeleted);
     socket.off(SOCKET_EVENTS.POKER_PLAYER_JOINED, handlers.handlePlayerJoined);
     socket.off(SOCKET_EVENTS.POKER_PLAYER_LEFT, handlers.handlePlayerLeft);
+    socket.off(SOCKET_EVENTS.POKER_PLAYER_PRESENCE_UPDATED, handlers.handlePlayerPresenceUpdated);
     socket.off(SOCKET_EVENTS.POKER_GAME_LOCKED, handlers.handleGameLocked);
+    socket.off(SOCKET_EVENTS.POKER_GAME_UNLOCKED, handlers.handleGameUnlocked);
     socket.off(SOCKET_EVENTS.POKER_BET_PLACED, handlers.handleBetPlaced);
     socket.off(SOCKET_EVENTS.POKER_CARDS_DEALT, handlers.handleCardsDealt);
     socket.off(SOCKET_EVENTS.POKER_ROUND_COMPLETE, handlers.handleRoundComplete);

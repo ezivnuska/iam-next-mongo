@@ -284,6 +284,41 @@ app.prepare().then(() => {
 			}
 		});
 
+		// Handle poker player presence (away/present)
+		socket.on('poker:set_presence', async ({ gameId, isAway }) => {
+			console.log('[Socket] Received poker:set_presence for game:', gameId, 'user:', socket.userId, 'isAway:', isAway);
+
+			try {
+				// User must be registered first
+				if (!socket.userId) {
+					console.error('[Socket] Set presence failed - not authenticated');
+					return;
+				}
+
+				// Delegate to API route which handles the presence logic
+				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						signal: 'poker:set_presence',
+						gameId,
+						userId: socket.userId,
+						isAway
+					}),
+				});
+
+				const result = await response.json();
+
+				if (!response.ok) {
+					console.error('[Socket] Set presence failed:', result.error);
+				} else {
+					console.log('[Socket] Successfully set presence to', isAway ? 'away' : 'present');
+				}
+			} catch (error) {
+				console.error('[Socket] Error setting presence:', error);
+			}
+		});
+
 		socket.on('disconnect', () => {
 			if (socket.userId) {
 				const userId = socket.userId

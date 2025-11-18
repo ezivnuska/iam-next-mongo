@@ -41,6 +41,9 @@ export const SOCKET_EVENTS = {
 	POKER_PLAYER_JOINED: 'poker:player_joined',
 	POKER_PLAYER_LEFT: 'poker:player_left',
 	POKER_GAME_LOCKED: 'poker:game_locked',
+	POKER_GAME_UNLOCKED: 'poker:game_unlocked', // Server -> Clients: Game unlocked (e.g., all players left)
+	POKER_SET_PRESENCE: 'poker:set_presence', // Client -> Server: Set player presence (away/present)
+	POKER_PLAYER_PRESENCE_UPDATED: 'poker:player_presence_updated', // Server -> Clients: Player presence changed
 
 	// Poker events - Game actions (Client -> Server)
 	POKER_BET: 'poker:bet', // Client -> Server: Place bet
@@ -177,6 +180,16 @@ export interface PokerPlayerLeftPayload {
 	players: any[] // Full updated players array
 	playerCount: number
 	gameReset?: boolean // True if game was reset due to only 1 player remaining
+}
+
+export interface PokerSetPresencePayload {
+	gameId: string
+	isAway: boolean
+}
+
+export interface PokerPlayerPresenceUpdatedPayload {
+	playerId: string
+	isAway: boolean
 }
 
 export interface PokerGameLockedPayload {

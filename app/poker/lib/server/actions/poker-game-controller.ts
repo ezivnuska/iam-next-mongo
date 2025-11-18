@@ -293,6 +293,38 @@ export async function handlePlayerLeave(
   }
 }
 
+/**
+ * Set player presence (away/present) and notify all clients
+ */
+export async function setPlayerPresence(
+  gameId: string,
+  userId: string,
+  isAway: boolean
+): Promise<void> {
+  const game = await PokerGame.findById(gameId);
+  if (!game) {
+    throw new Error('Game not found');
+  }
+
+  const playerIndex = game.players.findIndex((p: Player) => p.id === userId);
+  if (playerIndex === -1) {
+    throw new Error('Player not found in game');
+  }
+
+  // Update player presence
+  game.players[playerIndex].isAway = isAway;
+  game.markModified('players');
+  await game.save();
+
+  console.log(`[SetPlayerPresence] Player ${userId} is now ${isAway ? 'away' : 'present'}`);
+
+  // Emit presence update to all clients
+  await PokerSocketEmitter.emitPlayerPresenceUpdated({
+    playerId: userId,
+    isAway,
+  });
+}
+
 // ===== REMOVE PLAYER HELPER FUNCTIONS =====
 
 /**

@@ -692,18 +692,27 @@ export class StageManager {
       gameToReset.stages = [];
       gameToReset.lockTime = undefined;
 
-      // Remove players with insufficient balance for next game
+      // Remove players with insufficient balance or who are away
       const { BIG_BLIND } = POKER_GAME_CONFIG;
       const playersBeforeRemoval = gameToReset.players.length;
 
-      console.log('[StageManager] Player balances before removal check:', gameToReset.players.map((p: Player) =>
-        ({ username: p.username, chipCount: p.chipCount, canPlay: p.chipCount >= BIG_BLIND })
-      ));
+      console.log('[StageManager] Player status before removal check:', JSON.stringify(gameToReset.players.map((p: Player) =>
+        ({ username: p.username, chipCount: p.chipCount, isAway: p.isAway, isAI: p.isAI, canPlay: p.chipCount >= BIG_BLIND && !p.isAway })
+      ), null, 2));
 
-      // Filter out players who can't afford the big blind
+      // Filter out players who can't afford the big blind or are away (navigated away from /poker route)
       gameToReset.players = gameToReset.players.filter((p: Player) => {
+        // Check chip count first (applies to all players including AI)
         if (p.chipCount < BIG_BLIND) {
           console.log(`[StageManager] Removing player ${p.username} - insufficient balance (${p.chipCount} < ${BIG_BLIND})`);
+          return false;
+        }
+        // Don't check away status for AI players
+        if (p.isAI) {
+          return true;
+        }
+        if (p.isAway) {
+          console.log(`[StageManager] Removing player ${p.username} - away from game`);
           return false;
         }
         return true;
@@ -711,20 +720,65 @@ export class StageManager {
 
       const playersRemoved = playersBeforeRemoval - gameToReset.players.length;
       if (playersRemoved > 0) {
-        console.log(`[StageManager] Removed ${playersRemoved} player(s) with insufficient balance`);
+        console.log(`[StageManager] Removed ${playersRemoved} player(s) with insufficient balance or away`);
+
+        // Adjust dealer button position if it's now out of range
+        if (gameToReset.players.length > 0 && gameToReset.dealerButtonPosition >= gameToReset.players.length) {
+          const oldPosition = gameToReset.dealerButtonPosition;
+          gameToReset.dealerButtonPosition = gameToReset.dealerButtonPosition % gameToReset.players.length;
+          gameToReset.markModified('dealerButtonPosition');
+          console.log(`[StageManager] Adjusted dealer button from ${oldPosition} to ${gameToReset.dealerButtonPosition} after player removal`);
+        }
+
+        // Save and emit granular player_left events so clients see removed players immediately
+        gameToReset.markModified('players');
+        await gameToReset.save();
+
+        // Emit player_left for each removed player (granular update)
+        for (let i = 0; i < playersBeforeRemoval; i++) {
+          const removedPlayer = game.players[i];
+          const stillInGame = gameToReset.players.some((p: Player) => p.id === removedPlayer.id);
+          if (!stillInGame) {
+            await PokerSocketEmitter.emitPlayerLeft({
+              playerId: removedPlayer.id,
+              players: gameToReset.players,
+              playerCount: gameToReset.players.length,
+              gameReset: false,
+              actionHistory: gameToReset.actionHistory || [],
+            });
+            console.log(`[StageManager] Emitted player_left for ${removedPlayer.username}`);
+          }
+        }
+
+        // Also emit dealer button update if it changed
+        await PokerSocketEmitter.emitDealerButtonMoved({
+          dealerButtonPosition: gameToReset.dealerButtonPosition,
+        });
       }
 
       // Check if we have enough players to continue (need at least 2)
       if (gameToReset.players.length < 2) {
         console.log(`[StageManager] Insufficient players to restart (${gameToReset.players.length} remaining). Canceling restart.`);
 
+        // Reset dealer button to 0 when only AI remains
+        gameToReset.dealerButtonPosition = 0;
+        gameToReset.markModified('dealerButtonPosition');
+
         // Unlock the game and save
         gameToReset.locked = false;
         gameToReset.markModified('players');
         await gameToReset.save();
 
-        // Emit state update to show players have been removed
-        await PokerSocketEmitter.emitStateUpdate(gameToReset);
+        // Cancel any pending notifications on clients
+        await PokerSocketEmitter.emitNotificationCanceled();
+        console.log('[StageManager] Notification canceled - insufficient players');
+
+        // Emit granular game unlocked event (avoids full page reload from state update)
+        await PokerSocketEmitter.emitGameUnlocked({
+          locked: false,
+          stage: 0,
+          dealerButtonPosition: gameToReset.dealerButtonPosition,
+        });
 
         console.log('[StageManager] Game unlocked - restart canceled due to insufficient players');
         return; // Exit early - no restart

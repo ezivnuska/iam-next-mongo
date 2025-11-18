@@ -112,7 +112,7 @@ export default function PokerTable() {
   }
 
   return (
-    <div className='flex flex-1 flex-col bg-black'>
+    <div className='flex flex-1 flex-col bg-black static'>
         <div className='flex flex-row items-center justify-between'>
             <SoftHeader color='white' />
             <div className='flex flex-row items-center px-2 gap-2'>
@@ -125,23 +125,14 @@ export default function PokerTable() {
                 {showPlayerControls && (
                     <PlayerControls onActionTaken={handleActionTaken} />
                 )}
-
-                {/* {gameId && (
-                    <Button
-                        onClick={resetSingleton}
-                        size='sm'
-                        className='bg-red-600 hover:bg-red-700 text-white'
-                    >
-                        Reset
-                    </Button>
-                )} */}
                 {!locked && !userGameInfo.isUserInGame && (
                     <Button size='sm' onClick={() => gameId && joinGame(gameId)} className='text-sm'>Join</Button>
                 )}
             </div>
         </div>
 
-        <div id='poker-table' className='flex flex-1 flex-col sm:flex-row gap-2 rounded-r-full sm:rounded-br-none sm:rounded-t-full bg-green-700 p-2 relative'>
+        {/* <div id='poker-table' className='flex flex-1 flex-col sm:flex-row gap-2 rounded-r-full sm:rounded-br-none sm:rounded-t-full bg-green-700 p-2 relative'> */}
+        <div id='poker-table' className='flex flex-1 flex-col sm:flex-row gap-2 bg-green-700 p-2 relative'>
             {/* Player slots sidebar */}
             <div className='absolute top-0 left-0 bottom-0 right-0 z-10'>
                 {/* <div className='flex flex-1 h-full w-full border-1 border-white'> */}
@@ -167,6 +158,15 @@ export default function PokerTable() {
                     </div>
                 </div>
             </div>
+            {gameId && (
+                <Button
+                    onClick={resetSingleton}
+                    size='sm'
+                    className='cursor-pointer bg-red-600 hover:bg-red-700 text-white absolute bottom-1 right-1 z-100'
+                >
+                    Reset
+                </Button>
+            )}
         </div>
     </div>
   );
