@@ -534,9 +534,12 @@ export class StageManager {
     game.markModified('deck');
     game.markModified('communalCards');
 
-    // Determine winner
+    // Determine winner from active players only (exclude folded players)
+    const activePlayers = getActivePlayers(game.players);
+    console.log(`[StageManager] Determining winner from ${activePlayers.length} active players:`, activePlayers.map(p => p.username));
+
     const winnerInfo = determineWinner(
-      game.players.map((p: Player) => ({
+      activePlayers.map((p: Player) => ({
         id: p.id,
         username: p.username,
         hand: p.hand,

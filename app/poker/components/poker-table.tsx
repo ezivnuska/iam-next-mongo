@@ -10,7 +10,7 @@ import { SOCKET_EVENTS } from '@/app/lib/socket/events';
 import PlayerSlots from './player-slots';
 import CommunalCards from './communal-cards';
 import Pot from './pot';
-import PlayerControls from './player-controls-vertical';
+import PlayerControls from './player-controls';
 import GameNotification from './game-notification';
 import SoftHeader from '@/app/ui/header/soft-header';
 import { Button } from '@/app/ui/button';
@@ -116,70 +116,54 @@ export default function PokerTable() {
         <div className='flex flex-row items-center justify-between'>
             <SoftHeader color='white' />
             <div className='flex flex-row items-center px-2 gap-2'>
-                {gameId && (
+
+                <div className="flex gap-2">
+                    <GameNotification />
+                </div>
+
+                {/* Game notification - always visible, not just when locked */}
+                {showPlayerControls && (
+                    <PlayerControls onActionTaken={handleActionTaken} />
+                )}
+
+                {/* {gameId && (
                     <Button
                         onClick={resetSingleton}
-                        // variant='outline'
                         size='sm'
                         className='bg-red-600 hover:bg-red-700 text-white'
                     >
                         Reset
                     </Button>
+                )} */}
+                {!locked && !userGameInfo.isUserInGame && (
+                    <Button size='sm' onClick={() => gameId && joinGame(gameId)} className='text-sm'>Join</Button>
                 )}
-                {!locked && (
-                    <>
-                        {userGameInfo.isUserInGame
-                            ? <Button size='sm' onClick={leaveGame} className='text-sm'>Leave</Button>
-                            : <Button size='sm' onClick={() => gameId && joinGame(gameId)} className='text-sm'>Join</Button>
-                        }
-                    </>
-                )}
-                </div>
+            </div>
         </div>
 
-        <div id='poker-table' className='flex flex-1 flex-col sm:flex-row gap-2 rounded-tl-full bg-green-700 p-2'>
+        <div id='poker-table' className='flex flex-1 flex-col sm:flex-row gap-2 rounded-r-full sm:rounded-br-none sm:rounded-t-full bg-green-700 p-2 relative'>
             {/* Player slots sidebar */}
-            <div id='players' className='flex sm:flex-3 border-1 border-white'>
-                <PlayerSlots
-                    players={players}
-                    locked={locked}
-                    currentPlayerIndex={currentPlayerIndex}
-                    currentUserId={user?.id}
-                    gameId={gameId}
-                    onJoinGame={() => gameId && joinGame(gameId)}
-                    onLeaveGame={leaveGame}
-                />
+            <div className='absolute top-0 left-0 bottom-0 right-0 z-10'>
+                {/* <div className='flex flex-1 h-full w-full border-1 border-white'> */}
+                    <PlayerSlots
+                        players={players}
+                        locked={locked}
+                        currentPlayerIndex={currentPlayerIndex}
+                        currentUserId={user?.id}
+                        gameId={gameId}
+                        onJoinGame={() => gameId && joinGame(gameId)}
+                        onLeaveGame={leaveGame}
+                    />
+                {/* </div> */}
             </div>
             
-            <div className='flex flex-1 sm:flex-4 flex-col shrink-0 items-stretch'>
-                <div className='flex flex-1 flex-col h-[60px]'>
-
-                    <div className="flex gap-2">
-                        <GameNotification />
-                    </div>
-
-                    {/* Game notification - always visible, not just when locked */}
-                    {showPlayerControls && (
-                        <PlayerControls onActionTaken={handleActionTaken} />
-                    )}
-                    
-                </div>
+            <div className='absolute top-0 right-0 bottom-0 left-0 z-5'>
 
                 {/* Main table area */}
-                <div id='table' className='flex w-full flex-col grow items-stretch justify-between border-1 border-white'>
-
-                    <div className='flex flex-1 flex-full flex-col items-stretch justify-between gap-4'>
-                        {/* Center area with pot and communal cards */}
-                        {/* <div className='flex flex-1 flex-full flex-col sm:flex-row items-center gap-4'> */}
-                            <div className='flex flex-1 flex-full flex-row items-center justify-center'>
-                                <div className='flex flex-3 flex-full flex-col items-center justify-center gap-4'>
-                                    <Pot />
-                                    <CommunalCards />
-                                </div>
-                            </div>
-                        {/* </div> */}
-                        {/* <div className='flex flex-row flex-1 items-center justify-center'>
-                        </div> */}
+                <div id='table' className='flex h-full flex-row items-center sm:items-end justify-start sm:justify-center'>
+                    <div className='flex flex-col items-center justify-center gap-4 m-5'>
+                        <Pot />
+                        <CommunalCards />
                     </div>
                 </div>
             </div>

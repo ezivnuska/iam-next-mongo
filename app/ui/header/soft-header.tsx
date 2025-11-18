@@ -18,13 +18,15 @@ export default function SoftHeader({ color = 'white' }: SoftHeaderProps) {
     const showNavLinks = status === "authenticated";
 
     return (
-        <div className={`flex flex-row items-center gap-2 px-2`}>
+        <div className={`flex flex-row items-center gap-2 px-2 h-[50px]`}>
             {/* <div className="flex"> */}
-                <ArrowLeftIcon className={`h-6 w-6 text-${color}`} />
-            {/* </div> */}
             <Link href='/'>
-                <h1 className={`text-[32px] font-bold text-${color}`}>iameric</h1>
+                <ArrowLeftIcon className={`h-6 w-6 text-${color}`} />
             </Link>
+            {/* </div> */}
+            {/* <Link href='/'>
+                <h1 className={`text-[32px] font-bold text-${color}`}>iameric</h1>
+            </Link> */}
         </div>
     );
 }

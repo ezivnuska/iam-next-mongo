@@ -269,9 +269,20 @@ export async function handlePlayerLeave(
       actionHistory: gameState.actionHistory || [],
     });
 
+    // Emit dealer button update so clients update the dealer position
+    if (gameState.players.length > 0) {
+      await PokerSocketEmitter.emitDealerButtonMoved({
+        dealerButtonPosition: gameState.dealerButtonPosition,
+      });
+    }
+
     // If game was reset (< 2 players remain), send full state update to sync hands, cards, etc.
     if (gameState.players.length < 2) {
       await PokerSocketEmitter.emitStateUpdate(gameState);
+    } else {
+      // If 2+ players remain, reset the game starting timer
+      const { resetGameStartingOnPlayerLeave } = await import('../notifications/notification-queue-manager');
+      await resetGameStartingOnPlayerLeave(gameId);
     }
 
     return { success: true, gameState: serializedState };
@@ -294,15 +305,47 @@ function removePlayerFromGame(
   leavingPlayer: Player | undefined;
   wasCurrentPlayer: boolean;
   leavingPlayerIndex: number;
+  wasDealer: boolean;
 } {
   const leavingPlayer = game.players.find((p: Player) => p.id === userId);
   const wasCurrentPlayer = game.players[game.currentPlayerIndex]?.id === userId;
   const leavingPlayerIndex = game.players.findIndex((p: Player) => p.id === userId);
+  const wasDealer = (game.dealerButtonPosition || 0) === leavingPlayerIndex;
 
   game.players = game.players.filter((p: Player) => p.id !== userId);
   game.markModified('players');
 
-  return { leavingPlayer, wasCurrentPlayer, leavingPlayerIndex };
+  return { leavingPlayer, wasCurrentPlayer, leavingPlayerIndex, wasDealer };
+}
+
+/**
+ * Adjust dealer button position after a player leaves
+ */
+function adjustDealerButtonPosition(
+  game: any,
+  leavingPlayerIndex: number,
+  wasDealer: boolean
+): void {
+  if (game.players.length === 0) {
+    // No players left, reset to 0
+    game.dealerButtonPosition = 0;
+  } else {
+    const currentDealerPosition = game.dealerButtonPosition || 0;
+
+    if (wasDealer) {
+      // Dealer left - button stays at same index (which is now the next player)
+      // But need to wrap if at end
+      game.dealerButtonPosition = leavingPlayerIndex % game.players.length;
+      console.log(`[RemovePlayer] Dealer left - button advances to position ${game.dealerButtonPosition}`);
+    } else if (leavingPlayerIndex < currentDealerPosition) {
+      // Player before dealer left - decrement dealer position
+      game.dealerButtonPosition = currentDealerPosition - 1;
+      console.log(`[RemovePlayer] Player before dealer left - button adjusted to position ${game.dealerButtonPosition}`);
+    }
+    // If player after dealer left, no adjustment needed
+  }
+
+  game.markModified('dealerButtonPosition');
 }
 
 /**
@@ -317,9 +360,11 @@ async function manageLockTimerAfterRemoval(game: any, gameId: string): Promise<v
     await PokerGame.findByIdAndUpdate(gameId, { lockTime: undefined });
     console.log('[RemovePlayer] Cancelled auto-lock timer - less than 2 players');
 
-    // CRITICAL: Cancel any active "Game starting!" notification
+    // CRITICAL: Clear the notification queue and cancel any active notification
+    const { clearQueue } = await import('../notifications/notification-queue-manager');
+    clearQueue(gameId);
     await PokerSocketEmitter.emitNotificationCanceled();
-    console.log('[RemovePlayer] Cancelled game starting notification - insufficient players');
+    console.log('[RemovePlayer] Cleared notification queue - insufficient players');
   } else if (game.players.length >= 2 && !game.locked) {
     // Reset lockTime flag if 2+ players remain
     const lockTime = new Date(Date.now() + POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS);
@@ -381,6 +426,10 @@ async function resetGameForSinglePlayer(game: any, gameId: string): Promise<void
   game.actionTimer = undefined;
   game.stages = [];
 
+  // Reset dealer button to the remaining player's position (0)
+  // This ensures the AI player has the dealer button when all humans leave
+  game.dealerButtonPosition = 0;
+
   // Clear remaining player's hand and reset deck
   const remainingPlayer = game.players[0];
   remainingPlayer.hand = [];
@@ -399,6 +448,7 @@ async function resetGameForSinglePlayer(game: any, gameId: string): Promise<void
   game.markModified('players.0.hand');
   game.markModified('players');
   game.markModified('deck');
+  game.markModified('dealerButtonPosition');
 
   // Clear any running server-side timers
   try {
@@ -422,7 +472,7 @@ export async function removePlayer(
     if (!isPlayer) return game.toObject();
 
     // STEP 1: Remove player from game and track context
-    const { leavingPlayer, wasCurrentPlayer, leavingPlayerIndex } = removePlayerFromGame(game, user.id);
+    const { leavingPlayer, wasCurrentPlayer, leavingPlayerIndex, wasDealer } = removePlayerFromGame(game, user.id);
     await game.save();
 
     // STEP 2: Manage lock timer based on player count
@@ -431,12 +481,15 @@ export async function removePlayer(
     // STEP 3: Adjust current player index if needed
     adjustCurrentPlayerIndex(game, wasCurrentPlayer, leavingPlayerIndex);
 
-    // STEP 4: Reset game state if only one player remains
+    // STEP 4: Adjust dealer button position if needed
+    adjustDealerButtonPosition(game, leavingPlayerIndex, wasDealer);
+
+    // STEP 5: Reset game state if only one player remains
     if (game.players.length === 1) {
       await resetGameForSinglePlayer(game, gameId);
     }
 
-    // STEP 5: Log action history
+    // STEP 6: Log action history
     if (leavingPlayer) {
       logPlayerLeftAction(game, user.id, leavingPlayer.username);
     }

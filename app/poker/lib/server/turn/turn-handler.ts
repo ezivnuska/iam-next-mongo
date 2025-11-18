@@ -115,6 +115,13 @@ export async function handleReadyForNextTurn(gameId: string): Promise<void> {
     const currentPlayer = game.players[game.currentPlayerIndex];
     if (!currentPlayer || currentPlayer.isAllIn || currentPlayer.folded) {
       console.log('[TurnHandler] Current player is all-in or folded after advancement');
+
+      // Check if we should auto-advance (all active players are all-in or only one can act)
+      if (StageManager.shouldAutoAdvance(game)) {
+        console.log('[TurnHandler] Auto-advance condition met - triggering betting cycle complete');
+        const { onBettingCycleComplete } = await import('../flow/step-orchestrator');
+        await onBettingCycleComplete(gameId);
+      }
       return;
     }
 

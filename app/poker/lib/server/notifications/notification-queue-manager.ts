@@ -51,87 +51,103 @@ export async function queuePlayerJoinedNotification(
   const queue = gameQueues.get(gameId)!;
   const activeNotification = activeNotifications.get(gameId);
 
+  // ALWAYS cancel any pending game lock timer first
+  // This handles the edge case where countdown completed but lock hasn't fired yet
+  cancelGameLock(gameId);
+
+  // ALWAYS remove any existing game_starting from queue first (prevents duplicates)
+  for (let i = queue.length - 1; i >= 0; i--) {
+    if (queue[i].type === 'game_starting') {
+      queue.splice(i, 1);
+    }
+  }
+
+  // Add player joined notification
+  queue.push({
+    type: 'player_joined',
+    playerName,
+    playerId,
+  });
+
+  // Add NEW game_starting notification at the end
+  queue.push({
+    type: 'game_starting',
+    gameId,
+  });
+
   // Check if game_starting is currently displaying (active)
   if (activeNotification?.type === 'game_starting') {
     console.log('[NotificationQueue] Game starting countdown is ACTIVELY DISPLAYING - canceling it');
 
-    // Cancel the currently displaying start-timer notification
+    console.log(`[NotificationQueue] Queue updated: ${queue.length} items (canceled active start timer, added player + new start timer)`);
+
+    // NOW cancel the currently displaying start-timer notification
+    // (after queue is set up so processQueue will find the new items)
     if (activeNotification.cancelFn) {
       activeNotification.cancelFn();
     }
 
-    // Cancel the game lock timer
-    cancelGameLock(gameId);
-
     // Emit notification canceled event to client
     const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
     await PokerSocketEmitter.emitNotificationCanceled();
-
-    // Remove any game_starting notifications from the queue
-    const filteredQueue = queue.filter(item => item.type !== 'game_starting');
-    gameQueues.set(gameId, filteredQueue);
-
-    // Add player joined notification
-    filteredQueue.push({
-      type: 'player_joined',
-      playerName,
-      playerId,
-    });
-
-    // Add NEW game_starting notification at the end
-    filteredQueue.push({
-      type: 'game_starting',
-      gameId,
-    });
-
-    console.log(`[NotificationQueue] Queue updated: ${filteredQueue.length} items (canceled active start timer, added player + new start timer)`);
   } else {
-    // Check if there's a game_starting notification in queue (not yet displayed)
-    const hasStartTimer = queue.some(item => item.type === 'game_starting');
+    console.log(`[NotificationQueue] Queue updated: ${queue.length} items (added player + game_starting)`);
+  }
 
-    if (hasStartTimer) {
-      // Cancel the existing game lock timer (will be rescheduled after new notifications)
-      console.log('[NotificationQueue] Game starting countdown in queue - canceling game lock timer');
-      cancelGameLock(gameId);
+  // Start processing if not already processing
+  if (!processingGames.has(gameId)) {
+    processQueue(gameId);
+  }
+}
 
-      // Remove the old game_starting notification
-      const filteredQueue = queue.filter(item => item.type !== 'game_starting');
-      gameQueues.set(gameId, filteredQueue);
+/**
+ * Reset the game starting timer when a player leaves
+ * Cancels any active game_starting notification and queues a new one
+ */
+export async function resetGameStartingOnPlayerLeave(gameId: string): Promise<void> {
+  console.log(`[NotificationQueue] Resetting game_starting timer due to player leave in game ${gameId}`);
 
-      // Add player joined notification
-      filteredQueue.push({
-        type: 'player_joined',
-        playerName,
-        playerId,
-      });
+  // Initialize queue if doesn't exist
+  if (!gameQueues.has(gameId)) {
+    gameQueues.set(gameId, []);
+  }
 
-      // Add NEW game_starting notification at the end
-      filteredQueue.push({
-        type: 'game_starting',
-        gameId,
-      });
+  const queue = gameQueues.get(gameId)!;
+  const activeNotification = activeNotifications.get(gameId);
 
-      console.log(`[NotificationQueue] Queue updated: ${filteredQueue.length} items (removed old start timer, added player + new start timer)`);
-    } else {
-      // Just add player joined notification
-      queue.push({
-        type: 'player_joined',
-        playerName,
-        playerId,
-      });
+  // ALWAYS cancel any pending game lock timer first
+  // This handles the edge case where countdown completed but lock hasn't fired yet
+  cancelGameLock(gameId);
 
-      // Always add game_starting notification after player_joined if not already in queue
-      const hasStartTimer = queue.some(item => item.type === 'game_starting');
-      if (!hasStartTimer) {
-        queue.push({
-          type: 'game_starting',
-          gameId,
-        });
-        console.log(`[NotificationQueue] Queue updated: ${queue.length} items (added player notification + game_starting)`);
-      } else {
-        console.log(`[NotificationQueue] Queue updated: ${queue.length} items (added player notification)`);
-      }
+  // ALWAYS remove any existing game_starting from queue first (prevents duplicates)
+  for (let i = queue.length - 1; i >= 0; i--) {
+    if (queue[i].type === 'game_starting') {
+      queue.splice(i, 1);
     }
+  }
+
+  // Add NEW game_starting notification
+  queue.push({
+    type: 'game_starting',
+    gameId,
+  });
+
+  // Check if game_starting is currently displaying (active)
+  if (activeNotification?.type === 'game_starting') {
+    console.log('[NotificationQueue] Game starting countdown is ACTIVELY DISPLAYING - canceling it');
+
+    console.log(`[NotificationQueue] Queue updated: ${queue.length} items (canceled active start timer, added new start timer)`);
+
+    // NOW cancel the currently displaying start-timer notification
+    // (after queue is set up so processQueue will find the new items)
+    if (activeNotification.cancelFn) {
+      activeNotification.cancelFn();
+    }
+
+    // Emit notification canceled event to client
+    await PokerSocketEmitter.emitNotificationCanceled();
+  } else {
+    console.log(`[NotificationQueue] Queue updated: ${queue.length} items (added new start timer)`);
   }
 
   // Start processing if not already processing
@@ -284,6 +300,13 @@ async function processQueue(gameId: string): Promise<void> {
       // If cancelled, skip the game lock scheduling and continue to next notification
       if (cancelled) {
         console.log('[NotificationQueue] Skipping game lock scheduling - notification was cancelled');
+        continue;
+      }
+
+      // Check if new items were added to queue during countdown (player joined/left)
+      // If so, skip scheduling lock - a new game_starting will handle it
+      if (queue.length > 0) {
+        console.log(`[NotificationQueue] Skipping game lock scheduling - ${queue.length} items in queue (player joined/left during countdown)`);
         continue;
       }
 

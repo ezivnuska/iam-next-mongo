@@ -12,16 +12,23 @@ interface HandProps {
 }
 
 export default function Hand({ cards, hidden = true }: HandProps) {
+    // Stagger offset in pixels
+    const staggerOffsetX = hidden ? 8 : 30;
+    const staggerOffsetY = 4;
+
     return (
-        <div className='w-[60px] h-full relative border-1'>
+        <div className='flex flex-1 h-full relative'>
             {cards.map((card, index) => (
-                <div className={clsx(
-                    `absolute inset-x-2 inset-y-1 top-${index} left-${index} z-${index + 1}`,
-                    {
-                        'inset-x-7': !hidden,
-                    }
-                )}>
-                    <Card key={`${card.id}-${index}`} index={index} card={card} size='sm' hidden={hidden} />
+                <div
+                    key={`${card.id}-${index}`}
+                    className='absolute transition'
+                    style={{
+                        top: `${index * staggerOffsetY}px`,
+                        left: `${index * staggerOffsetX}px`,
+                        zIndex: index + 1,
+                    }}
+                >
+                    <Card index={index} card={card} size='sm' hidden={hidden} />
                 </div>
             ))}
         </div>

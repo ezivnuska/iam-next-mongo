@@ -31,7 +31,7 @@ export default function Card({ card, index, size = 'md', hidden = false }: CardP
                 'flex px-1 bg-white rounded-lg border-1',
                 cardSizeClasses[size],
             )}
-            style={{ left: `${index * 24}px`, zIndex: index }}
+            // style={{ left: `${index * 24}px`, zIndex: index }}
         >
             {!hidden && (
                 <p className={clsx(

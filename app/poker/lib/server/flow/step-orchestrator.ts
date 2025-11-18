@@ -52,8 +52,22 @@ export async function executeCurrentStep(gameId: string): Promise<void> {
   // Execute the step action
   const duration = await executeStepAction(gameId, step.stepType);
 
-  // For betting cycles, don't auto-advance (wait for turn manager to signal completion)
+  // For betting cycles, check if we should auto-advance (all players all-in or only one can act)
   if (step.stepType === StepType.BETTING_CYCLE) {
+    const game = await PokerGame.findById(gameId);
+
+    if (game) {
+      const { StageManager } = await import('./stage-manager');
+
+      if (StageManager.shouldAutoAdvance(game)) {
+        console.log('[StepOrchestrator] Auto-advance condition met - skipping betting cycle');
+        // Complete the betting cycle immediately since no one can act
+        await completeRequirement(gameId, RequirementType.ALL_PLAYERS_ACTED);
+        await tryAdvanceStep(gameId);
+        return;
+      }
+    }
+
     console.log('[StepOrchestrator] Betting cycle started - waiting for completion signal');
     return;
   }

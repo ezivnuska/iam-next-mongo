@@ -9,6 +9,7 @@ import type { Player as PlayerType } from '@/app/poker/lib/definitions/poker';
 import { useUser } from '@/app/lib/providers/user-provider';
 import UserAvatar from '@/app/ui/user/user-avatar';
 import { useGameState } from '@/app/poker/lib/providers/poker-provider';
+import clsx from 'clsx';
 // import PlayerCircle from './player-new';
 
 interface PlayerSlotsProps {
@@ -58,9 +59,17 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
 
   // Show button if user is not in game, game is not locked (in progress), and table is not full
   const canJoin = !isUserInGame && !locked && players.length < MAX_SLOTS;
+  
+  const slotPositions = [
+    'top-0 left-[15%] sm:top-[60%] sm:left-[2%]',
+    'top-[10%] left-[55%] sm:top-[15%] sm:left-[15%]',
+    'top-[40%] left-[70%] sm:-top-1 sm:left-[38%]',
+    'top-[60%] left-[60%] sm:top-0 sm:left-[45%]',
+    'top-[80%] left-[2%] sm:top-0 sm:left-[70%]',
+  ]
 
   return (
-    <ul className='flex flex-1 flex-col gap-2'>
+    <ul className='flex h-full w-full relative'>
 
       {slots.map((slotIndex) => {
         const player = players[slotIndex];
@@ -73,7 +82,10 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
 
           // Show actual player wrapped in <li>
           return (
-            <li key={player.id} className='flex border-1 border-white'>
+            <li key={player.id} className={clsx(
+                'absolute',
+                slotPositions[slotIndex],
+            )}>
               <Player
                 player={player}
                 index={slotIndex}

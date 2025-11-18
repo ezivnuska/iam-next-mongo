@@ -467,7 +467,15 @@ async function executeDealFlop(gameId: string): Promise<number> {
 
   // Calculate and set first player to act BEFORE emitting cards dealt
   // This ensures the correct player is highlighted during the dealing animation
-  game.currentPlayerIndex = calculateFirstToActForBettingRound(game);
+  // But only if we're not auto-advancing (multiple players can still bet)
+  const { StageManager } = await import('./stage-manager');
+  if (!StageManager.shouldAutoAdvance(game)) {
+    game.currentPlayerIndex = calculateFirstToActForBettingRound(game);
+  } else {
+    // Auto-advancing (all-in scenario) - set to -1 to hide controls
+    game.currentPlayerIndex = -1;
+    console.log('[StepManager] Auto-advance mode - setting currentPlayerIndex to -1');
+  }
   game.markModified('currentPlayerIndex');
 
   await game.save();
@@ -509,7 +517,15 @@ async function executeDealTurn(gameId: string): Promise<number> {
 
   // Calculate and set first player to act BEFORE emitting cards dealt
   // This ensures the correct player is highlighted during the dealing animation
-  game.currentPlayerIndex = calculateFirstToActForBettingRound(game);
+  // But only if we're not auto-advancing (multiple players can still bet)
+  const { StageManager } = await import('./stage-manager');
+  if (!StageManager.shouldAutoAdvance(game)) {
+    game.currentPlayerIndex = calculateFirstToActForBettingRound(game);
+  } else {
+    // Auto-advancing (all-in scenario) - set to -1 to hide controls
+    game.currentPlayerIndex = -1;
+    console.log('[StepManager] Auto-advance mode - setting currentPlayerIndex to -1');
+  }
   game.markModified('currentPlayerIndex');
 
   await game.save();
@@ -550,7 +566,15 @@ async function executeDealRiver(gameId: string): Promise<number> {
 
   // Calculate and set first player to act BEFORE emitting cards dealt
   // This ensures the correct player is highlighted during the dealing animation
-  game.currentPlayerIndex = calculateFirstToActForBettingRound(game);
+  // But only if we're not auto-advancing (multiple players can still bet)
+  const { StageManager } = await import('./stage-manager');
+  if (!StageManager.shouldAutoAdvance(game)) {
+    game.currentPlayerIndex = calculateFirstToActForBettingRound(game);
+  } else {
+    // Auto-advancing (all-in scenario) - set to -1 to hide controls
+    game.currentPlayerIndex = -1;
+    console.log('[StepManager] Auto-advance mode - setting currentPlayerIndex to -1');
+  }
   game.markModified('currentPlayerIndex');
 
   await game.save();
