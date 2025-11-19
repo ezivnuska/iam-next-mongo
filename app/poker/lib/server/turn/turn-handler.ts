@@ -10,6 +10,7 @@ import { startActionTimer } from '../timers/poker-timer-controller';
 import { POKER_TIMERS } from '../../config/poker-constants';
 import { GameActionType } from '../../definitions/game-actions';
 import { GameStage } from '../../definitions/poker';
+import { saveGameSafe } from '../locking/game-lock-utils';
 
 export async function handleReadyForNextTurn(gameId: string): Promise<void> {
   console.log('[TurnHandler] Processing ready_for_next_turn for game:', gameId);
@@ -29,7 +30,8 @@ export async function handleReadyForNextTurn(gameId: string): Promise<void> {
   if (!game.locked) {
     console.log('[TurnHandler] Game is not locked - skipping ready_for_next_turn');
     game.processing = false;
-    await game.save();
+    const saved = await saveGameSafe(game, 'game not locked');
+    if (!saved) return;
     return;
   }
 
@@ -41,7 +43,8 @@ export async function handleReadyForNextTurn(gameId: string): Promise<void> {
   if (earlyCompletion) {
     console.log('[TurnHandler] Early completion detected - all players folded/all-in except one');
     game.processing = false;
-    await game.save();
+    const saved = await saveGameSafe(game, 'early completion');
+    if (!saved) return;
 
     // Signal step orchestrator to skip to winner
     await completeRequirement(gameId, RequirementType.ALL_PLAYERS_ACTED);
@@ -68,7 +71,8 @@ export async function handleReadyForNextTurn(gameId: string): Promise<void> {
 
     // Release lock before signaling orchestrator (orchestrator will acquire its own locks as needed)
     game.processing = false;
-    await game.save();
+    const saved = await saveGameSafe(game, 'betting complete');
+    if (!saved) return;
 
     // Add a small buffer delay to ensure the last action notification has fully completed
     // This gives clients time to process and display the notification before stage advances
@@ -91,16 +95,8 @@ export async function handleReadyForNextTurn(gameId: string): Promise<void> {
 
     // Release lock and save
     game.processing = false;
-    try {
-      await game.save();
-    } catch (error: any) {
-      // Ignore version errors - game might be processed by server-driven reset
-      if (error.name === 'VersionError' || error.message?.includes('version')) {
-        console.log('[TurnHandler] Version conflict during save - game likely being processed elsewhere, skipping');
-        return;
-      }
-      throw error;
-    }
+    const saved = await saveGameSafe(game, 'turn advancement');
+    if (!saved) return;
 
     console.log('[TurnHandler] Advanced turn from', previousPlayerIndex, 'to', game.currentPlayerIndex);
 

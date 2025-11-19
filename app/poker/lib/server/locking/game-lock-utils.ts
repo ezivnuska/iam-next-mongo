@@ -92,3 +92,24 @@ export async function withGameLock<T>(
     throw error;
   }
 }
+
+/**
+ * Save a game document with version error handling
+ * Handles concurrent modification conflicts gracefully
+ *
+ * @param game - Game document to save
+ * @param context - Optional context string for logging
+ * @returns true if saved successfully, false if version conflict occurred
+ */
+export async function saveGameSafe(game: PokerGameDocument, context?: string): Promise<boolean> {
+  try {
+    await game.save();
+    return true;
+  } catch (error: any) {
+    if (error.name === 'VersionError' || error.message?.includes('version')) {
+      console.log(`[Game Lock] Version conflict during save${context ? ` (${context})` : ''} - game likely being processed elsewhere`);
+      return false;
+    }
+    throw error;
+  }
+}
