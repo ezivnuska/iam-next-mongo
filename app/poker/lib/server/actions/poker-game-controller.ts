@@ -764,8 +764,13 @@ async function finalizeBetAction(
     try {
       await handleReadyForNextTurn(gameId);
       console.log('[PlaceBet] Turn advancement completed');
-    } catch (error) {
-      console.error('[PlaceBet] Turn advancement error:', error);
+    } catch (error: any) {
+      // Version errors are expected during concurrent operations - log as info, not error
+      if (error.name === 'VersionError' || error.message?.includes('version')) {
+        console.log('[PlaceBet] Turn advancement skipped - concurrent operation in progress');
+      } else {
+        console.error('[PlaceBet] Turn advancement error:', error);
+      }
     }
   }, POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS);
 }
@@ -1015,8 +1020,13 @@ async function finalizeFoldAndContinue(
     try {
       await handleReadyForNextTurn(gameId);
       console.log('[Fold] Turn advancement completed');
-    } catch (error) {
-      console.error('[Fold] Turn advancement error:', error);
+    } catch (error: any) {
+      // Version errors are expected during concurrent operations - log as info, not error
+      if (error.name === 'VersionError' || error.message?.includes('version')) {
+        console.log('[Fold] Turn advancement skipped - concurrent operation in progress');
+      } else {
+        console.error('[Fold] Turn advancement error:', error);
+      }
     }
   }, POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS);
 }
