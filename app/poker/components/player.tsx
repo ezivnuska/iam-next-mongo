@@ -89,7 +89,7 @@ export default function Player({
                                 },
                             )}
                         >
-                            <UserAvatar size={50} username={player.username} />
+                            <UserAvatar size={50} username={player.username} isAI={player.isAI} />
                         </div>
 
                         {isDealer && (

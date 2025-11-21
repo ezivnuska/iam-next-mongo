@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import type { Image as ImageType } from '@/app/lib/definitions/image'
+import { ComputerDesktopIcon } from '@heroicons/react/24/solid'
 
 interface UserAvatarProps {
 	username: string
@@ -12,6 +13,7 @@ interface UserAvatarProps {
 	avatarUrl?: string
 	size?: number
 	className?: string
+	isAI?: boolean
 }
 
 export default function UserAvatar({
@@ -19,7 +21,8 @@ export default function UserAvatar({
 	avatar,
 	avatarUrl,
 	size = 40,
-	className = ''
+	className = '',
+	isAI = false
 }: UserAvatarProps) {
 	const [fetchedAvatar, setFetchedAvatar] = useState<ImageType | null>(null)
 	const [loading, setLoading] = useState(false)
@@ -78,7 +81,11 @@ export default function UserAvatar({
 			className={`rounded-full bg-gray-400 flex items-center justify-center text-gray-600 font-semibold flex-shrink-0 ${className}`}
 			style={{ width: size, height: size }}
 		>
-			<p className={`text-[30px] text-white`}>{username?.[0]?.toUpperCase() || '?'}</p>
+			{isAI ? (
+				<ComputerDesktopIcon className="text-white" style={{ width: size * 0.6, height: size * 0.6 }} />
+			) : (
+				<p className={`text-[30px] text-white`}>{username?.[0]?.toUpperCase() || '?'}</p>
+			)}
 		</div>
 	)
 }
