@@ -144,6 +144,7 @@ export default function PokerTable() {
                         gameId={gameId}
                         onJoinGame={() => gameId && joinGame(gameId)}
                         onLeaveGame={leaveGame}
+                        actionTriggered={actionTriggered}
                     />
                 {/* </div> */}
             </div>

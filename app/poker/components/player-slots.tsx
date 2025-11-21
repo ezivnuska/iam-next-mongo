@@ -90,6 +90,7 @@ interface PlayerSlotsProps {
   gameId: string | null;
   onJoinGame: () => void;
   onLeaveGame: () => void;
+  actionTriggered: boolean;
 }
 
 /**
@@ -111,7 +112,7 @@ function getBlindPositions(dealerButtonPosition: number, playerCount: number) {
   return { smallBlindPos, bigBlindPos };
 }
 
-function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameId, onJoinGame, onLeaveGame }: PlayerSlotsProps) {
+function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameId, onJoinGame, onLeaveGame, actionTriggered }: PlayerSlotsProps) {
   const MAX_SLOTS = 5;
 
   const { user } = useUser();
@@ -156,6 +157,7 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
               isDealer={isDealer}
               mobileOrientation={slotConfig.mobileOrientation}
               desktopOrientation={slotConfig.desktopOrientation}
+              actionTriggered={actionTriggered}
             />
           </li>
         );

@@ -20,6 +20,7 @@ interface PlayerProps {
   isDealer?: boolean;
   mobileOrientation?: PlayerOrientation;
   desktopOrientation?: PlayerOrientation;
+  actionTriggered?: boolean;
 }
 
 /**
@@ -53,6 +54,7 @@ export default function Player({
     isDealer,
     mobileOrientation = 'ltr',
     desktopOrientation = 'ltr',
+    actionTriggered = false,
 }: PlayerProps) {
     const chipTotal = player.chipCount;
     const isCurrentPlayer = index === currentPlayerIndex;
@@ -85,7 +87,7 @@ export default function Player({
                             className={clsx(
                                 'rounded-full border-2 relative overflow-visible',
                                 {
-                                    'border-white': isCurrentPlayer,
+                                    'border-white': isCurrentPlayer && (!isCurrentUser || !actionTriggered),
                                 },
                             )}
                         >
