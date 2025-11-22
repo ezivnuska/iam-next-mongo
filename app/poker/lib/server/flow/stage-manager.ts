@@ -607,35 +607,7 @@ export class StageManager {
     }
 
     console.log(`[StageManager] Winner notification sent: ${winnerInfo.winnerName}`);
-    console.log(`[StageManager] Starting fully server-driven restart flow`);
-
-    // FULLY SERVER-DRIVEN RESTART FLOW (eliminates client-triggered API calls that cause page refreshes):
-    // 1. Server emits winner notification (done above)
-    // 2. Client shows winner notification for 10s (purely visual, no callbacks)
-    // 3. Server waits 10s then automatically resets game
-    // 4. Server emits game_starting notification
-    // 5. Client shows "Game starting!" notification for 10s (purely visual, no callbacks)
-    // 6. Server waits 10s then automatically locks and starts new game
-
-    const { POKER_GAME_CONFIG } = await import('../../config/poker-constants');
-
-    // Wait for winner notification to complete (10 seconds)
-    console.log('[StageManager] Waiting 10 seconds for winner notification to display');
-    await new Promise(resolve => setTimeout(resolve, POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS));
-
-    console.log('[StageManager] Winner notification complete - starting game reset');
-
-    // Advance to End stage
-    game.stage = GameStage.End;
-    game.markModified('stage');
-    await game.save();
-
-    console.log('[StageManager] Advanced to End stage - calling resetGameForNextRound');
-
-    // Reset and restart the game (this will emit game_starting and auto-lock after 10s)
-    await StageManager.resetGameForNextRound(game);
-
-    console.log('[StageManager] Game reset and restart flow complete');
+    console.log(`[StageManager] endGame complete - step flow will handle game reset and restart`);
   }
 
   /**
@@ -699,6 +671,16 @@ export class StageManager {
       console.log('[StageManager] Player status before removal check:', JSON.stringify(gameToReset.players.map((p: Player) =>
         ({ username: p.username, chipCount: p.chipCount, isAway: p.isAway, isAI: p.isAI, canPlay: p.chipCount >= BIG_BLIND && !p.isAway })
       ), null, 2));
+
+      // Reset player state for next game BEFORE filtering (so hands are cleared even if player is removed)
+      gameToReset.players = gameToReset.players.map((p: Player) => ({
+        ...p,
+        hand: [],
+        folded: false,
+        isAllIn: undefined,
+        allInAmount: undefined,
+        // IMPORTANT: Keep existing chipCount - balances persist across games
+      }));
 
       // Filter out players who can't afford the big blind or are away (navigated away from /poker route)
       gameToReset.players = gameToReset.players.filter((p: Player) => {
@@ -766,6 +748,15 @@ export class StageManager {
 
         // Unlock the game and save
         gameToReset.locked = false;
+
+        // Mark all reset fields as modified so they're saved and sent to clients
+        gameToReset.markModified('winner');
+        gameToReset.markModified('stage');
+        gameToReset.markModified('communalCards');
+        gameToReset.markModified('playerBets');
+        gameToReset.markModified('pot');
+        gameToReset.markModified('pots');
+        gameToReset.markModified('actionHistory');
         gameToReset.markModified('players');
         await gameToReset.save();
 
@@ -773,26 +764,13 @@ export class StageManager {
         await PokerSocketEmitter.emitNotificationCanceled();
         console.log('[StageManager] Notification canceled - insufficient players');
 
-        // Emit granular game unlocked event (avoids full page reload from state update)
-        await PokerSocketEmitter.emitGameUnlocked({
-          locked: false,
-          stage: 0,
-          dealerButtonPosition: gameToReset.dealerButtonPosition,
-        });
+        // Emit full state update to sync all reset fields (communalCards, pot, hands, etc.)
+        // This ensures clients clear all game state when restart is cancelled
+        await PokerSocketEmitter.emitStateUpdate(gameToReset);
 
         console.log('[StageManager] Game unlocked - restart canceled due to insufficient players');
         return; // Exit early - no restart
       }
-
-      // Reset player state for next game (keep their balances)
-      gameToReset.players = gameToReset.players.map((p: Player) => ({
-        ...p,
-        hand: [],
-        folded: false,
-        isAllIn: undefined,
-        allInAmount: undefined,
-        // IMPORTANT: Keep existing chipCount - balances persist across games
-      }));
 
       console.log('[StageManager] Player balances for next game:', gameToReset.players.map((p: Player) =>
         ({ username: p.username, chipCount: p.chipCount })
@@ -813,33 +791,18 @@ export class StageManager {
 
       console.log('[StageManager] Game reset for next round');
 
-      // Emit "Game starting!" notification to inform players
-      // NOTE: pot and playerBets are intentionally omitted here to avoid race condition.
-      // These will be synced via blind notifications and state updates from step flow.
-      console.log('[StageManager] ✅ Emitting game starting notification');
+      // Emit full state update to sync all reset fields with clients
+      // This ensures clients clear communal cards, hands, pot, etc. BEFORE game_starting notification
+      await PokerSocketEmitter.emitStateUpdate(gameToReset);
+      console.log('[StageManager] State update emitted - clients synced with reset game state');
 
-      await PokerSocketEmitter.emitNotification({
-        notificationType: 'game_starting',
-        category: 'info',
-        countdownSeconds: POKER_GAME_CONFIG.AUTO_LOCK_DELAY_SECONDS, // 10 seconds
-        stage: 0, // Reset to preflop
-      });
-
-      console.log('[StageManager] ✅ Game starting notification emitted');
-
-      // Wait for notification duration, then automatically lock the game
-      // This is server-driven to avoid issues with client socket disconnections during page remounts
-      console.log('[StageManager] Waiting 10 seconds before auto-locking game');
-      await new Promise(resolve => setTimeout(resolve, POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS));
-
-      console.log('[StageManager] 10 second countdown complete - auto-locking game');
-
-      // Automatically lock and start the game using internal function (bypasses auth)
+      // Queue game starting notification through notification system
+      // This ensures proper cancellation and sequencing if players join/leave during countdown
+      console.log('[StageManager] Queueing game_starting notification through notification queue');
       const gameId = String(gameToReset._id);
-      const { lockGameInternal } = await import('../locking/lock-game-internal');
-
-      await lockGameInternal(gameId);
-      console.log('[StageManager] ✅ Game auto-locked and started successfully');
+      const { queueGameStartingNotification } = await import('../notifications/notification-queue-manager');
+      await queueGameStartingNotification(gameId);
+      console.log('[StageManager] ✅ Game starting notification queued - queue will handle countdown and lock');
     }
   }
 }

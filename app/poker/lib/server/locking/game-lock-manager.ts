@@ -10,6 +10,9 @@ import { logGameStartedAction } from '@/app/poker/lib/utils/action-history-helpe
 // Store timeout references for cancellation
 const lockTimers = new Map<string, NodeJS.Timeout>();
 
+// Store restart timer references for cancellation (used during game restart flow)
+const restartTimers = new Map<string, NodeJS.Timeout>();
+
 /**
  * Initialize game when it's locked (2+ players ready to play)
  * Uses distributed locking to prevent race conditions with manual "Start Now" clicks
@@ -204,4 +207,41 @@ export function cancelGameLock(gameId: string): void {
  */
 export function shouldStartLockTimer(playerCount: number, hasLockTime: boolean): boolean {
   return playerCount === 2 && !hasLockTime;
+}
+
+/**
+ * Schedule auto-lock after game restart countdown
+ * This creates a cancellable timer for the restart flow
+ */
+export function scheduleGameRestart(gameId: string, delayMs: number): void {
+  // Cancel any existing restart timer for this game
+  cancelGameRestart(gameId);
+
+  const timeoutId = setTimeout(async () => {
+    restartTimers.delete(gameId); // Clean up reference after execution
+
+    console.log('[GameRestart] Auto-lock delay complete - locking game now');
+
+    // Automatically lock and start the game using internal function (bypasses auth)
+    const { lockGameInternal } = await import('./lock-game-internal');
+    await lockGameInternal(gameId);
+    console.log('[GameRestart] ✅ Game auto-locked and started successfully');
+  }, delayMs);
+
+  // Store timeout reference for cancellation
+  restartTimers.set(gameId, timeoutId);
+  console.log(`[GameRestart] Scheduled restart timer for game ${gameId} (${delayMs}ms)`);
+}
+
+/**
+ * Cancel a scheduled game restart
+ * Called when a player leaves during the restart countdown
+ */
+export function cancelGameRestart(gameId: string): void {
+  const timeoutId = restartTimers.get(gameId);
+  if (timeoutId) {
+    clearTimeout(timeoutId);
+    restartTimers.delete(gameId);
+    console.log(`[GameRestart] Cancelled restart timer for game ${gameId}`);
+  }
 }

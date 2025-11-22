@@ -144,16 +144,19 @@ export async function addPlayer(
 
     await game.save();
 
-    // Set lockTime flag when we have 2+ total players (used to trigger notification queue)
+    // Set/Reset lockTime flag when we have 2+ total players (used to trigger notification queue)
     // Note: AI player is always present in singleton game, so this will trigger when first human joins
-    // The actual game lock is scheduled by the notification queue AFTER the countdown completes
+    // IMPORTANT: Always reset lockTime when a new player joins to give everyone the full countdown
+    // lockTime must account for BOTH player_joined notification (2s) AND game_starting notification (10s)
     if (game.players.length >= 2 && !game.locked) {
-      const lockTime = new Date(Date.now() + POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS);
+      const totalNotificationDuration =
+        POKER_GAME_CONFIG.PLAYER_JOINED_NOTIFICATION_DURATION_MS +
+        POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS;
+      const lockTime = new Date(Date.now() + totalNotificationDuration);
       game.lockTime = lockTime;
       await PokerGame.findByIdAndUpdate(gameId, { lockTime });
-      // NOTE: scheduleGameLock is called by notification queue after countdown completes
       const humanCount = game.players.filter((p: Player) => !p.isAI).length;
-      console.log(`[AddPlayer] ${humanCount === 1 ? 'Set' : 'Reset'} lockTime flag for notification queue (${game.players.length} total players: ${humanCount} human + AI)`);
+      console.log(`[AddPlayer] ${humanCount === 1 ? 'Set' : 'Reset'} lockTime to ${lockTime.toISOString()} (includes player_joined + game_starting: ${totalNotificationDuration}ms total)`);
     }
 
     // Return fresh game state
@@ -200,13 +203,15 @@ export async function handlePlayerJoin(
     });
 
     // If this player join brings the count to 2+ and game isn't locked, queue notifications
-    if (gameState.players.length >= 2 && !gameState.locked && gameState.lockTime) {
-      console.log('[HandlePlayerJoin] Queueing notification sequence for player join');
+    // Note: lockTime may be undefined during restart, but we still queue notifications to cancel timers
+    if (gameState.players.length >= 2 && !gameState.locked) {
+      const context = gameState.lockTime ? 'initial join' : 'join during restart';
+      console.log(`[HandlePlayerJoin] Queueing notification sequence for ${context}`);
 
       // Import notification queue manager
       const { queuePlayerJoinedNotification } = await import('../notifications/notification-queue-manager');
 
-      // Queue player joined notification (this will automatically handle game_starting notification)
+      // Queue player joined notification (cancels any active timers and resets countdown)
       await queuePlayerJoinedNotification(gameId, username, userId);
     }
 

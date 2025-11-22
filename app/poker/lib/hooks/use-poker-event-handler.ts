@@ -27,7 +27,7 @@ import { POKER_TIMERS } from '../config/poker-constants';
 export function usePokerEventHandler(gameId: string | null) {
   const { socket } = useSocket();
   const { user } = useUser();
-  const { showNotification, clearNotification } = useNotifications();
+  const { showNotification, clearNotification, resetNotifications } = useNotifications();
   const { clearAllPlayerNotifications, clearPlayerNotification } = usePlayerNotifications();
   const { syncPotFromNotification, shouldSyncPot } = usePotSync();
   const { clearTimerOptimistically, playSound, setCommunalCards, setPlayers } = usePokerActions();
@@ -125,7 +125,12 @@ export function usePokerEventHandler(gameId: string | null) {
 
       // Handle game_starting notification - reset UI state for new round
       if (payload.notificationType === 'game_starting' && payload.stage === 0) {
-        console.log('[PokerEventHandler] Processing game reset from game_starting notification');
+        console.log('[PokerEventHandler] Processing game reset from game_starting notification - resetting notification queue');
+
+        // Reset notification queue to clear any stale notifications from previous game
+        // This must be done BEFORE showing the game_starting notification
+        resetNotifications();
+
         // NOTE: pot and playerBets are NOT synced here to avoid race condition.
         // They will be properly synced via blind notifications and state updates from step flow.
         setCommunalCards([]); // Clear communal cards
@@ -208,5 +213,5 @@ export function usePokerEventHandler(gameId: string | null) {
       socket.off(SOCKET_EVENTS.POKER_NOTIFICATION_CANCELED, handleNotificationCanceled);
       socket.off(SOCKET_EVENTS.POKER_ACTION_TIMER_STARTED, handleTimerStarted);
     };
-  }, [socket, gameId, user, showNotification, clearNotification, clearPlayerNotification, syncPotFromNotification, shouldSyncPot, clearTimerOptimistically, clearAllPlayerNotifications, playSound, setCommunalCards, setPlayers]);
+  }, [socket, gameId, user, showNotification, clearNotification, resetNotifications, clearPlayerNotification, syncPotFromNotification, shouldSyncPot, clearTimerOptimistically, clearAllPlayerNotifications, playSound, setCommunalCards, setPlayers]);
 }

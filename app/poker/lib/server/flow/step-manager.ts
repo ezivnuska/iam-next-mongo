@@ -686,45 +686,25 @@ async function executeDetermineWinner(gameId: string): Promise<number> {
 
 /**
  * Execute reset game step
+ * This is called after winner determination is complete
  */
 async function executeResetGame(gameId: string): Promise<number> {
   const game = await PokerGame.findById(gameId);
   if (!game) return 0;
 
-  // ADVANCE DEALER BUTTON FIRST (before reset) - standard poker rules
-  game.dealerButtonPosition = ((game.dealerButtonPosition || 0) + 1) % game.players.length;
-  game.markModified('dealerButtonPosition');
-  console.log(`[StepManager] Dealer button advanced to position ${game.dealerButtonPosition}`);
+  console.log('[StepManager] Executing RESET_GAME step - delegating to resetGameForNextRound');
 
-  // Save dealer button advancement and emit granular update so clients see it BEFORE reset
-  await game.save();
-
-  const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
-  await PokerSocketEmitter.emitDealerButtonMoved({
-    dealerButtonPosition: game.dealerButtonPosition,
-  });
-  console.log('[StepManager] Dealer button advancement emitted to clients');
-
-  // Reset game state
-  game.locked = false;
-  game.stage = 0;
-  game.currentStep = undefined;
-  game.winner = undefined;
-  game.communalCards = [];
-  game.pot = [];
-  game.pots = [];
-  game.playerBets = [];
-  game.players.forEach((p: any) => {
-    p.hand = [];
-    p.folded = false;
-    p.isAllIn = false;
-  });
-
-  await game.save();
+  // Call resetGameForNextRound which handles:
+  // 1. Dealer button advancement
+  // 2. Game state reset
+  // 3. Player removal (insufficient chips/away)
+  // 4. Queueing game_starting notification
+  const { StageManager } = await import('./stage-manager');
+  await StageManager.resetGameForNextRound(game);
 
   await completeRequirement(gameId, RequirementType.GAME_RESET);
 
-  console.log('[StepManager] Game reset complete');
+  console.log('[StepManager] Game reset and restart queued');
 
-  return 0;
+  return 0; // No wait - notification queue handles timing
 }

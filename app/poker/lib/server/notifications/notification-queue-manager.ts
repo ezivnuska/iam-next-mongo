@@ -51,9 +51,27 @@ export async function queuePlayerJoinedNotification(
   const queue = gameQueues.get(gameId)!;
   const activeNotification = activeNotifications.get(gameId);
 
-  // ALWAYS cancel any pending game lock timer first
+  // Check if there's a game_starting in queue or active - need to cancel on client
+  const hasQueuedGameStarting = queue.some(item => item.type === 'game_starting');
+  const hasActiveGameStarting = activeNotification?.type === 'game_starting';
+  const needsClientCancellation = hasQueuedGameStarting || hasActiveGameStarting;
+
+  // IMMEDIATELY emit notification canceled to client FIRST if there's any game_starting
+  // This ensures the client UI updates instantly when player joins
+  if (needsClientCancellation) {
+    const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
+    await PokerSocketEmitter.emitNotificationCanceled();
+    console.log(`[NotificationQueue] ⚡ IMMEDIATE cancellation sent to client (player joined during ${hasActiveGameStarting ? 'active' : 'queued'} game_starting)`);
+  }
+
+  // ALWAYS cancel any pending game lock timer
   // This handles the edge case where countdown completed but lock hasn't fired yet
   cancelGameLock(gameId);
+
+  // CRITICAL FIX: Also cancel any restart timer (from resetGameForNextRound)
+  // This prevents the game from auto-locking when a player joins during restart countdown
+  const { cancelGameRestart } = await import('../locking/game-lock-manager');
+  cancelGameRestart(gameId);
 
   // ALWAYS remove any existing game_starting from queue first (prevents duplicates)
   for (let i = queue.length - 1; i >= 0; i--) {
@@ -75,24 +93,15 @@ export async function queuePlayerJoinedNotification(
     gameId,
   });
 
-  // Check if game_starting is currently displaying (active)
-  if (activeNotification?.type === 'game_starting') {
-    console.log('[NotificationQueue] Game starting countdown is ACTIVELY DISPLAYING - canceling it');
-
-    console.log(`[NotificationQueue] Queue updated: ${queue.length} items (canceled active start timer, added player + new start timer)`);
-
-    // NOW cancel the currently displaying start-timer notification
-    // (after queue is set up so processQueue will find the new items)
+  // If there's an active game_starting notification, cancel it via the queue system
+  if (hasActiveGameStarting) {
+    console.log('[NotificationQueue] Canceling active game_starting countdown');
     if (activeNotification.cancelFn) {
       activeNotification.cancelFn();
     }
-
-    // Emit notification canceled event to client
-    const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
-    await PokerSocketEmitter.emitNotificationCanceled();
-  } else {
-    console.log(`[NotificationQueue] Queue updated: ${queue.length} items (added player + game_starting)`);
   }
+
+  console.log(`[NotificationQueue] Queue updated: ${queue.length} items (added player_joined + new game_starting)`);
 
   // Start processing if not already processing
   if (!processingGames.has(gameId)) {
@@ -115,9 +124,26 @@ export async function resetGameStartingOnPlayerLeave(gameId: string): Promise<vo
   const queue = gameQueues.get(gameId)!;
   const activeNotification = activeNotifications.get(gameId);
 
-  // ALWAYS cancel any pending game lock timer first
+  // Check if there's a game_starting active or in queue - need to cancel on client
+  const hasQueuedGameStarting = queue.some(item => item.type === 'game_starting');
+  const hasActiveGameStarting = activeNotification?.type === 'game_starting';
+  const needsClientCancellation = hasQueuedGameStarting || hasActiveGameStarting;
+
+  // IMMEDIATELY emit notification canceled to client FIRST if there's any game_starting
+  // This ensures the client UI updates instantly when player leaves
+  if (needsClientCancellation) {
+    await PokerSocketEmitter.emitNotificationCanceled();
+    console.log(`[NotificationQueue] ⚡ IMMEDIATE cancellation sent to client (player left during ${hasActiveGameStarting ? 'active' : 'queued'} game_starting)`);
+  }
+
+  // ALWAYS cancel any pending game lock timer
   // This handles the edge case where countdown completed but lock hasn't fired yet
   cancelGameLock(gameId);
+
+  // CRITICAL FIX: Also cancel any restart timer (from resetGameForNextRound)
+  // This prevents the game from auto-locking when a player leaves during restart countdown
+  const { cancelGameRestart } = await import('../locking/game-lock-manager');
+  cancelGameRestart(gameId);
 
   // ALWAYS remove any existing game_starting from queue first (prevents duplicates)
   for (let i = queue.length - 1; i >= 0; i--) {
@@ -132,23 +158,15 @@ export async function resetGameStartingOnPlayerLeave(gameId: string): Promise<vo
     gameId,
   });
 
-  // Check if game_starting is currently displaying (active)
-  if (activeNotification?.type === 'game_starting') {
-    console.log('[NotificationQueue] Game starting countdown is ACTIVELY DISPLAYING - canceling it');
-
-    console.log(`[NotificationQueue] Queue updated: ${queue.length} items (canceled active start timer, added new start timer)`);
-
-    // NOW cancel the currently displaying start-timer notification
-    // (after queue is set up so processQueue will find the new items)
+  // If there's an active game_starting notification, cancel it via the queue system
+  if (hasActiveGameStarting) {
+    console.log('[NotificationQueue] Canceling active game_starting countdown');
     if (activeNotification.cancelFn) {
       activeNotification.cancelFn();
     }
-
-    // Emit notification canceled event to client
-    await PokerSocketEmitter.emitNotificationCanceled();
-  } else {
-    console.log(`[NotificationQueue] Queue updated: ${queue.length} items (added new start timer)`);
   }
+
+  console.log(`[NotificationQueue] Queue updated: ${queue.length} items (added new start timer)`);
 
   // Start processing if not already processing
   if (!processingGames.has(gameId)) {
