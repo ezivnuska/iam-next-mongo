@@ -79,20 +79,20 @@ export default function PokerDashboard({
     : turnTimerProgress;
 
   return (
-    <div className='relative w-11/12 sm:w-1/2 h-12 flex-row items-center justify-stretch rounded-full bg-green-900 overflow-hidden p-0.5'>
+    <div className='relative w-11/12 sm:w-1/2 h-12 flex-row items-center justify-center rounded-full bg-green-900 overflow-hidden p-0.5'>
       {/* Background Progress Bar */}
       {currentNotification?.type !== 'action' && currentNotification?.type !== 'deal' && progressPercentage > 0 && (
         <div
           className="absolute left-0 top-0 bottom-0 bg-green-500 transition-all duration-100 ease-linear z-5"
           style={{
             width: `${progressPercentage}%`,
-            opacity: 1.0,
+            opacity: 0.8,
           }}
         />
       )}
 
       {/* Content Layer */}
-      <div className='relative z-10 flex h-full flex-row items-center justify-center rounded-full'>
+      <div className='relative z-10 flex flex-1 h-full flex-row items-center justify-center rounded-full border'>
         <GameNotification />
 
         {showPlayerControls && (
@@ -103,7 +103,7 @@ export default function PokerDashboard({
           <Button
             size='md'
             onClick={() => gameId && joinGame(gameId)}
-            className='text-md text-white rounded-full bg-green-950 w-full mx-1'
+            className='text-md text-white rounded-full bg-green-950 w-full mx-0.5'
             variant='ghost'
           >
             Start a New Game!
