@@ -143,6 +143,10 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
         // Determine if this player has the dealer button
         const isDealer = playerIndex === dealerButtonPosition;
 
+        // Determine if this player has the small or big blind
+        const isSmallBlind = playerIndex === smallBlindPos;
+        const isBigBlind = playerIndex === bigBlindPos;
+
         return (
           <li key={player.id} className={clsx(
               'absolute',
@@ -155,6 +159,8 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
               potContribution={0}
               isCurrentUser={isCurrentUser}
               isDealer={isDealer}
+              isSmallBlind={isSmallBlind}
+              isBigBlind={isBigBlind}
               mobileOrientation={slotConfig.mobileOrientation}
               desktopOrientation={slotConfig.desktopOrientation}
               actionTriggered={actionTriggered}

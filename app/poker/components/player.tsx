@@ -18,6 +18,8 @@ interface PlayerProps {
   potContribution: number;
   isCurrentUser?: boolean;
   isDealer?: boolean;
+  isSmallBlind?: boolean;
+  isBigBlind?: boolean;
   mobileOrientation?: PlayerOrientation;
   desktopOrientation?: PlayerOrientation;
   actionTriggered?: boolean;
@@ -52,13 +54,15 @@ export default function Player({
     potContribution,
     isCurrentUser,
     isDealer,
+    isSmallBlind = false,
+    isBigBlind = false,
     mobileOrientation = 'ltr',
     desktopOrientation = 'ltr',
     actionTriggered = false,
 }: PlayerProps) {
     const chipTotal = player.chipCount;
     const isCurrentPlayer = index === currentPlayerIndex;
-    const { winner, actionTimer } = useGameState();
+    const { winner, actionTimer, locked } = useGameState();
     const isWinner = player.id === winner?.winnerId;
 
     // Timer progress bar - only show for current player
@@ -94,11 +98,31 @@ export default function Player({
                             <UserAvatar size={50} username={player.username} isAI={player.isAI} />
                         </div>
 
-                        {isDealer && (
-                            <div className='absolute -top-1 -right-1 z-20 rounded-full bg-yellow-500 text-black overflow-hidden border-1'>
-                                <span className='text-xs font-bold px-1.5 py-0.5 text-black'>
-                                    D
-                                </span>
+                        {isDealer && locked && !winner && (
+                            <div className='absolute -top-1 -right-1 z-20'>
+                                <div className='flex flex-row items-center justify-center h-5 w-5 rounded-full bg-yellow-500 text-black overflow-hidden border-1'>
+                                    <span className='text-xs font-bold text-black'>
+                                        D
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+                        {isSmallBlind && locked && !winner && (
+                            <div className='absolute -top-1 -left-1 z-21'>
+                                <div className='flex flex-row items-center justify-center h-5 w-5 rounded-full bg-blue-500 text-white overflow-hidden border-1'>
+                                    <span className='block text-xs font-bold text-white'>
+                                        S
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+                        {isBigBlind && locked && !winner && (
+                            <div className='absolute -top-1 -left-1 z-22'>
+                                <div className='flex flex-row items-center justify-center h-5 w-5 rounded-full bg-red-600 text-white overflow-hidden border-1'>
+                                    <span className='text-xs font-bold text-white'>
+                                        B
+                                    </span>
+                                </div>
                             </div>
                         )}
                         {player.isAllIn && !winner ? (
