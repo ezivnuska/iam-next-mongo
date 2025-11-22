@@ -95,7 +95,7 @@ export default function Player({
                         </div>
 
                         {isDealer && (
-                            <div className='absolute top-0 right-0 z-20 rounded-full bg-yellow-500 text-black overflow-hidden border-1'>
+                            <div className='absolute -top-1 -right-1 z-20 rounded-full bg-yellow-500 text-black overflow-hidden border-1'>
                                 <span className='text-xs font-bold px-1.5 py-0.5 text-black'>
                                     D
                                 </span>

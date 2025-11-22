@@ -87,9 +87,9 @@ export default function PokerNotificationDisplay({ notification }: PokerNotifica
   const bgStyle = typeStyles[notification.type] || typeStyles.info;
 
   return (
-    <div className="relative w-full overflow-hidden rounded-full shadow-lg">
+    <div className="relative w-full h-full overflow-hidden rounded-full shadow-lg">
       {/* Notification content */}
-      <div className={`relative px-4 font-semibold text-center`}>
+      <div className={`relative h-full px-4 font-semibold text-center`}>
       {/* <div className={`relative px-4 ${bgStyle} font-semibold text-center`}> */}
       {/* <div className={`relative px-4 py-3 ${bgStyle} font-semibold text-center`}> */}
         {/* Progress bar background */}
@@ -103,7 +103,7 @@ export default function PokerNotificationDisplay({ notification }: PokerNotifica
         />
 
         {/* Message text and optional buttons */}
-        <div className="relative z-10 flex items-center justify-center gap-3">
+        <div className="relative z-10 flex flex-row h-full items-center justify-center gap-3">
           <span className='text-white'>{notification.message}</span>
 
           {/* Join/Leave buttons for game_starting notification */}
@@ -113,7 +113,7 @@ export default function PokerNotificationDisplay({ notification }: PokerNotifica
                 <Button
                   size="sm"
                   onClick={leaveGame}
-                  className="bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1"
+                  className="bg-green-700 hover:bg-red-700 text-white text-xs px-2 py-1"
                 >
                   Leave
                 </Button>

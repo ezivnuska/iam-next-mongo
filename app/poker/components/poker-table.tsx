@@ -10,9 +10,7 @@ import { SOCKET_EVENTS } from '@/app/lib/socket/events';
 import PlayerSlots from './player-slots';
 import CommunalCards from './communal-cards';
 import Pot from './pot';
-import PlayerControls from './player-controls';
-import GameNotification from './game-notification';
-import SoftHeader from '@/app/ui/header/soft-header';
+import PokerDashboard from './poker-dashboard';
 import { Button } from '@/app/ui/button';
 import Link from 'next/link';
 import { ArrowLeftIcon } from "@heroicons/react/20/solid";
@@ -115,25 +113,7 @@ export default function PokerTable() {
 
   return (
     <div className='flex flex-1 flex-col bg-black static'>
-        {/* <div className='flex flex-row items-center justify-between'> */}
-            {/* <SoftHeader color='white' /> */}
-            {/* <div className='flex flex-row items-center px-2 gap-2'> */}
 
-                {/* <div className="flex gap-2">
-                    <GameNotification />
-                </div> */}
-
-                {/* Game notification - always visible, not just when locked */}
-                {/* {showPlayerControls && (
-                    <PlayerControls onActionTaken={handleActionTaken} />
-                )}
-                {!locked && !userGameInfo.isUserInGame && (
-                    <Button size='sm' onClick={() => gameId && joinGame(gameId)} className='text-sm'>Join</Button>
-                )} */}
-            {/* </div> */}
-        {/* </div> */}
-
-        {/* <div id='poker-table' className='flex flex-1 flex-col sm:flex-row gap-2 rounded-r-full sm:rounded-br-none sm:rounded-t-full bg-green-700 p-2 relative'> */}
         <div id='poker-table' className='flex flex-1 flex-col sm:flex-row gap-2 bg-green-700 p-2 relative'>
 
             <Link href='/' className='absolute top-0 left-0 z-20 p-2'>
@@ -142,18 +122,16 @@ export default function PokerTable() {
 
             {/* Player slots sidebar */}
             <div className='absolute top-0 left-0 bottom-0 right-0 z-10'>
-                {/* <div className='flex flex-1 h-full w-full border-1 border-white'> */}
-                    <PlayerSlots
-                        players={players}
-                        locked={locked}
-                        currentPlayerIndex={currentPlayerIndex}
-                        currentUserId={user?.id}
-                        gameId={gameId}
-                        onJoinGame={() => gameId && joinGame(gameId)}
-                        onLeaveGame={leaveGame}
-                        actionTriggered={actionTriggered}
-                    />
-                {/* </div> */}
+                <PlayerSlots
+                    players={players}
+                    locked={locked}
+                    currentPlayerIndex={currentPlayerIndex}
+                    currentUserId={user?.id}
+                    gameId={gameId}
+                    onJoinGame={() => gameId && joinGame(gameId)}
+                    onLeaveGame={leaveGame}
+                    actionTriggered={actionTriggered}
+                />
             </div>
             
             <div className='absolute top-0 right-0 bottom-0 left-0 z-15'>
@@ -161,26 +139,19 @@ export default function PokerTable() {
                 {/* Main table area */}
                 <div id='table' className='flex h-full flex-row items-center sm:items-end justify-center sm:justify-center'>
                     <div className='flex flex-row items-center justify-center gap-2 w-full h-full'>
-                        <div className='flex flex-col items-center justify-center gap-2 border-2 border-yellow-500'>
-                            <div className='flex h-12 flex-row w-full items-end justify-center gap-4 border'>
+                        <div className='flex w-full flex-1 flex-col items-center justify-center gap-2'>
+                            <div className='flex h-16 flex-row w-full items-end justify-center gap-4'>
                                 <Pot />
                             </div>
-                            <div className='flex h-10 flex-row items-center justify-center border'>
-
-                                <GameNotification />
-
-                                {/* Game notification - always visible, not just when locked */}
-                                {showPlayerControls && (
-                                    <PlayerControls onActionTaken={handleActionTaken} />
-                                )}
-                                {!locked && !userGameInfo.isUserInGame && (
-                                    <Button size='sm' onClick={() => gameId && joinGame(gameId)} className='text-sm'>Join</Button>
-                                )}
-
-                            </div>
-                            {/* <div className='flex flex-row w-full h-[110px] items-center justify-center border'> */}
-                                <CommunalCards />
-                            {/* </div> */}
+                            <PokerDashboard
+                                showPlayerControls={showPlayerControls}
+                                onActionTaken={handleActionTaken}
+                                locked={locked}
+                                isUserInGame={userGameInfo.isUserInGame}
+                                gameId={gameId}
+                                joinGame={joinGame}
+                            />
+                            <CommunalCards />
                         </div>
                     </div>
                 </div>
