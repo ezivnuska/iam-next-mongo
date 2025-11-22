@@ -122,7 +122,7 @@ export default function PokerDashboard({
           <Button
             size='md'
             onClick={() => gameId && joinGame(gameId)}
-            className='text-md text-white rounded-full bg-green-950 w-full mx-0.5'
+            className='text-md text-white rounded-full bg-green-950 w-full mx-0.5 hover:bg-green-400 hover:text-green-950'
             variant='ghost'
           >
             Start a New Game!
