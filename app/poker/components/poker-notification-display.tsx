@@ -103,7 +103,7 @@ export default function PokerNotificationDisplay({ notification }: PokerNotifica
         />
 
         {/* Message text and optional buttons */}
-        <div className="relative z-10 flex flex-row h-full items-center justify-center gap-3">
+        <div className="relative z-10 flex flex-row h-full items-center justify-center gap-4">
           <span className='text-white'>{notification.message}</span>
 
           {/* Join/Leave buttons for game_starting notification */}
@@ -113,7 +113,7 @@ export default function PokerNotificationDisplay({ notification }: PokerNotifica
                 <Button
                   size="sm"
                   onClick={leaveGame}
-                  className="bg-green-700 hover:bg-red-700 text-white text-xs px-2 py-1"
+                  className="bg-green-700 hover:bg-red-700 text-white text-md px-3 rounded-full"
                 >
                   Leave
                 </Button>
@@ -121,7 +121,7 @@ export default function PokerNotificationDisplay({ notification }: PokerNotifica
                 <Button
                   size="sm"
                   onClick={() => gameId && joinGame(gameId)}
-                  className="bg-green-600 hover:bg-green-700 text-white text-xs px-2 py-1"
+                  className="bg-green-600 hover:bg-green-700 text-white text-md px-3 rounded-full"
                 >
                   Join
                 </Button>

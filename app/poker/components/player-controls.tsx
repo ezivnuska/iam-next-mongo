@@ -274,7 +274,7 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
             id="allinButton"
             onClick={handleAllIn}
             disabled={isActionProcessing}
-            className='bg-red-600 text-white'
+            className='bg-red-600 text-white rounded-full px-3'
           >
             <span>All In</span>
           </Button>
@@ -297,7 +297,11 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
             id="foldButton"
             onClick={handleFold}
             disabled={isActionProcessing}
-            className={`${selectedAction === 'fold' ? 'ring-2 ring-yellow-400' : ''}`}
+            className={clsx('rounded-full px-3',
+                {
+                    'ring-2 ring-yellow-400': selectedAction === 'fold',
+                }
+            )}
           >
             <span>Fold</span>
           </Button>

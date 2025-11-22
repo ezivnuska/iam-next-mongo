@@ -73,7 +73,7 @@ export function UnifiedBetControl({
 
   return (
     <div
-      className={`flex flex-1 flex-row items-stretch rounded-lg overflow-hidden bg-blue-600 hover:bg-blue-700 transition-colors ${
+      className={`flex flex-1 flex-row items-stretch rounded-full overflow-hidden bg-blue-600 hover:bg-blue-700 transition-colors ${
         isSelected ? 'ring-2 ring-yellow-400' : ''
       }`}
     >
@@ -82,7 +82,7 @@ export function UnifiedBetControl({
         <button
           onClick={handleDecrement}
           disabled={isProcessing || !canDecrement}
-          className="flex items-center justify-center text-white h-8 px-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-800 transition-colors"
+          className="flex items-center justify-center text-white h-8 pl-3 pr-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-800 transition-colors"
           aria-label="Decrease bet amount"
         >
           <ChevronDownIcon className="w-4 h-4" />
@@ -104,7 +104,7 @@ export function UnifiedBetControl({
         <button
           onClick={handleIncrement}
           disabled={isProcessing || !canIncrement}
-          className="flex items-center justify-center text-white h-8 px-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-800 transition-colors"
+          className="flex items-center justify-center text-white h-8 pl-2 pr-3 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-800 transition-colors"
           aria-label="Increase bet amount"
         >
           <ChevronUpIcon className="w-4 h-4" />

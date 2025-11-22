@@ -89,7 +89,7 @@ export function usePokerEventHandler(gameId: string | null) {
       // This eliminates client-triggered API calls that were causing page refreshes
       // Turn advancement is also fully server-driven - no client signaling needed
 
-      // Check if this is the user's own action (for optimistic notification handling)
+      // Check if this is the user's own action (for logging purposes)
       const isOwnAction = payload.playerId === user?.id;
 
       // Clear timer optimistically for ANY player action (including AI)
@@ -98,97 +98,88 @@ export function usePokerEventHandler(gameId: string | null) {
         clearTimerOptimistically();
       }
 
-      if (isOwnAction && isPlayerAction && !payload.timerTriggered) {
-        // This is the acting user receiving their own action notification via socket
-        // Skip display ONLY if it's not timer-triggered (optimistic notification already shown)
-        console.log('[PokerEventHandler] Received own action notification - skipping display (already shown optimistically) but syncing pot', { timerTriggered: payload.timerTriggered });
-
-        // Sync pot from socket event to correct any discrepancies with optimistic update
-        if (shouldSyncPot(payload.notificationType)) {
-          console.log('[PokerEventHandler] Syncing pot from own action socket event');
-          syncPotFromNotification(payload);
-        }
-
-        // Note: Turn advancement is handled server-side with automatic delay
+      // Always show action notifications to all players (including the acting player)
+      // The acting player sees optimistic notifications immediately when they click
+      // The socket notification confirms the action was processed by the server
+      if (payload.timerTriggered && isOwnAction) {
+        console.log('[PokerEventHandler] *** SHOWING TIMER-TRIGGERED OWN ACTION NOTIFICATION ***: message=', message, 'duration=', duration);
+      } else if (isOwnAction && isPlayerAction) {
+        console.log('[PokerEventHandler] *** SHOWING OWN ACTION NOTIFICATION ***: message=', message, 'duration=', duration);
       } else {
-        // This is for another player's action, a timer-triggered own action, or a non-action event
-        if (payload.timerTriggered && isOwnAction) {
-          console.log('[PokerEventHandler] *** SHOWING TIMER-TRIGGERED OWN ACTION NOTIFICATION ***: message=', message, 'duration=', duration);
-        } else {
-          console.log('[PokerEventHandler] *** SHOWING NOTIFICATION ***: message=', message, 'duration=', duration);
-        }
+        console.log('[PokerEventHandler] *** SHOWING NOTIFICATION ***: message=', message, 'duration=', duration);
+      }
 
-        // Clear all player notifications before showing ANY dealing notifications
-        // This ensures player action notifications disappear before dealing (hole cards, flop, turn, river)
-        const isDealingNotification = payload.notificationType === 'cards_dealt';
-        if (isDealingNotification) {
-          console.log('[PokerEventHandler] Clearing all player notifications before showing dealing notification');
-          clearAllPlayerNotifications();
-        }
+      // Sync pot from socket event to ensure state consistency
+      if (shouldSyncPot(payload.notificationType)) {
+        console.log('[PokerEventHandler] Syncing pot from notification:', payload.notificationType);
+        syncPotFromNotification(payload);
+      }
 
-        // Sync pot for blind notifications and other player actions
-        if (shouldSyncPot(payload.notificationType)) {
-          console.log('[PokerEventHandler] Syncing pot from notification:', payload.notificationType);
-          syncPotFromNotification(payload);
-        }
+      // Clear all player notifications before showing ANY dealing notifications
+      // This ensures player action notifications disappear before dealing (hole cards, flop, turn, river)
+      const isDealingNotification = payload.notificationType === 'cards_dealt';
+      if (isDealingNotification) {
+        console.log('[PokerEventHandler] Clearing all player notifications before showing dealing notification');
+        clearAllPlayerNotifications();
+      }
 
-        // Handle game_starting notification - reset UI state for new round
-        if (payload.notificationType === 'game_starting' && payload.stage === 0) {
-          console.log('[PokerEventHandler] Processing game reset from game_starting notification');
-          // NOTE: pot and playerBets are NOT synced here to avoid race condition.
-          // They will be properly synced via blind notifications and state updates from step flow.
-          setCommunalCards([]); // Clear communal cards
-          // Winner state will be reset through server state updates
-          // Clear player hands by mapping current players to empty hands
-          setPlayers((prev: any[]) => prev.map((p: any) => ({ ...p, hand: [], folded: false, isAllIn: false })));
-        }
+      // Handle game_starting notification - reset UI state for new round
+      if (payload.notificationType === 'game_starting' && payload.stage === 0) {
+        console.log('[PokerEventHandler] Processing game reset from game_starting notification');
+        // NOTE: pot and playerBets are NOT synced here to avoid race condition.
+        // They will be properly synced via blind notifications and state updates from step flow.
+        setCommunalCards([]); // Clear communal cards
+        // Winner state will be reset through server state updates
+        // Clear player hands by mapping current players to empty hands
+        setPlayers((prev: any[]) => prev.map((p: any) => ({ ...p, hand: [], folded: false, isAllIn: false })));
+      }
 
-        // Route to appropriate notification display
-        const isBlindNotification = payload.notificationType === 'blind_posted';
-        const isPlayerJoinedNotification = payload.notificationType === 'player_joined';
-        const isWinnerNotification = payload.notificationType === 'winner_determined' || payload.notificationType === 'game_tied';
+      // Route to appropriate notification display
+      const isBlindNotification = payload.notificationType === 'blind_posted';
+      const isPlayerJoinedNotification = payload.notificationType === 'player_joined';
+      const isWinnerNotification = payload.notificationType === 'winner_determined' || payload.notificationType === 'game_tied';
 
-        // Play appropriate sound for player actions
-        if (isPlayerAction || isBlindNotification) {
-          if (isBlindNotification) {
-            // Blinds are automatic - always play sound regardless of who posted
-            playSound('chips');
-          } else if (!isOwnAction || payload.timerTriggered) {
-            // For player actions, skip if it's own action (already played optimistically)
-            if (payload.notificationType === 'player_fold') {
-              playSound('fold');
-            } else if (payload.notificationType === 'player_check') {
-              playSound('check');
-            } else if (payload.notificationType === 'player_call' ||
-                       payload.notificationType === 'player_bet' ||
-                       payload.notificationType === 'player_raise' ||
-                       payload.notificationType === 'player_all_in') {
-              playSound('chips'); // All betting actions = chips sound
-            }
+      // Play appropriate sound for player actions
+      if (isPlayerAction || isBlindNotification) {
+        if (isBlindNotification) {
+          // Blinds are automatic - always play sound regardless of who posted
+          playSound('chips');
+        } else if (!isOwnAction || payload.timerTriggered) {
+          // For player actions, skip sound if it's own action (already played optimistically)
+          // unless it's timer-triggered
+          if (payload.notificationType === 'player_fold') {
+            playSound('fold');
+          } else if (payload.notificationType === 'player_check') {
+            playSound('check');
+          } else if (payload.notificationType === 'player_call' ||
+                     payload.notificationType === 'player_bet' ||
+                     payload.notificationType === 'player_raise' ||
+                     payload.notificationType === 'player_all_in') {
+            playSound('chips'); // All betting actions = chips sound
           }
         }
-
-        // Play winner sound
-        if (isWinnerNotification) {
-          playSound('winner');
-        }
-
-        // All notifications now go to central display with 2-second auto-clear for player actions
-        console.log('[PokerEventHandler] Showing central notification:', message, 'duration:', duration);
-
-        const onComplete = isWinnerNotification ? () => {
-          console.log('[PokerEventHandler] Winner notification complete - clearing player action notifications');
-          clearAllPlayerNotifications();
-        } : undefined;
-
-        showNotification({
-          message,
-          type,
-          duration,
-          metadata: payload,
-          onComplete,
-        });
       }
+
+      // Play winner sound
+      if (isWinnerNotification) {
+        playSound('winner');
+      }
+
+      // All notifications now go to central display with 2-second auto-clear for player actions
+      console.log('[PokerEventHandler] Showing central notification:', message, 'duration:', duration);
+
+      const onComplete = isWinnerNotification ? () => {
+        console.log('[PokerEventHandler] Winner notification complete - clearing player action notifications');
+        clearAllPlayerNotifications();
+      } : undefined;
+
+      showNotification({
+        message,
+        type,
+        duration,
+        metadata: payload,
+        onComplete,
+      });
     };
 
     // Handler for notification cancellation
