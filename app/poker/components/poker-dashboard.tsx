@@ -77,7 +77,7 @@ export default function PokerDashboard({
     : turnTimerProgress;
 
   return (
-    <div className='relative w-5/6 sm:w-1/2 h-full flex-row items-center justify-stretch rounded-full bg-green-900 overflow-hidden'>
+    <div className='relative w-11/12 sm:w-1/2 h-full flex-row items-center justify-stretch rounded-full bg-green-900 overflow-hidden'>
       {/* Background Progress Bar */}
       {progressPercentage > 0 && (
         <div

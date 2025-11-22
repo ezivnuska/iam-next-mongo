@@ -115,7 +115,7 @@ export default function PokerNotificationDisplay({ notification }: PokerNotifica
                   onClick={leaveGame}
                   className="bg-green-700 hover:bg-red-700 text-white text-md px-3 rounded-full"
                 >
-                  Leave
+                  Leave Table
                 </Button>
               ) : (
                 <Button
@@ -123,7 +123,7 @@ export default function PokerNotificationDisplay({ notification }: PokerNotifica
                   onClick={() => gameId && joinGame(gameId)}
                   className="bg-green-600 hover:bg-green-700 text-white text-md px-3 rounded-full"
                 >
-                  Join
+                  Join Game
                 </Button>
               )}
             </>
