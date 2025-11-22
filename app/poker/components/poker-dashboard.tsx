@@ -50,6 +50,8 @@ export default function PokerDashboard({
       return;
     }
 
+    console.log('currentNotification', currentNotification)
+
     const startTime = Date.now();
     const { duration } = currentNotification;
 
@@ -77,20 +79,20 @@ export default function PokerDashboard({
     : turnTimerProgress;
 
   return (
-    <div className='relative w-11/12 sm:w-1/2 h-full flex-row items-center justify-stretch rounded-full bg-green-900 overflow-hidden'>
+    <div className='relative w-11/12 sm:w-1/2 h-12 flex-row items-center justify-stretch rounded-full bg-green-900 overflow-hidden p-0.5'>
       {/* Background Progress Bar */}
-      {progressPercentage > 0 && (
+      {currentNotification?.type !== 'action' && currentNotification?.type !== 'deal' && progressPercentage > 0 && (
         <div
-          className="absolute left-0 top-0 bottom-0 bg-white transition-all duration-100 ease-linear"
+          className="absolute left-0 top-0 bottom-0 bg-green-500 transition-all duration-100 ease-linear z-5"
           style={{
             width: `${progressPercentage}%`,
-            opacity: 0.1,
+            opacity: 1.0,
           }}
         />
       )}
 
       {/* Content Layer */}
-      <div className='relative z-10 flex h-12 flex-row items-center justify-center'>
+      <div className='relative z-10 flex h-full flex-row items-center justify-center rounded-full'>
         <GameNotification />
 
         {showPlayerControls && (
@@ -101,7 +103,7 @@ export default function PokerDashboard({
           <Button
             size='md'
             onClick={() => gameId && joinGame(gameId)}
-            className='text-md text-white bg-green-950 h-full w-full'
+            className='text-md text-white rounded-full bg-green-950 w-full mx-1'
             variant='ghost'
           >
             Start a New Game!

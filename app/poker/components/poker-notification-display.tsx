@@ -87,20 +87,20 @@ export default function PokerNotificationDisplay({ notification }: PokerNotifica
   const bgStyle = typeStyles[notification.type] || typeStyles.info;
 
   return (
-    <div className="relative w-full h-full overflow-hidden rounded-full shadow-lg">
+    <div className="relative w-full h-full overflow-hidden rounded-full shadow-lg bg-green-900">
       {/* Notification content */}
       <div className={`relative h-full px-4 font-semibold text-center`}>
       {/* <div className={`relative px-4 ${bgStyle} font-semibold text-center`}> */}
       {/* <div className={`relative px-4 py-3 ${bgStyle} font-semibold text-center`}> */}
         {/* Progress bar background */}
-        <div
+        {/* <div
           className="absolute inset-0 transition-all duration-100 ease-linear"
         //   className="absolute inset-0 bg-gray-200 transition-all duration-100 ease-linear"
           style={{
             width: `${progress}%`,
             opacity: 0.1,
           }}
-        />
+        /> */}
 
         {/* Message text and optional buttons */}
         <div className="relative z-10 flex flex-row h-full items-center justify-center gap-4">
