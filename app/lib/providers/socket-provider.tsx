@@ -40,9 +40,13 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 			console.log('[SocketProvider] Socket connected, userId:', user?.id);
 			setIsConnected(true)
 
+			// Always register, even for guest users
+			// Guest users will have 'guest-pending' ID until they join a game
 			if (user?.id) {
 				console.log('[SocketProvider] Registering user:', user.id);
 				socketInstance.emit('register', user.id)
+			} else {
+				console.log('[SocketProvider] No user ID available for registration');
 			}
 		})
 

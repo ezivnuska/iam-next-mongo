@@ -54,7 +54,7 @@ import { useStageCoordinator } from '../hooks/use-stage-coordinator';
 
 function PokerProviderInner({ children }: { children: ReactNode }) {
   const { socket } = useSocket();
-  const { user } = useUser();
+  const { user, setUser } = useUser();
   const { playSound, initSounds } = usePokerSounds();
   const { isActionNotificationActive } = useNotifications();
 
@@ -260,8 +260,8 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
 
   // --- Create API actions ---
   const joinGame = useCallback(
-    createJoinGameAction(setGameId, socket, user?.username || user?.email),
-    [socket, user]
+    createJoinGameAction(setGameId, socket, user?.username || user?.email, setUser),
+    [socket, user, setUser]
   );
 
   // Wrap placeBet to set processing state and update optimistically

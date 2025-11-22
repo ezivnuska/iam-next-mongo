@@ -101,7 +101,11 @@ app.prepare().then(() => {
 				} else {
 					console.log('[Socket] Successfully joined game');
 					// Success event will be sent via emitPlayerJoined and emitStateUpdate
-					socket.emit('poker:join_success', { gameState: result.gameState });
+					socket.emit('poker:join_success', {
+					gameState: result.gameState,
+					userId: result.userId,
+					username: result.username
+				});
 				}
 			} catch (error) {
 				console.error('[Socket] Error processing join_game:', error);

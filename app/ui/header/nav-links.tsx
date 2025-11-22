@@ -30,7 +30,8 @@ const links = [
 
 export default function NavLinks() {
   
-    const { user } = useUser()
+    const { status, user } = useUser()
+    const showNavLinks = status === "authenticated";
     const pathname = usePathname();
     const avatar = user?.avatar
     return (
@@ -64,7 +65,7 @@ export default function NavLinks() {
                     </Link>
                 )
             }
-            {links.map((link) => {
+            {showNavLinks && links.map((link) => {
                 const LinkIcon = link.icon;
                 return (
                     <Link
@@ -83,7 +84,7 @@ export default function NavLinks() {
                 );
             })}
             <PokerNavButton />
-            <NotificationsButton />
+            {showNavLinks && <NotificationsButton />}
         </div>
     );
 }

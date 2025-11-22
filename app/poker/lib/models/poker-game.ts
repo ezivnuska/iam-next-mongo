@@ -92,6 +92,7 @@ const PlayerSchema = new Schema<Player>(
     allInAmount: { type: Number, required: false },
     isAI: { type: Boolean, required: false, default: false },
     isAway: { type: Boolean, required: false, default: false },
+    isGuest: { type: Boolean, required: false, default: false },
   },
   { _id: false }
 );

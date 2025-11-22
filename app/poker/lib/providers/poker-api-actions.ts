@@ -10,7 +10,8 @@ import type { PokerStateUpdatePayload } from '@/app/lib/socket/events';
 export const createJoinGameAction = (
   setGameId: (id: string) => void,
   socket: any,
-  username?: string
+  username?: string,
+  setUser?: (user: any) => void
 ) => {
   return async (gameId: string) => {
     try {
@@ -27,7 +28,25 @@ export const createJoinGameAction = (
 
       // Listen for success/error responses (one-time listeners)
       const successHandler = (data: any) => {
-        console.log('[Join Game] Successfully joined game via socket');
+        console.log('[Join Game] Successfully joined game via socket', data);
+
+        // Update user context with validated userId and username from server
+        if (data.userId && data.username && setUser) {
+          setUser((prevUser: any) => {
+            // Only update if this is a guest user
+            if (prevUser?.id === 'guest-pending' || prevUser?.isGuest) {
+              console.log('[Join Game] Updating guest user ID from', prevUser.id, 'to', data.userId);
+              return {
+                ...prevUser,
+                id: data.userId,
+                username: data.username,
+                isGuest: true
+              };
+            }
+            return prevUser;
+          });
+        }
+
         socket.off('poker:join_error', errorHandler);
       };
 

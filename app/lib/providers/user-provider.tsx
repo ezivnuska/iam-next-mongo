@@ -5,6 +5,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { signIn as nextSignIn, signOut as nextSignOut } from "next-auth/react";
 import type { AppUser, User } from "@/app/lib/definitions";
+import { UserRole } from "@/app/lib/definitions/user";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -35,16 +36,45 @@ export function UserProvider({ children, initialUser }: UserProviderProps) {
   useEffect(() => {
     async function fetchFullUser() {
       if (!initialUser) {
-        setUser(null);
+        // Create guest user object for unauthenticated users
+        // Actual guest ID will be assigned server-side when joining a game
+        const guestUser: User = {
+          id: 'guest-pending',
+          username: 'Guest',
+          email: '',
+          role: UserRole.User,
+          bio: '',
+          avatar: null,
+          verified: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          // @ts-expect-error - Guest users have isGuest flag
+          isGuest: true,
+        };
+        setUser(guestUser);
         setStatus("unauthenticated");
         return;
       }
-  
+
       setStatus("loading");
       try {
         const res = await fetch("/api/users/me");
         if (!res.ok) {
-          setUser(null);
+          // Create guest user on failed authentication
+          const guestUser: User = {
+            id: 'guest-pending',
+            username: 'Guest',
+            email: '',
+            role: UserRole.User,
+            bio: '',
+            avatar: null,
+            verified: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            // @ts-expect-error - Guest users have isGuest flag
+            isGuest: true,
+          };
+          setUser(guestUser);
           setStatus("unauthenticated");
           return;
         }
@@ -53,11 +83,25 @@ export function UserProvider({ children, initialUser }: UserProviderProps) {
         setStatus("authenticated");
       } catch (err) {
         console.error("Failed to fetch full user:", err);
-        setUser(null);
+        // Create guest user on error
+        const guestUser: User = {
+          id: 'guest-pending',
+          username: 'Guest',
+          email: '',
+          role: UserRole.User,
+          bio: '',
+          avatar: null,
+          verified: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          // @ts-expect-error - Guest users have isGuest flag
+          isGuest: true,
+        };
+        setUser(guestUser);
         setStatus("unauthenticated");
       }
     }
-  
+
     fetchFullUser();
   }, [initialUser]);
 

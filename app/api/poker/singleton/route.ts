@@ -10,7 +10,7 @@ import { requireAuth } from '@/app/lib/utils/auth-utils';
  */
 export async function GET() {
   try {
-    await requireAuth();
+    // await requireAuth();
     const game = await getOrCreateSingletonGame();
     const serialized = serializeGame(game);
 

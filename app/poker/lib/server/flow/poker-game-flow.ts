@@ -35,9 +35,20 @@ interface PokerGameDoc {
 
 /**
  * Save all players' chip balances to the database
+ * Skips guest players (no balance persistence for guests)
  */
 export async function savePlayerBalances(players: Player[]) {
-  const balanceUpdates = players.map(player =>
+  const { isGuestId } = await import('@/app/poker/lib/utils/guest-utils');
+
+  // Filter out guest players - they don't have persisted balances
+  const authenticatedPlayers = players.filter(player => !isGuestId(player.id));
+
+  if (authenticatedPlayers.length === 0) {
+    console.log('[SavePlayerBalances] No authenticated players to save (all guests)');
+    return;
+  }
+
+  const balanceUpdates = authenticatedPlayers.map(player =>
     PokerBalance.findOneAndUpdate(
       { userId: player.id },
       { chipCount: player.chipCount },
@@ -46,6 +57,7 @@ export async function savePlayerBalances(players: Player[]) {
   );
 
   await Promise.all(balanceUpdates);
+  console.log(`[SavePlayerBalances] Saved balances for ${authenticatedPlayers.length} authenticated player(s)`);
 }
 
 /**

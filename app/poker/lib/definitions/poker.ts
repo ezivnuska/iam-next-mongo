@@ -64,6 +64,7 @@ export interface Player {
   allInAmount?: number;     // Total amount player went all-in for (in chip count)
   isAI?: boolean;           // Whether this is an AI player
   isAway?: boolean;         // Player has navigated away from the /poker route
+  isGuest?: boolean;        // Whether this is a guest (unauthenticated) player
 }
 
 export enum GameStage {

@@ -4,20 +4,79 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { checkSocketRateLimit, SOCKET_RATE_LIMITS } from '@/app/lib/api/socket-rate-limiter'
+import { generateGuestId, generateGuestUsername, isGuestId } from '@/app/poker/lib/utils/guest-utils'
 
 export async function POST(request: NextRequest) {
 	try {
 		const body = await request.json()
 		const { event, room, data, excludeUserId, signal, gameId, userId, username } = body
 
+		// Helper function to validate userId for game actions
+		// Note: Since this is called from socket server (internal), session cookies aren't available
+		// So we validate based on userId format and database lookup
+		async function validateUserId(userId: string): Promise<{ valid: boolean; error?: string }> {
+			// Check if this is a guest user
+			if (isGuestId(userId)) {
+				// Guest user - valid if follows guest ID format
+				return { valid: true };
+			}
+
+			// Authenticated user - verify exists in database
+			try {
+				const UserModel = (await import('@/app/lib/models/user')).default;
+				const user = await UserModel.findById(userId);
+
+				if (!user) {
+					return { valid: false, error: 'User not found' };
+				}
+
+				return { valid: true };
+			} catch (error) {
+				console.error('[validateUserId] Error:', error);
+				return { valid: false, error: 'Invalid user ID' };
+			}
+		}
+
 		// Handle incoming client signals
 		if (signal) {
 			console.log('[Socket Emit Route] Received signal:', signal, 'for game:', gameId);
 
 			if (signal === 'poker:join_game' && gameId && userId) {
+				// Security validation: Verify userId authenticity
+				// Note: Since this is called from socket server (internal), session cookies aren't available
+				// So we validate based on userId format and database lookup
+				let validatedUserId: string;
+				let validatedUsername: string;
+
+				// Check if this is a guest user request
+				if (userId === 'guest-pending' || isGuestId(userId)) {
+					// Guest user - generate new guest ID and username
+					validatedUserId = generateGuestId();
+					validatedUsername = generateGuestUsername();
+					console.log('[Socket Emit Route] Generated guest:', validatedUserId, validatedUsername);
+				} else {
+					// Authenticated user - validate that user exists in database
+					try {
+						const UserModel = (await import('@/app/lib/models/user')).default;
+						const user = await UserModel.findById(userId);
+
+						if (!user) {
+							console.error('[Socket Emit Route] User not found:', userId);
+							return NextResponse.json({ error: 'User not found' }, { status: 404 });
+						}
+
+						validatedUserId = user._id.toString();
+						validatedUsername = user.username || user.name || 'Player';
+						console.log('[Socket Emit Route] Validated authenticated user:', validatedUserId, validatedUsername);
+					} catch (error) {
+						console.error('[Socket Emit Route] Error validating user:', error);
+						return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
+					}
+				}
+
 				const { handlePlayerJoin } = await import('@/app/poker/lib/server/actions/poker-game-controller');
 
-				const result = await handlePlayerJoin(gameId, userId, username || 'Guest');
+				const result = await handlePlayerJoin(gameId, validatedUserId, validatedUsername);
 
 				if (!result.success) {
 					const errorMessage = result.error || 'Failed to join game';
@@ -35,10 +94,21 @@ export async function POST(request: NextRequest) {
 					return NextResponse.json({ error: errorMessage }, { status: 500 });
 				}
 
-				return NextResponse.json({ success: true, gameState: result.gameState });
+				return NextResponse.json({
+					success: true,
+					gameState: result.gameState,
+					userId: validatedUserId,
+					username: validatedUsername
+				});
 			}
 
 			if (signal === 'poker:leave_game' && gameId && userId) {
+				// Validate userId
+				const validation = await validateUserId(userId);
+				if (!validation.valid) {
+					return NextResponse.json({ error: validation.error }, { status: 403 });
+				}
+
 				const { handlePlayerLeave } = await import('@/app/poker/lib/server/actions/poker-game-controller');
 
 				const result = await handlePlayerLeave(gameId, userId);
@@ -65,6 +135,12 @@ export async function POST(request: NextRequest) {
 			}
 
 			if (signal === 'poker:bet' && gameId && userId) {
+			// Validate userId
+			const validation = await validateUserId(userId);
+			if (!validation.valid) {
+				return NextResponse.json({ error: validation.error }, { status: 403 });
+			}
+
 			// Check rate limit
 			const rateLimit = checkSocketRateLimit(userId, 'poker:bet', SOCKET_RATE_LIMITS.GAME_ACTION);
 			if (rateLimit.isLimited) {
@@ -100,6 +176,12 @@ export async function POST(request: NextRequest) {
 		}
 
 		if (signal === 'poker:fold' && gameId && userId) {
+			// Validate userId
+			const validation = await validateUserId(userId);
+			if (!validation.valid) {
+				return NextResponse.json({ error: validation.error }, { status: 403 });
+			}
+
 			// Check rate limit
 			const rateLimit = checkSocketRateLimit(userId, 'poker:fold', SOCKET_RATE_LIMITS.GAME_ACTION);
 			if (rateLimit.isLimited) {
@@ -129,6 +211,12 @@ export async function POST(request: NextRequest) {
 		}
 
 		if (signal === 'poker:set_timer_action' && gameId && userId) {
+			// Validate userId
+			const validation = await validateUserId(userId);
+			if (!validation.valid) {
+				return NextResponse.json({ error: validation.error }, { status: 403 });
+			}
+
 			// Check rate limit
 			const rateLimit = checkSocketRateLimit(userId, 'poker:set_timer_action', SOCKET_RATE_LIMITS.TIMER);
 			if (rateLimit.isLimited) {
@@ -166,6 +254,12 @@ export async function POST(request: NextRequest) {
 		}
 
 		if (signal === 'poker:set_presence' && gameId && userId) {
+			// Validate userId
+			const validation = await validateUserId(userId);
+			if (!validation.valid) {
+				return NextResponse.json({ error: validation.error }, { status: 403 });
+			}
+
 			const { setPlayerPresence } = await import('@/app/poker/lib/server/actions/poker-game-controller');
 			const { isAway } = body;
 
