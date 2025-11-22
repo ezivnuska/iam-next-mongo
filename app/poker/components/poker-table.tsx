@@ -25,7 +25,7 @@ export default function PokerTable() {
 
   // Track if an action has been triggered during the current turn
   const [actionTriggered, setActionTriggered] = useState(false);
-  const prevIsUserTurnRef = useRef(false);
+  const prevPlayerIndexRef = useRef(currentPlayerIndex);
   const prevStageRef = useRef(stage);
 
   // Memoize user-related calculations
@@ -42,15 +42,15 @@ export default function PokerTable() {
     };
   }, [players, user?.id, currentPlayerIndex]);
 
-  // Reset actionTriggered when player can act (new turn started AND notifications complete)
-  // This only triggers on FALSE→TRUE transition (when turn advances TO the user AND notifications complete)
+  // Reset actionTriggered when turn advances to a different player
+  // This prevents controls from showing again after action completes but before turn advances
   useEffect(() => {
-    if (canPlayerAct && !prevIsUserTurnRef.current) {
-      console.log('[PokerTable] Player can act - resetting actionTriggered');
+    if (currentPlayerIndex !== prevPlayerIndexRef.current) {
+      console.log('[PokerTable] Turn advanced to different player - resetting actionTriggered');
       setActionTriggered(false);
+      prevPlayerIndexRef.current = currentPlayerIndex;
     }
-    prevIsUserTurnRef.current = canPlayerAct;
-  }, [canPlayerAct]);
+  }, [currentPlayerIndex]);
 
   // Reset actionTriggered when stage changes (new betting round)
   useEffect(() => {
