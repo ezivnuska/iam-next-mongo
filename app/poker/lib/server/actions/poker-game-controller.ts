@@ -384,21 +384,24 @@ function adjustDealerButtonPosition(
  * Manage lock timer based on player count after removal
  */
 async function manageLockTimerAfterRemoval(game: any, gameId: string): Promise<void> {
-  if (game.players.length < 2) {
-    // Cancel lock timer if player count drops below 2
+  // Count human players (AI player doesn't count toward game start requirements)
+  const humanCount = game.players.filter((p: Player) => !p.isAI).length;
+
+  if (humanCount < 2) {
+    // Cancel lock timer if human player count drops below 2
     const { cancelGameLock } = await import('../locking/game-lock-manager');
     cancelGameLock(gameId);
     game.lockTime = undefined;
     await PokerGame.findByIdAndUpdate(gameId, { lockTime: undefined });
-    console.log('[RemovePlayer] Cancelled auto-lock timer - less than 2 players');
+    console.log('[RemovePlayer] Cancelled auto-lock timer - less than 2 human players');
 
     // CRITICAL: Clear the notification queue and cancel any active notification
     const { clearQueue } = await import('../notifications/notification-queue-manager');
     clearQueue(gameId);
     await PokerSocketEmitter.emitNotificationCanceled();
-    console.log('[RemovePlayer] Cleared notification queue - insufficient players');
-  } else if (game.players.length >= 2 && !game.locked) {
-    // Reset lockTime flag if 2+ players remain
+    console.log('[RemovePlayer] Cleared notification queue - insufficient human players');
+  } else if (humanCount >= 2 && !game.locked) {
+    // Reset lockTime flag if 2+ human players remain
     const lockTime = new Date(Date.now() + POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS);
     game.lockTime = lockTime;
     await PokerGame.findByIdAndUpdate(gameId, { lockTime });
@@ -406,7 +409,6 @@ async function manageLockTimerAfterRemoval(game: any, gameId: string): Promise<v
   }
 
   // Log if only AI player remains
-  const humanCount = game.players.filter((p: Player) => !p.isAI).length;
   if (humanCount === 0) {
     console.log('[RemovePlayer] No human players remain - only AI player left');
   }
