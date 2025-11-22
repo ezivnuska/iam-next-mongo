@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
 						}
 
 						validatedUserId = user._id.toString();
-						validatedUsername = user.username || user.name || 'Player';
+						validatedUsername = user.username || 'Player';
 						console.log('[Socket Emit Route] Validated authenticated user:', validatedUserId, validatedUsername);
 					} catch (error) {
 						console.error('[Socket Emit Route] Error validating user:', error);
