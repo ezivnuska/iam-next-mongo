@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNotifications } from '@/app/poker/lib/providers/notification-provider';
-import { useGameState } from '@/app/poker/lib/providers/poker-provider';
+import { useGameState, usePlayers } from '@/app/poker/lib/providers/poker-provider';
 import { useUser } from '@/app/lib/providers/user-provider';
 import { useActionTimerPercentage } from '@/app/poker/lib/hooks/use-action-timer-percentage';
 import GameNotification from './game-notification';
@@ -35,6 +35,7 @@ export default function PokerDashboard({
 }: PokerDashboardProps) {
   const { currentNotification } = useNotifications();
   const { actionTimer } = useGameState();
+  const { players } = usePlayers();
   const { user } = useUser();
 
   // Notification timer progress (when notification is active)
@@ -78,6 +79,18 @@ export default function PokerDashboard({
     ? notificationProgress
     : turnTimerProgress;
 
+  // Find the acting player when it's not the user's turn
+  const actingPlayer = actionTimer?.targetPlayerId
+    ? players.find(p => p.id === actionTimer.targetPlayerId)
+    : null;
+
+  // Show acting player placeholder when:
+  // - Not the user's turn
+  // - Someone is acting (actionTimer exists)
+  // - Acting player is human (not AI)
+  // - No notification is showing
+  const showActingPlayerPlaceholder = !showPlayerControls && actingPlayer && !actingPlayer.isAI && !currentNotification;
+
   return (
     <div className='relative w-11/12 sm:w-1/2 h-12 flex-row items-center justify-center rounded-full bg-green-900 overflow-hidden p-0.5'>
       {/* Background Progress Bar */}
@@ -97,6 +110,12 @@ export default function PokerDashboard({
 
         {showPlayerControls && (
           <PlayerControls onActionTaken={onActionTaken} />
+        )}
+
+        {showActingPlayerPlaceholder && (
+          <div className='text-sm text-white/70 px-4'>
+            Waiting for {actingPlayer.username}...
+          </div>
         )}
 
         {!locked && !isUserInGame && !currentNotification && (
