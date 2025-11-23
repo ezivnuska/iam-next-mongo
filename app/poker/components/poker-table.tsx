@@ -96,9 +96,9 @@ export default function PokerTable() {
   }
 
   return (
-    <div className='flex flex-1 flex-col bg-black static'>
+    <div className='flex flex-1 flex-col bg-black'>
 
-        <div id='poker-table' className='flex flex-1 flex-col sm:flex-row gap-2 bg-green-700 p-2 relative'>
+        <div id='poker-table' className='flex flex-1 flex-col items-center justify-center sm:flex-row gap-2 bg-green-700 p-2 relative'>
 
             <Link href='/' className='absolute top-0 left-0 z-20 p-2'>
                 <ArrowLeftIcon className={`h-6 w-6 text-white`} />
