@@ -24,15 +24,17 @@ export default function PublicContentFeed({ initialContent }: PublicContentFeedP
   return (
     <div className="mt-4">
       {/* Filter Tabs */}
-      <div className="flex justify-between gap-2 mb-4">
+      <div className="flex justify-between gap-2">
         <Button
+          size='sm'
           variant={filter === 'all' ? 'active' : 'ghost'}
           onClick={() => setFilter('all')}
-        >
+          >
           All
           {/* ({content.length}) */}
         </Button>
         <Button
+          size='sm'
           variant={filter === 'memory' ? 'active' : 'ghost'}
           onClick={() => setFilter('memory')}
         >
@@ -40,6 +42,7 @@ export default function PublicContentFeed({ initialContent }: PublicContentFeedP
           {/* ({content.filter(i => i.contentType === 'memory').length}) */}
         </Button>
         <Button
+          size='sm'
           variant={filter === 'post' ? 'active' : 'ghost'}
           onClick={() => setFilter('post')}
         >
@@ -47,6 +50,7 @@ export default function PublicContentFeed({ initialContent }: PublicContentFeedP
           {/* ({content.filter(i => i.contentType === 'post').length}) */}
         </Button>
         <Button
+          size='sm'
           variant={filter === 'image' ? 'active' : 'ghost'}
           onClick={() => setFilter('image')}
         >

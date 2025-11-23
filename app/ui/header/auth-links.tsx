@@ -5,7 +5,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useUser } from "@/app/lib/providers/user-provider";
-import { ArrowRightIcon } from "@heroicons/react/24/outline";
 
 export default function AuthLinks() {
   const { status } = useUser();
@@ -21,15 +20,15 @@ export default function AuthLinks() {
         <>
           <Link
             href="/signin"
-            className="flex items-center gap-2 self-start rounded-lg bg-blue-500 px-3 py-2 m-1 text-sm font-medium text-white transition-colors hover:bg-blue-400 md:text-base"
+            className="flex items-center gap-2 self-start rounded-lg bg-blue-500 px-2 py-1 text-sm font-medium text-white transition-colors hover:bg-blue-400 md:text-base text-nowrap"
           >
-            Sign In <ArrowRightIcon className="w-5" />
+            Sign In
           </Link>
           <Link
             href="/signup"
-            className="flex items-center gap-2 self-start rounded-lg bg-green-500 px-3 py-2 m-1 text-sm font-medium text-white transition-colors hover:bg-green-400 md:text-base"
+            className="flex items-center gap-2 self-start rounded-lg bg-green-500 px-2 py-1 text-sm font-medium text-white transition-colors hover:bg-green-400 md:text-base text-nowrap"
           >
-            Sign Up <ArrowRightIcon className="w-5" />
+            Sign Up
           </Link>
         </>
       )}
