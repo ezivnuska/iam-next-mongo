@@ -52,8 +52,8 @@ function getOrientationClasses(mobileOrientation: PlayerOrientation, desktopOrie
  */
 function getDealerButtonPositionClasses(orientation: PlayerOrientation): string {
     const buttonClass = {
-      'ltr': '-right-5 -bottom-3',
-      'rtl': '-left-5 bottom-0',
+      'ltr': '-right-2 bottom-2',
+      'rtl': '-left-2 bottom-2',
       'ttb': '-bottom-5 left-0',
       'btt': 'top-0 left-1/2',
     }[orientation];
