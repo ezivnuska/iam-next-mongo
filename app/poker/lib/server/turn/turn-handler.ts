@@ -105,6 +105,37 @@ export async function handleReadyForNextTurn(gameId: string): Promise<void> {
       return;
     }
 
+    // Check if player is connected (only for human players, not AI)
+    if (!currentPlayer.isAI) {
+      const { isPlayerConnected } = await import('@/app/lib/utils/socket-helper');
+      const isConnected = isPlayerConnected(currentPlayer.id);
+
+      // If player is connected but was marked as away, clear the away status
+      if (isConnected && currentPlayer.isAway) {
+        currentPlayer.isAway = false;
+        await saveGameSafe(game, 'player reconnected');
+
+        // Emit presence update to all clients
+        await PokerSocketEmitter.emitPlayerPresenceUpdated({
+          playerId: currentPlayer.id,
+          isAway: false,
+        });
+      }
+
+      // If player is disconnected and not already marked as away, mark them
+      if (!isConnected && !currentPlayer.isAway) {
+        currentPlayer.isAway = true;
+        await saveGameSafe(game, 'player disconnected');
+
+        // Emit presence update to all clients
+        await PokerSocketEmitter.emitPlayerPresenceUpdated({
+          playerId: currentPlayer.id,
+          isAway: true,
+        });
+      }
+
+    }
+
     // Start timer for current player (both human and AI)
     await startActionTimer(
       gameId,
@@ -112,6 +143,19 @@ export async function handleReadyForNextTurn(gameId: string): Promise<void> {
       GameActionType.PLAYER_BET,
       currentPlayer.id
     );
+
+    // If player is away (disconnected), pre-set timer action to fold or check
+    // This gives them a chance to reconnect before timer expires
+    if (!currentPlayer.isAI && currentPlayer.isAway) {
+      const playerBet = game.playerBets[game.currentPlayerIndex] || 0;
+      const maxBet = Math.max(...game.playerBets);
+      const currentBet = maxBet - playerBet;
+
+      const { setTurnTimerAction } = await import('../actions/poker-game-controller');
+      const action = currentBet === 0 ? 'check' : 'fold';
+
+      await setTurnTimerAction(gameId, currentPlayer.id, action);
+    }
 
     // If current player is AI, trigger action immediately after timer starts
     if (currentPlayer.isAI) {

@@ -402,7 +402,23 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
 
   // Track if player is a human player in the game
   const isUserInGame = useMemo(() => {
-    return user && players.some(p => p.id === user.id && !p.isAI);
+    if (!user) return false;
+
+    // Direct ID match (works for authenticated users and guests who haven't refreshed)
+    const directMatch = players.some(p => p.id === user.id && !p.isAI);
+    if (directMatch) return true;
+
+    // For guest users who refreshed/returned (their client ID resets to guest-pending)
+    // Check if there's a guest player with matching username
+    if (user.isGuest && user.username && user.id === 'guest-pending') {
+      return players.some(p =>
+        p.id.startsWith('guest-') &&
+        p.username === user.username &&
+        !p.isAI
+      );
+    }
+
+    return false;
   }, [user, players]);
 
   // Refs to store values for cleanup function
@@ -493,6 +509,8 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
     socket,
     gameId,
     userId: user?.id,
+    user,
+    setUser,
     stateRef,
     updaters,
     resetGameState,

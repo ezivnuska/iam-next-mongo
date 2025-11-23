@@ -38,6 +38,8 @@ export interface PokerSocketEffectsDeps {
   socket: Socket | null;
   gameId: string | null;
   userId: string | null | undefined;
+  user: any;
+  setUser: (user: any) => void;
   stateRef: React.MutableRefObject<GameStateSnapshot>;
   updaters: StateUpdaters;
   resetGameState: () => void;
@@ -95,6 +97,8 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
     socket,
     gameId,
     userId,
+    user,
+    setUser,
     stateRef,
     updaters,
     resetGameState,
@@ -142,6 +146,8 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
       setAutoAdvanceMode,
       playSound,
       userId,
+      user,
+      setUser,
     });
 
     const handleGameCreated = createGameCreatedHandler(setAvailableGames);

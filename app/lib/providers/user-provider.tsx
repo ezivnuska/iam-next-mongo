@@ -48,7 +48,6 @@ export function UserProvider({ children, initialUser }: UserProviderProps) {
           verified: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          // @ts-expect-error - Guest users have isGuest flag
           isGuest: true,
         };
         setUser(guestUser);
@@ -71,7 +70,6 @@ export function UserProvider({ children, initialUser }: UserProviderProps) {
             verified: false,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            // @ts-expect-error - Guest users have isGuest flag
             isGuest: true,
           };
           setUser(guestUser);
@@ -94,7 +92,6 @@ export function UserProvider({ children, initialUser }: UserProviderProps) {
           verified: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          // @ts-expect-error - Guest users have isGuest flag
           isGuest: true,
         };
         setUser(guestUser);

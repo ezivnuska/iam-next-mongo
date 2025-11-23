@@ -51,6 +51,8 @@ export interface SocketHandlerDeps {
   playSound: (sound: PokerSoundType) => void;
   getGameNotification?: () => { type: string; timestamp: number; duration: number } | null;
   userId?: string | null;
+  user?: any;
+  setUser?: (user: any) => void;
 }
 
 export const createStateUpdateHandler = (deps: SocketHandlerDeps) => {
@@ -60,6 +62,18 @@ export const createStateUpdateHandler = (deps: SocketHandlerDeps) => {
     // Update game ID if present
     if (payload._id && currentState.gameId !== payload._id.toString()) {
       deps.updaters.updateGameId(payload._id.toString());
+    }
+
+    // If this is a guest user who returned (ID is guest-pending), update their ID from the players array
+    if (deps.user?.isGuest && deps.user?.id === 'guest-pending' && deps.user?.username && deps.setUser) {
+      const actualPlayer = payload.players.find((p: Player) =>
+        p.id.startsWith('guest-') &&
+        p.username === deps.user.username &&
+        !p.isAI
+      );
+      if (actualPlayer) {
+        deps.setUser({ ...deps.user, id: actualPlayer.id });
+      }
     }
 
     // Update all state to prevent sync issues

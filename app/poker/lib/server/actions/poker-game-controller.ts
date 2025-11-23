@@ -315,20 +315,36 @@ export async function setPlayerPresence(
     throw new Error('Game not found');
   }
 
-  const playerIndex = game.players.findIndex((p: Player) => p.id === userId);
+  let playerIndex = game.players.findIndex((p: Player) => p.id === userId);
+
+  // If player not found and userId is 'guest-pending', this is a guest who returned
+  // For singleton game, find the guest player (there should only be one active guest)
+  if (playerIndex === -1 && userId === 'guest-pending') {
+    // Find any guest player (there should only be one per game session)
+    const guestPlayers = game.players.filter((p: Player) => p.id.startsWith('guest-') && !p.isAI);
+    if (guestPlayers.length === 1) {
+      playerIndex = game.players.findIndex((p: Player) => p.id === guestPlayers[0].id);
+    } else if (guestPlayers.length > 1) {
+      // Multiple guests - can't determine which one without more context
+      console.warn('[SetPlayerPresence] Multiple guest players found, cannot determine which reconnected');
+      throw new Error('Cannot identify guest player - multiple guests in game');
+    }
+  }
+
   if (playerIndex === -1) {
     throw new Error('Player not found in game');
   }
+
+  const actualPlayerId = game.players[playerIndex].id;
 
   // Update player presence
   game.players[playerIndex].isAway = isAway;
   game.markModified('players');
   await game.save();
 
-
-  // Emit presence update to all clients
+  // Emit presence update to all clients with the actual player ID
   await PokerSocketEmitter.emitPlayerPresenceUpdated({
-    playerId: userId,
+    playerId: actualPlayerId,
     isAway,
   });
 }

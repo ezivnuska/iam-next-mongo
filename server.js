@@ -44,7 +44,7 @@ app.prepare().then(() => {
 	// Socket.IO connection handling
 	io.on('connection', (socket) => {
 		// Handle user registration (join user-specific room)
-		socket.on('register', (userId) => {
+		socket.on('register', async (userId) => {
 			if (userId) {
 				socket.join(`user:${userId}`)
 				socket.userId = userId
@@ -67,6 +67,26 @@ app.prepare().then(() => {
 						socket.broadcast.emit('user:online', { userId })
 					}
 				})
+
+				// Check if user is in a poker game and clear their away status
+				try {
+					const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({
+							signal: 'poker:player_reconnected',
+							userId: userId
+						}),
+					});
+
+					if (!response.ok) {
+						// Silently fail - user might not be in a game
+						console.log('[Socket] Player reconnection check completed (no active game)');
+					}
+				} catch (error) {
+					// Silently fail - this is just a helper to clear away status
+					console.error('[Socket] Error checking poker game on reconnect:', error.message);
+				}
 			}
 		})
 

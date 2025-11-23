@@ -303,3 +303,22 @@ export class PokerSocketEmitter {
     }
   }
 }
+
+/**
+ * Check if a player is currently connected via socket.io
+ * @param playerId - The player's user ID
+ * @returns true if the player has an active socket connection, false otherwise
+ */
+export function isPlayerConnected(playerId: string): boolean {
+  const io = (global as any).io;
+  if (!io) {
+    console.warn('[SocketHelper] Socket.IO instance not available');
+    return false;
+  }
+
+  // Check if any socket is connected with this userId
+  const sockets = Array.from(io.sockets.sockets.values());
+  const isConnected = sockets.some((socket: any) => socket.userId === playerId);
+
+  return isConnected;
+}

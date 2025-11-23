@@ -291,6 +291,49 @@ export async function POST(request: NextRequest) {
 			}
 		}
 
+		if (signal === 'poker:player_reconnected' && userId) {
+			// Validate userId
+			const validation = await validateUserId(userId);
+			if (!validation.valid) {
+				return NextResponse.json({ error: validation.error }, { status: 403 });
+			}
+
+			// Find the singleton game and check if this player is in it
+			const { PokerGame } = await import('@/app/poker/lib/models/poker-game');
+			const game = await PokerGame.findOne({ isSingleton: true });
+
+			if (!game) {
+				return NextResponse.json({ error: 'No active game' }, { status: 404 });
+			}
+
+			// Check if player is in the game
+			const playerIndex = game.players.findIndex((p: any) => p.id === userId);
+			if (playerIndex === -1) {
+				// Player not in game - this is fine, just return success
+				return NextResponse.json({ success: true, message: 'Player not in game' });
+			}
+
+			const player = game.players[playerIndex];
+
+			// If player was marked as away, clear it
+			if (player.isAway) {
+				player.isAway = false;
+				game.markModified('players');
+				await game.save();
+
+				// Emit presence update to all clients
+				const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
+				await PokerSocketEmitter.emitPlayerPresenceUpdated({
+					playerId: userId,
+					isAway: false,
+				});
+
+				console.log('[Socket Emit Route] Cleared away status for reconnected player:', userId);
+			}
+
+			return NextResponse.json({ success: true, wasAway: player.isAway });
+		}
+
 		return NextResponse.json({ error: 'Unknown signal' }, { status: 400 });
 		}
 

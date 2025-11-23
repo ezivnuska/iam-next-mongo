@@ -59,6 +59,7 @@ export interface User {
     verified: boolean;
     createdAt: string;
     updatedAt: string;
+    isGuest?: boolean; // For guest users (not persisted in database)
 }
 
 // ----------------------
