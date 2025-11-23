@@ -20,12 +20,7 @@ const links = [
         name: 'Users',
         href: '/users',
         icon: UserGroupIcon,
-    },
-    {
-        name: 'Tiles',
-        href: '/tiles',
-        icon: PuzzlePieceIcon,
-    },
+    }
 ];
 
 export default function NavLinks() {
