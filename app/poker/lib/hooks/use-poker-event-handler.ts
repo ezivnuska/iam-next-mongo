@@ -34,22 +34,11 @@ export function usePokerEventHandler(gameId: string | null) {
 
   useEffect(() => {
     if (!socket || !gameId) {
-      console.log('[PokerEventHandler] Effect triggered but missing dependencies:', { hasSocket: !!socket, gameId });
       return;
     }
 
-    console.log('[PokerEventHandler] Registering listener - socket connected:', socket.connected, 'gameId:', gameId);
 
     const handlePokerNotification = (payload: PokerNotificationPayload) => {
-      console.log('[PokerEventHandler] *** RECEIVED POKER NOTIFICATION VIA SOCKET ***:', {
-        notificationType: payload.notificationType,
-        playerName: payload.playerName,
-        chipAmount: payload.chipAmount,
-        isAI: payload.isAI,
-        category: payload.category,
-        timestamp: new Date().toISOString(),
-      });
-
       // Format message using shared formatter utility
       const message = formatNotificationMessage(payload);
 
@@ -94,7 +83,6 @@ export function usePokerEventHandler(gameId: string | null) {
 
       // Clear timer optimistically for ANY player action (including AI)
       if (isPlayerAction) {
-        console.log('[PokerEventHandler] Action notification received - clearing timer optimistically');
         clearTimerOptimistically();
       }
 
@@ -102,16 +90,12 @@ export function usePokerEventHandler(gameId: string | null) {
       // The acting player sees optimistic notifications immediately when they click
       // The socket notification confirms the action was processed by the server
       if (payload.timerTriggered && isOwnAction) {
-        console.log('[PokerEventHandler] *** SHOWING TIMER-TRIGGERED OWN ACTION NOTIFICATION ***: message=', message, 'duration=', duration);
       } else if (isOwnAction && isPlayerAction) {
-        console.log('[PokerEventHandler] *** SHOWING OWN ACTION NOTIFICATION ***: message=', message, 'duration=', duration);
       } else {
-        console.log('[PokerEventHandler] *** SHOWING NOTIFICATION ***: message=', message, 'duration=', duration);
       }
 
       // Sync pot from socket event to ensure state consistency
       if (shouldSyncPot(payload.notificationType)) {
-        console.log('[PokerEventHandler] Syncing pot from notification:', payload.notificationType);
         syncPotFromNotification(payload);
       }
 
@@ -119,13 +103,11 @@ export function usePokerEventHandler(gameId: string | null) {
       // This ensures player action notifications disappear before dealing (hole cards, flop, turn, river)
       const isDealingNotification = payload.notificationType === 'cards_dealt';
       if (isDealingNotification) {
-        console.log('[PokerEventHandler] Clearing all player notifications before showing dealing notification');
         clearAllPlayerNotifications();
       }
 
       // Handle game_starting notification - reset UI state for new round
       if (payload.notificationType === 'game_starting' && payload.stage === 0) {
-        console.log('[PokerEventHandler] Processing game reset from game_starting notification - resetting notification queue');
 
         // Reset notification queue to clear any stale notifications from previous game
         // This must be done BEFORE showing the game_starting notification
@@ -171,10 +153,8 @@ export function usePokerEventHandler(gameId: string | null) {
       }
 
       // All notifications now go to central display with 2-second auto-clear for player actions
-      console.log('[PokerEventHandler] Showing central notification:', message, 'duration:', duration);
 
       const onComplete = isWinnerNotification ? () => {
-        console.log('[PokerEventHandler] Winner notification complete - clearing player action notifications');
         clearAllPlayerNotifications();
       } : undefined;
 
@@ -189,7 +169,6 @@ export function usePokerEventHandler(gameId: string | null) {
 
     // Handler for notification cancellation
     const handleNotificationCanceled = () => {
-      console.log('[PokerEventHandler] *** NOTIFICATION CANCELED - Clearing immediately ***');
       clearNotification();
     };
 
@@ -197,13 +176,11 @@ export function usePokerEventHandler(gameId: string | null) {
     // This ensures notifications persist until the player's next turn
     const handleTimerStarted = (payload: PokerActionTimerStartedPayload) => {
       if (payload.targetPlayerId) {
-        console.log('[PokerEventHandler] Timer started for player:', payload.targetPlayerId, '- clearing their previous notification');
         clearPlayerNotification(payload.targetPlayerId);
       }
     };
 
     // Register socket listeners
-    console.log('[PokerEventHandler] Registering poker notification listeners for game:', gameId);
     socket.on(SOCKET_EVENTS.POKER_NOTIFICATION, handlePokerNotification);
     socket.on(SOCKET_EVENTS.POKER_NOTIFICATION_CANCELED, handleNotificationCanceled);
     socket.on(SOCKET_EVENTS.POKER_ACTION_TIMER_STARTED, handleTimerStarted);

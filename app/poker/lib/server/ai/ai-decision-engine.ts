@@ -156,15 +156,6 @@ export function makeAIDecision(
   stage: GameStage,
   aggression: AggressionLevel = AggressionLevel.BALANCED
 ): AIDecision {
-  console.log(`[AI] Making decision for ${aiPlayer.username}:`, {
-    chipCount: aiPlayer.chipCount,
-    currentBet,
-    playerBet,
-    potSize,
-    stage,
-    communalCards: communalCards.length
-  });
-
   // currentBet is already the amount to call (calculated by caller)
   const amountToCall = currentBet;
   const canCheck = amountToCall === 0;
@@ -176,17 +167,9 @@ export function makeAIDecision(
 
   // Evaluate hand strength
   const handStrength = evaluateHandStrength(aiPlayer.hand, communalCards, stage);
-  console.log(`[AI] Hand strength: ${HandStrength[handStrength]}, Hand:`, aiPlayer.hand.map(c => `${c.label}${c.symbol}`).join(' '));
 
   // Calculate pot odds if facing a bet
   const potOdds = amountToCall > 0 ? calculatePotOdds(amountToCall, potSize) : 0;
-  console.log(`[AI] Decision factors:`, {
-    amountToCall,
-    canCheck,
-    potOdds: potOdds.toFixed(2),
-    chipCount: aiPlayer.chipCount,
-    percentOfStack: ((amountToCall / aiPlayer.chipCount) * 100).toFixed(1) + '%'
-  });
 
   // Decision making based on hand strength and situation
   switch (handStrength) {

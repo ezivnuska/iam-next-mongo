@@ -57,11 +57,6 @@ export const createStateUpdateHandler = (deps: SocketHandlerDeps) => {
   return (payload: PokerStateUpdatePayload) => {
     const currentState = deps.stateRef.current;
 
-    console.log('[StateUpdateHandler] Received state update:', {
-      playersCount: payload.players?.length,
-      allInPlayers: payload.players?.filter(p => p.isAllIn).map(p => p.username)
-    });
-
     // Update game ID if present
     if (payload._id && currentState.gameId !== payload._id.toString()) {
       deps.updaters.updateGameId(payload._id.toString());
@@ -220,15 +215,6 @@ export const createBetPlacedHandler = (
 
     // Update players if provided (for chip count and all-in status changes)
     if (payload.players && updatePlayers) {
-      // Log all-in status for debugging
-      const allInPlayers = payload.players.filter((p: Player) => p.isAllIn);
-      if (allInPlayers.length > 0) {
-        console.log('[BetPlacedHandler] Players with ALL-IN status:', allInPlayers.map((p: Player) => ({
-          username: p.username,
-          isAllIn: p.isAllIn,
-          chipCount: p.chipCount
-        })));
-      }
       updatePlayers(payload.players);
     }
 
@@ -251,37 +237,19 @@ export const createCardsDealtHandler = (
   setCurrentPlayerIndex?: (index: number) => void
 ) => {
   return (payload: any) => {
-    console.log('[CardsDealtHandler] Received cards dealt event:', {
-      stage: payload.stage,
-      communalCardsCount: payload.communalCards?.length,
-      playersCount: payload.players?.length,
-      currentPlayerIndex: payload.currentPlayerIndex
-    });
-
     // Update current player index immediately
     if (payload.currentPlayerIndex !== undefined && setCurrentPlayerIndex) {
-      console.log('[CardsDealtHandler] Updating current player index to:', payload.currentPlayerIndex);
       setCurrentPlayerIndex(payload.currentPlayerIndex);
     }
 
     // Update players immediately (hands, chips, all-in status)
     if (payload.players && updatePlayers) {
-      console.log('[CardsDealtHandler] Updating player state immediately');
-      const allInPlayers = payload.players.filter((p: Player) => p.isAllIn);
-      if (allInPlayers.length > 0) {
-        console.log('[CardsDealtHandler] Players with ALL-IN status:', allInPlayers.map((p: Player) => ({
-          username: p.username,
-          isAllIn: p.isAllIn,
-          chipCount: p.chipCount
-        })));
-      }
       updatePlayers(payload.players);
     }
 
     // Route stage and communal cards through the coordinated update system
     // This will queue the notification and delay the card display until notification completes
     // NOTE: Sound effects are played by the stage coordinator when cards are actually displayed
-    console.log('[CardsDealtHandler] Routing stage/card update through coordinator');
     updateStageState(
       payload.stage,
       payload.communalCards || [],
@@ -299,13 +267,6 @@ export const createRoundCompleteHandler = (
   gameId?: string | null
 ) => {
   return (payload: any) => {
-    console.log('[RoundCompleteHandler] Round complete event received:', {
-      hasWinner: !!payload.winner,
-      winner: payload.winner,
-      hasShowNotification: !!showNotification,
-      gameId: gameId,
-    });
-
     setWinner(payload.winner);
     updatePlayers(payload.players);
 
@@ -325,7 +286,6 @@ export const createDealerButtonMovedHandler = (
   setDealerButtonPosition: (position: number) => void
 ) => {
   return (payload: { dealerButtonPosition: number }) => {
-    console.log('[DealerButtonMovedHandler] Dealer button moved to position:', payload.dealerButtonPosition);
     setDealerButtonPosition(payload.dealerButtonPosition);
   };
 };
@@ -335,7 +295,6 @@ export const createPlayerPresenceUpdatedHandler = (
   getPlayers: () => Player[]
 ) => {
   return (payload: { playerId: string; isAway: boolean }) => {
-    console.log('[PlayerPresenceUpdatedHandler] Player presence updated:', payload.playerId, 'isAway:', payload.isAway);
     const currentPlayers = getPlayers();
     const updatedPlayers = currentPlayers.map(p =>
       p.id === payload.playerId
@@ -352,7 +311,6 @@ export const createGameUnlockedHandler = (
   setDealerButtonPosition: (position: number) => void
 ) => {
   return (payload: { locked: false; stage: number; dealerButtonPosition: number }) => {
-    console.log('[GameUnlockedHandler] Game unlocked:', payload);
     updateGameStatus(false, undefined, undefined);
     setStage(payload.stage);
     setDealerButtonPosition(payload.dealerButtonPosition);

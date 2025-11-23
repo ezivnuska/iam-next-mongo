@@ -64,15 +64,6 @@ export class StageValidators {
     const allBetsEqual = activePlayerBets.length > 0 &&
       activePlayerBets.every(bet => bet === activePlayerBets[0]);
 
-    console.log('[StageValidators] Betting round validation details:', {
-      stage: game.stage,
-      activePlayers: activePlayers.map(p => p.username),
-      activePlayerBets,
-      allBetsEqual,
-      playersWhoCanAct: playersWhoCanAct.length,
-      totalPlayerBets: game.playerBets,
-    });
-
     if (!allBetsEqual && playersWhoCanAct.length > 0) {
       errors.push(`Not all active players have equal bets - bets: [${activePlayerBets.join(', ')}]`);
     }

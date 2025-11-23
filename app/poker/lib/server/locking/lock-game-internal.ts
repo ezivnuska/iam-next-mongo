@@ -15,7 +15,6 @@ import { POKER_TIMERS } from '@/app/poker/lib/config/poker-constants';
  * Used by server-driven restart flow
  */
 export async function lockGameInternal(gameId: string) {
-  console.log('[lockGameInternal] Locking game:', gameId);
 
   return await withRetry(async () => {
     // ATOMIC LOCK ACQUISITION
@@ -49,7 +48,6 @@ export async function lockGameInternal(gameId: string) {
       // Check if there are at least 2 players
       // Handle gracefully by releasing lock and returning early (player may have left during countdown)
       if (game.players.length < 2) {
-        console.log(`[lockGameInternal] ABORTED - insufficient players (${game.players.length}). Releasing lock.`);
         game.processing = false;
         game.lockTime = undefined; // Clear lock time
         await game.save();
@@ -122,7 +120,6 @@ export async function lockGameInternal(gameId: string) {
         actionHistory: game.actionHistory,
       });
 
-      console.log(`[lockGameInternal] Game locked - starting step-based flow`);
 
       // *** USE STEP-BASED FLOW (consistent with first game) ***
       // Start the step orchestrator which will handle the entire game flow:
@@ -134,7 +131,6 @@ export async function lockGameInternal(gameId: string) {
       const { startStepFlow } = await import('../flow/step-orchestrator');
       await startStepFlow(gameId);
 
-      console.log('[lockGameInternal] ✅ Game successfully locked and started');
 
       return { success: true, message: 'Game locked and started' };
     } catch (error) {

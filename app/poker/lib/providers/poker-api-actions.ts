@@ -13,7 +13,7 @@ export const createJoinGameAction = (
   username?: string,
   setUser?: (user: any) => void
 ) => {
-  return async (gameId: string) => {
+  return async (gameId: string, guestUsername?: string) => {
     try {
       if (!socket || !socket.connected) {
         console.error('[Join Game] Socket not connected');
@@ -23,19 +23,20 @@ export const createJoinGameAction = (
 
       setGameId(gameId);
 
+      // Use provided guest username if available, otherwise fall back to user's username
+      const usernameToSend = guestUsername || username;
+
       // Emit socket event to join game
-      socket.emit('poker:join_game', { gameId, username });
+      socket.emit('poker:join_game', { gameId, username: usernameToSend });
 
       // Listen for success/error responses (one-time listeners)
       const successHandler = (data: any) => {
-        console.log('[Join Game] Successfully joined game via socket', data);
 
         // Update user context with validated userId and username from server
         if (data.userId && data.username && setUser) {
           setUser((prevUser: any) => {
             // Only update if this is a guest user
             if (prevUser?.id === 'guest-pending' || prevUser?.isGuest) {
-              console.log('[Join Game] Updating guest user ID from', prevUser.id, 'to', data.userId);
               return {
                 ...prevUser,
                 id: data.userId,
@@ -92,7 +93,6 @@ export const createPlaceBetAction = (gameId: string | null, socket: any) => {
 
       // Listen for success/error responses (one-time listeners)
       const successHandler = () => {
-        console.log('[Place Bet] Successfully placed bet via socket');
         socket.off('poker:bet_error', errorHandler);
       };
 
@@ -125,7 +125,6 @@ export const createFoldAction = (gameId: string | null, socket: any) => {
 
       // Listen for success/error responses (one-time listeners)
       const successHandler = () => {
-        console.log('[Fold] Successfully folded via socket');
         socket.off('poker:fold_error', errorHandler);
       };
 
@@ -163,7 +162,6 @@ export const createLeaveGameAction = (
 
       // Listen for success/error responses (one-time listeners)
       const successHandler = (data: any) => {
-        console.log('[Leave Game] Successfully left game via socket');
 
         // If game was deleted (no players left), reset state and return to lobby
         if (data.gameState?.deleted) {
@@ -228,7 +226,6 @@ export const createSetTurnTimerAction = (gameId: string | null, socket: any) => 
 
       // Listen for success/error responses (one-time listeners)
       const successHandler = () => {
-        console.log('[Timer] Successfully set timer action via socket');
         socket.off('poker:timer_error', errorHandler);
       };
 
@@ -256,7 +253,6 @@ export const createSetPresenceAction = (gameId: string | null, socket: any) => {
     try {
       // Emit socket event to set presence
       socket.emit('poker:set_presence', { gameId, isAway });
-      console.log(`[Presence] Set presence to ${isAway ? 'away' : 'present'}`);
     } catch (error) {
       console.error('Error setting presence:', error);
     }
@@ -293,7 +289,6 @@ export const createResetSingletonAction = (
         if (data.gameState) {
           // Immediately update local state with response
           updateGameState(data.gameState);
-          console.log('[ResetSingleton] Game reset successfully');
         }
       } else {
         const errorData = await response.json();
@@ -330,7 +325,9 @@ export const initializeGames = async (
         }]);
       }
     } else {
-      console.error('Failed to load singleton game');
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Failed to load singleton game:', errorData);
+      console.error('Status:', response.status, response.statusText);
     }
   } catch (error) {
     console.error('Error initializing singleton game:', error);

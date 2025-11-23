@@ -29,16 +29,8 @@ export function usePotSync() {
   const syncPotFromNotification = useCallback((payload: PokerNotificationPayload) => {
     // Only sync if pot data is included in the payload
     if (!payload.pot || !payload.playerBets || payload.currentPlayerIndex === undefined) {
-      console.log('[PotSync] Skipping sync - missing pot data in payload');
       return false;
     }
-
-    console.log('[PotSync] Synchronizing pot from notification:', {
-      notificationType: payload.notificationType,
-      potLength: payload.pot.length,
-      playerBetsLength: payload.playerBets.length,
-      currentPlayerIndex: payload.currentPlayerIndex,
-    });
 
     // Update pot state
     setPot(payload.pot);

@@ -33,11 +33,6 @@ export function PlayerNotificationProvider({ children }: { children: ReactNode }
   const showPlayerNotification = useCallback((notification: PlayerNotification, playSound?: (sound: PokerSoundType) => void) => {
     const { playerId, duration, onComplete } = notification;
 
-    console.log('[PlayerNotificationProvider] Showing notification for player:', playerId, notification.message, {
-      hasDuration: !!duration,
-      hasOnComplete: !!onComplete,
-    });
-
     // Sound effects removed - player actions are silent in notification provider
     // Individual sounds are handled by:
     // - Optimistic feedback in player-controls.tsx for user's own actions
@@ -48,7 +43,6 @@ export function PlayerNotificationProvider({ children }: { children: ReactNode }
     if (existingTimer) {
       clearTimeout(existingTimer);
       timersRef.current.delete(playerId);
-      console.log('[PlayerNotificationProvider] Cleared existing timer for player:', playerId);
     }
 
     // Set notification (persists until cleared by stage advance or timer)
@@ -61,11 +55,9 @@ export function PlayerNotificationProvider({ children }: { children: ReactNode }
     // If duration is specified, auto-clear after duration
     if (duration) {
       const timer = setTimeout(() => {
-        console.log('[PlayerNotificationProvider] Auto-clearing notification for player:', playerId);
 
         // Execute onComplete callback if present
         if (onComplete) {
-          console.log('[PlayerNotificationProvider] Executing onComplete callback for:', playerId);
           try {
             onComplete();
           } catch (error) {
@@ -105,7 +97,6 @@ export function PlayerNotificationProvider({ children }: { children: ReactNode }
 
   // Clear all player notifications (called on stage advance)
   const clearAllPlayerNotifications = useCallback(() => {
-    console.log('[PlayerNotificationProvider] Clearing all player notifications');
 
     // Clear all timers
     timersRef.current.forEach(timer => clearTimeout(timer));

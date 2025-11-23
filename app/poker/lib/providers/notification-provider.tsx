@@ -50,30 +50,15 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
     const nextNotification = notificationQueueRef.current.shift()!;
 
-    console.log('[NotificationProvider] Processing queued notification:', {
-      message: nextNotification.message,
-      type: nextNotification.type,
-      id: nextNotification.id,
-      duration: nextNotification.duration,
-      queueLength: notificationQueueRef.current.length,
-      hasOnComplete: !!nextNotification.onComplete,
-    });
-
     setCurrentNotification(nextNotification);
 
     // Auto-clear after duration and execute callback
     timerRef.current = setTimeout(() => {
-      console.log('[NotificationProvider] ⏰ Notification timer expired:', {
-        message: nextNotification.message,
-        hasOnComplete: !!nextNotification.onComplete,
-      });
 
       // Execute onComplete callback if present
       if (nextNotification.onComplete) {
-        console.log('[NotificationProvider] ✅ Executing onComplete callback for:', nextNotification.message);
         try {
           nextNotification.onComplete();
-          console.log('[NotificationProvider] ✅ onComplete callback executed successfully');
         } catch (error) {
           console.error('[NotificationProvider] ❌ onComplete callback error:', error);
         }
@@ -98,15 +83,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       timestamp: Date.now(),
       duration: notification.duration ?? 5000, // Default 5 seconds
     };
-
-    console.log('[NotificationProvider] Queuing notification:', {
-      message: newNotification.message,
-      type: newNotification.type,
-      id: newNotification.id,
-      duration: newNotification.duration,
-      currentQueueLength: notificationQueueRef.current.length,
-      hasOnComplete: !!newNotification.onComplete,
-    });
 
     // Add to queue
     notificationQueueRef.current.push(newNotification);
@@ -137,7 +113,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   // Reset all notifications (for game reset)
   const resetNotifications = useCallback(() => {
-    console.log('[NotificationProvider] Resetting all notifications');
 
     if (timerRef.current) {
       clearTimeout(timerRef.current);

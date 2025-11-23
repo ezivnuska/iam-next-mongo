@@ -10,7 +10,6 @@ import { useUser } from '@/app/lib/providers/user-provider';
 import UserAvatar from '@/app/ui/user/user-avatar';
 import { useGameState } from '@/app/poker/lib/providers/poker-provider';
 import clsx from 'clsx';
-// import PlayerCircle from './player-new';
 
 /**
  * Slot configuration for strategic player positioning

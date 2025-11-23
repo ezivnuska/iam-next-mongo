@@ -107,7 +107,6 @@ export async function saveGameSafe(game: PokerGameDocument, context?: string): P
     return true;
   } catch (error: any) {
     if (error.name === 'VersionError' || error.message?.includes('version')) {
-      console.log(`[Game Lock] Version conflict during save${context ? ` (${context})` : ''} - game likely being processed elsewhere`);
       return false;
     }
     throw error;

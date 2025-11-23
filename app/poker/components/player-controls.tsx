@@ -57,7 +57,6 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
     if (!timerActive) {
       // Default to 0 if can check, otherwise minimum bet or call amount
       const newBetAmount = canCheck ? 0 : (hasBetToCall ? Math.min(currentBet, playerChipCount) : 0);
-      console.log('[PlayerControls] Bet state changed - hasBetToCall:', hasBetToCall, 'currentBet:', currentBet, 'newBetAmount:', newBetAmount);
       setSelectedAction(canCheck ? 'check' : (hasBetToCall ? 'call' : 'bet'));
       setBetAmount(newBetAmount);
     }
@@ -68,7 +67,6 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
     const defaultAction = canCheck ? 'check' : (hasBetToCall ? 'call' : 'bet');
     // Default to 0 if can check, otherwise minimum bet or call amount
     const newBetAmount = canCheck ? 0 : (hasBetToCall ? Math.min(currentBet, playerChipCount) : 0);
-    console.log('[PlayerControls] Stage changed - stage:', stage, 'hasBetToCall:', hasBetToCall, 'currentBet:', currentBet, 'newBetAmount:', newBetAmount);
     setSelectedAction(defaultAction);
     setBetAmount(newBetAmount);
   }, [stage, canCheck, hasBetToCall, currentBet, playerChipCount]);
@@ -156,7 +154,6 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
 
     playSound(soundToPlay);
 
-    console.log('[PlayerControls] Unified bet action - betAmount:', betAmount, 'currentBet:', currentBet, 'hasBetToCall:', hasBetToCall, 'sound:', soundToPlay);
 
     // Execute the bet
     placeBet(betAmount);

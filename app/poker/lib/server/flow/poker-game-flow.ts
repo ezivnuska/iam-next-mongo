@@ -44,7 +44,6 @@ export async function savePlayerBalances(players: Player[]) {
   const authenticatedPlayers = players.filter(player => !isGuestId(player.id));
 
   if (authenticatedPlayers.length === 0) {
-    console.log('[SavePlayerBalances] No authenticated players to save (all guests)');
     return;
   }
 
@@ -57,7 +56,6 @@ export async function savePlayerBalances(players: Player[]) {
   );
 
   await Promise.all(balanceUpdates);
-  console.log(`[SavePlayerBalances] Saved balances for ${authenticatedPlayers.length} authenticated player(s)`);
 }
 
 /**
@@ -77,7 +75,6 @@ export function awardPotToWinners(game: PokerGameDoc, winnerInfo: WinnerInfo): v
     }
   });
 
-  console.log(`[AwardPot] Cumulative player bets:`, cumulativePlayerBets);
 
   // Calculate side pots from cumulative bets (not current stage bets)
   const sidePots = calculateSidePots(game.players, cumulativePlayerBets);
@@ -87,7 +84,6 @@ export function awardPotToWinners(game: PokerGameDoc, winnerInfo: WinnerInfo): v
   game.markModified('pots');
   game.markModified('players'); // Mark players as modified since we'll update chipCount
 
-  console.log(`[AwardPot] Calculated ${sidePots.length} pot(s) from cumulative bets`);
 
   // If no side pots, fall back to legacy pot distribution
   if (sidePots.length === 0) {
@@ -126,7 +122,6 @@ export function awardPotToWinners(game: PokerGameDoc, winnerInfo: WinnerInfo): v
   for (let potIndex = 0; potIndex < sidePots.length; potIndex++) {
     const pot = sidePots[potIndex];
 
-    console.log(`[AwardPot] Processing ${potIndex === 0 ? 'Main' : 'Side'} Pot ${potIndex}: ${pot.amount} chips, eligible: ${pot.eligiblePlayers.length} players`);
 
     // Get eligible players who haven't folded
     const eligiblePlayers = game.players.filter(p =>
@@ -148,7 +143,6 @@ export function awardPotToWinners(game: PokerGameDoc, winnerInfo: WinnerInfo): v
       game.communalCards
     );
 
-    console.log(`[AwardPot] Pot ${potIndex} winner: ${potWinner.winnerName} (${potWinner.handRank})`);
 
     // The pot amount is already calculated in sidePots
     const potAmount = pot.amount;
@@ -164,7 +158,6 @@ export function awardPotToWinners(game: PokerGameDoc, winnerInfo: WinnerInfo): v
         if (player && pot.eligiblePlayers.includes(player.id)) {
           const wonChips = chipsPerWinner + (index === 0 ? remainder : 0); // First player gets remainder
           player.chipCount += wonChips;
-          console.log(`[AwardPot] ${username} wins ${wonChips} chips from pot ${potIndex} (tie)`);
         }
       });
     } else {
@@ -172,7 +165,6 @@ export function awardPotToWinners(game: PokerGameDoc, winnerInfo: WinnerInfo): v
       const winner = game.players.find((p: Player) => p.id === potWinner.winnerId);
       if (winner && pot.eligiblePlayers.includes(winner.id)) {
         winner.chipCount += potAmount;
-        console.log(`[AwardPot] ${winner.username} wins ${potAmount} chips from pot ${potIndex}`);
 
         // Track winnings for main winner info
         if (winner.id === winnerInfo.winnerId) {

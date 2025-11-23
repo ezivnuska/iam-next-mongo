@@ -28,21 +28,12 @@ export function useNotificationPotSync() {
     // Check if this notification has metadata with pot sync data
     const metadata = currentNotification.metadata;
     if (!metadata) {
-      console.log('[NotificationPotSync] No metadata attached to notification');
       return;
     }
 
     // Sync pot if this is a betting-related notification
     if (shouldSyncPot(metadata.notificationType)) {
-      console.log('[NotificationPotSync] Notification shown - syncing pot immediately:', {
-        notificationType: metadata.notificationType,
-        message: currentNotification.message,
-      });
-
-      const synced = syncPotFromNotification(metadata);
-      if (synced) {
-        console.log('[NotificationPotSync] Pot synchronized immediately');
-      }
+      syncPotFromNotification(metadata);
     }
   }, [currentNotification, syncPotFromNotification, shouldSyncPot]);
 }

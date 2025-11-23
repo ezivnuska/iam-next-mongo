@@ -2,7 +2,6 @@
 
 import { getOrCreateSingletonGame } from '@/app/poker/lib/server/game/singleton-game';
 import { serializeGame } from '@/app/lib/utils/game-serialization';
-import { requireAuth } from '@/app/lib/utils/auth-utils';
 
 /**
  * GET /api/poker/singleton
@@ -10,7 +9,10 @@ import { requireAuth } from '@/app/lib/utils/auth-utils';
  */
 export async function GET() {
   try {
-    // await requireAuth();
+    // Ensure database connection
+    const { connectToDatabase } = await import('@/app/lib/mongoose');
+    await connectToDatabase();
+
     const game = await getOrCreateSingletonGame();
     const serialized = serializeGame(game);
 
@@ -20,6 +22,9 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Error fetching singleton game:', error);
+    if (error instanceof Error) {
+      console.error('Error stack:', error.stack);
+    }
     if (error instanceof Error && error.message === "Unauthorized") {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }

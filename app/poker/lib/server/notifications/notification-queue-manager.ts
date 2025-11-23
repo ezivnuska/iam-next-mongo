@@ -41,7 +41,6 @@ export async function queuePlayerJoinedNotification(
   playerName: string,
   playerId: string
 ): Promise<void> {
-  console.log(`[NotificationQueue] Adding player_joined notification for ${playerName} (${playerId}) to game ${gameId}`);
 
   // Initialize queue if doesn't exist
   if (!gameQueues.has(gameId)) {
@@ -61,7 +60,6 @@ export async function queuePlayerJoinedNotification(
   if (needsClientCancellation) {
     const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
     await PokerSocketEmitter.emitNotificationCanceled();
-    console.log(`[NotificationQueue] ⚡ IMMEDIATE cancellation sent to client (player joined during ${hasActiveGameStarting ? 'active' : 'queued'} game_starting)`);
   }
 
   // ALWAYS cancel any pending game lock timer
@@ -95,13 +93,11 @@ export async function queuePlayerJoinedNotification(
 
   // If there's an active game_starting notification, cancel it via the queue system
   if (hasActiveGameStarting) {
-    console.log('[NotificationQueue] Canceling active game_starting countdown');
     if (activeNotification.cancelFn) {
       activeNotification.cancelFn();
     }
   }
 
-  console.log(`[NotificationQueue] Queue updated: ${queue.length} items (added player_joined + new game_starting)`);
 
   // Start processing if not already processing
   if (!processingGames.has(gameId)) {
@@ -114,7 +110,6 @@ export async function queuePlayerJoinedNotification(
  * Cancels any active game_starting notification and queues a new one
  */
 export async function resetGameStartingOnPlayerLeave(gameId: string): Promise<void> {
-  console.log(`[NotificationQueue] Resetting game_starting timer due to player leave in game ${gameId}`);
 
   // Initialize queue if doesn't exist
   if (!gameQueues.has(gameId)) {
@@ -133,7 +128,6 @@ export async function resetGameStartingOnPlayerLeave(gameId: string): Promise<vo
   // This ensures the client UI updates instantly when player leaves
   if (needsClientCancellation) {
     await PokerSocketEmitter.emitNotificationCanceled();
-    console.log(`[NotificationQueue] ⚡ IMMEDIATE cancellation sent to client (player left during ${hasActiveGameStarting ? 'active' : 'queued'} game_starting)`);
   }
 
   // ALWAYS cancel any pending game lock timer
@@ -160,13 +154,11 @@ export async function resetGameStartingOnPlayerLeave(gameId: string): Promise<vo
 
   // If there's an active game_starting notification, cancel it via the queue system
   if (hasActiveGameStarting) {
-    console.log('[NotificationQueue] Canceling active game_starting countdown');
     if (activeNotification.cancelFn) {
       activeNotification.cancelFn();
     }
   }
 
-  console.log(`[NotificationQueue] Queue updated: ${queue.length} items (added new start timer)`);
 
   // Start processing if not already processing
   if (!processingGames.has(gameId)) {
@@ -179,7 +171,6 @@ export async function resetGameStartingOnPlayerLeave(gameId: string): Promise<vo
  * This is called automatically after player joined notifications
  */
 export async function queueGameStartingNotification(gameId: string): Promise<void> {
-  console.log(`[NotificationQueue] Adding game_starting notification to game ${gameId}`);
 
   if (!gameQueues.has(gameId)) {
     gameQueues.set(gameId, []);
@@ -193,7 +184,6 @@ export async function queueGameStartingNotification(gameId: string): Promise<voi
       type: 'game_starting',
       gameId,
     });
-    console.log(`[NotificationQueue] Queue updated: ${queue.length} items`);
   }
 
   // Start processing if not already processing
@@ -209,7 +199,6 @@ export async function queueCardsDealtNotification(
   gameId: string,
   stageName: 'PRE-FLOP' | 'FLOP' | 'TURN' | 'RIVER'
 ): Promise<void> {
-  console.log(`[NotificationQueue] Adding cards_dealt notification for ${stageName} to game ${gameId}`);
 
   // Initialize queue if doesn't exist
   if (!gameQueues.has(gameId)) {
@@ -224,7 +213,6 @@ export async function queueCardsDealtNotification(
     stageName,
   });
 
-  console.log(`[NotificationQueue] Queue updated: ${queue.length} items (added cards_dealt for ${stageName})`);
 
   // Start processing if not already processing
   if (!processingGames.has(gameId)) {
@@ -237,12 +225,10 @@ export async function queueCardsDealtNotification(
  */
 async function processQueue(gameId: string): Promise<void> {
   if (processingGames.has(gameId)) {
-    console.log(`[NotificationQueue] Already processing queue for game ${gameId}`);
     return;
   }
 
   processingGames.add(gameId);
-  console.log(`[NotificationQueue] Started processing queue for game ${gameId}`);
 
   const queue = gameQueues.get(gameId);
   if (!queue) {
@@ -252,7 +238,6 @@ async function processQueue(gameId: string): Promise<void> {
 
   while (queue.length > 0) {
     const item = queue.shift()!;
-    console.log(`[NotificationQueue] Processing ${item.type} notification (${queue.length} remaining in queue)`);
 
     if (item.type === 'player_joined') {
       // Track active notification
@@ -267,7 +252,6 @@ async function processQueue(gameId: string): Promise<void> {
       });
 
       // Wait for notification to complete (2 seconds)
-      console.log(`[NotificationQueue] Waiting 2s for player_joined notification to complete`);
       await new Promise(resolve => setTimeout(resolve, POKER_GAME_CONFIG.PLAYER_JOINED_NOTIFICATION_DURATION_MS));
 
       // Clear active notification
@@ -288,7 +272,6 @@ async function processQueue(gameId: string): Promise<void> {
         if (resolvePromise) {
           resolvePromise();
         }
-        console.log('[NotificationQueue] Game starting notification cancelled');
       };
 
       // Track active notification with cancel function
@@ -302,7 +285,6 @@ async function processQueue(gameId: string): Promise<void> {
       });
 
       // Wait for countdown to complete (10 seconds), but allow cancellation
-      console.log(`[NotificationQueue] Waiting 10s for game_starting countdown to complete`);
       await new Promise<void>(resolve => {
         resolvePromise = resolve;
         timeoutId = setTimeout(() => {
@@ -317,19 +299,16 @@ async function processQueue(gameId: string): Promise<void> {
 
       // If cancelled, skip the game lock scheduling and continue to next notification
       if (cancelled) {
-        console.log('[NotificationQueue] Skipping game lock scheduling - notification was cancelled');
         continue;
       }
 
       // Check if new items were added to queue during countdown (player joined/left)
       // If so, skip scheduling lock - a new game_starting will handle it
       if (queue.length > 0) {
-        console.log(`[NotificationQueue] Skipping game lock scheduling - ${queue.length} items in queue (player joined/left during countdown)`);
         continue;
       }
 
       // After countdown completes, schedule the actual game lock
-      console.log(`[NotificationQueue] Game starting countdown complete - scheduling game lock`);
       const { PokerGame } = await import('../../models/poker-game');
       const game = await PokerGame.findById(gameId);
 
@@ -339,7 +318,6 @@ async function processQueue(gameId: string): Promise<void> {
         game.lockTime = lockTime;
         await game.save();
         scheduleGameLock(gameId, lockTime);
-        console.log(`[NotificationQueue] Game lock scheduled`);
       }
 
     } else if (item.type === 'cards_dealt') {
@@ -354,7 +332,6 @@ async function processQueue(gameId: string): Promise<void> {
       });
 
       // Wait for notification to complete (2 seconds)
-      console.log(`[NotificationQueue] Waiting 2s for cards_dealt notification (${item.stageName}) to complete`);
       await new Promise(resolve => setTimeout(resolve, POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS));
 
       // Clear active notification
@@ -362,7 +339,6 @@ async function processQueue(gameId: string): Promise<void> {
     }
   }
 
-  console.log(`[NotificationQueue] Finished processing queue for game ${gameId}`);
   processingGames.delete(gameId);
 
   // Clean up empty queue
@@ -375,7 +351,6 @@ async function processQueue(gameId: string): Promise<void> {
  * Clear queue for a game (called when game starts or is deleted)
  */
 export function clearQueue(gameId: string): void {
-  console.log(`[NotificationQueue] Clearing queue for game ${gameId}`);
 
   // Cancel any active notification
   const activeNotification = activeNotifications.get(gameId);

@@ -30,7 +30,6 @@ export class StageManager {
    * Logs validation errors and warnings
    */
   static validateStageExit(game: PokerGameDocument): ValidationResult {
-    console.log(`[StageManager] Validating stage exit for stage ${game.stage}`);
     const validation = StageValidators.validateCanExitStage(game);
 
     if (!validation.valid) {
@@ -49,7 +48,6 @@ export class StageManager {
    * Logs validation errors and warnings
    */
   static validateStageEntry(game: PokerGameDocument, targetStage: number): ValidationResult {
-    console.log(`[StageManager] Validating stage entry for stage ${targetStage}`);
     const validation = StageValidators.validateCanEnterStage(game, targetStage);
 
     if (!validation.valid) {
@@ -67,7 +65,6 @@ export class StageManager {
    * Validate betting round completion using TurnManager
    */
   static validateBettingRound(game: PokerGameDocument): ValidationResult {
-    console.log(`[StageManager] Validating betting round for stage ${game.stage}`);
     const validation = TurnManager.validateBettingRoundComplete(game);
 
     if (!validation.valid) {
@@ -106,7 +103,6 @@ export class StageManager {
 
     // If no one can act, betting is complete
     if (playersWhoCanAct.length === 0) {
-      console.log('[StageManager] Betting complete: All players all-in or folded');
       return true;
     }
 
@@ -121,7 +117,6 @@ export class StageManager {
         activePlayerBets.every((bet: number) => bet === activePlayerBets[0]);
 
       if (allBetsEqual) {
-        console.log('[StageManager] Betting complete: Only one player can act and all bets equal');
         return true;
       }
     }
@@ -138,7 +133,6 @@ export class StageManager {
    * Sets stage status to COMPLETING and tracks completion checks
    */
   static completeStage(game: PokerGameDocument): void {
-    console.log(`[StageManager] Completing stage ${game.stage}`);
 
     this.initStageTracking(game);
 
@@ -202,12 +196,6 @@ export class StageManager {
 
     const shouldAuto = playersWithChips.length <= 1;
 
-    console.log('[StageManager] Auto-advance check:', {
-      activePlayers: activePlayers.length,
-      playersWithChips: playersWithChips.length,
-      shouldAutoAdvance: shouldAuto
-    });
-
     return shouldAuto;
   }
 
@@ -224,7 +212,6 @@ export class StageManager {
    * - Set status to ACTIVE
    */
   static async enterStage(game: PokerGameDocument, newStage: GameStage): Promise<void> {
-    console.log(`[StageManager] Entering stage ${newStage}`);
 
     game.stageStatus = StageStatus.ENTERING;
     game.markModified('stageStatus');
@@ -261,7 +248,6 @@ export class StageManager {
       // Emit state update to show showdown stage
       await PokerSocketEmitter.emitStateUpdate(game);
 
-      console.log(`[StageManager] Showdown stage active - caller will handle winner determination`);
 
       // Return immediately - caller will handle winner determination after notification completes
       return;
@@ -338,7 +324,6 @@ export class StageManager {
     // Save final stage state
     await game.save();
 
-    console.log(`[StageManager] Stage ${newStage} now ACTIVE`);
   }
 
   /**
@@ -423,7 +408,6 @@ export class StageManager {
       duration,
     });
 
-    console.log(`[StageManager] Notified clients about ${GameStage[stage]}`);
   }
 
   /**
@@ -472,7 +456,6 @@ export class StageManager {
    * This ensures proper timing for card dealing and winner determination
    */
   static async startAutoAdvanceSequence(game: PokerGameDocument): Promise<void> {
-    console.log('[StageManager] Starting auto-advance sequence (all players all-in)');
 
     const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
     const { POKER_TIMERS } = await import('../../config/poker-constants');
@@ -484,20 +467,17 @@ export class StageManager {
 
     // Continue advancing until we reach Showdown or can no longer auto-advance
     while (game.stage < GameStage.Showdown && this.shouldAutoAdvance(game)) {
-      console.log(`[StageManager] Auto-advancing from stage ${game.stage}`);
 
       // Advance to next stage
       const advanced = await this.advanceToNextStage(game);
 
       if (!advanced) {
-        console.log('[StageManager] Could not advance further, stopping auto-advance');
         break;
       }
 
       await game.save();
       await PokerSocketEmitter.emitStateUpdate(game);
 
-      console.log(`[StageManager] Advanced to stage ${game.stage}, waiting for stage notification to complete`);
 
       // Wait for stage notification to complete (5 seconds)
       await new Promise(resolve => setTimeout(resolve, POKER_TIMERS.NOTIFICATION_DURATION_MS));
@@ -509,12 +489,9 @@ export class StageManager {
 
     // Check if we reached Showdown
     if (game.stage === GameStage.Showdown) {
-      console.log('[StageManager] Reached Showdown during auto-advance, ending game');
       // endGame handles all state updates, saves, and round_complete emission internally
       await this.endGame(game);
-      console.log('[StageManager] endGame complete, game has been reset and round_complete emitted');
     } else {
-      console.log('[StageManager] Auto-advance sequence complete, players can now act');
       await game.save();
     }
   }
@@ -525,7 +502,6 @@ export class StageManager {
    * End the game and determine winner
    */
   static async endGame(game: PokerGameDocument): Promise<void> {
-    console.log('[StageManager] Ending game, determining winner...');
 
     const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
 
@@ -536,7 +512,6 @@ export class StageManager {
 
     // Determine winner from active players only (exclude folded players)
     const activePlayers = getActivePlayers(game.players);
-    console.log(`[StageManager] Determining winner from ${activePlayers.length} active players:`, activePlayers.map(p => p.username));
 
     const winnerInfo = determineWinner(
       activePlayers.map((p: Player) => ({
@@ -584,7 +559,6 @@ export class StageManager {
     // This allows clients to see the final hands while winner notification displays
     await PokerSocketEmitter.emitStateUpdate(game);
 
-    console.log(`[StageManager] State updated with winner and pot distribution, now emitting winner notification`);
 
     // Emit winner notification (event-based)
     // Note: This is called after Showdown stage notification completes,
@@ -606,8 +580,6 @@ export class StageManager {
       });
     }
 
-    console.log(`[StageManager] Winner notification sent: ${winnerInfo.winnerName}`);
-    console.log(`[StageManager] endGame complete - step flow will handle game reset and restart`);
   }
 
   /**
@@ -615,7 +587,6 @@ export class StageManager {
    * All cleanup and reset logic lives here
    */
   static async resetGameForNextRound(game: PokerGameDocument): Promise<void> {
-    console.log('[StageManager] Resetting game for next round...');
 
     const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
     const { POKER_GAME_CONFIG } = await import('../../config/poker-constants');
@@ -623,14 +594,12 @@ export class StageManager {
     // ADVANCE DEALER BUTTON FIRST (before reset) - standard poker rules
     game.dealerButtonPosition = ((game.dealerButtonPosition || 0) + 1) % game.players.length;
     game.markModified('dealerButtonPosition');
-    console.log(`[StageManager] Dealer button advanced to position ${game.dealerButtonPosition}`);
 
     // Save and emit granular update so clients see the button move BEFORE reset
     await game.save();
     await PokerSocketEmitter.emitDealerButtonMoved({
       dealerButtonPosition: game.dealerButtonPosition,
     });
-    console.log('[StageManager] Dealer button advancement emitted to clients');
 
     // Unlock the game
     game.locked = false;
@@ -668,10 +637,6 @@ export class StageManager {
       const { BIG_BLIND } = POKER_GAME_CONFIG;
       const playersBeforeRemoval = gameToReset.players.length;
 
-      console.log('[StageManager] Player status before removal check:', JSON.stringify(gameToReset.players.map((p: Player) =>
-        ({ username: p.username, chipCount: p.chipCount, isAway: p.isAway, isAI: p.isAI, canPlay: p.chipCount >= BIG_BLIND && !p.isAway })
-      ), null, 2));
-
       // Reset player state for next game BEFORE filtering (so hands are cleared even if player is removed)
       gameToReset.players = gameToReset.players.map((p: Player) => ({
         ...p,
@@ -686,7 +651,6 @@ export class StageManager {
       gameToReset.players = gameToReset.players.filter((p: Player) => {
         // Check chip count first (applies to all players including AI)
         if (p.chipCount < BIG_BLIND) {
-          console.log(`[StageManager] Removing player ${p.username} - insufficient balance (${p.chipCount} < ${BIG_BLIND})`);
           return false;
         }
         // Don't check away status for AI players
@@ -694,7 +658,6 @@ export class StageManager {
           return true;
         }
         if (p.isAway) {
-          console.log(`[StageManager] Removing player ${p.username} - away from game`);
           return false;
         }
         return true;
@@ -702,14 +665,12 @@ export class StageManager {
 
       const playersRemoved = playersBeforeRemoval - gameToReset.players.length;
       if (playersRemoved > 0) {
-        console.log(`[StageManager] Removed ${playersRemoved} player(s) with insufficient balance or away`);
 
         // Adjust dealer button position if it's now out of range
         if (gameToReset.players.length > 0 && gameToReset.dealerButtonPosition >= gameToReset.players.length) {
           const oldPosition = gameToReset.dealerButtonPosition;
           gameToReset.dealerButtonPosition = gameToReset.dealerButtonPosition % gameToReset.players.length;
           gameToReset.markModified('dealerButtonPosition');
-          console.log(`[StageManager] Adjusted dealer button from ${oldPosition} to ${gameToReset.dealerButtonPosition} after player removal`);
         }
 
         // Save and emit granular player_left events so clients see removed players immediately
@@ -728,7 +689,6 @@ export class StageManager {
               gameReset: false,
               actionHistory: gameToReset.actionHistory || [],
             });
-            console.log(`[StageManager] Emitted player_left for ${removedPlayer.username}`);
           }
         }
 
@@ -740,7 +700,6 @@ export class StageManager {
 
       // Check if we have enough players to continue (need at least 2)
       if (gameToReset.players.length < 2) {
-        console.log(`[StageManager] Insufficient players to restart (${gameToReset.players.length} remaining). Canceling restart.`);
 
         // Reset dealer button to 0 when only AI remains
         gameToReset.dealerButtonPosition = 0;
@@ -762,19 +721,13 @@ export class StageManager {
 
         // Cancel any pending notifications on clients
         await PokerSocketEmitter.emitNotificationCanceled();
-        console.log('[StageManager] Notification canceled - insufficient players');
 
         // Emit full state update to sync all reset fields (communalCards, pot, hands, etc.)
         // This ensures clients clear all game state when restart is cancelled
         await PokerSocketEmitter.emitStateUpdate(gameToReset);
 
-        console.log('[StageManager] Game unlocked - restart canceled due to insufficient players');
         return; // Exit early - no restart
       }
-
-      console.log('[StageManager] Player balances for next game:', gameToReset.players.map((p: Player) =>
-        ({ username: p.username, chipCount: p.chipCount })
-      ));
 
       gameToReset.markModified('winner');
       gameToReset.markModified('stage');
@@ -789,20 +742,16 @@ export class StageManager {
 
       await gameToReset.save();
 
-      console.log('[StageManager] Game reset for next round');
 
       // Emit full state update to sync all reset fields with clients
       // This ensures clients clear communal cards, hands, pot, etc. BEFORE game_starting notification
       await PokerSocketEmitter.emitStateUpdate(gameToReset);
-      console.log('[StageManager] State update emitted - clients synced with reset game state');
 
       // Queue game starting notification through notification system
       // This ensures proper cancellation and sequencing if players join/leave during countdown
-      console.log('[StageManager] Queueing game_starting notification through notification queue');
       const gameId = String(gameToReset._id);
       const { queueGameStartingNotification } = await import('../notifications/notification-queue-manager');
       await queueGameStartingNotification(gameId);
-      console.log('[StageManager] ✅ Game starting notification queued - queue will handle countdown and lock');
     }
   }
 }

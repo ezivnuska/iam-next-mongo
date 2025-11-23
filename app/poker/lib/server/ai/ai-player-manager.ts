@@ -21,7 +21,6 @@ export const AI_PLAYER_CONFIG = {
  */
 export async function createAIPlayer(name?: string, aggression?: AggressionLevel): Promise<Player> {
   const aiId = `${AI_PLAYER_CONFIG.ID_PREFIX}${Date.now()}`;
-//   const aiName = name || `${AI_PLAYER_CONFIG.DEFAULT_NAME} ${Math.floor(Math.random() * 100)}`;
   const aiName = name || `${AI_PLAYER_CONFIG.DEFAULT_NAME}`;
 
   // Create balance for AI player
@@ -31,7 +30,6 @@ export async function createAIPlayer(name?: string, aggression?: AggressionLevel
     { upsert: true }
   );
 
-  console.log(`[AI Manager] Created AI player: ${aiName} (${aiId})`);
 
   return {
     id: aiId,
@@ -60,7 +58,6 @@ export async function addAIPlayerToGame(gameId: string, name?: string): Promise<
   // Check if AI already exists
   const hasAI = game.players.some((p: Player) => p.isAI);
   if (hasAI) {
-    console.log('[AI Manager] AI player already exists in game');
     return;
   }
 
@@ -69,7 +66,6 @@ export async function addAIPlayerToGame(gameId: string, name?: string): Promise<
   game.markModified('players');
   await game.save();
 
-  console.log(`[AI Manager] Added AI player ${aiPlayer.username} to game ${gameId}`);
 }
 
 // checkAndExecuteAITurn removed - no longer needed with unified timer system
@@ -92,7 +88,6 @@ export async function executeAIActionIfReady(gameId: string): Promise<void> {
   // Check if AI player is folded or all-in
   if (currentPlayer.folded || currentPlayer.isAllIn) return;
 
-  console.log(`[AI Manager] Executing AI action for ${currentPlayer.username} (timer already started)`);
 
   // Execute AI action immediately (timer was already started by caller)
   await executeAIAction(gameId);
@@ -122,7 +117,6 @@ async function executeAIAction(gameId: string): Promise<void> {
       isAI: true,
     });
 
-    console.log(`[AI Manager] ${currentPlayer.username} is thinking...`);
 
     // Wait for thinking notification to display before making decision
     const { POKER_TIMERS } = await import('../../config/poker-constants');
@@ -131,7 +125,6 @@ async function executeAIAction(gameId: string): Promise<void> {
     // Re-fetch game to ensure we have latest state after delay
     const freshGame = await PokerGame.findById(gameId);
     if (!freshGame || !freshGame.locked) {
-      console.log('[AI Manager] Game state changed during thinking delay - aborting action');
       return;
     }
 
@@ -154,7 +147,6 @@ async function executeAIAction(gameId: string): Promise<void> {
       AI_PLAYER_CONFIG.DEFAULT_AGGRESSION
     );
 
-    console.log(`[AI Manager] AI decision:`, decision);
 
     // Execute the actual action using game controllers
     // The controllers will emit notifications and clear timers automatically
@@ -165,7 +157,6 @@ async function executeAIAction(gameId: string): Promise<void> {
     switch (decision.action) {
       case 'fold':
         result = await foldController(gameId, currentPlayer.id);
-        console.log(`[AI Manager] AI folded`);
         break;
 
       case 'check':
@@ -175,29 +166,24 @@ async function executeAIAction(gameId: string): Promise<void> {
           result = await placeBetController(gameId, currentPlayer.id, currentBet);
         } else {
           result = await placeBetController(gameId, currentPlayer.id, 0);
-          console.log(`[AI Manager] AI checked`);
         }
         break;
 
       case 'call':
         result = await placeBetController(gameId, currentPlayer.id, currentBet);
-        console.log(`[AI Manager] AI called ${currentBet}`);
         break;
 
       case 'bet':
       case 'raise':
         result = await placeBetController(gameId, currentPlayer.id, decision.amount);
-        console.log(`[AI Manager] AI ${decision.action} ${decision.amount}`);
         break;
 
       case 'all-in':
         result = await placeBetController(gameId, currentPlayer.id, currentPlayer.chipCount);
-        console.log(`[AI Manager] AI went all-in with ${currentPlayer.chipCount}`);
         break;
     }
 
     // Socket events and notifications are emitted by the controllers
-    console.log(`[AI Manager] AI action executed successfully`);
   } catch (error) {
     console.error('[AI Manager] Error executing AI action:', error);
   }
@@ -237,23 +223,19 @@ export async function autoManageAIPlayer(gameId: string): Promise<void> {
 
   // Don't modify AI during an active game
   if (game.locked) {
-    console.log('[AI Manager] Cannot modify AI during active game');
     return;
   }
 
   const humanCount = countHumanPlayers(game.players);
   const hasAI = game.players.some((p: Player) => p.isAI);
 
-  console.log(`[AI Manager] Auto-managing AI: ${humanCount} human players, hasAI: ${hasAI}`);
 
   // If we have 2+ human players and AI exists, remove AI
   if (humanCount >= 2 && hasAI) {
-    console.log('[AI Manager] Removing AI - sufficient human players');
     await removeAIPlayerFromGame(gameId);
   }
   // If we have less than 2 total players and no AI, add AI
   else if (game.players.length < 2 && !hasAI) {
-    console.log('[AI Manager] Adding AI - insufficient players');
     await addAIPlayerToGame(gameId);
   }
 }
@@ -266,7 +248,6 @@ export async function removeAIPlayerFromGame(gameId: string): Promise<void> {
   if (!game) return;
 
   if (game.locked) {
-    console.log('[AI Manager] Cannot remove AI from locked game');
     return;
   }
 
@@ -278,5 +259,4 @@ export async function removeAIPlayerFromGame(gameId: string): Promise<void> {
   game.markModified('players');
   await game.save();
 
-  console.log(`[AI Manager] Removed AI player ${aiPlayer.username} from game`);
 }

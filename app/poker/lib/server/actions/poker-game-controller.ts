@@ -92,24 +92,20 @@ export async function addPlayer(
           { userId: user.id },
           { $set: { chipCount: playerChipCount }, $unset: { chips: '' } }
         );
-        console.log(`[AddPlayer] Migrated balance for ${user.username}: ${oldChipTotal} -> ${playerChipCount} chips`);
       } else {
         // Balance exists but has no chips, set to default
         await PokerBalance.findOneAndUpdate(
           { userId: user.id },
           { $set: { chipCount: playerChipCount } }
         );
-        console.log(`[AddPlayer] Set default balance for ${user.username}: ${playerChipCount} chips`);
       }
     } else {
       // Create new balance record with starting chips
       await PokerBalance.create({ userId: user.id, chipCount: playerChipCount });
-      console.log(`[AddPlayer] Created new balance for ${user.username}: ${playerChipCount} chips`);
     }
 
     // Reset balance to default if insufficient for big blind
     if (playerChipCount < POKER_GAME_CONFIG.BIG_BLIND) {
-      console.log(`[AddPlayer] Player ${user.username} has insufficient balance (${playerChipCount} < ${POKER_GAME_CONFIG.BIG_BLIND}) - resetting to ${POKER_GAME_CONFIG.DEFAULT_STARTING_CHIPS}`);
       playerChipCount = POKER_GAME_CONFIG.DEFAULT_STARTING_CHIPS;
 
       // Update the balance in database
@@ -120,7 +116,6 @@ export async function addPlayer(
     }
   } else {
     // Guest players always start with default chips (no persistence)
-    console.log(`[AddPlayer] Guest player ${user.username} joining with default chips: ${playerChipCount}`);
   }
 
   // Retry logic for version conflicts
@@ -167,7 +162,6 @@ export async function addPlayer(
       game.lockTime = lockTime;
       await PokerGame.findByIdAndUpdate(gameId, { lockTime });
       const humanCount = game.players.filter((p: Player) => !p.isAI).length;
-      console.log(`[AddPlayer] ${humanCount === 1 ? 'Set' : 'Reset'} lockTime to ${lockTime.toISOString()} (includes player_joined + game_starting: ${totalNotificationDuration}ms total)`);
     }
 
     // Return fresh game state
@@ -217,7 +211,6 @@ export async function handlePlayerJoin(
     // Note: lockTime may be undefined during restart, but we still queue notifications to cancel timers
     if (gameState.players.length >= 2 && !gameState.locked) {
       const context = gameState.lockTime ? 'initial join' : 'join during restart';
-      console.log(`[HandlePlayerJoin] Queueing notification sequence for ${context}`);
 
       // Import notification queue manager
       const { queuePlayerJoinedNotification } = await import('../notifications/notification-queue-manager');
@@ -332,7 +325,6 @@ export async function setPlayerPresence(
   game.markModified('players');
   await game.save();
 
-  console.log(`[SetPlayerPresence] Player ${userId} is now ${isAway ? 'away' : 'present'}`);
 
   // Emit presence update to all clients
   await PokerSocketEmitter.emitPlayerPresenceUpdated({
@@ -384,11 +376,9 @@ function adjustDealerButtonPosition(
       // Dealer left - button stays at same index (which is now the next player)
       // But need to wrap if at end
       game.dealerButtonPosition = leavingPlayerIndex % game.players.length;
-      console.log(`[RemovePlayer] Dealer left - button advances to position ${game.dealerButtonPosition}`);
     } else if (leavingPlayerIndex < currentDealerPosition) {
       // Player before dealer left - decrement dealer position
       game.dealerButtonPosition = currentDealerPosition - 1;
-      console.log(`[RemovePlayer] Player before dealer left - button adjusted to position ${game.dealerButtonPosition}`);
     }
     // If player after dealer left, no adjustment needed
   }
@@ -409,24 +399,20 @@ async function manageLockTimerAfterRemoval(game: any, gameId: string): Promise<v
     cancelGameLock(gameId);
     game.lockTime = undefined;
     await PokerGame.findByIdAndUpdate(gameId, { lockTime: undefined });
-    console.log('[RemovePlayer] Cancelled auto-lock timer - less than 2 human players');
 
     // CRITICAL: Clear the notification queue and cancel any active notification
     const { clearQueue } = await import('../notifications/notification-queue-manager');
     clearQueue(gameId);
     await PokerSocketEmitter.emitNotificationCanceled();
-    console.log('[RemovePlayer] Cleared notification queue - insufficient human players');
   } else if (humanCount >= 2 && !game.locked) {
     // Reset lockTime flag if 2+ human players remain
     const lockTime = new Date(Date.now() + POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS);
     game.lockTime = lockTime;
     await PokerGame.findByIdAndUpdate(gameId, { lockTime });
-    console.log(`[RemovePlayer] Reset lockTime flag for notification queue`);
   }
 
   // Log if only AI player remains
   if (humanCount === 0) {
-    console.log('[RemovePlayer] No human players remain - only AI player left');
   }
 }
 
@@ -677,14 +663,6 @@ async function emitBetNotification(
     action.timestamp && new Date(action.timestamp) > oneSecondAgo
   );
 
-  console.log(`[PlaceBet] Checking for duplicate bet actions for ${player.username} (AI: ${player.isAI}):`, {
-    playerId,
-    stage: game.stage,
-    chipCount,
-    isBlindPost,
-    recentActionsCount: recentBetActions.length,
-  });
-
   // Skip if duplicate detected
   if (recentBetActions.length > 0) {
     console.warn(`[PlaceBet] SKIPPING notification - duplicate detected within last second`);
@@ -692,7 +670,6 @@ async function emitBetNotification(
   }
 
   // Log action
-  console.log(`[PlaceBet] Logging bet action and emitting notification for ${player.username}, chipCount: ${chipCount}`);
   logBetAction(game, playerId, player.username, chipCount);
 
   // Calculate bet to call (BEFORE this action)
@@ -719,7 +696,6 @@ async function emitBetNotification(
     notificationType = 'player_bet';
   }
 
-  console.log(`[PlaceBet] *** EMITTING NOTIFICATION: ${notificationType} for ${player.username}, chips: ${chipCount} ***`);
 
   // Emit notification
   await PokerSocketEmitter.emitNotification({
@@ -735,7 +711,6 @@ async function emitBetNotification(
     currentPlayerIndex: game.currentPlayerIndex,
   });
 
-  console.log(`[PlaceBet] *** NOTIFICATION EMITTED SUCCESSFULLY ***`);
   return true;
 }
 
@@ -751,7 +726,6 @@ async function finalizeBetAction(
   // Clear timer from game object
   game.actionTimer = undefined;
   game.markModified('actionTimer');
-  console.log('[PlaceBet] Timer cleared from game object');
 
   // Cancel server-side setTimeout
   const { activeTimers } = await import('../timers/poker-timer-controller');
@@ -759,7 +733,6 @@ async function finalizeBetAction(
   if (existingTimer) {
     clearTimeout(existingTimer);
     activeTimers.delete(gameId);
-    console.log('[PlaceBet] Canceled server-side timer');
   }
 
   // Release lock and save
@@ -774,18 +747,14 @@ async function finalizeBetAction(
   await onPlayerAction(gameId, playerId, 'bet');
 
   // Schedule turn advancement after notification completes
-  console.log(`[PlaceBet] ${playerIsAI ? 'AI' : 'Manual'} action - scheduling turn advancement after notification (${POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS}ms)`);
 
   setTimeout(async () => {
-    console.log('[PlaceBet] Notification complete - advancing turn');
     const { handleReadyForNextTurn } = await import('../turn/turn-handler');
     try {
       await handleReadyForNextTurn(gameId);
-      console.log('[PlaceBet] Turn advancement completed');
     } catch (error: any) {
       // Version errors are expected during concurrent operations - log as info, not error
       if (error.name === 'VersionError' || error.message?.includes('version')) {
-        console.log('[PlaceBet] Turn advancement skipped - concurrent operation in progress');
       } else {
         console.error('[PlaceBet] Turn advancement error:', error);
       }
@@ -806,16 +775,6 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1, 
         console.error('[PlaceBet] Turn validation failed:', turnValidation.errors);
       }
 
-      // Get current turn context for logging
-      const turnContext = TurnManager.getCurrentTurnContext(game);
-      if (turnContext) {
-        console.log('[PlaceBet] Turn context:', {
-          turnNumber: turnContext.turnNumber,
-          stage: turnContext.stage,
-          actionRequired: turnContext.actionRequired,
-        });
-      }
-
       // STEP 1: Validate the bet request
       const validation = await validateBetRequest(game, playerId, chipCount);
       const { playerIndex, player, currentPlayerBetAmount, betAlreadyProcessed } = validation;
@@ -830,7 +789,6 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1, 
         );
 
         if (wentAllIn) {
-          console.log(`[PlaceBet] Player ${player.username} went ALL-IN with ${actualChipCount} chips`);
         }
       }
 
@@ -846,7 +804,6 @@ export async function placeBet(gameId: string, playerId: string, chipCount = 1, 
       );
 
       // STEP 4: Finalize action (clear timer, save, schedule turn advancement)
-      console.log('[PlaceBet] Action processed - deferring turn/stage advancement until client signals ready');
       await finalizeBetAction(game, gameId, playerId, player.isAI || false);
 
       // Return result in expected format
@@ -968,11 +925,9 @@ async function emitFoldNotifications(
     timerTriggered,
   });
 
-  console.log(`[Fold] Fold notification emitted for ${foldingPlayer.username} (AI: ${foldingPlayer.isAI}, timerTriggered: ${timerTriggered})`);
 
   // Wait for fold notification to complete before emitting winner
   if (foldingPlayer.isAI || timerTriggered) {
-    console.log(`[Fold] ${foldingPlayer.isAI ? 'AI' : 'Timer-triggered'} fold - waiting for fold notification to complete`);
     await new Promise(resolve => setTimeout(resolve, POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS));
   } else {
     // For human folds, add small buffer to ensure fold notification is sent first
@@ -988,7 +943,6 @@ async function emitFoldNotifications(
     handRank: winnerInfo.handRank,
   });
 
-  console.log(`[Fold] Winner notification emitted for ${winner.username}`);
 }
 
 /**
@@ -1007,7 +961,6 @@ async function finalizeFoldAndContinue(
   // Clear timer from game object
   game.actionTimer = undefined;
   game.markModified('actionTimer');
-  console.log('[Fold] Timer cleared from game object');
 
   // Cancel server-side setTimeout
   const { activeTimers } = await import('../timers/poker-timer-controller');
@@ -1015,7 +968,6 @@ async function finalizeFoldAndContinue(
   if (existingTimer) {
     clearTimeout(existingTimer);
     activeTimers.delete(gameId);
-    console.log('[Fold] Canceled server-side timer');
   }
 
   // Release lock and save
@@ -1030,18 +982,14 @@ async function finalizeFoldAndContinue(
   await onPlayerAction(gameId, playerId, 'fold');
 
   // Schedule turn advancement after notification completes
-  console.log(`[Fold] Game continues - scheduling turn advancement after notification (${POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS}ms)`);
 
   setTimeout(async () => {
-    console.log('[Fold] Notification complete - advancing turn');
     const { handleReadyForNextTurn } = await import('../turn/turn-handler');
     try {
       await handleReadyForNextTurn(gameId);
-      console.log('[Fold] Turn advancement completed');
     } catch (error: any) {
       // Version errors are expected during concurrent operations - log as info, not error
       if (error.name === 'VersionError' || error.message?.includes('version')) {
-        console.log('[Fold] Turn advancement skipped - concurrent operation in progress');
       } else {
         console.error('[Fold] Turn advancement error:', error);
       }
@@ -1081,7 +1029,6 @@ async function finalizeFoldAndTriggerRestart(
   // Clear timer since game ended - do this BEFORE saving
   game.actionTimer = undefined;
   game.markModified('actionTimer');
-  console.log('[Fold] Timer cleared from game object');
 
   // Cancel the server-side setTimeout if it exists
   const { activeTimers } = await import('../timers/poker-timer-controller');
@@ -1089,7 +1036,6 @@ async function finalizeFoldAndTriggerRestart(
   if (existingTimer) {
     clearTimeout(existingTimer);
     activeTimers.delete(gameId);
-    console.log('[Fold] Canceled server-side timer');
   }
 
   // Release lock before save to prevent lock timeout issues
@@ -1099,14 +1045,10 @@ async function finalizeFoldAndTriggerRestart(
   // Emit full game state update to show winner with timer already cleared
   await PokerSocketEmitter.emitStateUpdate(game.toObject());
 
-  console.log(`[Fold] Fold complete - winner notification emitted`);
-  console.log(`[Fold] Starting fully server-driven restart flow`);
 
   // Wait for winner notification to complete (10 seconds)
-  console.log('[Fold] Waiting 10 seconds for winner notification to display');
   await new Promise(resolve => setTimeout(resolve, POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS));
 
-  console.log('[Fold] Winner notification complete - starting game reset');
 
   // Fetch fresh game state for reset
   const gameForReset = await PokerGame.findById(gameId);
@@ -1117,13 +1059,11 @@ async function finalizeFoldAndTriggerRestart(
   gameForReset.markModified('stage');
   await gameForReset.save();
 
-  console.log('[Fold] Advanced to End stage - calling resetGameForNextRound');
 
   // Reset and restart the game (this will emit game_starting and auto-lock after 10s)
   const { StageManager } = await import('../flow/stage-manager');
   await StageManager.resetGameForNextRound(gameForReset);
 
-  console.log('[Fold] Game reset and restart flow complete');
 }
 
 export async function fold(gameId: string, playerId: string, timerTriggered = false) {
@@ -1139,16 +1079,13 @@ export async function fold(gameId: string, playerId: string, timerTriggered = fa
       game.players[playerIndex].folded = true;
       game.markModified('players');
 
-      console.log(`[Fold] Player ${foldingPlayer.username} folded`);
 
       // STEP 3: Check how many active players remain
       const activePlayers = getActivePlayers(game.players);
-      console.log(`[Fold] Active players remaining: ${activePlayers.length}`);
 
       if (activePlayers.length === 1) {
         // Only one player left - they win by fold
         const winner = activePlayers[0];
-        console.log(`[Fold] Last active player is ${winner.username} - they win by fold`);
 
         // Process fold and determine winner
         const winnerInfo = processFoldAndDetermineWinner(game, winner, foldingPlayer);
@@ -1160,7 +1097,6 @@ export async function fold(gameId: string, playerId: string, timerTriggered = fa
         await finalizeFoldAndTriggerRestart(game, gameId, playerId, foldingPlayer, winner, winnerInfo);
       } else {
         // Multiple active players remain - game continues
-        console.log(`[Fold] Game continues with ${activePlayers.length} active players`);
 
         // Emit fold notification (event-based)
         await PokerSocketEmitter.emitNotification({

@@ -116,7 +116,6 @@ export function useSocketConnectionMonitor(
     };
 
     const handleReconnect = () => {
-      console.log('Socket reconnected');
       onReconnect?.();
     };
 

@@ -34,7 +34,6 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
         // CRITICAL: Check if we have enough players before locking
         // A player may have left during the countdown timer, so we need to verify
         if (gameToLock.players.length < 2) {
-          console.log(`[Auto Lock] ABORTED - insufficient players (${gameToLock.players.length}). Releasing lock.`);
           gameToLock.processing = false;
           gameToLock.lockTime = undefined; // Clear lock time since we're not locking
           await gameToLock.save();
@@ -78,13 +77,11 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
             player.chipCount = oldChipTotal;
             delete (player as any).chips;
             migrationNeeded = true;
-            console.log(`[GameLockManager] Migrated player ${player.username} chips: ${oldChipTotal}`);
           } else if (typeof player.chipCount !== 'number') {
             // No chipCount set, default to starting chips
             const { POKER_GAME_CONFIG } = await import('@/app/poker/lib/config/poker-constants');
             player.chipCount = POKER_GAME_CONFIG.DEFAULT_STARTING_CHIPS;
             migrationNeeded = true;
-            console.log(`[GameLockManager] Set default chips for player ${player.username}: ${player.chipCount}`);
           }
         }
         if (migrationNeeded) {
@@ -119,10 +116,8 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
 
         // Log if players will go all-in on blinds
         if (smallBlindPlayerChips < smallBlind) {
-          console.log(`[Auto Lock] Small blind player will go all-in: ${smallBlindPlayerChips}/${smallBlind} chips`);
         }
         if (bigBlindPlayerChips < bigBlind) {
-          console.log(`[Auto Lock] Big blind player will go all-in: ${bigBlindPlayerChips}/${bigBlind} chips`);
         }
 
         // Calculate initial current player index for first-to-act
@@ -148,7 +143,6 @@ async function initializeGameAtLock(gameId: string): Promise<void> {
           actionHistory: gameToLock.actionHistory,
         });
 
-        console.log(`[Auto Lock] Game locked - starting step-based flow`);
 
         // *** NEW STEP-BASED FLOW ***
         // Start the step orchestrator which will handle the entire game flow:
@@ -220,17 +214,14 @@ export function scheduleGameRestart(gameId: string, delayMs: number): void {
   const timeoutId = setTimeout(async () => {
     restartTimers.delete(gameId); // Clean up reference after execution
 
-    console.log('[GameRestart] Auto-lock delay complete - locking game now');
 
     // Automatically lock and start the game using internal function (bypasses auth)
     const { lockGameInternal } = await import('./lock-game-internal');
     await lockGameInternal(gameId);
-    console.log('[GameRestart] ✅ Game auto-locked and started successfully');
   }, delayMs);
 
   // Store timeout reference for cancellation
   restartTimers.set(gameId, timeoutId);
-  console.log(`[GameRestart] Scheduled restart timer for game ${gameId} (${delayMs}ms)`);
 }
 
 /**
@@ -242,6 +233,5 @@ export function cancelGameRestart(gameId: string): void {
   if (timeoutId) {
     clearTimeout(timeoutId);
     restartTimers.delete(gameId);
-    console.log(`[GameRestart] Cancelled restart timer for game ${gameId}`);
   }
 }

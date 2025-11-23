@@ -107,9 +107,6 @@ export class TurnManager {
   static getBettingRoundState(game: PokerGameDocument): BettingRoundState {
     const startingPlayerIndex = calculateFirstToActForBettingRound(game);
 
-    console.log(`[TurnManager] Getting betting round state for stage ${game.stage}`);
-    console.log(`[TurnManager] Starting player index: ${startingPlayerIndex}`);
-    console.log(`[TurnManager] Total action history entries: ${game.actionHistory.length}`);
 
     // Get all VOLUNTARY actions in current stage
     // IMPORTANT: Blinds are FORCED bets, not voluntary actions
@@ -119,9 +116,7 @@ export class TurnManager {
       action => action.stage === game.stage && !action.isBlind
     );
 
-    console.log(`[TurnManager] Voluntary actions in current stage: ${voluntaryActions.length}`);
     voluntaryActions.forEach(action => {
-      console.log(`[TurnManager]   - ${action.playerName} (${action.playerId}): ${action.actionType}, chips: ${action.chipAmount}`);
     });
 
     const playersActed = new Set(
@@ -142,9 +137,6 @@ export class TurnManager {
     const playersWhoCanAct = getPlayersWhoCanAct(game.players);
     const activePlayers = getActivePlayers(game.players);
 
-    console.log(`[TurnManager] Active players: ${activePlayers.length}`, activePlayers.map(p => `${p.username}(${p.id})`));
-    console.log(`[TurnManager] Players who can act: ${playersWhoCanAct.length}`, playersWhoCanAct.map(p => `${p.username}(${p.id})`));
-    console.log(`[TurnManager] Players who have acted: ${playersActed.size}`, Array.from(playersActed));
 
     // All active players should have equal bets
     const activePlayerBets = activePlayers.map(p => {
@@ -152,21 +144,16 @@ export class TurnManager {
       return game.playerBets[idx] || 0;
     });
 
-    console.log(`[TurnManager] Active player bets:`, activePlayers.map((p, i) => `${p.username}: ${activePlayerBets[i]}`));
 
     const allBetsEqual = activePlayerBets.length > 0 &&
       activePlayerBets.every(bet => bet === activePlayerBets[0]);
 
-    console.log(`[TurnManager] All bets equal: ${allBetsEqual}`);
 
     // Check if all players who CAN ACT have acted (not just active players)
     // Active players include all-in players who can't act, so we need to check playersWhoCanAct instead
     const playersWhoCanActIds = playersWhoCanAct.map(p => p.id);
     const allPlayersWhoCanActHaveActed = playersWhoCanActIds.every(id => playersActed.has(id));
 
-    console.log(`[TurnManager] All players who can act have acted: ${allPlayersWhoCanActHaveActed}`);
-    console.log(`[TurnManager] Players who can act IDs:`, playersWhoCanActIds);
-    console.log(`[TurnManager] Players who acted IDs:`, Array.from(playersActed));
 
     // Debug: Show which players who can act haven't acted
     const playersWhoCanActButHavent = playersWhoCanActIds.filter(id => !playersActed.has(id));
@@ -175,12 +162,10 @@ export class TurnManager {
         const p = game.players.find(player => player.id === id);
         return p ? p.username : 'unknown';
       });
-      console.log(`[TurnManager] Players who can act but haven't:`, playersWhoCanActButHavent, notActedNames);
     }
 
     const bettingComplete = (allBetsEqual && allPlayersWhoCanActHaveActed) || playersWhoCanAct.length === 0;
 
-    console.log(`[TurnManager] Betting complete: ${bettingComplete}`);
 
     return {
       startingPlayerIndex,

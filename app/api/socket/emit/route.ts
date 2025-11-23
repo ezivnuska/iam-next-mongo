@@ -50,10 +50,28 @@ export async function POST(request: NextRequest) {
 
 				// Check if this is a guest user request
 				if (userId === 'guest-pending' || isGuestId(userId)) {
-					// Guest user - generate new guest ID and username
+					// Guest user - generate new guest ID, use provided username or generate one
 					validatedUserId = generateGuestId();
-					validatedUsername = generateGuestUsername();
-					console.log('[Socket Emit Route] Generated guest:', validatedUserId, validatedUsername);
+
+					// Validate and use provided username if available
+					if (username && username.trim()) {
+						const trimmedUsername = username.trim();
+
+						// Validate username length
+						if (trimmedUsername.length < 2) {
+							return NextResponse.json({ error: 'Username must be at least 2 characters' }, { status: 400 });
+						}
+						if (trimmedUsername.length > 20) {
+							return NextResponse.json({ error: 'Username must be 20 characters or less' }, { status: 400 });
+						}
+
+						validatedUsername = trimmedUsername;
+					} else {
+						// No username provided, generate random
+						validatedUsername = generateGuestUsername();
+					}
+
+					console.log('[Socket Emit Route] Guest user:', validatedUserId, validatedUsername);
 				} else {
 					// Authenticated user - validate that user exists in database
 					try {

@@ -9,7 +9,7 @@ import { useUser } from '@/app/lib/providers/user-provider';
 import { useActionTimerPercentage } from '@/app/poker/lib/hooks/use-action-timer-percentage';
 import GameNotification from './game-notification';
 import PlayerControls from './player-controls';
-import { Button } from '@/app/ui/button';
+import JoinGameControl from './join-game-control';
 
 interface PokerDashboardProps {
   showPlayerControls: boolean;
@@ -17,7 +17,7 @@ interface PokerDashboardProps {
   locked: boolean;
   isUserInGame: boolean;
   gameId: string | null;
-  joinGame: (gameId: string) => void;
+  joinGame: (gameId: string, guestUsername?: string) => void;
 }
 
 /**
@@ -50,8 +50,6 @@ export default function PokerDashboard({
       setNotificationProgress(0);
       return;
     }
-
-    console.log('currentNotification', currentNotification)
 
     const startTime = Date.now();
     const { duration } = currentNotification;
@@ -119,14 +117,7 @@ export default function PokerDashboard({
         )}
 
         {!locked && !isUserInGame && !currentNotification && (
-          <Button
-            size='md'
-            onClick={() => gameId && joinGame(gameId)}
-            className='text-md text-white rounded-full bg-green-950 w-full mx-0.5 hover:bg-green-400 hover:text-green-950'
-            variant='ghost'
-          >
-            Start a New Game!
-          </Button>
+          <JoinGameControl gameId={gameId} onJoinGame={joinGame} />
         )}
       </div>
     </div>

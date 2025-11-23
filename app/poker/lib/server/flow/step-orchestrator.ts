@@ -28,7 +28,6 @@ import { PokerGame } from '../../models/poker-game';
  * Called when game locks and begins
  */
 export async function startStepFlow(gameId: string): Promise<void> {
-  console.log('[StepOrchestrator] Starting step-based game flow for game:', gameId);
 
   // Initialize step tracking
   await initializeStepTracking(gameId);
@@ -43,11 +42,9 @@ export async function startStepFlow(gameId: string): Promise<void> {
 export async function executeCurrentStep(gameId: string): Promise<void> {
   const step = await getCurrentStepInfo(gameId);
   if (!step) {
-    console.log('[StepOrchestrator] No current step - game flow complete');
     return;
   }
 
-  console.log(`[StepOrchestrator] Executing step: ${step.description}`);
 
   // Execute the step action
   const duration = await executeStepAction(gameId, step.stepType);
@@ -60,7 +57,6 @@ export async function executeCurrentStep(gameId: string): Promise<void> {
       const { StageManager } = await import('./stage-manager');
 
       if (StageManager.shouldAutoAdvance(game)) {
-        console.log('[StepOrchestrator] Auto-advance condition met - skipping betting cycle');
         // Complete the betting cycle immediately since no one can act
         await completeRequirement(gameId, RequirementType.ALL_PLAYERS_ACTED);
         await tryAdvanceStep(gameId);
@@ -68,7 +64,6 @@ export async function executeCurrentStep(gameId: string): Promise<void> {
       }
     }
 
-    console.log('[StepOrchestrator] Betting cycle started - waiting for completion signal');
     return;
   }
 
@@ -91,14 +86,12 @@ async function tryAdvanceStep(gameId: string): Promise<void> {
   // Check if requirements are met
   const requirementsMet = await areRequirementsMet(gameId);
   if (!requirementsMet) {
-    console.log('[StepOrchestrator] Requirements not yet met - waiting');
     return;
   }
 
   // Check for early completion (all fold except one)
   const earlyCompletion = await checkEarlyCompletion(gameId);
   if (earlyCompletion) {
-    console.log('[StepOrchestrator] Early completion detected - skipping to winner');
     await skipToWinner(gameId);
     await executeCurrentStep(gameId);
     return;
@@ -108,12 +101,10 @@ async function tryAdvanceStep(gameId: string): Promise<void> {
   const { advanced, nextStep, stageChanged } = await advanceToNextStep(gameId);
 
   if (!advanced) {
-    console.log('[StepOrchestrator] Game flow complete - no more steps');
     return;
   }
 
   if (stageChanged) {
-    console.log('[StepOrchestrator] *** STAGE CHANGED ***');
   }
 
   // Execute the next step
@@ -125,7 +116,6 @@ async function tryAdvanceStep(gameId: string): Promise<void> {
  * Called by turn manager when all players have acted
  */
 export async function onBettingCycleComplete(gameId: string): Promise<void> {
-  console.log('[StepOrchestrator] Betting cycle completed');
 
   // Mark requirement as complete
   await completeRequirement(gameId, RequirementType.ALL_PLAYERS_ACTED);
@@ -143,7 +133,6 @@ export async function onPlayerAction(
   playerId: string,
   action: string
 ): Promise<void> {
-  console.log(`[StepOrchestrator] Player action: ${playerId} -> ${action}`);
 
   // NOTE: Early completion check removed from here to prevent premature stage advancement
   // The turn-handler will check for early completion when handleReadyForNextTurn is called
@@ -154,7 +143,6 @@ export async function onPlayerAction(
  * Pause the game flow (for disconnections, etc.)
  */
 export async function pauseStepFlow(gameId: string): Promise<void> {
-  console.log('[StepOrchestrator] Game flow paused');
   // TODO: Implement pause logic
 }
 
@@ -162,6 +150,5 @@ export async function pauseStepFlow(gameId: string): Promise<void> {
  * Resume the game flow
  */
 export async function resumeStepFlow(gameId: string): Promise<void> {
-  console.log('[StepOrchestrator] Game flow resumed');
   await executeCurrentStep(gameId);
 }

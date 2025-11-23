@@ -161,7 +161,6 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
 
   // --- Create state updater functions ---
   const resetGameState = useCallback(() => {
-    console.log('[PokerProvider] Resetting game state');
 
     // Reset all game state
     createResetGameState({
@@ -214,20 +213,12 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
     const isStageAdvancing = stage > currentStage;
 
     if (isStageAdvancing && stage > 0) { // Clear for all stage advancements (Flop, Turn, River, Showdown)
-      console.log('[UpdateStageState] Stage advancing from', currentStage, 'to', stage, '- Clearing all player notifications');
       clearAllPlayerNotifications();
     }
 
     // Always update deck and game stages immediately
     setDeck(deck);
     if (stages) setGameStages(stages);
-
-    console.log('[UpdateStageState] Calling applyStageUpdate:', {
-      currentStage,
-      newStage: stage,
-      isStageAdvancing,
-      communalCardsCount: communalCards.length
-    });
 
     // Use stage coordinator for stage and communalCards updates
     // This delays the update until the notification completes
@@ -300,7 +291,6 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
 
     // Optimistically update pot, playerBets, and player chips IMMEDIATELY on acting client
     if (chipCount > 0) {
-      console.log('[PlaceBet] Optimistically updating pot, playerBets, and player chips immediately');
 
       // Update pot
       setPot(prevPot => [
@@ -426,7 +416,6 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
   useEffect(() => {
     presenceRef.current = { socket, gameId, isUserInGame: !!isUserInGame };
     if (isUserInGame) {
-      console.log('[PokerProvider] Ref updated - isUserInGame:', isUserInGame, 'gameId:', gameId);
     }
   }, [socket, gameId, isUserInGame]);
 
@@ -436,27 +425,22 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
 
     // Mark as present when entering the route
     setPresence(false);
-    console.log('[PokerProvider] Marked player as present');
 
     // Mark as away when leaving the route (cleanup)
     // Use ref to get current values at cleanup time
     return () => {
       const { socket: currentSocket, gameId: currentGameId, isUserInGame: wasInGame } = presenceRef.current;
-      console.log('[PokerProvider] Cleanup running - wasInGame:', wasInGame, 'hasSocket:', !!currentSocket, 'socketConnected:', currentSocket?.connected, 'gameId:', currentGameId);
 
       if (!wasInGame || !currentSocket || !currentGameId) {
-        console.log('[PokerProvider] Skipping away presence - not in game or no socket');
         return;
       }
 
       if (!currentSocket.connected) {
-        console.log('[PokerProvider] Socket disconnected - cannot send away presence');
         return;
       }
 
       try {
         currentSocket.emit('poker:set_presence', { gameId: currentGameId, isAway: true });
-        console.log('[PokerProvider] Sent away presence on cleanup for gameId:', currentGameId);
       } catch (error) {
         console.error('[PokerProvider] Failed to send away presence:', error);
       }
@@ -465,7 +449,6 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
 
   // Optimistically clear timer locally without waiting for server
   const clearTimerOptimistically = useCallback(() => {
-    console.log('[PokerProvider] Clearing timer optimistically');
     setActionTimer(undefined);
   }, []);
 
@@ -495,30 +478,6 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
   // 2. Server emits round_complete with winner: undefined
   // 3. "Game starting!" notification shows (10s countdown)
   // 4. onComplete triggers game lock via /api/poker/lock
-
-  // Monitor player connection status
-  // DISABLED: Connection monitor was disrupting normal game flow
-  // const isUserInGame = user && players.some(p => p.id === user.id);
-  // const isMyTurn = user && players[currentPlayerIndex]?.id === user.id;
-
-  // usePlayerConnectionMonitor({
-  //   gameId,
-  //   isUserInGame: !!isUserInGame,
-  //   isMyTurn: !!isMyTurn,
-  //   onDisconnect: () => {
-  //     console.log('You disconnected from the game');
-  //   },
-  //   onReconnect: async () => {
-  //     console.log('You reconnected to the game');
-  //     // Refresh game state when reconnecting
-  //     if (gameId) {
-  //       const freshGameState = await fetchCurrentGame();
-  //       if (freshGameState) {
-  //         updateGameState(freshGameState);
-  //       }
-  //     }
-  //   },
-  // });
 
   // Memoize updaters object to prevent socket handlers from re-registering on every render
   const updaters = useMemo(() => ({

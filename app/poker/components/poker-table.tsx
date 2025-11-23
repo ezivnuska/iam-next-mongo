@@ -46,7 +46,6 @@ export default function PokerTable() {
   // This prevents controls from showing again after action completes but before turn advances
   useEffect(() => {
     if (currentPlayerIndex !== prevPlayerIndexRef.current) {
-      console.log('[PokerTable] Turn advanced to different player - resetting actionTriggered');
       setActionTriggered(false);
       prevPlayerIndexRef.current = currentPlayerIndex;
     }
@@ -55,7 +54,6 @@ export default function PokerTable() {
   // Reset actionTriggered when stage changes (new betting round)
   useEffect(() => {
     if (stage !== prevStageRef.current) {
-      console.log('[PokerTable] Stage changed - resetting actionTriggered');
       setActionTriggered(false);
       prevStageRef.current = stage;
     }
@@ -68,7 +66,6 @@ export default function PokerTable() {
     const handleTimerTriggeredAction = (payload: any) => {
       // Check if this is a timer-triggered action for the current user
       if (payload.timerTriggered && payload.playerId === user.id) {
-        console.log('[PokerTable] Timer-triggered action received - hiding controls');
         setActionTriggered(true);
       }
     };
@@ -88,21 +85,8 @@ export default function PokerTable() {
     !winner &&
     stage < 4; // Hide controls during Showdown (stage 4) and End (stage 5)
 
-  // Log controls visibility changes (hook must be called in consistent order)
-  useEffect(() => {
-    console.log('[PokerTable] Player controls visibility:', {
-      showPlayerControls,
-      locked,
-      canPlayerAct,
-      actionTriggered,
-      winner: !!winner,
-      stage,
-    });
-  }, [showPlayerControls, locked, canPlayerAct, actionTriggered, winner, stage]);
-
   // Callback to notify when action is taken (called immediately on button click)
   const handleActionTaken = () => {
-    console.log('[PokerTable] Action taken - hiding controls');
     setActionTriggered(true);
   };
 

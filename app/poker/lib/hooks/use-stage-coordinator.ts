@@ -59,16 +59,13 @@ export function useStageCoordinator(gameId: string | null, playSound?: PlaySound
     const { stage, communalCards, currentPlayerIndex } = data;
     const prevStage = currentStageRef.current;
 
-    console.log('[StageCoordinator] Stage update:', { prevStage, newStage: stage, autoAdvanceMode });
 
     // If stage is not advancing (same or going backwards), check for action notifications
     if (stage <= prevStage) {
-      console.log('[StageCoordinator] Stage not advancing (stage:', stage, ', prevStage:', prevStage, ')');
 
       // Even for non-advancing stages, we should wait for action notifications
       // This is especially important for game start (stage 0 -> 0) when blinds are being posted
       if (isActionNotificationActive()) {
-        console.log('[StageCoordinator] Action notification active for non-advancing stage, deferring update');
 
         // Store the pending update to be applied after notification completes
         pendingStageUpdateRef.current = {
@@ -79,7 +76,6 @@ export function useStageCoordinator(gameId: string | null, playSound?: PlaySound
         return;
       }
 
-      console.log('[StageCoordinator] No action notification active, applying non-advancing stage update immediately');
       setStage(stage);
       setCommunalCards(communalCards);
       if (currentPlayerIndex !== undefined && setCurrentPlayerIndex) {
@@ -98,11 +94,9 @@ export function useStageCoordinator(gameId: string | null, playSound?: PlaySound
     const stageNames = ['Pre-flop', 'Flop', 'Turn', 'River', 'Showdown'];
     const stageName = stageNames[stage] || `Stage ${stage}`;
 
-    console.log('[StageCoordinator] Stage advancement requested:', stageName);
 
     // Check if there's an action notification that needs to complete first
     if (isActionNotificationActive()) {
-      console.log('[StageCoordinator] Action notification active, deferring stage advancement');
 
       // Store the pending stage update to be applied after notification completes
       pendingStageUpdateRef.current = {
@@ -113,7 +107,6 @@ export function useStageCoordinator(gameId: string | null, playSound?: PlaySound
       return;
     }
 
-    console.log('[StageCoordinator] No action notification active, applying stage advancement immediately');
 
     // Apply stage update immediately without notification
     setStage(stage);
@@ -129,21 +122,17 @@ export function useStageCoordinator(gameId: string | null, playSound?: PlaySound
 
       if (stage === 0 && communalCardsCount === 0) {
         // Hole cards (Preflop stage with no communal cards)
-        console.log('[StageCoordinator] Playing card-deal sound for hole cards');
         playSound('card-deal');
       } else if (stage === 1 && communalCardsCount === 3) {
         // Flop (3 communal cards)
-        console.log('[StageCoordinator] Playing card-deal sound for Flop');
         playSound('card-deal');
       } else if ((stage === 2 || stage === 3) && communalCardsCount > 0) {
         // Turn or River (1 card each)
-        console.log('[StageCoordinator] Playing single-card sound for Turn/River');
         playSound('single-card');
       }
     }
 
     // NOTE: Server handles turn advancement automatically with 2-second delay - no client signaling needed
-    console.log(`[StageCoordinator] Stage update applied: ${stageName}`);
   }, [gameId, isActionNotificationActive, playSound]);
 
 
@@ -151,7 +140,6 @@ export function useStageCoordinator(gameId: string | null, playSound?: PlaySound
    * Resets the coordinator state (for game reset)
    */
   const resetCoordinator = useCallback(() => {
-    console.log('[StageCoordinator] Resetting coordinator state');
     currentStageRef.current = 0;
     pendingStageUpdateRef.current = null;
   }, []);
@@ -167,7 +155,6 @@ export function useStageCoordinator(gameId: string | null, playSound?: PlaySound
 
     // Check if action notification has completed
     if (!isActionNotificationActive()) {
-      console.log('[StageCoordinator] Action notification complete, applying pending stage update');
 
       const { data, callbacks } = pending;
 
@@ -182,7 +169,6 @@ export function useStageCoordinator(gameId: string | null, playSound?: PlaySound
         const stageNames = ['Pre-flop', 'Flop', 'Turn', 'River', 'Showdown'];
         const stageName = stageNames[data.stage] || `Stage ${data.stage}`;
 
-        console.log('[StageCoordinator] Applying deferred stage advancement:', stageName);
         callbacks.setStage(data.stage);
         callbacks.setCommunalCards(data.communalCards);
         if (data.currentPlayerIndex !== undefined && callbacks.setCurrentPlayerIndex) {
@@ -196,24 +182,19 @@ export function useStageCoordinator(gameId: string | null, playSound?: PlaySound
 
           if (data.stage === 0 && communalCardsCount === 0) {
             // Hole cards (Preflop stage with no communal cards)
-            console.log('[StageCoordinator] Playing card-deal sound for hole cards');
             playSound('card-deal');
           } else if (data.stage === 1 && communalCardsCount === 3) {
             // Flop (3 communal cards)
-            console.log('[StageCoordinator] Playing card-deal sound for Flop');
             playSound('card-deal');
           } else if ((data.stage === 2 || data.stage === 3) && communalCardsCount > 0) {
             // Turn or River (1 card each)
-            console.log('[StageCoordinator] Playing single-card sound for Turn/River');
             playSound('single-card');
           }
         }
 
         // NOTE: Server handles turn advancement automatically - no client signaling needed
-        console.log(`[StageCoordinator] Deferred stage update applied: ${stageName}`);
       } else {
         // Non-advancing stage update (e.g., card dealing at same stage) - apply immediately
-        console.log('[StageCoordinator] Applying deferred non-advancing update immediately:', data.stage);
         callbacks.setStage(data.stage);
         callbacks.setCommunalCards(data.communalCards);
         if (data.currentPlayerIndex !== undefined && callbacks.setCurrentPlayerIndex) {

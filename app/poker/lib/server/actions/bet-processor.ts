@@ -24,26 +24,21 @@ export function processBetTransaction(
 ): { player: Player; chipsToAdd: Bet; actualChipCount: number; wentAllIn: boolean } {
   const availableChips = getPlayerChipCount(player);
 
-  console.log(`[BetProcessor] Processing bet for ${player.username}: requestedBet=${chipCount}, availableChips=${availableChips}`);
 
   // Determine actual bet amount (may be less if all-in)
   const actualChipCount = Math.min(chipCount, availableChips);
   const wentAllIn = actualChipCount === availableChips && availableChips > 0;
 
-  console.log(`[BetProcessor] Bet calculation: actualChipCount=${actualChipCount}, wentAllIn=${wentAllIn}`);
 
   // Remove chips from player (simple subtraction now)
   player.chipCount -= actualChipCount;
 
-  console.log(`[BetProcessor] Chips after bet - removed: ${actualChipCount}, remaining: ${player.chipCount}`);
 
   // Mark player as all-in if they bet all their chips
   if (wentAllIn) {
     player.isAllIn = true;
     player.allInAmount = actualChipCount;
-    console.log(`[BetProcessor] Player ${player.username} marked as ALL-IN: isAllIn=${player.isAllIn}, allInAmount=${actualChipCount}`);
   } else {
-    console.log(`[BetProcessor] Player ${player.username} NOT all-in: wentAllIn=${wentAllIn}, actualChipCount=${actualChipCount}, availableChips=${availableChips}, chipsRemaining=${player.chipCount}`);
   }
 
   return {
@@ -87,8 +82,6 @@ export function updateGameAfterBet(
   game.players[playerIndex] = updatedPlayer;
   game.markModified('players');
 
-  console.log(`[updateGameAfterBet] Player ${updatedPlayer.username} updated in game - chipCount: ${updatedPlayer.chipCount}, isAllIn: ${updatedPlayer.isAllIn}`);
-  console.log(`[updateGameAfterBet] Player advancement will happen only if betting continues`);
 }
 
 /**
@@ -100,17 +93,14 @@ export function advanceToNextPlayer(game: PokerGameDocument, currentPlayerIndex:
   let nextIndex = (currentPlayerIndex + 1) % game.players.length;
   let foundValidPlayer = false;
 
-  console.log(`[advanceToNextPlayer] Looking for next player after index ${startingIndex}`);
 
   // Find next active player (not all-in and not folded)
   let attempts = 0;
   while (attempts < game.players.length) {
     const candidate = game.players[nextIndex];
-    console.log(`[advanceToNextPlayer] Checking player ${nextIndex} (${candidate.username}): isAllIn=${candidate.isAllIn}, folded=${candidate.folded}`);
 
     if (!candidate.isAllIn && !candidate.folded) {
       foundValidPlayer = true;
-      console.log(`[advanceToNextPlayer] Found valid player at index ${nextIndex} (${candidate.username})`);
       break; // Found an active player
     }
     nextIndex = (nextIndex + 1) % game.players.length;
@@ -122,10 +112,8 @@ export function advanceToNextPlayer(game: PokerGameDocument, currentPlayerIndex:
     const prevIndex = game.currentPlayerIndex;
     game.currentPlayerIndex = nextIndex;
     game.markModified('currentPlayerIndex');
-    console.log(`[advanceToNextPlayer] Advanced turn from index ${prevIndex} to ${nextIndex} (${game.players[nextIndex].username})`);
   } else {
     // All players are all-in or folded - don't advance turn
-    console.log('[advanceToNextPlayer] All players all-in/folded, skipping turn update');
   }
 }
 

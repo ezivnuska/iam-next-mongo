@@ -41,7 +41,6 @@ export async function initializeStepTracking(gameId: string): Promise<void> {
   };
 
   await game.save();
-  console.log('[StepManager] Initialized step tracking:', game.currentStep);
 }
 
 /**
@@ -62,7 +61,6 @@ export async function completeRequirement(
     game.currentStep.completedRequirements.push(requirementType);
     game.markModified('currentStep');
     await game.save();
-    console.log(`[StepManager] Completed requirement: ${requirementType}`);
   }
 
   // Check if all requirements are met
@@ -96,7 +94,6 @@ export async function advanceToNextStep(gameId: string): Promise<{
   // Get next step
   const nextStepInfo = getNextStep(currentStageNumber, currentStepNumber);
   if (!nextStepInfo) {
-    console.log('[StepManager] No more steps - game complete');
     return { advanced: false, stageChanged: false };
   }
 
@@ -114,14 +111,12 @@ export async function advanceToNextStep(gameId: string): Promise<{
   // Update game.stage if stage changed
   if (stageChanged) {
     game.stage = nextStepInfo.stage;
-    console.log(`[StepManager] Stage changed: ${currentStageNumber} → ${nextStepInfo.stage}`);
   }
 
   game.markModified('currentStep');
   await game.save();
 
   const nextStep = getStepDefinition(nextStepInfo.stepId);
-  console.log(`[StepManager] Advanced to step ${nextStepInfo.stage}.${nextStepInfo.step}: ${nextStep?.description}`);
 
   return {
     advanced: true,
@@ -169,7 +164,6 @@ export async function checkEarlyCompletion(gameId: string): Promise<boolean> {
 
   // Early completion only if exactly one player remains (everyone else folded)
   if (playersInHand.length === 1) {
-    console.log(`[StepManager] Early completion: only ${playersInHand[0].username} remains (all others folded)`);
     return true;
   }
 
@@ -184,7 +178,6 @@ export async function skipToWinner(gameId: string): Promise<void> {
   const game = await PokerGame.findById(gameId);
   if (!game) throw new Error('Game not found');
 
-  console.log('[StepManager] Early completion detected - skipping to winner');
 
   // Jump directly to Stage 4 (Showdown), Step 1 (Stage notification)
   game.currentStep = {
@@ -199,7 +192,6 @@ export async function skipToWinner(gameId: string): Promise<void> {
   game.markModified('currentStep');
   await game.save();
 
-  console.log('[StepManager] Jumped to Showdown stage for winner determination');
 }
 
 /**
@@ -210,7 +202,6 @@ export async function executeStepAction(
   gameId: string,
   stepType: StepType
 ): Promise<number> {
-  console.log(`[StepManager] Executing step action: ${stepType}`);
 
   switch (stepType) {
     case StepType.STAGE_NOTIFICATION:
@@ -270,7 +261,6 @@ async function executeStageNotification(gameId: string): Promise<number> {
     stageName: stage.stageName,
   });
 
-  console.log(`[StepManager] Stage notification sent: ${stage.stageName}`);
 
   // Mark notification requirement as complete
   await completeRequirement(gameId, RequirementType.NOTIFICATION_COMPLETE);
@@ -309,7 +299,6 @@ async function executePostSmallBlind(gameId: string): Promise<number> {
   await completeRequirement(gameId, RequirementType.BLINDS_POSTED);
   await completeRequirement(gameId, RequirementType.NOTIFICATION_COMPLETE);
 
-  console.log(`[StepManager] Small blind posted by player ${smallBlindInfo.position}: ${smallBlindInfo.amount} chips`);
 
   return 2000; // 2 second notification duration
 }
@@ -345,7 +334,6 @@ async function executePostBigBlind(gameId: string): Promise<number> {
   await completeRequirement(gameId, RequirementType.BLINDS_POSTED);
   await completeRequirement(gameId, RequirementType.NOTIFICATION_COMPLETE);
 
-  console.log(`[StepManager] Big blind posted by player ${bigBlindInfo.position}: ${bigBlindInfo.amount} chips`);
 
   return 2000; // 2 second notification duration
 }
@@ -446,7 +434,6 @@ async function executeDealHoleCards(gameId: string): Promise<number> {
   await completeRequirement(gameId, RequirementType.CARDS_DEALT);
   await completeRequirement(gameId, RequirementType.NOTIFICATION_COMPLETE);
 
-  console.log('[StepManager] Hole cards dealt');
 
   return POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS;
 }
@@ -474,7 +461,6 @@ async function executeDealFlop(gameId: string): Promise<number> {
   } else {
     // Auto-advancing (all-in scenario) - set to -1 to hide controls
     game.currentPlayerIndex = -1;
-    console.log('[StepManager] Auto-advance mode - setting currentPlayerIndex to -1');
   }
   game.markModified('currentPlayerIndex');
 
@@ -496,7 +482,6 @@ async function executeDealFlop(gameId: string): Promise<number> {
   await completeRequirement(gameId, RequirementType.CARDS_DEALT);
   await completeRequirement(gameId, RequirementType.NOTIFICATION_COMPLETE);
 
-  console.log(`[StepManager] Flop dealt (3 cards) - first to act: player ${game.currentPlayerIndex}`);
 
   return POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS;
 }
@@ -524,7 +509,6 @@ async function executeDealTurn(gameId: string): Promise<number> {
   } else {
     // Auto-advancing (all-in scenario) - set to -1 to hide controls
     game.currentPlayerIndex = -1;
-    console.log('[StepManager] Auto-advance mode - setting currentPlayerIndex to -1');
   }
   game.markModified('currentPlayerIndex');
 
@@ -545,7 +529,6 @@ async function executeDealTurn(gameId: string): Promise<number> {
   await completeRequirement(gameId, RequirementType.CARDS_DEALT);
   await completeRequirement(gameId, RequirementType.NOTIFICATION_COMPLETE);
 
-  console.log(`[StepManager] Turn dealt (1 card) - first to act: player ${game.currentPlayerIndex}`);
 
   return POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS;
 }
@@ -573,7 +556,6 @@ async function executeDealRiver(gameId: string): Promise<number> {
   } else {
     // Auto-advancing (all-in scenario) - set to -1 to hide controls
     game.currentPlayerIndex = -1;
-    console.log('[StepManager] Auto-advance mode - setting currentPlayerIndex to -1');
   }
   game.markModified('currentPlayerIndex');
 
@@ -594,7 +576,6 @@ async function executeDealRiver(gameId: string): Promise<number> {
   await completeRequirement(gameId, RequirementType.CARDS_DEALT);
   await completeRequirement(gameId, RequirementType.NOTIFICATION_COMPLETE);
 
-  console.log(`[StepManager] River dealt (1 card) - first to act: player ${game.currentPlayerIndex}`);
 
   return POKER_TIMERS.PLAYER_ACTION_NOTIFICATION_DURATION_MS;
 }
@@ -613,7 +594,6 @@ async function executeBettingCycle(gameId: string): Promise<number> {
     const { initializeBets } = await import('@/app/poker/lib/utils/betting-helpers');
     game.playerBets = initializeBets(game.players.length);
     game.markModified('playerBets');
-    console.log(`[StepManager] Reset playerBets for stage ${game.stage} betting cycle`);
   }
 
   // Calculate first player to act using shared helper function
@@ -625,7 +605,6 @@ async function executeBettingCycle(gameId: string): Promise<number> {
   game.markModified('currentPlayerIndex');
   await game.save();
 
-  console.log(`[StepManager] Betting cycle starting - first to act: player ${currentIndex} (${game.players[currentIndex]?.username})`);
 
   // Emit state update so UI shows border on first player
   const { PokerSocketEmitter } = await import('@/app/lib/utils/socket-helper');
@@ -656,7 +635,6 @@ async function executeBettingCycle(gameId: string): Promise<number> {
     }
   }
 
-  console.log('[StepManager] Betting cycle started with timer');
 
   // Betting cycle completion is handled by turn manager
   // When all players have acted, turn manager will call completeRequirement
@@ -679,7 +657,6 @@ async function executeDetermineWinner(gameId: string): Promise<number> {
   await completeRequirement(gameId, RequirementType.WINNER_DETERMINED);
   await completeRequirement(gameId, RequirementType.NOTIFICATION_COMPLETE);
 
-  console.log('[StepManager] Winner determined');
 
   return 10000; // 10 second winner notification
 }
@@ -692,7 +669,6 @@ async function executeResetGame(gameId: string): Promise<number> {
   const game = await PokerGame.findById(gameId);
   if (!game) return 0;
 
-  console.log('[StepManager] Executing RESET_GAME step - delegating to resetGameForNextRound');
 
   // Call resetGameForNextRound which handles:
   // 1. Dealer button advancement
@@ -704,7 +680,6 @@ async function executeResetGame(gameId: string): Promise<number> {
 
   await completeRequirement(gameId, RequirementType.GAME_RESET);
 
-  console.log('[StepManager] Game reset and restart queued');
 
   return 0; // No wait - notification queue handles timing
 }
