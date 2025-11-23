@@ -17,7 +17,7 @@ export default function Hand({ cards, hidden = true }: HandProps) {
     const staggerOffsetY = 4;
 
     return (
-        <div className='flex flex-1 h-full relative'>
+        <div className='flex flex-1 relative w-[60px] h-[60px] mx-2'>
             {cards.map((card, index) => (
                 <div
                     key={`${card.id}-${index}`}

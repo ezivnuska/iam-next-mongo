@@ -43,14 +43,14 @@ const SLOT_CONFIGS: SlotConfig[] = [
   // Slot 2: Top-left
   {
     position: 'top-[5%] left-[9%] sm:top-[5%] sm:left-[25%]',
-    mobileOrientation: 'ttb',
-    desktopOrientation: 'ttb',
+    mobileOrientation: 'ltr',
+    desktopOrientation: 'ltr',
   },
   // Slot 3: Top-right
   {
     position: 'top-[5%] right-[9%] sm:top-[5%] sm:right-[25%]',
-    mobileOrientation: 'ttb',
-    desktopOrientation: 'ttb',
+    mobileOrientation: 'rtl',
+    desktopOrientation: 'rtl',
   },
   // Slot 4: Right side
   {
@@ -135,7 +135,7 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
       {players.map((player, playerIndex) => {
         const slotIndex = getSlotIndexForPlayer(playerIndex, players.length);
         const slotConfig = SLOT_CONFIGS[slotIndex];
-
+        
         if (!slotConfig) return null;
 
         const isCurrentUser = player.id === currentUserId;

@@ -47,6 +47,20 @@ function getOrientationClasses(mobileOrientation: PlayerOrientation, desktopOrie
   return `${mobileClass} ${desktopClass}`;
 }
 
+/**
+ * Get dealer button position classes based on orientation
+ */
+function getDealerButtonPositionClasses(orientation: PlayerOrientation): string {
+    const buttonClass = {
+      'ltr': '-right-5 -bottom-3',
+      'rtl': '-left-5 bottom-0',
+      'ttb': '-bottom-5 left-0',
+      'btt': 'top-0 left-1/2',
+    }[orientation];
+  
+    return buttonClass
+  }
+
 export default function Player({
     player,
     index,
@@ -71,12 +85,12 @@ export default function Player({
 
     // Get orientation classes for layout
     const orientationClasses = getOrientationClasses(mobileOrientation, desktopOrientation);
+    const buttonClasses = getDealerButtonPositionClasses(mobileOrientation);
 
     return (
         <div
             className={clsx(
-                'flex gap-2 overflow-visible p-1 transition-opacity duration-300',
-                orientationClasses,
+                'flex flex-col justify-center gap-1 overflow-visible transition-opacity duration-300',
                 {
                     'opacity-50': player.isAway,
                 },
@@ -84,9 +98,13 @@ export default function Player({
         >
         
             {/* Avatar section with dealer button and chip count */}
-            <div className='flex flex-col gap-1'>
-                <div className='flex flex-row gap-2'>
-                    <div className='flex flex-col gap-1 relative'>
+            <span className='inline-block text-sm text-white text-center'>{player.username}</span>
+            <div className={clsx(
+                'flex justify-center',
+                orientationClasses,
+            )}>
+                <div className='flex flex-col justify-center gap-2'>
+                    <div className='flex relative'>
                         <div
                             className={clsx(
                                 'rounded-full border-2 relative overflow-visible',
@@ -95,20 +113,10 @@ export default function Player({
                                 },
                             )}
                         >
-                            <UserAvatar size={50} username={player.username} isAI={player.isAI} />
+                            <UserAvatar size={36} username={player.username} isAI={player.isAI} />
                         </div>
-
-                        {isDealer && locked && !winner && (
-                            <div className='absolute -top-1 -right-1 z-20'>
-                                <div className='flex flex-row items-center justify-center h-5 w-5 rounded-full bg-yellow-500 text-black overflow-hidden border-1'>
-                                    <span className='text-xs font-bold text-black'>
-                                        D
-                                    </span>
-                                </div>
-                            </div>
-                        )}
                         {isSmallBlind && locked && !winner && (
-                            <div className='absolute -top-1 -left-1 z-21'>
+                            <div className='absolute -bottom-1 -right-1 z-21'>
                                 <div className='flex flex-row items-center justify-center h-5 w-5 rounded-full bg-blue-500 text-white overflow-hidden border-1'>
                                     <span className='block text-xs font-bold text-white'>
                                         S
@@ -117,7 +125,7 @@ export default function Player({
                             </div>
                         )}
                         {isBigBlind && locked && !winner && (
-                            <div className='absolute -top-1 -left-1 z-22'>
+                            <div className='absolute -bottom-1 -right-1 z-22'>
                                 <div className='flex flex-row items-center justify-center h-5 w-5 rounded-full bg-red-600 text-white overflow-hidden border-1'>
                                     <span className='text-xs font-bold text-white'>
                                         B
@@ -125,19 +133,27 @@ export default function Player({
                                 </div>
                             </div>
                         )}
-                        {player.isAllIn && !winner ? (
-                            <span className="text-white px-1.5 py-0.5 bg-red-500 overflow-hidden rounded text-xs font-bold text-center">
-                                ALL-IN
-                            </span>
-                        ) : <span className='text-sm text-white px-1 text-center'>{chipTotal}</span>}
                     </div>
+                    {player.isAllIn && !winner ? (
+                        <span className="text-white px-1.5 py-0.5 bg-red-500 overflow-hidden rounded text-xs font-bold text-center">
+                            ALL-IN
+                        </span>
+                    ) : <span className='text-sm text-white px-1 text-center'>{chipTotal}</span>}
+                </div>
+                <div className='flex relative'>
                     {player.hand.length > 0 && !player.folded && (
-                        <div className='w-[60px]'>
-                            <Hand cards={player.hand} hidden={!(isCurrentUser || winner)} />
+                        <Hand cards={player.hand} hidden={!(isCurrentUser || winner)} />
+                    )}
+                    {isDealer && locked && !winner && (
+                        <div className={`absolute z-20 ${buttonClasses}`}>
+                            <div className='flex flex-row items-center justify-center h-5 w-5 rounded-full bg-yellow-500 text-black overflow-hidden border-1'>
+                                <span className='text-xs font-bold text-black'>
+                                    D
+                                </span>
+                            </div>
                         </div>
                     )}
                 </div>
-
             </div>
         </div>
     );
