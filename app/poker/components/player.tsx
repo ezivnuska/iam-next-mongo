@@ -103,7 +103,7 @@ export default function Player({
                 'flex justify-center',
                 orientationClasses,
             )}>
-                <div className='flex flex-col justify-center gap-2'>
+                <div className='flex flex-col justify-center gap-1'>
                     <div className='flex relative'>
                         <div
                             className={clsx(
@@ -113,7 +113,7 @@ export default function Player({
                                 },
                             )}
                         >
-                            <UserAvatar size={36} username={player.username} isAI={player.isAI} />
+                            <UserAvatar size={28} username={player.username} isAI={player.isAI} />
                         </div>
                         {isSmallBlind && locked && !winner && (
                             <div className='absolute -bottom-1 -right-1 z-21'>

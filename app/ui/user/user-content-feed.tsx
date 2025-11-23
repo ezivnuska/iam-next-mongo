@@ -10,6 +10,7 @@ import type { Image } from "@/app/lib/definitions/image";
 import { Button } from "@/app/ui/button";
 import ContentItemCard from "@/app/ui/content-item-card";
 import UserContentItemCard from "@/app/ui/user-content-item-card";
+import ContentFilterTabs from "@/app/ui/content-filter-tabs";
 import Modal from "@/app/ui/modal";
 import CreateMemoryForm from "@/app/ui/memories/create-memory-form";
 import CreatePostForm from "@/app/ui/posts/create-post-form";
@@ -20,12 +21,11 @@ interface UserContentFeedProps {
     editable?: boolean;
 }
 
-type FilterType = 'all' | 'memory' | 'post' | 'image';
 type ModalType = 'memory' | 'post' | 'image' | null;
 
 export default function UserContentFeed({ initialContent, editable = false }: UserContentFeedProps) {
     const [content, setContent] = useState<ContentItem[]>(initialContent);
-    const [filter, setFilter] = useState<FilterType>('all');
+    const [selectedFilters, setSelectedFilters] = useState<Set<string>>(new Set());
     const [modalType, setModalType] = useState<ModalType>(null);
     const [editingItem, setEditingItem] = useState<Memory | Post | undefined>(undefined);
 
@@ -72,58 +72,43 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
         handleCloseModal();
     };
 
-    const filteredContent = filter === 'all'
+    // If no filters are selected, show all content
+    // Otherwise, show only content that matches the selected filters
+    const filteredContent = selectedFilters.size === 0
         ? content
-        : content.filter(item => item.contentType === filter);
+        : content.filter(item => selectedFilters.has(item.contentType));
 
     return (
         <div className="mt-4">
             {/* Add Buttons - only show when editable */}
             {editable && (
-                <div className="flex justify-between gap-2 mb-4">
-                    <Button onClick={() => setModalType('memory')}>
+                <div className="flex justify-between gap-2 mb-4 px-2">
+                    <Button
+                        size='sm'
+                        onClick={() => setModalType('memory')}
+                    >
                         + Memory
                     </Button>
-                    <Button onClick={() => setModalType('post')}>
+                    <Button
+                        size='sm'
+                        onClick={() => setModalType('post')}
+                    >
                         + Post
                     </Button>
-                    <Button onClick={() => setModalType('image')}>
+                    <Button
+                        size='sm'
+                        onClick={() => setModalType('image')}
+                    >
                         + Image
                     </Button>
                 </div>
             )}
 
             {/* Filter Tabs */}
-            <div className="flex justify-between gap-2 mb-4">
-                <Button
-                    variant={filter === 'all' ? 'active' : 'ghost'}
-                    onClick={() => setFilter('all')}
-                >
-                    All
-                    {/* ({content.length}) */}
-                </Button>
-                <Button
-                    variant={filter === 'memory' ? 'active' : 'ghost'}
-                    onClick={() => setFilter('memory')}
-                >
-                    Memories
-                    {/* ({content.filter(i => i.contentType === 'memory').length}) */}
-                </Button>
-                <Button
-                    variant={filter === 'post' ? 'active' : 'ghost'}
-                    onClick={() => setFilter('post')}
-                >
-                    Posts
-                    {/* ({content.filter(i => i.contentType === 'post').length}) */}
-                </Button>
-                <Button
-                    variant={filter === 'image' ? 'active' : 'ghost'}
-                    onClick={() => setFilter('image')}
-                >
-                    Images
-                    {/* ({content.filter(i => i.contentType === 'image').length}) */}
-                </Button>
-            </div>
+            <ContentFilterTabs
+                selectedFilters={selectedFilters}
+                onFilterChange={setSelectedFilters}
+            />
 
             {/* Content List */}
             <div className="space-y-4">
