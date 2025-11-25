@@ -99,8 +99,8 @@ export default function PokerTable() {
   }
 
   return (
-    <div className='flex flex-1 flex-col h-full gap-2 bg-green-700'>
-        <div className={clsx('flex flex-1 relative', {
+    <div className='flex flex-1 flex-col h-full gap-2'>
+        <div className={clsx('flex flex-1 relative items-end', {
             'mx-7': orientation === 'landscape',
         })}>
             <Link href='/' className='absolute top-0 left-0 z-20 p-2'>
@@ -123,29 +123,27 @@ export default function PokerTable() {
                 />
             </div>
             
-            <div className={clsx('absolute top-0 right-0 bottom-0 left-0 z-5', {
+            <div className={clsx('absolute right-0 bottom-0 left-0 z-5', {
                 'z-15': userGameInfo.isUserInGame,
+                'top-0': orientation === 'portrait',
             })}>
-
-                {/* Main table area */}
-                <div id='table' className='flex h-full flex-row items-center sm:items-end justify-center sm:justify-center'>
-                    <div className='flex flex-row items-end justify-center gap-2 w-full h-full'>
-                        <div className={clsx('flex w-full h-[70%] flex-1 flex-col justify-evenly items-center gap-4 pb-5',
-                            {
-                                'h-[70%]': orientation === 'landscape',
-                            }
-                        )}>
-                            <div className='flex flex-col w-full items-center justify-center gap-3'>
-                                <div className='flex h-16 flex-row w-full items-end justify-center gap-4'>
-                                    <Pot />
-                                </div>
-                                <PokerDashboard
-                                    showPlayerControls={showPlayerControls}
-                                    onActionTaken={handleActionTaken}
-                                />
-                            </div>
-                            <CommunalCards />
+            {/* Main table area */}
+                <div className='flex flex-1 h-full w-full flex-row items-end justify-center'>
+                    <div className={clsx('flex w-full h-[60%] flex-1 flex-col justify-evenly items-center gap-4',
+                        {
+                            'h-[60%]': orientation === 'landscape',
+                        }
+                    )}>
+                        <div className='flex flex-col w-full items-center justify-center gap-2'>
+                            {/* <div className='flex flex-row w-full items-end justify-center gap-4'> */}
+                                <Pot />
+                            {/* </div> */}
+                            <PokerDashboard
+                                showPlayerControls={showPlayerControls}
+                                onActionTaken={handleActionTaken}
+                            />
                         </div>
+                        <CommunalCards />
                     </div>
                 </div>
             </div>

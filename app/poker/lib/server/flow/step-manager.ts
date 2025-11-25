@@ -663,23 +663,14 @@ async function executeDetermineWinner(gameId: string): Promise<number> {
 
 /**
  * Execute reset game step
- * This is called after winner determination is complete
+ * NOTE: This step no longer triggers the reset directly.
+ * Reset is now triggered by client after winner notification completes.
+ * This ensures communal cards remain visible during the winner notification.
  */
 async function executeResetGame(gameId: string): Promise<number> {
-  const game = await PokerGame.findById(gameId);
-  if (!game) return 0;
-
-
-  // Call resetGameForNextRound which handles:
-  // 1. Dealer button advancement
-  // 2. Game state reset
-  // 3. Player removal (insufficient chips/away)
-  // 4. Queueing game_starting notification
-  const { StageManager } = await import('./stage-manager');
-  await StageManager.resetGameForNextRound(game);
-
+  // Mark requirement as complete - actual reset will be triggered by
+  // poker:winner_notification_complete event from client
   await completeRequirement(gameId, RequirementType.GAME_RESET);
 
-
-  return 0; // No wait - notification queue handles timing
+  return 0; // No wait - client will trigger reset after notification
 }

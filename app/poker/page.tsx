@@ -7,7 +7,7 @@ import FullPage from '../ui/layout/page/full-page';
 export default function PokerPage() {
   return (
     <PokerProvider>
-      <FullPage>
+      <FullPage bgColor='bg-green-700'>
         <PokerTable />
       </FullPage>
     </PokerProvider>

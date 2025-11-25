@@ -120,6 +120,17 @@ app.prepare().then(() => {
 					socket.emit('poker:join_error', { error: result.error });
 				} else {
 					console.log('[Socket] Successfully joined game');
+
+					// Update socket.userId if a new guest ID was assigned
+					if (result.userId && socket.userId === 'guest-pending') {
+						console.log('[Socket] Updating socket.userId from guest-pending to', result.userId);
+						socket.userId = result.userId;
+
+						// Update the socket room membership
+						socket.leave(`user:guest-pending`);
+						socket.join(`user:${result.userId}`);
+					}
+
 					// Success event will be sent via emitPlayerJoined and emitStateUpdate
 					socket.emit('poker:join_success', {
 					gameState: result.gameState,
@@ -340,6 +351,32 @@ app.prepare().then(() => {
 				}
 			} catch (error) {
 				console.error('[Socket] Error setting presence:', error);
+			}
+		});
+
+		// Handle winner notification complete (client signals notification finished)
+		socket.on('poker:winner_notification_complete', async ({ gameId }) => {
+			console.log('[Socket] Received poker:winner_notification_complete for game:', gameId);
+
+			try {
+				// Delegate to API route which handles the reset logic
+				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						signal: 'poker:winner_notification_complete',
+						gameId
+					}),
+				});
+
+				if (!response.ok) {
+					const result = await response.json();
+					console.error('[Socket] Winner notification complete handler failed:', result.error);
+				} else {
+					console.log('[Socket] Successfully processed winner notification complete');
+				}
+			} catch (error) {
+				console.error('[Socket] Error processing winner notification complete:', error);
 			}
 		});
 

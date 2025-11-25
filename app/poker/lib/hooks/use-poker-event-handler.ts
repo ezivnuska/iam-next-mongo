@@ -156,6 +156,12 @@ export function usePokerEventHandler(gameId: string | null) {
 
       const onComplete = isWinnerNotification ? () => {
         clearAllPlayerNotifications();
+
+        // Notify server that winner notification has completed
+        // Server will then reset the game for the next round
+        if (socket && gameId) {
+          socket.emit(SOCKET_EVENTS.POKER_WINNER_NOTIFICATION_COMPLETE, { gameId });
+        }
       } : undefined;
 
       showNotification({

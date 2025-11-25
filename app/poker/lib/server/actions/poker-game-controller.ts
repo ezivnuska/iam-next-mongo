@@ -64,7 +64,8 @@ export async function createGame() {
 
 export async function addPlayer(
   gameId: string,
-  user: { id: string; username: string }
+  user: { id: string; username: string },
+  options: { skipLockTimeReset?: boolean } = {}
 ) {
   const { isGuestId } = await import('@/app/poker/lib/utils/guest-utils');
   const isGuest = isGuestId(user.id);
@@ -182,7 +183,8 @@ export async function addPlayer(
     // Note: AI player is always present in singleton game, so this will trigger when first human joins
     // IMPORTANT: Always reset lockTime when a new player joins to give everyone the full countdown
     // lockTime must account for BOTH player_joined notification (2s) AND game_starting notification (10s)
-    if (game.players.length >= 2 && !game.locked) {
+    // SKIP this when adding queued players (they shouldn't reset the existing countdown)
+    if (game.players.length >= 2 && !game.locked && !options.skipLockTimeReset) {
       const totalNotificationDuration =
         POKER_GAME_CONFIG.PLAYER_JOINED_NOTIFICATION_DURATION_MS +
         POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS;
@@ -235,9 +237,15 @@ export async function processQueuedPlayers(gameId: string): Promise<void> {
   }
 
   // Add players from queue
+  // IMPORTANT: Skip lockTime reset so the existing game start countdown isn't reset
   for (const queuedPlayer of playersToAdd) {
     try {
-      const result = await handlePlayerJoin(gameId, queuedPlayer.id, queuedPlayer.username);
+      const result = await handlePlayerJoin(
+        gameId,
+        queuedPlayer.id,
+        queuedPlayer.username,
+        { skipLockTimeReset: true } // Don't reset the countdown when adding queued players
+      );
       if (result.success) {
         console.log(`[ProcessQueuedPlayers] Added ${queuedPlayer.username} from queue`);
       } else {
@@ -266,14 +274,15 @@ export async function processQueuedPlayers(gameId: string): Promise<void> {
 export async function handlePlayerJoin(
   gameId: string,
   userId: string,
-  username: string
+  username: string,
+  options: { skipLockTimeReset?: boolean } = {}
 ): Promise<{ success: boolean; gameState: any; error?: string }> {
   try {
     // Add player to game
     const gameState = await addPlayer(gameId, {
       id: userId,
       username: username || 'Guest',
-    });
+    }, options);
 
     // Find the newly joined player
     const joinedPlayer = gameState.players.find((p: any) => p.id === userId);

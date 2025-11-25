@@ -75,6 +75,7 @@ export const SOCKET_EVENTS = {
 	// Poker events - Notification events (new event-based system)
 	POKER_NOTIFICATION: 'poker:notification', // Generic notification event
 	POKER_NOTIFICATION_CANCELED: 'poker:notification_canceled', // Cancel active notification
+	POKER_WINNER_NOTIFICATION_COMPLETE: 'poker:winner_notification_complete', // Client -> Server: Winner notification finished displaying
 } as const
 
 export type SocketEventType = typeof SOCKET_EVENTS[keyof typeof SOCKET_EVENTS]

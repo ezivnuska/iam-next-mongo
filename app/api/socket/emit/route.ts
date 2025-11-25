@@ -291,6 +291,23 @@ export async function POST(request: NextRequest) {
 			}
 		}
 
+		if (signal === 'poker:winner_notification_complete' && gameId) {
+			// No rate limiting or auth needed - this is just a client signal that notification finished
+			// Trigger the game reset now that winner notification has completed on client
+			const { StageManager } = await import('@/app/poker/lib/server/flow/stage-manager');
+			const { PokerGame } = await import('@/app/poker/lib/models/poker-game');
+
+			const game = await PokerGame.findById(gameId);
+			if (!game) {
+				return NextResponse.json({ error: 'Game not found' }, { status: 404 });
+			}
+
+			// Reset the game for next round
+			await StageManager.resetGameForNextRound(game);
+
+			return NextResponse.json({ success: true });
+		}
+
 		if (signal === 'poker:player_reconnected' && userId) {
 			// Validate userId
 			const validation = await validateUserId(userId);
