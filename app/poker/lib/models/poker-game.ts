@@ -19,6 +19,7 @@ export interface PokerGameDocument extends Document {
   stageStatus?: StageStatus;    // NEW: Track stage lifecycle position
   locked: boolean; // Whether game is in progress (locked from new joins)
   lockTime?: Date; // When game will auto-lock
+  queuedPlayers?: Array<{ id: string; username: string }>; // Players waiting to join when game unlocks
   processing: boolean; // Distributed lock for concurrent operations
   processingStartedAt?: Date; // Timestamp when processing lock was acquired
   currentPlayerIndex: number; // Index of current player in players array
@@ -185,6 +186,14 @@ const PokerGameSchema = new Schema<PokerGameDocument>(
 
     locked: { type: Boolean, default: false },
     lockTime: { type: Date, required: false },
+    queuedPlayers: {
+      type: [{
+        id: { type: String, required: true },
+        username: { type: String, required: true }
+      }],
+      default: [],
+      required: false
+    }, // Players waiting to join when game unlocks
     processing: { type: Boolean, default: false }, // Distributed lock for concurrent operations
     processingStartedAt: { type: Date, required: false }, // Timestamp when processing lock was acquired
     currentPlayerIndex: { type: Number, default: 0 },

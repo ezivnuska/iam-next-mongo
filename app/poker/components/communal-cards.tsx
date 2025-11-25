@@ -3,20 +3,29 @@
 'use client';
 
 import { memo } from 'react';
-import { useGameState } from '@/app/poker/lib/providers/poker-provider';
+import { useGameState, usePlayers } from '@/app/poker/lib/providers/poker-provider';
 import Card from './card';
 
 function CommunalCards() {
-  const { communalCards } = useGameState();
+  const { communalCards, locked } = useGameState();
+  const { players } = usePlayers();
   const cardWidth = 72
   const cardHeight = 108
 
-  const containerWidth = communalCards.length > 0 ? cardWidth + (communalCards.length - 1) * (cardWidth / 2) : 0;
+  // Check if there are any human players
+  const hasHumanPlayers = players.some(p => !p.isAI);
+
+  // Only show communal cards if:
+  // - There are communal cards
+  // - Game is locked (in progress) OR there are human players
+  const shouldShowCards = communalCards.length > 0 && (locked || hasHumanPlayers);
+
+  const containerWidth = shouldShowCards ? cardWidth + (communalCards.length - 1) * (cardWidth / 2) : 0;
   const containerHeight = cardHeight
-  
+
 return (
     <div className='relative' style={{ width: `${containerWidth}px`, height: `${containerHeight}px` }}>
-        {communalCards.map((card, index) => (
+        {shouldShowCards && communalCards.map((card, index) => (
             <div
                 key={`communal-card-${index}`}
                 className='absolute'

@@ -123,9 +123,37 @@ export async function addPlayer(
     const game = await PokerGame.findById(gameId);
     if (!game) throw new Error('Game not found');
 
-    // Check if game is locked
+    // Check if game is locked - if so, add to queue instead
     if (game.locked) {
-      throw new Error('Game is locked - no new players allowed');
+      // Check if player already in queue
+      const alreadyQueued = game.queuedPlayers?.some((p: { id: string }) => p.id === user.id);
+      if (alreadyQueued) {
+        return game.toObject();
+      }
+
+      // Check if player already in game
+      const alreadyIn = game.players.some((p: Player) => p.id === user.id);
+      if (alreadyIn) {
+        return game.toObject();
+      }
+
+      // Add to queue
+      if (!game.queuedPlayers) {
+        game.queuedPlayers = [];
+      }
+      game.queuedPlayers.push({ id: user.id, username: user.username });
+      game.markModified('queuedPlayers');
+      await game.save();
+
+      // Emit notification to player that they've been queued
+      await PokerSocketEmitter.emitNotification({
+        notificationType: 'player_queued',
+        category: 'info',
+        playerId: user.id,
+        playerName: user.username,
+      });
+
+      return game.toObject();
     }
 
     // Check if game is full (max players)
@@ -168,6 +196,67 @@ export async function addPlayer(
     const finalGame = await PokerGame.findById(gameId);
     return finalGame ? finalGame.toObject() : game.toObject();
   }, POKER_RETRY_CONFIG);
+}
+
+/**
+ * Process queued players and add them to the game when it unlocks
+ * Called after game resets and unlocks
+ */
+export async function processQueuedPlayers(gameId: string): Promise<void> {
+  const game = await PokerGame.findById(gameId);
+  if (!game) {
+    console.error('[ProcessQueuedPlayers] Game not found');
+    return;
+  }
+
+  // No queued players to process
+  if (!game.queuedPlayers || game.queuedPlayers.length === 0) {
+    return;
+  }
+
+  // Game is still locked, can't process queue yet
+  if (game.locked) {
+    console.warn('[ProcessQueuedPlayers] Game is still locked, cannot process queue');
+    return;
+  }
+
+  const queuedPlayersList = [...game.queuedPlayers];
+  const playersToAdd: Array<{ id: string; username: string }> = [];
+
+  // Determine how many players we can add
+  const availableSlots = POKER_GAME_CONFIG.MAX_PLAYERS - game.players.length;
+
+  for (let i = 0; i < Math.min(queuedPlayersList.length, availableSlots); i++) {
+    playersToAdd.push(queuedPlayersList[i]);
+  }
+
+  if (playersToAdd.length === 0) {
+    return;
+  }
+
+  // Add players from queue
+  for (const queuedPlayer of playersToAdd) {
+    try {
+      const result = await handlePlayerJoin(gameId, queuedPlayer.id, queuedPlayer.username);
+      if (result.success) {
+        console.log(`[ProcessQueuedPlayers] Added ${queuedPlayer.username} from queue`);
+      } else {
+        console.error(`[ProcessQueuedPlayers] Failed to add ${queuedPlayer.username}:`, result.error);
+      }
+    } catch (error: any) {
+      console.error(`[ProcessQueuedPlayers] Error adding ${queuedPlayer.username}:`, error.message);
+    }
+  }
+
+  // Remove processed players from queue
+  const freshGame = await PokerGame.findById(gameId);
+  if (freshGame && freshGame.queuedPlayers) {
+    freshGame.queuedPlayers = freshGame.queuedPlayers.filter(
+      (qp: { id: string }) => !playersToAdd.some(p => p.id === qp.id)
+    );
+    freshGame.markModified('queuedPlayers');
+    await freshGame.save();
+  }
 }
 
 /**

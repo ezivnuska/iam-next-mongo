@@ -99,63 +99,66 @@ export default function PokerTable() {
   }
 
   return (
-    <div id='poker-table' className='flex flex-1 flex-col items-center justify-center sm:flex-row gap-2 bg-green-700 p-2 relative'>
-
-        <Link href='/' className='absolute top-0 left-0 z-20 p-2'>
-            <ArrowLeftIcon className={`h-6 w-6 text-white`} />
-        </Link>
-
-        {/* Player slots sidebar */}
-        <div className={clsx('absolute top-0 left-0 bottom-0 right-0 z-15', {
-            'z-5': userGameInfo.isUserInGame,
+    <div className='flex flex-1 flex-col h-full gap-2 bg-green-700'>
+        <div className={clsx('flex flex-1 relative', {
+            'mx-7': orientation === 'landscape',
         })}>
-            <PlayerSlots
-                players={players}
-                locked={locked}
-                currentPlayerIndex={currentPlayerIndex}
-                currentUserId={user?.id}
-                gameId={gameId}
-                onJoinGame={joinGame}
-                onLeaveGame={leaveGame}
-                actionTriggered={actionTriggered}
-            />
-        </div>
-        
-        <div className={clsx('absolute top-0 right-0 bottom-0 left-0 z-5', {
-            'z-15': userGameInfo.isUserInGame,
-        })}>
+            <Link href='/' className='absolute top-0 left-0 z-20 p-2'>
+                <ArrowLeftIcon className={`h-6 w-6 text-white`} />
+            </Link>
 
-            {/* Main table area */}
-            <div id='table' className='flex h-full flex-row items-center sm:items-end justify-center sm:justify-center'>
-                <div className='flex flex-row items-end justify-center gap-2 w-full h-full'>
-                    <div className={clsx('flex w-full h-[70%] flex-1 flex-col justify-evenly items-center gap-4 pb-5',
-                        {
-                            'h-[70%]': orientation === 'landscape',
-                        }
-                    )}>
-                        <div className='flex flex-col w-full items-center justify-center gap-3'>
-                            <div className='flex h-16 flex-row w-full items-end justify-center gap-4'>
-                                <Pot />
+            {/* Player slots sidebar */}
+            <div className={clsx('absolute top-0 left-0 bottom-0 right-0 z-15', {
+                'z-5': userGameInfo.isUserInGame,
+            })}>
+                <PlayerSlots
+                    players={players}
+                    locked={locked}
+                    currentPlayerIndex={currentPlayerIndex}
+                    currentUserId={user?.id}
+                    gameId={gameId}
+                    onJoinGame={joinGame}
+                    onLeaveGame={leaveGame}
+                    actionTriggered={actionTriggered}
+                />
+            </div>
+            
+            <div className={clsx('absolute top-0 right-0 bottom-0 left-0 z-5', {
+                'z-15': userGameInfo.isUserInGame,
+            })}>
+
+                {/* Main table area */}
+                <div id='table' className='flex h-full flex-row items-center sm:items-end justify-center sm:justify-center'>
+                    <div className='flex flex-row items-end justify-center gap-2 w-full h-full'>
+                        <div className={clsx('flex w-full h-[70%] flex-1 flex-col justify-evenly items-center gap-4 pb-5',
+                            {
+                                'h-[70%]': orientation === 'landscape',
+                            }
+                        )}>
+                            <div className='flex flex-col w-full items-center justify-center gap-3'>
+                                <div className='flex h-16 flex-row w-full items-end justify-center gap-4'>
+                                    <Pot />
+                                </div>
+                                <PokerDashboard
+                                    showPlayerControls={showPlayerControls}
+                                    onActionTaken={handleActionTaken}
+                                />
                             </div>
-                            <PokerDashboard
-                                showPlayerControls={showPlayerControls}
-                                onActionTaken={handleActionTaken}
-                            />
+                            <CommunalCards />
                         </div>
-                        <CommunalCards />
                     </div>
                 </div>
             </div>
+            {gameId && (
+                <Button
+                    onClick={resetSingleton}
+                    size='sm'
+                    className='cursor-pointer bg-red-600 hover:bg-red-700 text-white absolute bottom-1 right-1 z-100'
+                >
+                    Reset
+                </Button>
+            )}
         </div>
-        {gameId && (
-            <Button
-                onClick={resetSingleton}
-                size='sm'
-                className='cursor-pointer bg-red-600 hover:bg-red-700 text-white absolute bottom-1 right-1 z-100'
-            >
-                Reset
-            </Button>
-        )}
     </div>
   );
 }

@@ -145,11 +145,7 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
   });
 
   return (
-    <ul className={clsx('flex h-full relative',
-        {
-            'mx-7': orientation === 'landscape',
-        }
-    )}>
+    <ul className='flex h-full relative'>
       {slots.map((slot, index) => {
         // Select position based on current orientation
         const position = orientation === 'portrait'
@@ -187,7 +183,7 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
           <li
             key={slot.player.id}
             className={clsx('absolute w-[120px] h-[96px] bg-green-400/25 rounded-xl p-1 border-2 border-green-400/25', position, {
-                'border-white': currentPlayerIndex === index,
+                'border-white': currentPlayerIndex === index && !slot.player.folded,
             })}
           >
             <Player

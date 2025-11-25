@@ -315,6 +315,7 @@ export type PokerNotificationType =
 	| 'player_fold'
 	| 'player_all_in'
 	| 'player_thinking'
+	| 'player_queued'
 	| 'blind_posted'
 	| 'cards_dealt'
 	| 'winner_determined'

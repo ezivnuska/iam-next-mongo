@@ -69,6 +69,33 @@ export async function resetSingletonGame(gameId: string) {
   const game = await PokerGame.findById(gameId);
   if (!game) throw new Error('Singleton game not found');
 
+  // Clear all server-side timers before resetting
+  try {
+    const { clearActionTimer } = await import('../timers/poker-timer-controller');
+    await clearActionTimer(gameId);
+  } catch (timerError) {
+    console.error('[ResetSingleton] Failed to clear action timer:', timerError);
+    // Continue with reset even if timer clear fails
+  }
+
+  // Cancel notification queue and any active notifications
+  try {
+    const { clearQueue } = await import('../notifications/notification-queue-manager');
+    clearQueue(gameId);
+  } catch (queueError) {
+    console.error('[ResetSingleton] Failed to clear notification queue:', queueError);
+    // Continue with reset even if queue clear fails
+  }
+
+  // Cancel game lock timer
+  try {
+    const { cancelGameLock } = await import('../locking/game-lock-manager');
+    cancelGameLock(gameId);
+  } catch (lockError) {
+    console.error('[ResetSingleton] Failed to cancel game lock timer:', lockError);
+    // Continue with reset even if lock cancel fails
+  }
+
   // Reset all game state
   game.deck = initializeDeck();
   game.communalCards = [];
@@ -78,6 +105,7 @@ export async function resetSingletonGame(gameId: string) {
   game.stage = Number(GameStage.Preflop);
   game.locked = false;
   game.lockTime = undefined;
+  game.queuedPlayers = [];
   game.currentPlayerIndex = 0;
   game.playerBets = [];
   game.stages = [];

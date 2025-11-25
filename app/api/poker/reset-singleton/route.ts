@@ -22,8 +22,14 @@ export const POST = withRateLimit(RATE_LIMITS.DESTRUCTIVE, withAuth(async (reque
 
     console.log(`[ResetSingleton] Resetting game ${gameId} by user ${session.user.username}`);
 
-    // Reset the singleton game
+    // Reset the singleton game (this also clears all timers internally)
     const resetGame = await resetSingletonGame(gameId);
+
+    // Cancel any active notifications on clients
+    await PokerSocketEmitter.emitNotificationCanceled();
+
+    // Emit timer cleared event to sync client timers
+    await PokerSocketEmitter.emitTimerCleared();
 
     // Emit state update to all clients
     await PokerSocketEmitter.emitStateUpdate(resetGame.toObject());

@@ -605,6 +605,15 @@ export class StageManager {
     game.locked = false;
     await game.save();
 
+    // Process any queued players now that the game is unlocked
+    try {
+      const { processQueuedPlayers } = await import('../actions/poker-game-controller');
+      await processQueuedPlayers(String(game._id));
+    } catch (queueError) {
+      console.error('[StageManager] Failed to process queued players:', queueError);
+      // Don't fail game completion if queue processing fails
+    }
+
     // Clear any existing action timer (game ended)
     try {
       const { clearActionTimer } = await import('../timers/poker-timer-controller');
@@ -718,6 +727,15 @@ export class StageManager {
         gameToReset.markModified('actionHistory');
         gameToReset.markModified('players');
         await gameToReset.save();
+
+        // Process any queued players now that the game is unlocked
+        try {
+          const { processQueuedPlayers } = await import('../actions/poker-game-controller');
+          await processQueuedPlayers(String(gameToReset._id));
+        } catch (queueError) {
+          console.error('[StageManager] Failed to process queued players:', queueError);
+          // Don't fail game completion if queue processing fails
+        }
 
         // Cancel any pending notifications on clients
         await PokerSocketEmitter.emitNotificationCanceled();
