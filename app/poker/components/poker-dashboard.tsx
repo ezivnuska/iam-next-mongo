@@ -9,29 +9,20 @@ import { useUser } from '@/app/lib/providers/user-provider';
 import { useActionTimerPercentage } from '@/app/poker/lib/hooks/use-action-timer-percentage';
 import GameNotification from './game-notification';
 import PlayerControls from './player-controls';
-import JoinGameControl from './join-game-control';
 
 interface PokerDashboardProps {
   showPlayerControls: boolean;
   onActionTaken: () => void;
-  locked: boolean;
-  isUserInGame: boolean;
-  gameId: string | null;
-  joinGame: (gameId: string, guestUsername?: string) => void;
 }
 
 /**
  * Centralized poker dashboard component with dynamic progress bar.
- * Displays notifications, player controls, and join button.
+ * Displays notifications and player controls.
  * Progress bar intelligently switches between notification timer and turn timer.
  */
 export default function PokerDashboard({
   showPlayerControls,
   onActionTaken,
-  locked,
-  isUserInGame,
-  gameId,
-  joinGame,
 }: PokerDashboardProps) {
   const { currentNotification } = useNotifications();
   const { actionTimer } = useGameState();
@@ -116,9 +107,9 @@ export default function PokerDashboard({
           </div>
         )}
 
-        {!locked && !isUserInGame && !currentNotification && (
+        {/* {!locked && !isUserInGame && !currentNotification && (
           <JoinGameControl gameId={gameId} onJoinGame={joinGame} />
-        )}
+        )} */}
       </div>
     </div>
   );

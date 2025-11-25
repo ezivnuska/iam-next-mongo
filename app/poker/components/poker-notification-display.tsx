@@ -1,11 +1,9 @@
 // app/poker/components/poker-notification-display.tsx
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { type Notification } from '@/app/poker/lib/providers/notification-provider';
-import { usePokerActions, usePlayers, useViewers } from '@/app/poker/lib/providers/poker-provider';
-import { useUser } from '@/app/lib/providers/user-provider';
-import { Button } from '@/app/ui/button';
+import { usePokerActions } from '@/app/poker/lib/providers/poker-provider';
 
 interface PokerNotificationDisplayProps {
   notification: Notification | null;
@@ -21,18 +19,7 @@ interface PokerNotificationDisplayProps {
  * - Sound effects play when notification appears
  */
 export default function PokerNotificationDisplay({ notification }: PokerNotificationDisplayProps) {
-  const { playSound, joinGame, leaveGame } = usePokerActions();
-  const { players } = usePlayers();
-  const { gameId } = useViewers();
-  const { user } = useUser();
-
-  // Check if user is in game
-  const isUserInGame = useMemo(() => {
-    return players.some(p => p.id === user?.id);
-  }, [players, user?.id]);
-
-  // Check if this is a game_starting notification
-  const isGameStarting = notification?.metadata?.notificationType === 'game_starting';
+  const { playSound } = usePokerActions();
 
   useEffect(() => {
     if (!notification) return;
@@ -58,29 +45,6 @@ export default function PokerNotificationDisplay({ notification }: PokerNotifica
       <div className="relative h-full px-4 font-semibold text-center">
         <div className="relative z-10 flex flex-row h-full items-center justify-center gap-4">
           <span className='text-white'>{notification.message}</span>
-
-          {/* Join/Leave buttons for game_starting notification */}
-          {isGameStarting && (
-            <>
-              {isUserInGame ? (
-                <Button
-                  size="sm"
-                  onClick={leaveGame}
-                  className="bg-green-700 hover:bg-red-700 text-white text-md px-3 rounded-full"
-                >
-                  Leave Table
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  onClick={() => gameId && joinGame(gameId)}
-                  className="bg-green-600 hover:bg-green-700 text-white text-md px-3 rounded-full"
-                >
-                  Join Game
-                </Button>
-              )}
-            </>
-          )}
         </div>
       </div>
     </div>
