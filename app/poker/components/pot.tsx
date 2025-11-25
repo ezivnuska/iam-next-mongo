@@ -45,7 +45,7 @@ function Pot() {
 
   // Default single pot display
   return (
-    <div id="pot" className="inline-block rounded-full px-3 py-2 border-2 border-white bg-green-900">
+    <div id="pot" className="flex justify-center h-[90px] w-[90px] rounded-full px-3 py-2 bg-green-900 mb-[-60px] border-2 border-green-950">
       <p className="text-xl font-bold text-white">${potTotal}</p>
     </div>
   );

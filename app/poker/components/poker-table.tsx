@@ -14,6 +14,8 @@ import PokerDashboard from './poker-dashboard';
 import { Button } from '@/app/ui/button';
 import Link from 'next/link';
 import { ArrowLeftIcon } from "@heroicons/react/20/solid";
+import { useScreenOrientation } from '../lib/hooks/use-screen-orientation';
+import clsx from 'clsx';
 
 export default function PokerTable() {
   const { players } = usePlayers();
@@ -22,6 +24,7 @@ export default function PokerTable() {
   const { joinGame, leaveGame, resetSingleton } = usePokerActions();
   const { user } = useUser();
   const { socket } = useSocket();
+  const orientation = useScreenOrientation();
 
   // Track if an action has been triggered during the current turn
   const [actionTriggered, setActionTriggered] = useState(false);
@@ -122,19 +125,25 @@ export default function PokerTable() {
 
                 {/* Main table area */}
                 <div id='table' className='flex h-full flex-row items-center sm:items-end justify-center sm:justify-center'>
-                    <div className='flex flex-row items-center justify-center gap-2 w-full h-full'>
-                        <div className='flex w-full flex-1 flex-col items-center justify-center gap-2'>
-                            <div className='flex h-16 flex-row w-full items-end justify-center gap-4'>
-                                <Pot />
+                    <div className='flex flex-row items-end justify-center gap-2 w-full h-full'>
+                        <div className={clsx('flex w-full h-[70%] flex-1 flex-col justify-evenly items-center gap-4 pb-5',
+                            {
+                                'h-[70%]': orientation === 'landscape',
+                            }
+                        )}>
+                            <div className='flex flex-col w-full items-center justify-center gap-3'>
+                                <div className='flex h-16 flex-row w-full items-end justify-center gap-4'>
+                                    <Pot />
+                                </div>
+                                <PokerDashboard
+                                    showPlayerControls={showPlayerControls}
+                                    onActionTaken={handleActionTaken}
+                                    locked={locked}
+                                    isUserInGame={userGameInfo.isUserInGame}
+                                    gameId={gameId}
+                                    joinGame={joinGame}
+                                />
                             </div>
-                            <PokerDashboard
-                                showPlayerControls={showPlayerControls}
-                                onActionTaken={handleActionTaken}
-                                locked={locked}
-                                isUserInGame={userGameInfo.isUserInGame}
-                                gameId={gameId}
-                                joinGame={joinGame}
-                            />
                             <CommunalCards />
                         </div>
                     </div>
