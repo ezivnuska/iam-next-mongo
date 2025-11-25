@@ -6,11 +6,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { PokerGame } from '@/app/poker/lib/models/poker-game';
+import { connectToDatabase } from '@/app/lib/mongoose';
 
 const STALE_THRESHOLD_MS = 60 * 1000; // 1 minute
 
 export async function POST(request: NextRequest) {
   try {
+    // Ensure database connection
+    await connectToDatabase();
 
     // Find singleton game
     const game = await PokerGame.findOne({ isSingleton: true });
