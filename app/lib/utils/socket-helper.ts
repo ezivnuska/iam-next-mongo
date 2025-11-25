@@ -302,6 +302,22 @@ export class PokerSocketEmitter {
       throw error;
     }
   }
+
+  /**
+   * Notify clients that the game was reset due to staleness
+   * Clients should show modal and reload
+   */
+  static async emitGameStaleReset() {
+    console.log('[PokerSocketEmitter] Emitting game stale reset event');
+    try {
+      const result = await emitViaAPI(SOCKET_EVENTS.POKER_GAME_STALE_RESET, {});
+      console.log('[PokerSocketEmitter] Game stale reset event emitted successfully');
+      return result;
+    } catch (error) {
+      console.error('[PokerSocketEmitter] Failed to emit game stale reset:', error);
+      throw error;
+    }
+  }
 }
 
 /**

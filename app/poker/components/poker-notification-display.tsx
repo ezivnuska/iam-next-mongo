@@ -54,8 +54,8 @@ export default function PokerNotificationDisplay({ notification }: PokerNotifica
   }
 
   return (
-    <div className="relative w-full h-full overflow-hidden rounded-full shadow-lg bg-green-900">
-      <div className="relative h-full px-4 font-semibold text-center">
+    // <div className="relative w-full h-full overflow-hidden rounded-full shadow-lg bg-green-900">
+    //   <div className="relative h-full px-4 font-semibold text-center">
         <div className="relative z-10 flex flex-row h-full items-center justify-center gap-4">
           <span className='text-white'>{notification.message}</span>
 
@@ -69,8 +69,8 @@ export default function PokerNotificationDisplay({ notification }: PokerNotifica
                 Leave Table
             </Button>
           )}
-        </div>
-      </div>
-    </div>
+        </div>  
+    //   </div>
+    // </div>
   );
 }

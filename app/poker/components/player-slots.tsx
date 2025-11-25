@@ -38,45 +38,45 @@ const SLOT_CONFIGS: SlotConfig[] = [
   // Slot 0: Bottom-left (START - Player 1)
   {
     slotIndex: 0,
-    portraitPosition: 'top-[31%] left-[1%]',
+    portraitPosition: 'top-[33%] left-[2%]',
     portraitOrientation: 'ltr',
-    landscapePosition: 'top-[36%] left-[1%]',
+    landscapePosition: 'top-[33%] left-[1%]',
     landscapeOrientation: 'ltr',
   },
 
   // Slot 1: Top-left (Player 2 - clockwise from slot 0)
   {
     slotIndex: 1,
-    portraitPosition: 'top-[16%] left-[1%]',
+    portraitPosition: 'top-[16%] left-[2%]',
     portraitOrientation: 'ltr',
-    landscapePosition: 'top-[1%] left-[18%]',
+    landscapePosition: 'top-[2%] left-[18%]',
     landscapeOrientation: 'ltr',
   },
 
   // Slot 2: Top-center (Player 3 - clockwise from slot 1)
   {
     slotIndex: 2,
-    portraitPosition: 'top-[1%] left-1/2 -translate-x-1/2',
+    portraitPosition: 'top-[2%] left-1/2 -translate-x-1/2',
     portraitOrientation: 'ltr',
-    landscapePosition: 'top-[1%] left-1/2 -translate-x-1/2',
+    landscapePosition: 'top-[2%] left-1/2 -translate-x-1/2',
     landscapeOrientation: 'ltr',
   },
 
   // Slot 3: Top-right (Player 4 - clockwise from slot 2)
   {
     slotIndex: 3,
-    portraitPosition: 'top-[16%] right-[1%]',
+    portraitPosition: 'top-[16%] right-[2%]',
     portraitOrientation: 'rtl',
-    landscapePosition: 'top-[1%] right-[18%]',
+    landscapePosition: 'top-[2%] right-[18%]',
     landscapeOrientation: 'rtl',
   },
 
   // Slot 4: Right side or Bottom-right (Player 5 - clockwise from slot 3)
   {
     slotIndex: 4,
-    portraitPosition: 'top-[31%] right-[1%]',
+    portraitPosition: 'top-[33%] right-[2%]',
     portraitOrientation: 'rtl',
-    landscapePosition: 'top-[36%] right-[1%]',
+    landscapePosition: 'top-[33%] right-[1%]',
     landscapeOrientation: 'rtl',
   },
 ];

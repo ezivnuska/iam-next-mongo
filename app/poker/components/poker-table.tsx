@@ -15,6 +15,7 @@ import { Button } from '@/app/ui/button';
 import Link from 'next/link';
 import { ArrowLeftIcon } from "@heroicons/react/20/solid";
 import { useScreenOrientation } from '../lib/hooks/use-screen-orientation';
+import { StaleGameModal } from './stale-game-modal';
 import clsx from 'clsx';
 
 export default function PokerTable() {
@@ -25,6 +26,32 @@ export default function PokerTable() {
   const { user } = useUser();
   const { socket } = useSocket();
   const orientation = useScreenOrientation();
+
+  // Listen for stale game reset from server
+  const [showStaleModal, setShowStaleModal] = useState(false);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleStaleReset = () => {
+      console.log('[PokerTable] Received stale game reset event from server');
+      setShowStaleModal(true);
+    };
+
+    socket.on(SOCKET_EVENTS.POKER_GAME_STALE_RESET, handleStaleReset);
+
+    return () => {
+      socket.off(SOCKET_EVENTS.POKER_GAME_STALE_RESET, handleStaleReset);
+    };
+  }, [socket]);
+
+  // Handle reset triggered by stale modal
+  const handleStaleReset = () => {
+    console.log('[PokerTable] Stale game reset triggered - reloading page');
+    // Simply reload the page - the server-side check will have already reset the game
+    // This avoids authentication issues with guest users
+    window.location.reload();
+  };
 
   // Track if an action has been triggered during the current turn
   const [actionTriggered, setActionTriggered] = useState(false);
@@ -129,7 +156,7 @@ export default function PokerTable() {
             })}>
             {/* Main table area */}
                 <div className='flex flex-1 h-full w-full flex-row items-end justify-center'>
-                    <div className={clsx('flex w-full h-[60%] flex-1 flex-col justify-evenly items-center gap-4',
+                    <div className={clsx('flex w-full h-[60%] flex-1 flex-col justify-evenly items-center gap-2',
                         {
                             'h-[60%]': orientation === 'landscape',
                         }
@@ -153,10 +180,13 @@ export default function PokerTable() {
                     size='sm'
                     className='cursor-pointer bg-red-600 hover:bg-red-700 text-white absolute bottom-1 right-1 z-100'
                 >
-                    Reset
+                    X
                 </Button>
             )}
         </div>
+
+        {/* Stale game modal */}
+        {showStaleModal && <StaleGameModal onResetTriggered={handleStaleReset} />}
     </div>
   );
 }

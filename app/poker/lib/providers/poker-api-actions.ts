@@ -31,20 +31,31 @@ export const createJoinGameAction = (
 
       // Listen for success/error responses (one-time listeners)
       const successHandler = (data: any) => {
+        console.log('[Join Game] Success handler received:', { userId: data.userId, username: data.username });
 
         // Update user context with validated userId and username from server
         if (data.userId && data.username && setUser) {
           setUser((prevUser: any) => {
+            console.log('[Join Game] Updating user - prevUser:', prevUser?.id, 'newId:', data.userId);
             // Only update if this is a guest user
             if (prevUser?.id === 'guest-pending' || prevUser?.isGuest) {
-              return {
+              const updatedUser = {
                 ...prevUser,
                 id: data.userId,
                 username: data.username,
                 isGuest: true
               };
+              console.log('[Join Game] User updated to:', updatedUser.id, updatedUser.username);
+              return updatedUser;
             }
+            console.log('[Join Game] User not updated - not a guest user');
             return prevUser;
+          });
+        } else {
+          console.log('[Join Game] Skipping user update - missing data or setUser:', {
+            hasUserId: !!data.userId,
+            hasUsername: !!data.username,
+            hasSetUser: !!setUser
           });
         }
 

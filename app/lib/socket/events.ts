@@ -30,6 +30,7 @@ export const SOCKET_EVENTS = {
 	POKER_STATE_UPDATE: 'poker:state_update', // Full state sync (restart, initial load)
 	POKER_GAME_CREATED: 'poker:game_created',
 	POKER_GAME_DELETED: 'poker:game_deleted',
+	POKER_GAME_STALE_RESET: 'poker:game_stale_reset', // Server -> Clients: Game was reset due to staleness
 
 	// Poker events - Player management
 	POKER_JOIN_GAME: 'poker:join_game', // Client -> Server: Request to join game

@@ -406,5 +406,17 @@ app.prepare().then(() => {
 		.listen(port, () => {
 			console.log(`> Ready on http://${hostname}:${port}`)
 			console.log(`> Socket.IO server running on path: /api/socket/io`)
+
+			// Start stale game detection check (runs every 30 seconds)
+			setInterval(async () => {
+				try {
+					await fetch(`http://localhost:${port}/api/poker/check-stale`, {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+					});
+				} catch (error) {
+					// Silently fail - don't spam logs
+				}
+			}, 30000); // Check every 30 seconds
 		})
 })

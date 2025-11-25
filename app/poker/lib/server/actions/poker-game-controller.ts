@@ -1112,7 +1112,9 @@ async function finalizeFoldAndContinue(
 }
 
 /**
- * Finalize fold action when game ends: log history, clear timer, save game, trigger restart
+ * Finalize fold action when game ends: log history, clear timer, save game
+ * NOTE: Reset is now triggered by client after winner notification completes.
+ * This ensures communal cards remain visible during the winner notification.
  */
 async function finalizeFoldAndTriggerRestart(
   game: any,
@@ -1152,32 +1154,21 @@ async function finalizeFoldAndTriggerRestart(
     activeTimers.delete(gameId);
   }
 
+  // Advance to End stage
+  game.stage = GameStage.End;
+  game.markModified('stage');
+
   // Release lock before save to prevent lock timeout issues
   game.processing = false;
   await game.save();
 
   // Emit full game state update to show winner with timer already cleared
+  // The client will display the winner notification and then signal the server
+  // via poker:winner_notification_complete to trigger the game reset
   await PokerSocketEmitter.emitStateUpdate(game.toObject());
 
-
-  // Wait for winner notification to complete (10 seconds)
-  await new Promise(resolve => setTimeout(resolve, POKER_GAME_CONFIG.AUTO_LOCK_DELAY_MS));
-
-
-  // Fetch fresh game state for reset
-  const gameForReset = await PokerGame.findById(gameId);
-  if (!gameForReset) throw new Error('Game not found for reset');
-
-  // Advance to End stage
-  gameForReset.stage = GameStage.End;
-  gameForReset.markModified('stage');
-  await gameForReset.save();
-
-
-  // Reset and restart the game (this will emit game_starting and auto-lock after 10s)
-  const { StageManager } = await import('../flow/stage-manager');
-  await StageManager.resetGameForNextRound(gameForReset);
-
+  // NOTE: Game reset is now triggered by client after winner notification completes
+  // This prevents premature clearing of communal cards and duplicate game_starting notifications
 }
 
 export async function fold(gameId: string, playerId: string, timerTriggered = false) {

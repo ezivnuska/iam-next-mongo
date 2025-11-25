@@ -91,7 +91,7 @@ export default function PokerDashboard({
   const showWaitingForPlayers = !hasHumanPlayers && !currentNotification && !showPlayerControls && !showActingPlayerPlaceholder;
 
   return (
-    <div className='relative w-11/12 sm:w-4/7 h-12 flex-row items-center justify-center rounded-full bg-green-900 overflow-hidden p-0.5'>
+    <div className='relative w-11/12 sm:w-4/7 h-10 flex-row items-center justify-center rounded-full bg-green-900 overflow-hidden'>
       {/* Background Progress Bar */}
       {currentNotification?.type !== 'action' && currentNotification?.type !== 'deal' && progressPercentage > 0 && (
         <div
@@ -104,7 +104,7 @@ export default function PokerDashboard({
       )}
 
       {/* Content Layer */}
-      <div className='relative z-10 flex flex-1 h-full flex-row items-center justify-center rounded-full border'>
+      <div className='relative z-11 flex flex-1 h-full flex-row items-center justify-center rounded-full'>
         <GameNotification />
 
         {showPlayerControls && (
@@ -119,7 +119,7 @@ export default function PokerDashboard({
 
         {showWaitingForPlayers && (
           <div className='text-sm text-white/70 px-4'>
-            Waiting for players...
+            Waiting for players
           </div>
         )}
       </div>

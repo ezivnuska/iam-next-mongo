@@ -113,12 +113,9 @@ export function usePokerEventHandler(gameId: string | null) {
         // This must be done BEFORE showing the game_starting notification
         resetNotifications();
 
-        // NOTE: pot and playerBets are NOT synced here to avoid race condition.
-        // They will be properly synced via blind notifications and state updates from step flow.
-        setCommunalCards([]); // Clear communal cards
-        // Winner state will be reset through server state updates
-        // Clear player hands by mapping current players to empty hands
-        setPlayers((prev: any[]) => prev.map((p: any) => ({ ...p, hand: [], folded: false, isAllIn: false })));
+        // NOTE: Communal cards, pot, playerBets, and player hands are NOT cleared here.
+        // They will be cleared via the server state update that precedes this notification.
+        // This ensures the cards remain visible during the winner notification display.
       }
 
       // Route to appropriate notification display
