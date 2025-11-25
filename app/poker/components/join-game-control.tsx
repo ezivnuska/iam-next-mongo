@@ -86,7 +86,7 @@ export default function JoinGameControl({ gameId, onJoinGame }: JoinGameControlP
             setGuestUsername(e.target.value);
             setError(''); // Clear error on input
           }}
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyPress}
           placeholder='player name'
           className='flex-1 px-3 py-1 rounded-full bg-white text-green-950 placeholder-green-950/50 border border-green-800 focus:outline-none focus:border-green-400 text-md'
           maxLength={20}
