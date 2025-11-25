@@ -182,7 +182,7 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
         return (
           <li
             key={slot.player.id}
-            className={clsx('absolute w-[120px] h-[96px] bg-green-400/25 rounded-xl p-1 border-2 border-green-400/25', position, {
+            className={clsx('absolute w-[120px] h-[96px] bg-green-400/25 rounded-xl p-1 border-2 border-green-400/25 overflow-hidden', position, {
                 'border-white': currentPlayerIndex === index && !slot.player.folded,
             })}
           >

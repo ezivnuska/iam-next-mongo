@@ -625,7 +625,7 @@ export class StageManager {
     }
 
     // Reset game for next round
-    const gameToReset = await PokerGame.findById(game._id);
+    let gameToReset = await PokerGame.findById(game._id);
     if (gameToReset) {
       // Initialize a fresh shuffled deck for the new game
       const { initializeDeck } = await import('./poker-dealer');
@@ -758,12 +758,64 @@ export class StageManager {
       gameToReset.markModified('stages');
       gameToReset.markModified('players');
 
-      await gameToReset.save();
+      // Retry save with version conflict handling
+      let saveAttempts = 0;
+      const MAX_SAVE_ATTEMPTS = 3;
+      let savedGame = null;
 
+      while (saveAttempts < MAX_SAVE_ATTEMPTS) {
+        try {
+          await gameToReset.save();
+          savedGame = gameToReset;
+          break;
+        } catch (error: any) {
+          saveAttempts++;
+          if (error.name === 'VersionError' && saveAttempts < MAX_SAVE_ATTEMPTS) {
+            console.log(`[StageManager] Version conflict on save, retrying (${saveAttempts}/${MAX_SAVE_ATTEMPTS})...`);
+            // Refetch the document with latest version
+            const freshGame = await PokerGame.findById(gameToReset._id);
+            if (freshGame) {
+              // Reapply all the reset changes to the fresh document
+              const { initializeDeck } = await import('./poker-dealer');
+              freshGame.winner = undefined;
+              freshGame.stage = 0;
+              freshGame.communalCards = [];
+              freshGame.playerBets = [];
+              freshGame.currentPlayerIndex = 0;
+              freshGame.actionHistory = [];
+              freshGame.pot = [];
+              freshGame.pots = [];
+              freshGame.deck = initializeDeck();
+              freshGame.stages = [];
+              freshGame.lockTime = undefined;
+              freshGame.players = gameToReset.players; // Keep the filtered players
+              freshGame.markModified('winner');
+              freshGame.markModified('stage');
+              freshGame.markModified('communalCards');
+              freshGame.markModified('playerBets');
+              freshGame.markModified('currentPlayerIndex');
+              freshGame.markModified('actionHistory');
+              freshGame.markModified('pot');
+              freshGame.markModified('deck');
+              freshGame.markModified('stages');
+              freshGame.markModified('players');
+              gameToReset = freshGame;
+            } else {
+              throw new Error('Game not found during retry');
+            }
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (!savedGame) {
+        throw new Error('Failed to save game after retries');
+      }
 
       // Emit full state update to sync all reset fields with clients
       // This ensures clients clear communal cards, hands, pot, etc. BEFORE game_starting notification
-      await PokerSocketEmitter.emitStateUpdate(gameToReset);
+      await PokerSocketEmitter.emitStateUpdate(savedGame);
 
       // Queue game starting notification through notification system
       // This ensures proper cancellation and sequencing if players join/leave during countdown
