@@ -42,11 +42,11 @@ function getDealerButtonPositionClasses(slotIndex: number, orientation: 'portrai
       'top-1/2 -left-5 -translate-x-1/2 -translate-y-1/2',  // Slot 4 (bottom-right): button to the left (toward center)
     ],
     landscape: [
-      'top-3/5 -right-5 translate-x-1/2 -translate-y-1/2',    // Slot 0 (bottom-left): button to top-right (toward center)
+      'top-2/5 -right-5 translate-x-1/2 -translate-y-1/2',    // Slot 0 (bottom-left): button to top-right (toward center)
       '-bottom-3 right-5 translate-x-1/2 translate-y-1/2',  // Slot 1 (top-left): button to bottom-right (toward center)
       '-bottom-5 left-1/2 -translate-x-1/2 translate-y-1/2', // Slot 2 (top-center): button below (toward center)
       '-bottom-3 left-5 -translate-x-1/2 translate-y-1/2',  // Slot 3 (top-right): button to bottom-left (toward center)
-      'top-3/5 -left-5 -translate-x-1/2 -translate-y-1/2',    // Slot 4 (right-middle): button to top-left (toward center)
+      'top-2/5 -left-5 -translate-x-1/2 -translate-y-1/2',    // Slot 4 (right-middle): button to top-left (toward center)
     ],
   };
 
@@ -66,7 +66,7 @@ const SLOT_CONFIGS: SlotConfig[] = [
     slotIndex: 0,
     portraitPosition: 'bottom-0 left-[1%]',
     portraitOrientation: 'ltr',
-    landscapePosition: 'bottom-[2%] left-0',
+    landscapePosition: 'top-[39%] left-0',
     landscapeOrientation: 'ltr',
   },
 
@@ -75,7 +75,7 @@ const SLOT_CONFIGS: SlotConfig[] = [
     slotIndex: 1,
     portraitPosition: 'top-[17%] left-[2%]',
     portraitOrientation: 'ltr',
-    landscapePosition: 'top-[8%] left-[18%]',
+    landscapePosition: 'top-[6%] left-[18%]',
     landscapeOrientation: 'ltr',
   },
 
@@ -93,7 +93,7 @@ const SLOT_CONFIGS: SlotConfig[] = [
     slotIndex: 3,
     portraitPosition: 'top-[17%] right-[2%]',
     portraitOrientation: 'rtl',
-    landscapePosition: 'top-[8%] right-[18%]',
+    landscapePosition: 'top-[6%] right-[18%]',
     landscapeOrientation: 'rtl',
   },
 
@@ -102,7 +102,7 @@ const SLOT_CONFIGS: SlotConfig[] = [
     slotIndex: 4,
     portraitPosition: 'bottom-0 right-[1%]',
     portraitOrientation: 'rtl',
-    landscapePosition: 'bottom-[2%] right-0',
+    landscapePosition: 'top-[39%] right-0',
     landscapeOrientation: 'rtl',
   },
 ];

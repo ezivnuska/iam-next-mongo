@@ -126,17 +126,18 @@ export default function PokerTable() {
   }
 
   return (
-    <div className='flex flex-1 flex-row items-center justify-center h-full gap-2 relative'>
+    <div className='flex flex-1 flex-row items-center justify-center max-h-dvh gap-2 relative'>
         <Link href='/' className='absolute top-0 left-0 z-20 p-2'>
             <ArrowLeftIcon className={`h-6 w-6 text-white`} />
         </Link>
-        <div className={clsx('flex flex-1 flex-col w-full max-w-[400px] h-dvh min-h-[375px] max-h-[500px] relative', {
-            'mx-7 min-h-[375px] max-w-[580px] min-w-[580px]': orientation === 'landscape',
+        <div className={clsx('flex flex-1 flex-col w-full max-w-[400px] h-dvh min-h-[300px] max-h-[500px] relative', {
+            'mx-7 min-h-[320px] max-w-[580px] min-w-[580px]': orientation === 'landscape',
         })}>
 
             {/* Player slots sidebar */}
             <div className={clsx('flex h-[47%] z-15', {
                 'z-5': userGameInfo.isUserInGame,
+                'h-[50%]': orientation === 'landscape',
             })}>
                 <PlayerSlots
                     players={players}
@@ -151,22 +152,22 @@ export default function PokerTable() {
             </div>
             
             {/* <div className={clsx('w-full z-5 border border-green-400', { */}
-            <div className={clsx('absolute right-0 bottom-0 left-0 z-5 h-[50%]', {
+            <div className={clsx('absolute right-0 bottom-0 left-0 z-5 h-[60%]', {
                 'z-15': userGameInfo.isUserInGame,
-                'h-[56%]': orientation === 'landscape',
+                'h-[64%]': orientation === 'landscape',
             })}>
                 {/* Main table area */}
-                {/* <div className='flex flex-1 h-full w-full flex-row items-end justify-center border'> */}
-                    <div className={clsx('flex flex-1 w-full h-full flex-col items-center justify-center',
-                        {
-                            'justify-evenly': orientation === 'portrait',
-                        }
+                {/* <div className='flex flex-1 h-full flex-row items-center justify-center border'> */}
+                    <div className={clsx('flex flex-1 h-full flex-col items-center justify-center',
+                        // {
+                        //     'w-[55%]': orientation === 'landscape',
+                        // }
                     )}>
-                        <div className={clsx('flex flex-col w-full items-center justify-center gap-2 relative p-2', {
-                            // 'flex-1': orientation === 'portrait',
+                        <div className={clsx('flex flex-col w-11/12 items-center justify-center py-2', {
+                            'w-[60%]': orientation === 'landscape',
                         })}>
                             {/* <div className='absolute -top-7 left-1/2 w-[360px] h-[340px] rounded-full bg-green-800 -translate-x-1/2'> */}
-                            <div className='absolute -top-7 left-1/2 w-[360px] h-[340px] -translate-x-1/2'>
+                            <div className='h-9'>
                                 <Pot />
                             </div>
                             <PokerDashboard

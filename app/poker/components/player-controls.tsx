@@ -228,7 +228,7 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
   return (
     <div id="playerControls" className='flex h-full w-full flex-row self-center items-center justify-center'>
       {/* Action Buttons with Radio Buttons - Vertical Layout */}
-      <div className='flex flex-1 flex-row items-center gap-2 justify-center'>
+      <div className='flex flex-1 flex-row items-center gap-1 justify-between px-1'>
         {/* Unified Bet Control - Handles Check/Call/Bet/Raise */}
         <div className='flex flex-row items-center gap-2'>
           <input
