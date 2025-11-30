@@ -38,18 +38,18 @@ const SLOT_CONFIGS: SlotConfig[] = [
   // Slot 0: Bottom-left (START - Player 1)
   {
     slotIndex: 0,
-    portraitPosition: 'top-[33%] left-[2%]',
+    portraitPosition: 'bottom-0 left-0',
     portraitOrientation: 'ltr',
-    landscapePosition: 'top-[33%] left-[1%]',
+    landscapePosition: 'bottom-[2%] left-0',
     landscapeOrientation: 'ltr',
   },
 
   // Slot 1: Top-left (Player 2 - clockwise from slot 0)
   {
     slotIndex: 1,
-    portraitPosition: 'top-[16%] left-[2%]',
+    portraitPosition: 'top-[19%] left-[2%]',
     portraitOrientation: 'ltr',
-    landscapePosition: 'top-[2%] left-[18%]',
+    landscapePosition: 'top-[8%] left-[18%]',
     landscapeOrientation: 'ltr',
   },
 
@@ -65,18 +65,18 @@ const SLOT_CONFIGS: SlotConfig[] = [
   // Slot 3: Top-right (Player 4 - clockwise from slot 2)
   {
     slotIndex: 3,
-    portraitPosition: 'top-[16%] right-[2%]',
+    portraitPosition: 'top-[19%] right-[2%]',
     portraitOrientation: 'rtl',
-    landscapePosition: 'top-[2%] right-[18%]',
+    landscapePosition: 'top-[8%] right-[18%]',
     landscapeOrientation: 'rtl',
   },
 
   // Slot 4: Right side or Bottom-right (Player 5 - clockwise from slot 3)
   {
     slotIndex: 4,
-    portraitPosition: 'top-[33%] right-[2%]',
+    portraitPosition: 'bottom-0 right-0',
     portraitOrientation: 'rtl',
-    landscapePosition: 'top-[33%] right-[1%]',
+    landscapePosition: 'bottom-[2%] right-0',
     landscapeOrientation: 'rtl',
   },
 ];
@@ -145,7 +145,7 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
   });
 
   return (
-    <ul className='flex h-full relative'>
+    <ul className='flex flex-1 relative'>
       {slots.map((slot, index) => {
         // Select position based on current orientation
         const position = orientation === 'portrait'
@@ -161,7 +161,8 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
           return (
             <li
               key={`empty-${slot.slotIndex}`}
-              className={clsx('absolute w-[120px] h-[96px] bg-green-400/25 rounded-xl p-1 border-2 border-dashed border-white/50', position)}
+            //   className={clsx('absolute w-[120px] h-[96px] bg-green-400/25 rounded-xl p-1 border-2 border-dashed border-white/50', position)}
+              className={clsx('absolute w-[120px] h-[96px] bg-green-400/25 border-2 border-dashed border-yellow-300 rounded-full', position)}
             >
               <EmptyPlayerSlot
                 orientation={playerOrientation}
@@ -182,7 +183,8 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
         return (
           <li
             key={slot.player.id}
-            className={clsx('absolute w-[120px] h-[96px] bg-green-400/25 rounded-xl p-1 border-2 border-green-400/25 overflow-hidden', position, {
+            // className={clsx('absolute w-[120px] h-[96px] bg-green-400/25 rounded-xl p-1 border-2 border-green-400/25 overflow-hidden', position, {
+            className={clsx('absolute w-[120px] h-[96px] bg-green-400/25 border-2 border-dashed border-yellow-300 rounded-full', position, {
                 'border-white': currentPlayerIndex === index && !slot.player.folded,
             })}
           >

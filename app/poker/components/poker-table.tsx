@@ -126,16 +126,16 @@ export default function PokerTable() {
   }
 
   return (
-    <div className='flex flex-1 flex-col h-full gap-2'>
-        <div className={clsx('flex flex-1 relative items-end', {
-            'mx-7': orientation === 'landscape',
+    <div className='flex flex-1 flex-row items-center justify-center h-full gap-2 relative'>
+        <Link href='/' className='absolute top-0 left-0 z-20 p-2'>
+            <ArrowLeftIcon className={`h-6 w-6 text-white`} />
+        </Link>
+        <div className={clsx('flex flex-1 flex-col w-full max-w-[400px] h-dvh min-h-[375px] max-h-[500px] relative', {
+            'mx-7 min-h-[375px] max-w-[600px]': orientation === 'landscape',
         })}>
-            <Link href='/' className='absolute top-0 left-0 z-20 p-2'>
-                <ArrowLeftIcon className={`h-6 w-6 text-white`} />
-            </Link>
 
             {/* Player slots sidebar */}
-            <div className={clsx('absolute top-0 left-0 bottom-0 right-0 z-15', {
+            <div className={clsx('flex h-1/2 z-15', {
                 'z-5': userGameInfo.isUserInGame,
             })}>
                 <PlayerSlots
@@ -150,40 +150,46 @@ export default function PokerTable() {
                 />
             </div>
             
-            <div className={clsx('absolute right-0 bottom-0 left-0 z-5', {
+            {/* <div className={clsx('w-full z-5 border border-green-400', { */}
+            <div className={clsx('absolute right-0 bottom-0 left-0 z-5 h-[50%]', {
                 'z-15': userGameInfo.isUserInGame,
-                'top-0': orientation === 'portrait',
+                'h-[62%]': orientation === 'landscape',
             })}>
-            {/* Main table area */}
-                <div className='flex flex-1 h-full w-full flex-row items-end justify-center'>
-                    <div className={clsx('flex w-full h-[60%] flex-1 flex-col justify-evenly items-center gap-2',
+                {/* Main table area */}
+                {/* <div className='flex flex-1 h-full w-full flex-row items-end justify-center border'> */}
+                    <div className={clsx('flex flex-1 w-full h-full flex-col items-center justify-center',
                         {
-                            'h-[60%]': orientation === 'landscape',
+                            'justify-evenly': orientation === 'portrait',
                         }
                     )}>
-                        <div className='flex flex-col w-full items-center justify-center gap-2'>
-                            {/* <div className='flex flex-row w-full items-end justify-center gap-4'> */}
+                        <div className={clsx('flex flex-col w-full items-center justify-center gap-2 relative p-2', {
+                            // 'flex-1': orientation === 'portrait',
+                        })}>
+                            {/* <div className='absolute -top-7 left-1/2 w-[360px] h-[340px] rounded-full bg-green-800 -translate-x-1/2'> */}
+                            <div className='absolute -top-7 left-1/2 w-[360px] h-[340px] -translate-x-1/2'>
                                 <Pot />
-                            {/* </div> */}
+                            </div>
                             <PokerDashboard
                                 showPlayerControls={showPlayerControls}
                                 onActionTaken={handleActionTaken}
                             />
                         </div>
-                        <CommunalCards />
+                        <div className='flex flex-1 flex-row items-center'>
+                            <CommunalCards />
+                        </div>
                     </div>
-                </div>
+                {/* </div> */}
             </div>
-            {gameId && (
-                <Button
-                    onClick={resetSingleton}
-                    size='sm'
-                    className='cursor-pointer bg-red-600 hover:bg-red-700 text-white absolute bottom-1 right-1 z-100'
-                >
-                    X
-                </Button>
-            )}
         </div>
+        {gameId && (
+            <Button
+                onClick={resetSingleton}
+                size='sm'
+                className='cursor-pointer bg-red-600 hover:bg-red-700 text-white absolute bottom-1 right-1 z-100'
+            >
+                X
+            </Button>
+        )}
 
         {/* Stale game modal */}
         {showStaleModal && <StaleGameModal onResetTriggered={handleStaleReset} />}

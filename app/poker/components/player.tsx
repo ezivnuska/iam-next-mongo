@@ -97,7 +97,7 @@ export default function Player({
             )}
         >
         
-            <div className='flex flex-row items-center justify-start gap-2'>
+            <div className='flex flex-row items-center justify-start gap-2 rounded-full bg-black/50 p-1'>
                 <div className='flex relative'>
                     <div
                         className={clsx(

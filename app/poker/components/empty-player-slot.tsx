@@ -43,7 +43,7 @@ export default function EmptyPlayerSlot({ orientation, gameId, isGameLocked, onJ
   const isAuthenticated = status === 'authenticated';
 
   const handleClick = () => {
-    console.log('hello')
+    
     if (!gameId) return;
 
     if (isAuthenticated) {
