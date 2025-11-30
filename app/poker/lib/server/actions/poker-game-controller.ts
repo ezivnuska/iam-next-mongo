@@ -430,7 +430,10 @@ export async function setPlayerPresence(
   }
 
   if (playerIndex === -1) {
-    throw new Error('Player not found in game');
+    // Player not in game - this is common and not an error
+    // Happens when: player left, was removed during reset, or timing issues
+    console.log(`[SetPlayerPresence] Player ${userId} not in game ${gameId} - ignoring presence update`);
+    return; // Silent no-op
   }
 
   const actualPlayerId = game.players[playerIndex].id;

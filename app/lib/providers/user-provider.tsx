@@ -134,9 +134,16 @@ export function UserProvider({ children, initialUser }: UserProviderProps) {
   }  
 
   async function signOut() {
+      // Clear local state first
       setUser(null);
       setStatus("unauthenticated");
-      await nextSignOut({ redirect: true, callbackUrl: '/' });
+
+      // Sign out from NextAuth without redirect, then manually redirect
+      // This ensures the session is fully cleared before navigation
+      await nextSignOut({ redirect: false });
+
+      // Manually navigate to home page after sign-out completes
+      window.location.href = '/';
   }
 
   return (
