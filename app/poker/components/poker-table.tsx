@@ -131,11 +131,11 @@ export default function PokerTable() {
             <ArrowLeftIcon className={`h-6 w-6 text-white`} />
         </Link>
         <div className={clsx('flex flex-1 flex-col w-full max-w-[400px] h-dvh min-h-[375px] max-h-[500px] relative', {
-            'mx-7 min-h-[375px] max-w-[600px]': orientation === 'landscape',
+            'mx-7 min-h-[375px] max-w-[580px]': orientation === 'landscape',
         })}>
 
             {/* Player slots sidebar */}
-            <div className={clsx('flex h-1/2 z-15', {
+            <div className={clsx('flex h-[47%] z-15', {
                 'z-5': userGameInfo.isUserInGame,
             })}>
                 <PlayerSlots
@@ -153,7 +153,7 @@ export default function PokerTable() {
             {/* <div className={clsx('w-full z-5 border border-green-400', { */}
             <div className={clsx('absolute right-0 bottom-0 left-0 z-5 h-[50%]', {
                 'z-15': userGameInfo.isUserInGame,
-                'h-[62%]': orientation === 'landscape',
+                'h-[56%]': orientation === 'landscape',
             })}>
                 {/* Main table area */}
                 {/* <div className='flex flex-1 h-full w-full flex-row items-end justify-center border'> */}

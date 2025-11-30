@@ -28,6 +28,32 @@ interface SlotConfig {
 }
 
 /**
+ * Get dealer button position classes based on slot index
+ * Positions the button toward the center of the screen relative to the player slot
+ */
+function getDealerButtonPositionClasses(slotIndex: number, orientation: 'portrait' | 'landscape'): string {
+  // Map slot index to button position (toward center)
+  const positions = {
+    portrait: [
+      'top-1/2 -right-5 translate-x-1/2 -translate-y-1/2',  // Slot 0 (bottom-left): button to the right (toward center)
+      'bottom-1 -right-3 translate-x-1/2 translate-y-1/2',  // Slot 1 (left-upper): button to bottom-right (toward center)
+      '-bottom-5 left-1/2 -translate-x-1/2 translate-y-1/2', // Slot 2 (top-center): button below (toward center)
+      'bottom-1 -left-3 -translate-x-1/2 translate-y-1/2',  // Slot 3 (right-upper): button to bottom-left (toward center)
+      'top-1/2 -left-5 -translate-x-1/2 -translate-y-1/2',  // Slot 4 (bottom-right): button to the left (toward center)
+    ],
+    landscape: [
+      'top-3/5 -right-5 translate-x-1/2 -translate-y-1/2',    // Slot 0 (bottom-left): button to top-right (toward center)
+      '-bottom-3 right-5 translate-x-1/2 translate-y-1/2',  // Slot 1 (top-left): button to bottom-right (toward center)
+      '-bottom-5 left-1/2 -translate-x-1/2 translate-y-1/2', // Slot 2 (top-center): button below (toward center)
+      '-bottom-3 left-5 -translate-x-1/2 translate-y-1/2',  // Slot 3 (top-right): button to bottom-left (toward center)
+      'top-3/5 -left-5 -translate-x-1/2 -translate-y-1/2',    // Slot 4 (right-middle): button to top-left (toward center)
+    ],
+  };
+
+  return positions[orientation][slotIndex] || '';
+}
+
+/**
  * Strategic slot configurations for 5-player table layout
  * Positions start at bottom-left (slot 0) and go clockwise
  *
@@ -115,7 +141,7 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
   const MAX_SLOTS = 5;
 
   const { user } = useUser();
-  const { dealerButtonPosition } = useGameState();
+  const { dealerButtonPosition, winner } = useGameState();
   const orientation = useScreenOrientation();
 
   // Calculate blind positions
@@ -179,6 +205,7 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
         const isDealer = slot.playerIndex === dealerButtonPosition;
         const isSmallBlind = slot.playerIndex === smallBlindPos;
         const isBigBlind = slot.playerIndex === bigBlindPos;
+        const dealerButtonClasses = getDealerButtonPositionClasses(slot.slotIndex, orientation);
 
         return (
           <li
@@ -194,13 +221,21 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
               currentPlayerIndex={currentPlayerIndex}
               potContribution={0}
               isCurrentUser={isCurrentUser}
-              isDealer={isDealer}
               isSmallBlind={isSmallBlind}
               isBigBlind={isBigBlind}
               mobileOrientation={playerOrientation}
               desktopOrientation={playerOrientation}
               actionTriggered={actionTriggered}
             />
+            {isDealer && locked && !winner && (
+              <div className={`absolute z-20 ${dealerButtonClasses}`}>
+                <div className='flex flex-row items-center justify-center h-5 w-5 rounded-full bg-yellow-500 text-black overflow-hidden border-1'>
+                  <span className='text-xs font-bold text-black'>
+                    D
+                  </span>
+                </div>
+              </div>
+            )}
           </li>
         );
       })}

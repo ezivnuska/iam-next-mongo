@@ -17,7 +17,6 @@ interface PlayerProps {
   currentPlayerIndex: number;
   potContribution: number;
   isCurrentUser?: boolean;
-  isDealer?: boolean;
   isSmallBlind?: boolean;
   isBigBlind?: boolean;
   mobileOrientation?: PlayerOrientation;
@@ -47,19 +46,6 @@ function getOrientationClasses(mobileOrientation: PlayerOrientation, desktopOrie
   return `${mobileClass} ${desktopClass}`;
 }
 
-/**
- * Get dealer button position classes based on orientation
- */
-function getDealerButtonPositionClasses(orientation: PlayerOrientation): string {
-    const buttonClass = {
-      'ltr': '-right-4 -bottom-4',
-      'rtl': '-left-4 -bottom-4',
-      'ttb': 'left-0 -bottom-2',
-      'btt': 'top-0 left-1/2',
-    }[orientation];
-  
-    return buttonClass
-  }
 
 export default function Player({
     player,
@@ -67,7 +53,6 @@ export default function Player({
     currentPlayerIndex,
     potContribution,
     isCurrentUser,
-    isDealer,
     isSmallBlind = false,
     isBigBlind = false,
     mobileOrientation = 'ltr',
@@ -85,7 +70,6 @@ export default function Player({
 
     // Get orientation classes for layout
     const orientationClasses = getOrientationClasses(mobileOrientation, desktopOrientation);
-    const buttonClasses = getDealerButtonPositionClasses(mobileOrientation);
 
     return (
         <div
@@ -143,16 +127,6 @@ export default function Player({
                     )}
                 </div>
             </div>
-
-            {isDealer && locked && !winner && (
-                <div className={`absolute z-20 ${buttonClasses}`}>
-                    <div className='flex flex-row items-center justify-center h-5 w-5 rounded-full bg-yellow-500 text-black overflow-hidden border-1'>
-                        <span className='text-xs font-bold text-black'>
-                            D
-                        </span>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
