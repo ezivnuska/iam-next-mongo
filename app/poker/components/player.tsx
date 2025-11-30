@@ -3,7 +3,6 @@
 'use client';
 
 import Hand from './hand';
-import { getChipTotal } from '@/app/poker/lib/utils/poker';
 import type { Player as PlayerType, PlayerOrientation } from '@/app/poker/lib/definitions/poker';
 import clsx from 'clsx';
 import { useGameState } from '@/app/poker/lib/providers/poker-provider';
@@ -15,7 +14,6 @@ interface PlayerProps {
   index: number;
   player: PlayerType;
   currentPlayerIndex: number;
-  potContribution: number;
   isCurrentUser?: boolean;
   isSmallBlind?: boolean;
   isBigBlind?: boolean;
@@ -51,7 +49,6 @@ export default function Player({
     player,
     index,
     currentPlayerIndex,
-    potContribution,
     isCurrentUser,
     isSmallBlind = false,
     isBigBlind = false,
@@ -84,18 +81,7 @@ export default function Player({
             <div className={clsx('flex flex-row items-center justify-start gap-2 rounded-full bg-black/50 p-1', {
                 'bg-black': isCurrentPlayer && (!isCurrentUser || !actionTriggered),
             })}>
-                {/* <div className='flex relative'> */}
-                    {/* <div
-                        className={clsx(
-                            'rounded-full relative overflow-visible',
-                            {
-                                'border-white': isCurrentPlayer && (!isCurrentUser || !actionTriggered),
-                            },
-                        )}
-                    > */}
-                        <UserAvatar size={24} username={player.username} isAI={player.isAI} />
-                    {/* </div> */}
-                {/* </div> */}
+                <UserAvatar size={24} username={player.username} isAI={player.isAI} />
                 <span className='inline-block text-sm text-white text-center'>{player.username}</span>
             </div>
             <div className={clsx(

@@ -6,7 +6,6 @@ import { memo } from 'react';
 import Player from './player';
 import EmptyPlayerSlot from './empty-player-slot';
 import type { Player as PlayerType, PlayerOrientation } from '@/app/poker/lib/definitions/poker';
-import { useUser } from '@/app/lib/providers/user-provider';
 import { useGameState } from '@/app/poker/lib/providers/poker-provider';
 import { useScreenOrientation } from '@/app/poker/lib/hooks/use-screen-orientation';
 import clsx from 'clsx';
@@ -140,7 +139,6 @@ function getBlindPositions(dealerButtonPosition: number, playerCount: number) {
 function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameId, onJoinGame, onLeaveGame, actionTriggered }: PlayerSlotsProps) {
   const MAX_SLOTS = 5;
 
-  const { user } = useUser();
   const { dealerButtonPosition, winner } = useGameState();
   const orientation = useScreenOrientation();
 
@@ -217,7 +215,6 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
         return (
           <li
             key={slot.player.id}
-            // className={clsx('absolute w-[120px] h-[96px] bg-green-400/25 rounded-xl p-1 border-2 border-green-400/25 overflow-hidden', position, {
             className={clsx('absolute w-[120px] h-[96px] bg-green-400/25 border-2 border-dashed border-yellow-300 rounded-full', position, {
                 'border-white border-solid': currentPlayerIndex === index && !slot.player.folded,
             })}
@@ -226,7 +223,6 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
               player={slot.player}
               index={slot.playerIndex}
               currentPlayerIndex={currentPlayerIndex}
-              potContribution={0}
               isCurrentUser={isCurrentUser}
               isSmallBlind={isSmallBlind}
               isBigBlind={isBigBlind}

@@ -21,7 +21,7 @@ interface PokerNotificationDisplayProps {
  * - Sound effects play when notification appears
  */
 export default function PokerNotificationDisplay({ notification }: PokerNotificationDisplayProps) {
-  const { playSound, joinGame, leaveGame } = usePokerActions();
+  const { playSound, leaveGame } = usePokerActions();
   const { players } = usePlayers();
   const { gameId } = useViewers();
   const { user } = useUser();

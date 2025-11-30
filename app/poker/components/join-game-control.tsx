@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { useUser } from '@/app/lib/providers/user-provider';
 import { Button } from '@/app/ui/button';
+import { validateGuestUsername } from '@/app/poker/lib/definitions/validation';
 
 interface JoinGameControlProps {
   gameId: string | null;
@@ -24,28 +25,18 @@ export default function JoinGameControl({ gameId, onJoinGame }: JoinGameControlP
   const isAuthenticated = status === 'authenticated';
 
   const handleGuestJoin = () => {
-    // Validate username
-    const trimmedUsername = guestUsername.trim();
+    // Validate username using shared validation function
+    const validation = validateGuestUsername(guestUsername);
 
-    if (!trimmedUsername) {
-      setError('Please enter a username');
-      return;
-    }
-
-    if (trimmedUsername.length < 2) {
-      setError('Username must be at least 2 characters');
-      return;
-    }
-
-    if (trimmedUsername.length > 20) {
-      setError('Username must be 20 characters or less');
+    if (!validation.valid) {
+      setError(validation.error || 'Invalid username');
       return;
     }
 
     // Clear error and join game
     setError('');
     if (gameId) {
-      onJoinGame(gameId, trimmedUsername);
+      onJoinGame(gameId, guestUsername.trim());
     }
   };
 

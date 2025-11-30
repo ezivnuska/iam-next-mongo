@@ -76,3 +76,33 @@ export function combineValidations(...results: ValidationResult[]): ValidationRe
     warnings: allWarnings,
   };
 }
+
+/**
+ * Validation result for username input
+ */
+export interface UsernameValidationResult {
+  valid: boolean;
+  error?: string;
+}
+
+/**
+ * Validate guest username input
+ * Used by guest username modal and join game control
+ */
+export function validateGuestUsername(username: string): UsernameValidationResult {
+  const trimmed = username.trim();
+
+  if (!trimmed) {
+    return { valid: false, error: 'Please enter a username' };
+  }
+
+  if (trimmed.length < 2) {
+    return { valid: false, error: 'Username must be at least 2 characters' };
+  }
+
+  if (trimmed.length > 20) {
+    return { valid: false, error: 'Username must be 20 characters or less' };
+  }
+
+  return { valid: true };
+}

@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import Modal from '@/app/ui/modal';
 import { Button } from '@/app/ui/button';
+import { validateGuestUsername } from '@/app/poker/lib/definitions/validation';
 
 interface GuestUsernameModalProps {
   isOpen: boolean;
@@ -27,27 +28,17 @@ export default function GuestUsernameModal({
   const [error, setError] = useState('');
 
   const handleSubmit = () => {
-    // Validate username
-    const trimmedUsername = guestUsername.trim();
+    // Validate username using shared validation function
+    const validation = validateGuestUsername(guestUsername);
 
-    if (!trimmedUsername) {
-      setError('Please enter a username');
-      return;
-    }
-
-    if (trimmedUsername.length < 2) {
-      setError('Username must be at least 2 characters');
-      return;
-    }
-
-    if (trimmedUsername.length > 20) {
-      setError('Username must be 20 characters or less');
+    if (!validation.valid) {
+      setError(validation.error || 'Invalid username');
       return;
     }
 
     // Clear error and submit
     setError('');
-    onSubmit(trimmedUsername);
+    onSubmit(guestUsername.trim());
 
     // Reset form
     setGuestUsername('');
