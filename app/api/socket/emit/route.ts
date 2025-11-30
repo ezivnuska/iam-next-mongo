@@ -39,7 +39,11 @@ export async function POST(request: NextRequest) {
 
 		// Handle incoming client signals
 		if (signal) {
-			console.log('[Socket Emit Route] Received signal:', signal, 'for game:', gameId);
+			console.log('[Socket Emit Route] Received signal:', signal, gameId ? `for game: ${gameId}` : '(no gameId)');
+
+			// Ensure database connection for all signal handlers
+			const { connectToDatabase } = await import('@/app/lib/mongoose');
+			await connectToDatabase();
 
 			if (signal === 'poker:join_game' && gameId && userId) {
 				// Security validation: Verify userId authenticity
