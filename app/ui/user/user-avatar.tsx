@@ -60,14 +60,17 @@ export default function UserAvatar({
 		imageUrl = bestVariant.url
 	}
 
-	if (imageUrl) {
+	// Guard against null/undefined/"null" string values
+	const validImageUrl = imageUrl && imageUrl !== 'null' && imageUrl !== 'undefined' ? imageUrl : null;
+
+	if (validImageUrl) {
 		return (
 			<div
 				className={`rounded-full overflow-hidden flex-shrink-0 border-1 ${className}`}
 				style={{ width: size, height: size }}
 			>
 				<Image
-					src={imageUrl}
+					src={validImageUrl}
 					alt={username}
 					width={size}
 					height={size}
