@@ -91,7 +91,7 @@ export default function PokerDashboard({
   const showWaitingForPlayers = !hasHumanPlayers && !currentNotification && !showPlayerControls && !showActingPlayerPlaceholder;
 
   return (
-    <div className='relative w-7/10 sm:w-4/7 h-10 flex-row items-center justify-center rounded-full bg-green-900 overflow-hidden'>
+    <div className='relative w-9/10 sm:w-4/7 h-10 flex-row items-center justify-center rounded-full bg-green-900 overflow-hidden'>
       {/* Background Progress Bar */}
       {currentNotification?.type !== 'action' && currentNotification?.type !== 'deal' && progressPercentage > 0 && (
         <div

@@ -14,6 +14,7 @@ interface EmptyPlayerSlotProps {
   gameId: string | null;
   isGameLocked: boolean;
   onJoinGame: (gameId: string, guestUsername?: string) => void;
+  isClickable?: boolean;
 }
 
 /**
@@ -35,7 +36,7 @@ function getOrientationClasses(orientation: PlayerOrientation): string {
  * Empty player slot placeholder component
  * Clickable to join the game - shows modal for guest users
  */
-export default function EmptyPlayerSlot({ orientation, gameId, isGameLocked, onJoinGame }: EmptyPlayerSlotProps) {
+export default function EmptyPlayerSlot({ orientation, gameId, isGameLocked, onJoinGame, isClickable = true }: EmptyPlayerSlotProps) {
   const { user, status } = useUser();
   const [showGuestModal, setShowGuestModal] = useState(false);
   const orientationClasses = getOrientationClasses(orientation);
@@ -43,7 +44,7 @@ export default function EmptyPlayerSlot({ orientation, gameId, isGameLocked, onJ
   const isAuthenticated = status === 'authenticated';
 
   const handleClick = () => {
-    
+    if (!isClickable) return;
     if (!gameId) return;
 
     if (isAuthenticated) {
@@ -66,20 +67,25 @@ export default function EmptyPlayerSlot({ orientation, gameId, isGameLocked, onJ
     <>
       <button
         onClick={handleClick}
+        disabled={!isClickable}
         className={clsx(
-          'flex h-full w-full items-center justify-center gap-2 cursor-pointer transition-opacity hover:opacity-100 focus:outline-none',
-          orientationClasses
+          'flex h-full w-full items-center justify-center gap-2 transition-opacity focus:outline-none',
+          orientationClasses,
+          {
+            'cursor-pointer hover:opacity-100': isClickable,
+            'cursor-default opacity-50': !isClickable,
+          }
         )}
-        aria-label='Join game'
+        aria-label={isClickable ? 'Join game' : 'Player slot'}
       >
         <div className='flex flex-col items-center justify-center gap-1'>
           {/* Empty avatar circle with dashed border */}
           <div className='rounded-full border-2 border-dashed border-green-400/25 w-[28px] h-[28px] flex items-center justify-center bg-gray-800/30'>
-            <span className='text-white text-lg font-bold'>+</span>
+            {isClickable && <span className='text-white text-lg font-bold'>+</span>}
           </div>
 
           {/* Empty slot label */}
-          <span className='text-xs text-white'>Join</span>
+          {isClickable && <span className='text-xs text-white'>Join</span>}
         </div>
       </button>
 

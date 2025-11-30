@@ -64,7 +64,7 @@ const SLOT_CONFIGS: SlotConfig[] = [
   // Slot 0: Bottom-left (START - Player 1)
   {
     slotIndex: 0,
-    portraitPosition: 'bottom-0 left-0',
+    portraitPosition: 'bottom-0 left-[1%]',
     portraitOrientation: 'ltr',
     landscapePosition: 'bottom-[2%] left-0',
     landscapeOrientation: 'ltr',
@@ -73,7 +73,7 @@ const SLOT_CONFIGS: SlotConfig[] = [
   // Slot 1: Top-left (Player 2 - clockwise from slot 0)
   {
     slotIndex: 1,
-    portraitPosition: 'top-[19%] left-[2%]',
+    portraitPosition: 'top-[17%] left-[2%]',
     portraitOrientation: 'ltr',
     landscapePosition: 'top-[8%] left-[18%]',
     landscapeOrientation: 'ltr',
@@ -91,7 +91,7 @@ const SLOT_CONFIGS: SlotConfig[] = [
   // Slot 3: Top-right (Player 4 - clockwise from slot 2)
   {
     slotIndex: 3,
-    portraitPosition: 'top-[19%] right-[2%]',
+    portraitPosition: 'top-[17%] right-[2%]',
     portraitOrientation: 'rtl',
     landscapePosition: 'top-[8%] right-[18%]',
     landscapeOrientation: 'rtl',
@@ -100,7 +100,7 @@ const SLOT_CONFIGS: SlotConfig[] = [
   // Slot 4: Right side or Bottom-right (Player 5 - clockwise from slot 3)
   {
     slotIndex: 4,
-    portraitPosition: 'bottom-0 right-0',
+    portraitPosition: 'bottom-0 right-[1%]',
     portraitOrientation: 'rtl',
     landscapePosition: 'bottom-[2%] right-0',
     landscapeOrientation: 'rtl',
@@ -147,6 +147,9 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
   // Calculate blind positions
   const { smallBlindPos, bigBlindPos } = getBlindPositions(dealerButtonPosition, players.length);
 
+  // Track if we've encountered the first empty slot
+  let firstEmptySlotFound = false;
+
   // Create array of all 5 slots with players or placeholders
   // Players fill slots in clockwise order starting from slot 0
   const slots = SLOT_CONFIGS.map((slotConfig, slotIndex) => {
@@ -154,10 +157,14 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
 
     if (!player) {
       // Empty slot - show placeholder
+      const isFirstEmpty = !firstEmptySlotFound;
+      firstEmptySlotFound = true;
+
       return {
         type: 'empty' as const,
         slotIndex,
         slotConfig,
+        isFirstEmpty,
       };
     }
 
@@ -187,14 +194,14 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
           return (
             <li
               key={`empty-${slot.slotIndex}`}
-            //   className={clsx('absolute w-[120px] h-[96px] bg-green-400/25 rounded-xl p-1 border-2 border-dashed border-white/50', position)}
-              className={clsx('absolute w-[120px] h-[96px] bg-green-400/25 border-2 border-dashed border-yellow-300 rounded-full', position)}
+              className={clsx('absolute w-[120px] h-[96px] bg-green-400/25 border-2 border-dashed border-yellow-300/50 rounded-full', position)}
             >
               <EmptyPlayerSlot
                 orientation={playerOrientation}
                 gameId={gameId}
                 isGameLocked={locked}
                 onJoinGame={onJoinGame}
+                isClickable={slot.isFirstEmpty}
               />
             </li>
           );

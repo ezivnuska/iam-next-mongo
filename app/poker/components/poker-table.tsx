@@ -131,7 +131,7 @@ export default function PokerTable() {
             <ArrowLeftIcon className={`h-6 w-6 text-white`} />
         </Link>
         <div className={clsx('flex flex-1 flex-col w-full max-w-[400px] h-dvh min-h-[375px] max-h-[500px] relative', {
-            'mx-7 min-h-[375px] max-w-[580px]': orientation === 'landscape',
+            'mx-7 min-h-[375px] max-w-[580px] min-w-[580px]': orientation === 'landscape',
         })}>
 
             {/* Player slots sidebar */}
