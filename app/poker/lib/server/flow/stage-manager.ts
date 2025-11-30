@@ -595,15 +595,14 @@ export class StageManager {
     game.dealerButtonPosition = ((game.dealerButtonPosition || 0) + 1) % game.players.length;
     game.markModified('dealerButtonPosition');
 
-    // Save and emit granular update so clients see the button move BEFORE reset
+    // Unlock the game (combine with dealer button update to avoid version conflict)
+    game.locked = false;
+
+    // Save both updates together and emit granular update so clients see the button move BEFORE reset
     await game.save();
     await PokerSocketEmitter.emitDealerButtonMoved({
       dealerButtonPosition: game.dealerButtonPosition,
     });
-
-    // Unlock the game
-    game.locked = false;
-    await game.save();
 
     // Process any queued players now that the game is unlocked
     try {
@@ -624,7 +623,7 @@ export class StageManager {
       // Don't fail game completion if timer clear fails
     }
 
-    // Reset game for next round
+    // Reset game for next round - refetch to get latest version after save
     let gameToReset = await PokerGame.findById(game._id);
     if (gameToReset) {
       // Initialize a fresh shuffled deck for the new game
