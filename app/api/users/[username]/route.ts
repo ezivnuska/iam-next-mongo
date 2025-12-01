@@ -1,6 +1,6 @@
 // app/api/users/[username]/route.ts
 
-import { NextResponse, NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
 import { normalizeUser } from "@/app/lib/utils/normalizeUser";

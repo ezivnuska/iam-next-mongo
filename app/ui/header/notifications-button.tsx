@@ -67,7 +67,7 @@ export default function NotificationsButton() {
                 },
             )}
         >
-            <BellIcon className="w-6 self-center" />
+            <BellIcon className="w-6 max-[375px]:w-5 self-center" />
             <p className="text-xs hidden md:block">Activity</p>
             {unreadCount > 0 && (
                 <span className="absolute top-0.5 right-0.5 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full min-w-[1.25rem]">

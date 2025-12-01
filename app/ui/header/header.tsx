@@ -10,7 +10,7 @@ export default function Header() {
     return (
         <div className="flex flex-row items-center gap-2 px-2 py-1">
             <Link href="/">
-                <h1 className="text-[32px] min-[375px]:text-[24px] font-bold">iameric</h1>
+                <h1 className="text-[32px] max-[375px]:text-[24px] font-bold">iameric</h1>
             </Link>
             <Nav />
         </div>
