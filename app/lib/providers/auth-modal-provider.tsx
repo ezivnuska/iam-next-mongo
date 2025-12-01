@@ -25,6 +25,7 @@ export function AuthModalProvider({ children }: AuthModalProviderProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [initialMode, setInitialMode] = useState<AuthMode>('signin');
   const [callbackUrl, setCallbackUrl] = useState<string>('/');
+  const [isFromProtectedRoute, setIsFromProtectedRoute] = useState(false);
 
   function openAuthModal(mode: AuthMode = 'signin') {
     setInitialMode(mode);
@@ -37,12 +38,39 @@ export function AuthModalProvider({ children }: AuthModalProviderProps) {
         sessionStorage.removeItem('authCallbackUrl');
       }
     }
-    setCallbackUrl(storedCallbackUrl || pathname || '/');
+    const finalCallbackUrl = storedCallbackUrl || pathname || '/';
+    setCallbackUrl(finalCallbackUrl);
+    // Track if this was opened from a protected route redirect
+    setIsFromProtectedRoute(!!storedCallbackUrl && storedCallbackUrl !== '/');
     setIsOpen(true);
   }
 
   function closeAuthModal() {
     setIsOpen(false);
+
+    // Clear any remaining callback URL from sessionStorage
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('authCallbackUrl');
+
+      // If the modal was opened from a protected route redirect,
+      // clean up the URL immediately to prevent AuthRedirectHandler from reopening
+      if (isFromProtectedRoute) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('auth');
+        url.searchParams.delete('callbackUrl');
+        window.history.replaceState({}, '', url.toString());
+      }
+    }
+
+    // If the modal was opened from a protected route redirect,
+    // redirect to home when closing without authenticating
+    if (isFromProtectedRoute && typeof window !== 'undefined' && pathname !== '/') {
+      // Use setTimeout to allow the state updates to complete
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 0);
+    }
+    setIsFromProtectedRoute(false);
   }
 
   return (

@@ -99,7 +99,7 @@ export default function PokerNavButton() {
         },
       )}
     >
-      <PokerChipIcon className="w-6 self-center" />
+      <PokerChipIcon className="w-6 min-[375px]:w-5 self-center" />
       <p className="text-xs hidden md:block">Poker</p>
 
       {/* Player count badge */}

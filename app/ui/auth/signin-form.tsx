@@ -35,7 +35,7 @@ export default function SigninForm({ onToggleMode, callbackUrl: propCallbackUrl 
 
   return (
     <form action={formAction} className="space-y-3">
-      <div className="flex-1 rounded-lg bg-gray-50 px-6 pb-4 pt-8">
+      <div className="flex-1 rounded-lg bg-gray-50 px-4 pb-6 pt-6">
         <h1 className={`${ubuntu.className} mb-3 text-2xl`}>
           Please log in to continue.
         </h1>
@@ -82,7 +82,7 @@ export default function SigninForm({ onToggleMode, callbackUrl: propCallbackUrl 
         <input type="hidden" name="redirectTo" value={callbackUrl} />
 
         <Button className="mt-4 w-full" aria-disabled={isPending}>
-          Log in <ArrowRightIcon className="ml-auto h-5 w-5 text-gray-50" />
+          Sign in
         </Button>
 
         {errorMessage && (

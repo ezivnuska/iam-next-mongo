@@ -9,7 +9,7 @@ import clsx from 'clsx';
 import { useUser } from '@/app/lib/providers/user-provider';
 import UserAvatar from '@/app/ui/user/user-avatar';
 import NotificationsButton from '@/app/ui/header/notifications-button';
-import SignOutButton from '../user/sign-out-button';
+import SignOutButton from '../auth/signout-button';
 
 const links = [
     {

@@ -3,6 +3,7 @@
 "use client";
 
 import { ReactNode, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useUser } from "@/app/lib/providers/user-provider";
 import { useAuthModal } from "@/app/lib/providers/auth-modal-provider";
 
@@ -14,6 +15,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     const { status, user } = useUser();
     const { openAuthModal } = useAuthModal();
     const [mounted, setMounted] = useState(false);
+    const pathname = usePathname();
 
     // only render on client
     useEffect(() => {
@@ -22,9 +24,13 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
     useEffect(() => {
         if (mounted && status === "unauthenticated" && user?.isGuest) {
+            // Store the current path as callback URL before opening modal
+            if (typeof window !== 'undefined' && pathname !== '/') {
+                sessionStorage.setItem('authCallbackUrl', pathname);
+            }
             openAuthModal('signin');
         }
-    }, [mounted, status, user, openAuthModal]);
+    }, [mounted, status, user, openAuthModal, pathname]);
 
     if (!mounted || status === "loading") {
         return <p>Loading...</p>;
@@ -36,7 +42,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     }
 
     if (!user || user.isGuest) {
-        return <p>Please sign in to continue...</p>;
+        return null
     }
 
     return <>{children}</>;

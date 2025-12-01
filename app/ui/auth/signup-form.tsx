@@ -49,7 +49,7 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
 
   return (
     <form action={formAction} className="space-y-3">
-      <div className="flex-1 rounded-lg bg-gray-50 px-6 pb-4 pt-8">
+      <div className="flex-1 rounded-lg bg-gray-50 px-4 pb-6 pt-6">
         <h1 className={`${ubuntu.className} mb-3 text-2xl`}>
           Create an account
         </h1>
@@ -150,7 +150,7 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
           className="mt-4 w-full"
           aria-disabled={isPending || !!passwordError}
         >
-          Sign up <ArrowRightIcon className="ml-auto h-5 w-5 text-gray-50" />
+          Sign up
         </Button>
 
         {/* Server-side error */}

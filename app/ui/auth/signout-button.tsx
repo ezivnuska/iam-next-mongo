@@ -1,4 +1,4 @@
-// app/ui/user/sign-out-button.tsx
+// app/ui/auth/signout-button.tsx
 
 "use client";
 

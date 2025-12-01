@@ -19,26 +19,23 @@ export default function Modal({
   isOpen = true,
   onClose,
   className = 'bg-black/50',
-  contentClassName = 'relative w-full max-w-md rounded-lg bg-white p-6 pt-4 shadow-lg',
+  contentClassName = 'relative w-full max-w-md rounded-lg bg-white p-2 shadow-lg',
   position = 'fixed',
 }: ModalProps) {
   if (!isOpen) return null;
 
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    // Only close if clicking the backdrop itself, not any child
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    onClose();
   };
 
-  const handleContentClick = (e: React.MouseEvent) => {
-    // Stop propagation to prevent backdrop click
+  const handleContentClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Prevent clicks inside content from closing the modal
     e.stopPropagation();
   };
 
   return (
     <div
-      className={`${position} inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto ${className}`}
+      className={`${position} inset-0 z-50 max-w-screen flex items-center justify-center p-3 overflow-y-auto ${className}`}
       onClick={handleBackdropClick}
     >
       <div className={`${contentClassName} my-auto`} onClick={handleContentClick}>

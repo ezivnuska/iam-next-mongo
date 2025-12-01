@@ -22,7 +22,7 @@ export default function NavPublic() {
                     },
                 )}
             >
-                <PuzzlePieceIcon className="w-6 self-center" />
+                <PuzzlePieceIcon className="w-6 min-[375px]:w-5 self-center" />
                 <p className="text-xs hidden md:block">Tiles</p>
             </Link>
             <PokerNavButton />
