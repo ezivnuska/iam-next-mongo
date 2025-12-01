@@ -23,11 +23,10 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'signin', cal
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <div className="max-w-md">
-        {mode === 'signin' ? (
-          <SigninForm onToggleMode={toggleMode} callbackUrl={callbackUrl} />
-        ) : (
-          <SignupForm onToggleMode={toggleMode} callbackUrl={callbackUrl} />
-        )}
+        {mode === 'signin'
+            ? <SigninForm onToggleMode={toggleMode} callbackUrl={callbackUrl} />
+            : <SignupForm onToggleMode={toggleMode} callbackUrl={callbackUrl} />
+        }
       </div>
     </Modal>
   );

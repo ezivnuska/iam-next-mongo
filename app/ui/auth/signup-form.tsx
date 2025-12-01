@@ -4,7 +4,6 @@
 
 import { ubuntu } from "@/app/ui/fonts";
 import { AtSymbolIcon, KeyIcon, ExclamationCircleIcon, UserIcon } from "@heroicons/react/24/outline";
-import { ArrowRightIcon } from "@heroicons/react/20/solid";
 import { Button } from "@/app/ui/button";
 import { useActionState } from "react";
 import { useSearchParams } from "next/navigation";

@@ -1,38 +1,76 @@
 // app/lib/actions/register.ts
 
-"use client";
+"use server";
 
-import { signIn } from "next-auth/react";
+import { connectToDatabase } from "@/app/lib/mongoose";
+import UserModel from "@/app/lib/models/user";
+import bcrypt from "bcrypt";
+import { signIn } from "@/app/lib/auth";
+import { AuthError } from "next-auth";
 
 export async function register(formData: FormData): Promise<string | undefined> {
   try {
-    const response = await fetch("/api/register", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const data = await response.json();
-      return data.error || "An unexpected error occurred";
-    }
-
-    // Auto-login after successful registration
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
+    const email = formData.get("email")?.toString().trim();
+    const password = formData.get("password")?.toString();
+    const username = formData.get("username")?.toString().trim();
     const redirectTo = (formData.get("redirectTo") as string) || "/";
 
+    // Validation
+    if (!email || !password) {
+      return "Email and password are required";
+    }
+
+    if (!username) {
+      return "Username is required";
+    }
+
+    if (username.length < 2 || username.length > 20) {
+      return "Username must be between 2 and 20 characters";
+    }
+
+    await connectToDatabase();
+
+    // Check if email already exists
+    const existingEmail = await UserModel.findOne({ email });
+    if (existingEmail) {
+      return "Email is already registered";
+    }
+
+    // Check if username already exists
+    const existingUsername = await UserModel.findOne({ username });
+    if (existingUsername) {
+      return "Username is already taken";
+    }
+
+    // Hash password and create user
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new UserModel({
+      email,
+      password: hashedPassword,
+      username,
+      role: "user",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    await newUser.save();
+
+    // Auto-login after successful registration
     try {
       await signIn("credentials", {
         email,
         password,
-        redirect: true,
-        callbackUrl: redirectTo,
+        redirectTo,
       });
-      return undefined; // success
     } catch (error) {
-      console.error("Sign in after registration failed:", error);
-      return "Registration successful, but auto-login failed. Please sign in manually.";
+      if (error instanceof AuthError) {
+        return "Registration successful, but auto-login failed. Please sign in manually.";
+      }
+      throw error;
     }
+
+    return undefined; // success
   } catch (err) {
     console.error("Registration error:", err);
     return "Failed to register. Please try again later.";

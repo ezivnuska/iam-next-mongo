@@ -17,7 +17,7 @@ export default function SigninButton() {
             onClick={() => openAuthModal('signin')}
             variant="link"
         >
-            {`Sign${status === 'loading' ? 'ing' : ''} In`}
+            Sign In
         </Button>
     );
 }
