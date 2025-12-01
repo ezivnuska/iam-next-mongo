@@ -151,35 +151,25 @@ export default function PokerTable() {
                 />
             </div>
             
-            {/* <div className={clsx('w-full z-5 border border-green-400', { */}
+            {/* Main table area */}
             <div className={clsx('absolute right-0 bottom-0 left-0 z-5 h-[60%]', {
                 'z-15': userGameInfo.isUserInGame,
                 'h-[64%]': orientation === 'landscape',
             })}>
-                {/* Main table area */}
-                {/* <div className='flex flex-1 h-full flex-row items-center justify-center border'> */}
-                    <div className={clsx('flex flex-1 h-full flex-col items-center justify-center',
-                        // {
-                        //     'w-[55%]': orientation === 'landscape',
-                        // }
-                    )}>
-                        <div className={clsx('flex flex-col w-11/12 items-center justify-center py-2', {
-                            'w-[60%]': orientation === 'landscape',
-                        })}>
-                            {/* <div className='absolute -top-7 left-1/2 w-[360px] h-[340px] rounded-full bg-green-800 -translate-x-1/2'> */}
-                            <div className='h-9'>
-                                <Pot />
-                            </div>
-                            <PokerDashboard
-                                showPlayerControls={showPlayerControls}
-                                onActionTaken={handleActionTaken}
-                            />
-                        </div>
-                        <div className='flex flex-1 flex-row items-center'>
-                            <CommunalCards />
-                        </div>
+                <div className='flex flex-1 h-full flex-col items-center justify-center'>
+                    <div className={clsx('flex flex-col w-11/12 items-center justify-center py-2', {
+                        'w-[60%]': orientation === 'landscape',
+                    })}>
+                        <Pot />
+                        <PokerDashboard
+                            showPlayerControls={showPlayerControls}
+                            onActionTaken={handleActionTaken}
+                        />
                     </div>
-                {/* </div> */}
+                    <div className='flex flex-1 flex-row items-center'>
+                        <CommunalCards />
+                    </div>
+                </div>
             </div>
         </div>
         {gameId && (

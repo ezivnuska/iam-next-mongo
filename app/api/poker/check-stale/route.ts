@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
       game.players?.length > 0;
 
     if (!isStale) {
+      // Game is healthy - return success quietly (no logging)
       return NextResponse.json({
         message: 'Game is not stale',
         timeSinceUpdate: Math.round(timeSinceUpdate / 1000),

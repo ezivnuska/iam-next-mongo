@@ -2,7 +2,7 @@
 
 'use client';
 
-import Hand from './hand';
+import Hand from './player-hand';
 import type { Player as PlayerType, PlayerOrientation } from '@/app/poker/lib/definitions/poker';
 import clsx from 'clsx';
 import { useGameState } from '@/app/poker/lib/providers/poker-provider';

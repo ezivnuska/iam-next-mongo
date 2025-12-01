@@ -1,4 +1,4 @@
-export default jobs = [
+const jobs = [
     {
         company: 'Eveo',
         city: 'San Francisco',
@@ -137,4 +137,6 @@ export default jobs = [
             'Built out all client sites from existing design composites (HTML|CSS|JS|AS)',
         ],
     }
-]
+];
+
+export default jobs;

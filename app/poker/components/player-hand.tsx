@@ -1,8 +1,7 @@
-// app/ui/poker/hand.tsx
+// app/ui/poker/player-hand.tsx
 
 'use client';
 
-import clsx from 'clsx';
 import Card from './card';
 import type { Card as CardType } from '@/app/poker/lib/definitions/poker';
 
