@@ -14,7 +14,14 @@ export default function AuthLinks() {
         <div className="flex w-full justify-end items-center gap-2">
             {(status === "authenticated" || status === "loading" || status === "signing-out")
                 ? null
-                : <Button onClick={() => openAuthModal('signin')} variant="ghost">Sign In</Button>
+                : (
+                    <Button
+                        onClick={() => openAuthModal('signin')}
+                        variant="link"
+                    >
+                        Sign In
+                    </Button>
+                )
             }
         </div>
     );

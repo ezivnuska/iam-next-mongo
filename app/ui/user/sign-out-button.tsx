@@ -14,6 +14,12 @@ export default function SignOutButton() {
     };
 
     return (
-        <Button onClick={handleSignOut} variant="ghost" disabled={isSigningOut}>{`Sign${isSigningOut ? 'ing' : ''} Out`}</Button>
+        <Button
+            onClick={handleSignOut}
+            variant="link"
+            disabled={isSigningOut}
+        >
+            {`Sign${isSigningOut ? 'ing' : ''} Out`}
+        </Button>
     );
 }
