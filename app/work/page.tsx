@@ -1,31 +1,28 @@
-// app/experience/page.tsx
+// app/work/page.tsx
 
 import DefaultPage from '../ui/layout/page/default-page';
 import jobs from './jobs'
 import { Metadata } from 'next';
-import { ubuntu } from '@/app/ui/fonts';
-import clsx from 'clsx';
 import PageHeader from '../ui/layout/page-header';
 
 export const metadata: Metadata = {
-  title: 'Experience',
-  description: 'Professional work experience and career history',
+    title: 'Work',
+    description: 'Professional work experience and career history',
 };
 
 interface Job {
-  company: string;
-  city: string;
-  start: string;
-  end: string;
-  duration: string;
-  title: string;
-  bullets: string[];
+    company: string;
+    city: string;
+    start: string;
+    end: string;
+    duration: string;
+    title: string;
+    bullets: string[];
 }
 
-export default function ExperiencePage() {
-  return (
-    <DefaultPage>
-        {/* <div className="max-w-4xl mx-auto px-4 py-8"> */}
+export default function WorkPage() {
+    return (
+        <DefaultPage>
             <PageHeader
                 title='Work'
                 subtitle='Professional work history'
@@ -57,17 +54,16 @@ export default function ExperiencePage() {
 
                         {/* Job responsibilities */}
                         <ul className="space-y-2">
-                        {job.bullets.map((bullet: string, bulletIndex: number) => (
-                            <li key={bulletIndex} className="flex items-start gap-2 text-gray-700">
-                                <span className="text-blue-500">▸</span>
-                                <span className="flex-1">{bullet}</span>
-                            </li>
-                        ))}
+                            {job.bullets.map((bullet: string, bulletIndex: number) => (
+                                <li key={bulletIndex} className="flex items-start gap-2 text-gray-700">
+                                    <span className="text-blue-500">▸</span>
+                                    <span className="flex-1">{bullet}</span>
+                                </li>
+                            ))}
                         </ul>
                     </div>
                 ))}
             </div>
-        {/* </div> */}
-    </DefaultPage>
-  );
+        </DefaultPage>
+    );
 }

@@ -25,7 +25,7 @@ import { getToken } from "next-auth/jwt";
  * - / - Home page
  * - /poker - Poker game (supports guest users)
  * - /tiles - Tile gallery
- * - /experience - Experience page
+ * - /work - Work page
  *
  * For unauthenticated users accessing protected routes:
  * - Redirects to home page with query params: ?auth=required&callbackUrl=/original-path
