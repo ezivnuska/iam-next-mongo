@@ -8,21 +8,21 @@ import { getActivities } from "@/app/lib/actions/activities";
 import DefaultPage from "../ui/layout/page/default-page";
 
 export default async function ActivityPage() {
-  const session = await auth();
-  if (!session) {
-    redirect("/?auth=required&callbackUrl=/activity");
-  }
+    const session = await auth();
+    if (!session) {
+        redirect("/?auth=required&callbackUrl=/activity");
+    }
 
-  const activities = await getActivities();
+    const activities = await getActivities();
 
-  return (
-    <DefaultPage>
-        <Breadcrumbs
-            breadcrumbs={[
-            { label: "Activity", href: "/activity", active: true },
-            ]}
-        />
-        <ActivityFeed initialActivities={activities} />
-    </DefaultPage>
-  );
+    return (
+        <DefaultPage>
+            <Breadcrumbs
+                breadcrumbs={[
+                    { label: "Activity", href: "/activity", active: true },
+                ]}
+            />
+            <ActivityFeed initialActivities={activities} />
+        </DefaultPage>
+    );
 }

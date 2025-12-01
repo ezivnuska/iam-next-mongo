@@ -5,6 +5,7 @@ import jobs from './jobs'
 import { Metadata } from 'next';
 import { ubuntu } from '@/app/ui/fonts';
 import clsx from 'clsx';
+import PageHeader from '../ui/layout/page-header';
 
 export const metadata: Metadata = {
   title: 'Experience',
@@ -25,8 +26,10 @@ export default function ExperiencePage() {
   return (
     <DefaultPage>
         {/* <div className="max-w-4xl mx-auto px-4 py-8"> */}
-            <h1 className={clsx(ubuntu.className, 'flex text-xl md:text-2xl')}>Experience</h1>
-            <p className="text-gray-600 mb-4">Professional work history</p>
+            <PageHeader
+                title='Work'
+                subtitle='Professional work history'
+            />
 
             <div className="space-y-8 px-2 pb-8">
                 {jobs.map((job: Job, index: number) => (
@@ -35,7 +38,7 @@ export default function ExperiencePage() {
                         className="relative pl-8 border-l-2 border-gray-200 pb-8 last:pb-0"
                     >
                         {/* Timeline dot */}
-                        <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-blue-500 border-2 border-white"></div>
+                        <div className="absolute -left-[9px] top-[8px] w-4 h-4 rounded-full bg-blue-500 border-2 border-white"></div>
 
                         {/* Job header */}
                         <div className="mb-3">

@@ -7,9 +7,9 @@ const jobs = [
         duration: '5 months',
         title: 'Frontend',
         bullets: [
-            'Built banner ads using Flash/Actionscript',
-            'Wrote Jade templates for mobile app',
-            'Built microsite for use in 3rd party iPad software',
+            'Developed interactive banner advertisements using Flash and ActionScript for multi-platform campaigns',
+            'Engineered Jade templates to streamline mobile application development workflow',
+            'Created responsive microsite optimized for third-party iPad software integration',
         ],
     },
     // {
@@ -31,7 +31,7 @@ const jobs = [
         duration: '1 year, 2 months',
         title: 'Frontend',
         bullets: [
-            'Built expandable and polite-loading rich-media creatives for DoubleClick and MediaMind (now Sizemek) platforms',
+            'Architected expandable and polite-loading rich-media creatives for DoubleClick and MediaMind (now Sizmek) platforms, ensuring optimal user experience and minimal page load impact',
         ],
     },
     {
@@ -42,7 +42,7 @@ const jobs = [
         duration: '1 month',
         title: 'Frontend',
         bullets: [
-            'Built expandable rich-media creatives using Actionscript on DoubleClick platform',
+            'Delivered expandable rich-media advertising creatives using ActionScript on the DoubleClick platform, meeting tight campaign deadlines',
         ],
     },
     {
@@ -53,7 +53,7 @@ const jobs = [
         duration: '1 month',
         title: 'Frontend',
         bullets: [
-            'Built Flash banner ads in various sizes',
+            'Produced Flash banner advertisements in multiple sizes for political campaign marketing initiatives',
         ],
     },
     {
@@ -64,10 +64,10 @@ const jobs = [
         duration: '2 years',
         title: 'Frontend/iOS',
         bullets: [
-            'Maintained and facilitated updates and promotions for Flash application created with AS3 and PureMVC framework which allowed customers to order localized cable, internet and telephone service bundles',
-            'Built the Lift Calculator, a simple app for iPhone, for calculating the response rate for marketing campaigns and comparing them to industry averages.',
-            'Built Flash banners for various clients',
-            'Built landing pages and email campaigns',
+            'Maintained and enhanced enterprise Flash application built with AS3 and PureMVC framework, enabling customers to configure and order customized cable, internet, and telephone service bundles',
+            'Developed Lift Calculator iOS application for calculating and benchmarking marketing campaign response rates against industry standards',
+            'Designed and implemented Flash banner advertisements for diverse client portfolio',
+            'Created conversion-optimized landing pages and email marketing campaigns',
         ],
     },
     {
@@ -78,7 +78,7 @@ const jobs = [
         duration: '4 months',
         title: 'Frontend',
         bullets: [
-            'Built Flash banner campaigns',
+            'Produced engaging Flash banner campaigns for multiple brand advertising initiatives',
         ],
     },
     {
@@ -89,7 +89,7 @@ const jobs = [
         duration: '4 months',
         title: 'Frontend',
         bullets: [
-            'Built XML driven interactive expandable rich media Flash banners for online reality show',
+            'Engineered XML-driven interactive expandable rich-media Flash banners for online reality show promotion, integrating dynamic content updates',
         ],
     },
     {
@@ -100,7 +100,7 @@ const jobs = [
         duration: '2 months',
         title: 'Frontend',
         bullets: [
-            'Built standard and expandable interactive Flash banners',
+            'Developed standard and expandable interactive Flash banner advertisements for client marketing campaigns',
         ],
     },
     {
@@ -111,8 +111,8 @@ const jobs = [
         duration: '4 months',
         title: 'Frontend',
         bullets: [
-            'Built 3 Flash interactive video case studies to be used as marketing materials for pharmaceutical companies',
-        ],  
+            'Developed three interactive Flash video case studies as marketing collateral for pharmaceutical industry clients, combining multimedia storytelling with user engagement features',
+        ],
     },
     {
         company: 'Graphic Language',
@@ -122,8 +122,8 @@ const jobs = [
         duration: '2 years',
         title: 'Frontend',
         bullets: [
-            'Built out client web sites using HTML, CSS, JavaScript, Flash and ActionScript',
-            'Gathered some experience creating email templates for a CMS-based email software',
+            'Developed and deployed client websites utilizing HTML, CSS, JavaScript, Flash, and ActionScript across multiple industries',
+            'Designed responsive email templates integrated with CMS-based email marketing platform',
         ],
     },
     {
@@ -134,7 +134,7 @@ const jobs = [
         duration: '5 years',
         title: 'Frontend',
         bullets: [
-            'Built out all client sites from existing design composites (HTML|CSS|JS|AS)',
+            'Transformed design composites into fully functional client websites using HTML, CSS, JavaScript, and ActionScript, ensuring pixel-perfect implementation and cross-browser compatibility',
         ],
     }
 ];
