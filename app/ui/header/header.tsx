@@ -3,8 +3,7 @@
 "use client";
 
 import Link from "next/link";
-import NavLinks from "@/app/ui/header/nav-links";
-import AuthLinks from "./auth-links";
+import Nav from "./nav";
 
 export default function Header() {
 
@@ -14,8 +13,7 @@ export default function Header() {
                 <h1 className="text-[32px] font-bold">iameric</h1>
             </Link>
             <div className="flex w-full items-center justify-between">
-                <NavLinks />
-                <AuthLinks />
+                <Nav />
             </div>
         </div>
     );

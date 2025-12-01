@@ -1,6 +1,7 @@
 // app/users/[username]/page.tsx
 
-import ProtectedRoute from '@/app/ui/auth/protected-route';
+import { auth } from '@/app/lib/auth';
+import { redirect } from 'next/navigation';
 import UserProfileCard from '@/app/ui/user/user-profile-card';
 import UserContentFeed from '@/app/ui/user/user-content-feed';
 import Breadcrumbs from '@/app/ui/layout/breadcrumbs';
@@ -13,21 +14,24 @@ interface Props {
 
 export default async function UserProfilePage({ params }: Props) {
     const { username } = await params;
+    const session = await auth();
+    if (!session) {
+        redirect(`/?auth=required&callbackUrl=/users/${username}`);
+    }
+
     const content = await getUserContent(username);
 
     return (
-        <ProtectedRoute>
-            <DefaultPage>
-                <Breadcrumbs
-                    breadcrumbs={[
-                        { label: "Users", href: "/users" },
-                        { label: username, href: `/users/${username}`, active: true },
-                        { label: "Images", href: `/users/${username}/images` },
-                    ]}
-                />
-                <UserProfileCard username={username} />
-                <UserContentFeed initialContent={content} />
-            </DefaultPage>
-        </ProtectedRoute>
+        <DefaultPage>
+            <Breadcrumbs
+                breadcrumbs={[
+                    { label: "Users", href: "/users" },
+                    { label: username, href: `/users/${username}`, active: true },
+                    { label: "Images", href: `/users/${username}/images` },
+                ]}
+            />
+            <UserProfileCard username={username} />
+            <UserContentFeed initialContent={content} />
+        </DefaultPage>
     );
 }

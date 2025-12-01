@@ -3,17 +3,22 @@
 "use client";
 
 import { ubuntu } from "@/app/ui/fonts";
-import { AtSymbolIcon, KeyIcon, ExclamationCircleIcon } from "@heroicons/react/24/outline";
+import { AtSymbolIcon, KeyIcon, ExclamationCircleIcon, UserIcon } from "@heroicons/react/24/outline";
 import { ArrowRightIcon } from "@heroicons/react/20/solid";
 import { Button } from "@/app/ui/button";
 import { useActionState } from "react";
 import { useSearchParams } from "next/navigation";
-import { register } from "@/app/lib/actions";
+import { register } from "@/app/lib/actions/register";
 import { useState, useEffect } from "react";
 
-export default function SignupForm() {
+interface SignupFormProps {
+  onToggleMode?: () => void;
+  callbackUrl?: string;
+}
+
+export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl }: SignupFormProps = {}) {
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/";
+  const callbackUrl = propCallbackUrl || searchParams.get("callbackUrl") || "/";
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -50,6 +55,26 @@ export default function SignupForm() {
         </h1>
 
         <div className="w-full">
+          <label
+            className="mb-3 mt-5 block text-xs font-medium text-gray-900"
+            htmlFor="username"
+          >
+            Username
+          </label>
+          <div className="relative">
+            <input
+              id="username"
+              name="username"
+              type="text"
+              placeholder="Choose a username"
+              required
+              minLength={2}
+              maxLength={20}
+              className="peer block w-full rounded-md border border-gray-200 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500"
+            />
+            <UserIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
+          </div>
+
           <label
             className="mb-3 mt-5 block text-xs font-medium text-gray-900"
             htmlFor="email"
@@ -133,6 +158,19 @@ export default function SignupForm() {
           <div className="flex h-8 items-end space-x-1 mt-2">
             <ExclamationCircleIcon className="h-5 w-5 text-red-500" />
             <p className="text-sm text-red-500">{errorMessage}</p>
+          </div>
+        )}
+
+        {onToggleMode && (
+          <div className="mt-4 text-center text-sm text-gray-600">
+            Already have an account?{' '}
+            <button
+              type="button"
+              onClick={onToggleMode}
+              className="text-blue-600 hover:text-blue-500 font-medium underline"
+            >
+              Sign in
+            </button>
           </div>
         )}
       </div>

@@ -4,13 +4,15 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import { useUser } from "@/app/lib/providers/user-provider";
+import { useAuthModal } from "@/app/lib/providers/auth-modal-provider";
 
 interface ProtectedRouteProps {
     children: ReactNode;
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-    const { status, user, signIn } = useUser();
+    const { status, user } = useUser();
+    const { openAuthModal } = useAuthModal();
     const [mounted, setMounted] = useState(false);
 
     // only render on client
@@ -18,17 +20,23 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
         setMounted(true);
     }, []);
 
+    useEffect(() => {
+        if (mounted && status === "unauthenticated" && user?.isGuest) {
+            openAuthModal('signin');
+        }
+    }, [mounted, status, user, openAuthModal]);
+
     if (!mounted || status === "loading") {
         return <p>Loading...</p>;
     }
 
-    if (!user) {
-        // Optionally redirect to sign-in
-        //
-        // TODO: open sign-in modal
-        //
-        signIn();
-        return <p>Redirecting...</p>;
+    // During sign-out, keep showing the content until redirect
+    if (status === "signing-out") {
+        return <>{children}</>;
+    }
+
+    if (!user || user.isGuest) {
+        return <p>Please sign in to continue...</p>;
     }
 
     return <>{children}</>;

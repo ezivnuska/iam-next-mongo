@@ -7,7 +7,7 @@ import { signIn as nextSignIn, signOut as nextSignOut } from "next-auth/react";
 import type { AppUser, User } from "@/app/lib/definitions";
 import { UserRole } from "@/app/lib/definitions/user";
 
-type AuthStatus = "loading" | "authenticated" | "unauthenticated";
+type AuthStatus = "loading" | "authenticated" | "unauthenticated" | "signing-out";
 
 interface UserContextValue {
   user: User | null;
@@ -131,18 +131,18 @@ export function UserProvider({ children, initialUser }: UserProviderProps) {
       console.error("fetchUserByUsername error:", err);
       return null;
     }
-  }  
+  }
 
   async function signOut() {
-      // Clear local state first
-      setUser(null);
-      setStatus("unauthenticated");
+      // Set signing-out status to prevent UI flash
+      setStatus("signing-out");
 
       // Sign out from NextAuth without redirect, then manually redirect
       // This ensures the session is fully cleared before navigation
       await nextSignOut({ redirect: false });
 
-      // Manually navigate to home page after sign-out completes
+      // Redirect immediately - don't clear state as it will cause UI flash
+      // The state will be reset when the page reloads
       window.location.href = '/';
   }
 
@@ -158,7 +158,7 @@ export function UserProvider({ children, initialUser }: UserProviderProps) {
         fetchUserByUsername,
       }}
     >
-      {["authenticated", "unauthenticated"].includes(status) ? children : null}
+      {["authenticated", "unauthenticated", "signing-out"].includes(status) ? children : null}
     </UserContext.Provider>
   );
 }

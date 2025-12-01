@@ -1,4 +1,4 @@
-// app/ui/login-form.tsx
+// app/ui/auth/signin-form.tsx
 
 "use client";
 
@@ -10,9 +10,14 @@ import { useActionState } from "react";
 import { authenticate } from "@/app/lib/actions/authenticate";
 import { useSearchParams } from "next/navigation";
 
-export default function LoginForm() {
+interface SigninFormProps {
+  onToggleMode?: () => void;
+  callbackUrl?: string;
+}
+
+export default function SigninForm({ onToggleMode, callbackUrl: propCallbackUrl }: SigninFormProps = {}) {
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/";
+  const callbackUrl = propCallbackUrl || searchParams.get("callbackUrl") || "/";
 
   // 🔹 Fully type useActionState
   // state = string | undefined (error message)
@@ -84,6 +89,19 @@ export default function LoginForm() {
           <div className="flex h-8 items-end space-x-1">
             <ExclamationCircleIcon className="h-5 w-5 text-red-500" />
             <p className="text-sm text-red-500">{errorMessage}</p>
+          </div>
+        )}
+
+        {onToggleMode && (
+          <div className="mt-4 text-center text-sm text-gray-600">
+            Don't have an account?{' '}
+            <button
+              type="button"
+              onClick={onToggleMode}
+              className="text-blue-600 hover:text-blue-500 font-medium underline"
+            >
+              Sign up
+            </button>
           </div>
         )}
       </div>

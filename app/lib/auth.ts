@@ -72,7 +72,7 @@ export const authOptions: NextAuthConfig = {
         return session;
     },
   },
-  pages: { signIn: "/signin" },
+  pages: { signIn: "/" },
   debug: process.env.NODE_ENV === "development",
 };
 

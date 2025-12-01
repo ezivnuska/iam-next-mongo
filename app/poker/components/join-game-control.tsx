@@ -22,7 +22,7 @@ export default function JoinGameControl({ gameId, onJoinGame }: JoinGameControlP
   const [guestUsername, setGuestUsername] = useState('');
   const [error, setError] = useState('');
 
-  const isAuthenticated = status === 'authenticated';
+  const isAuthenticated = status === 'authenticated' || status === 'signing-out';
 
   const handleGuestJoin = () => {
     // Validate username using shared validation function

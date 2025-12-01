@@ -11,7 +11,7 @@ interface ProtectedRouteProps {
 
 export default async function ProtectedRouteServer({
   children,
-  redirectTo = "/signin",
+  redirectTo = "/",
 }: ProtectedRouteProps) {
   const session = await getServerSession(authOptions);
 

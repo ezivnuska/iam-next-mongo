@@ -41,7 +41,7 @@ export default function EmptyPlayerSlot({ orientation, gameId, isGameLocked, onJ
   const [showGuestModal, setShowGuestModal] = useState(false);
   const orientationClasses = getOrientationClasses(orientation);
 
-  const isAuthenticated = status === 'authenticated';
+  const isAuthenticated = status === 'authenticated' || status === 'signing-out';
 
   const handleClick = () => {
     if (!isClickable) return;
