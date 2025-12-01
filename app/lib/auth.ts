@@ -10,6 +10,7 @@ import bcrypt from "bcrypt";
 import { UserRole } from "@/app/lib/definitions/user";
 
 export const authOptions: NextAuthConfig = {
+  trustHost: true,
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -41,7 +42,9 @@ export const authOptions: NextAuthConfig = {
       },
     }),
   ],
-  session: { strategy: "jwt" },
+  session: {
+    strategy: "jwt",
+  },
   callbacks: {
     // ----------------------
     // JWT callback (runs on sign-in and token refresh)

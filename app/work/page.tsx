@@ -35,7 +35,7 @@ export default function WorkPage() {
                         className="relative pl-8 border-l-2 border-gray-200 pb-8 last:pb-0"
                     >
                         {/* Timeline dot */}
-                        <div className="absolute -left-[9px] top-[8px] w-4 h-4 rounded-full bg-blue-500 border-2 border-white"></div>
+                        <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-blue-500 border-2 border-white"></div>
 
                         {/* Job header */}
                         <div className="mb-3">
