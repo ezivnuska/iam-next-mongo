@@ -17,6 +17,18 @@ console.log('[AUTH CONFIG]', {
 
 export const authOptions: NextAuthConfig = {
   trustHost: true,
+  useSecureCookies: true, // Force secure cookies in production
+  cookies: {
+    sessionToken: {
+      name: '__Secure-next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: true, // Always use secure cookies
+      }
+    }
+  },
   providers: [
     CredentialsProvider({
       name: "Credentials",
