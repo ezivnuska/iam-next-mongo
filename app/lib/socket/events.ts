@@ -109,6 +109,21 @@ export interface CommentPayload {
 		id: string
 		username: string
 	}
+	comment?: {
+		id: string
+		refId: string
+		refType: 'Image' | 'Post' | 'Memory'
+		author: {
+			id: string
+			username: string
+			avatar: {
+				id?: string
+				variants: string[]
+			} | null
+		}
+		content: string
+		createdAt: string
+	}
 }
 
 export interface LikePayload {

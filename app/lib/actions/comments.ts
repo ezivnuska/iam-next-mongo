@@ -60,18 +60,7 @@ export async function createComment(
 		throw new Error("Failed to retrieve created comment");
 	}
 
-	// Emit socket event
-	await emitCommentAdded({
-		commentId: populatedComment._id.toString(),
-		refId: populatedComment.refId.toString(),
-		refType: refType,
-		author: {
-			id: populatedComment.author._id.toString(),
-			username: populatedComment.author.username,
-		}
-	});
-
-	return {
+	const commentData = {
 		id: populatedComment._id.toString(),
 		refId: populatedComment.refId.toString(),
 		refType: populatedComment.refType as CommentRefType,
@@ -86,6 +75,20 @@ export async function createComment(
 		content: populatedComment.content,
 		createdAt: populatedComment.createdAt?.toISOString() ?? new Date().toISOString(),
 	};
+
+	// Emit socket event with full comment data
+	await emitCommentAdded({
+		commentId: commentData.id,
+		refId: commentData.refId,
+		refType: refType,
+		author: {
+			id: commentData.author.id,
+			username: commentData.author.username,
+		},
+		comment: commentData,
+	});
+
+	return commentData;
 }
 
 interface CommentDocument {

@@ -15,6 +15,7 @@ export type UseCommentsOptions = {
   initialCommentCount?: number;
   onCommentCountChange?: (count: number) => void;
   autoLoad?: boolean;
+  currentUserId?: string;
 };
 
 export type UseCommentsResult = {
@@ -35,6 +36,7 @@ export function useComments({
   initialCommentCount = 0,
   onCommentCountChange,
   autoLoad = false,
+  currentUserId,
 }: UseCommentsOptions): UseCommentsResult {
   const { socket } = useSocket();
   const [comments, setComments] = useState<Comment[]>([]);
@@ -67,18 +69,32 @@ export function useComments({
   // Add a comment optimistically
   const addComment = useCallback((comment: Comment) => {
     setComments(prev => [comment, ...prev]);
-    updateCommentCount(commentCount + 1);
+    setCommentCount(prev => {
+      const newCount = prev + 1;
+      onCommentCountChange?.(newCount);
+      return newCount;
+    });
     setCommentsLoaded(true);
-  }, [commentCount, updateCommentCount]);
+  }, [onCommentCountChange]);
 
   // Delete a comment with optimistic update
   const deleteComment = useCallback(async (commentId: string) => {
-    // Optimistic update
-    const previousComments = comments;
-    const previousCount = commentCount;
+    // Store previous state for rollback
+    let previousComments: Comment[] = [];
+    let previousCount = 0;
 
-    setComments(prev => prev.filter(c => c.id !== commentId));
-    updateCommentCount(previousCount - 1);
+    // Optimistic update
+    setComments(prev => {
+      previousComments = prev;
+      return prev.filter(c => c.id !== commentId);
+    });
+
+    setCommentCount(prev => {
+      previousCount = prev;
+      const newCount = Math.max(0, prev - 1);
+      onCommentCountChange?.(newCount);
+      return newCount;
+    });
 
     try {
       await deleteCommentAction(commentId);
@@ -86,9 +102,10 @@ export function useComments({
       // Rollback on error
       handleError(error, 'Failed to delete comment');
       setComments(previousComments);
-      updateCommentCount(previousCount);
+      setCommentCount(previousCount);
+      onCommentCountChange?.(previousCount);
     }
-  }, [comments, commentCount, updateCommentCount]);
+  }, [onCommentCountChange]);
 
   // Create a new comment
   const createComment = useCallback(async (content: string): Promise<Comment> => {
@@ -117,20 +134,64 @@ export function useComments({
 
     const handleCommentAdded = (payload: CommentPayload) => {
       if (payload.refId === itemId && payload.refType === itemType) {
-        // Only update count if comments are not loaded (to avoid duplication)
-        if (!commentsLoaded) {
-          updateCommentCount(commentCount + 1);
+        // Skip if comment is from current user (handled by optimistic update)
+        if (currentUserId && payload.author.id === currentUserId) {
+          return;
         }
+
+        // Check if comment already exists
+        setComments(prev => {
+          const commentExists = prev.some(c => c.id === payload.commentId);
+
+          // If comment doesn't exist and we have full comment data, add it
+          if (!commentExists && payload.comment) {
+            setCommentCount(current => {
+              const newCount = current + 1;
+              onCommentCountChange?.(newCount);
+              return newCount;
+            });
+            return [payload.comment as Comment, ...prev];
+          }
+
+          // If comment doesn't exist but no full data, just update count
+          if (!commentExists && !payload.comment) {
+            setCommentCount(current => {
+              const newCount = current + 1;
+              onCommentCountChange?.(newCount);
+              return newCount;
+            });
+          }
+
+          // Comment already exists, don't change anything
+          return prev;
+        });
       }
     };
 
     const handleCommentDeleted = (payload: CommentPayload) => {
       if (payload.refId === itemId && payload.refType === itemType) {
-        // Remove from comments list if loaded
+        // If comments are loaded, check if comment exists before updating
         if (commentsLoaded) {
-          setComments(prev => prev.filter(c => c.id !== payload.commentId));
+          setComments(prev => {
+            const commentExists = prev.some(c => c.id === payload.commentId);
+            // Only decrement count if comment actually exists (wasn't optimistically deleted by us)
+            if (commentExists) {
+              setCommentCount(current => {
+                const newCount = Math.max(0, current - 1);
+                onCommentCountChange?.(newCount);
+                return newCount;
+              });
+            }
+            return prev.filter(c => c.id !== payload.commentId);
+          });
+        } else {
+          // If comments not loaded, update count from socket event
+          setCommentCount(prev => {
+            const newCount = Math.max(0, prev - 1);
+            onCommentCountChange?.(newCount);
+            return newCount;
+          });
         }
-        updateCommentCount(Math.max(0, commentCount - 1));
       }
     };
 
@@ -141,7 +202,7 @@ export function useComments({
       socket.off(SOCKET_EVENTS.COMMENT_ADDED, handleCommentAdded);
       socket.off(SOCKET_EVENTS.COMMENT_DELETED, handleCommentDeleted);
     };
-  }, [socket, itemId, itemType, commentsLoaded, commentCount, updateCommentCount]);
+  }, [socket, itemId, itemType, commentsLoaded, onCommentCountChange, currentUserId]);
 
   // Auto-load on mount if requested
   useEffect(() => {

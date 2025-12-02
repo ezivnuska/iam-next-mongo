@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import LikeButton from '@/app/ui/like-button'
 import CommentControls from '@/app/ui/comments/comment-controls'
 import CommentFormModal from '@/app/ui/comments/comment-form-modal'
@@ -29,6 +29,22 @@ export default function ContentInteractions({
   const { user } = useUser()
   const [showCommentForm, setShowCommentForm] = useState(false)
   const [commentsExpanded, setCommentsExpanded] = useState(false)
+  const previousCountRef = useRef(initialCommentCount)
+
+  const handleCommentCountChange = useCallback((count: number) => {
+    const previousCount = previousCountRef.current
+
+    // Close comments section when count reaches zero
+    if (count === 0) {
+      setCommentsExpanded(false)
+    }
+    // Expand comments section when a new comment is added
+    else if (count > previousCount) {
+      setCommentsExpanded(true)
+    }
+
+    previousCountRef.current = count
+  }, [])
 
   const {
     comments,
@@ -42,6 +58,8 @@ export default function ContentInteractions({
     itemId,
     itemType: itemType as CommentRefType,
     initialCommentCount,
+    currentUserId: user?.id,
+    onCommentCountChange: handleCommentCountChange,
   })
 
   const handleToggleComments = async (e: React.MouseEvent) => {

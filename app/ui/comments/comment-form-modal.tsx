@@ -28,7 +28,7 @@ export default function CommentFormModal({
   return (
     <Modal
       onClose={onClose}
-      position="absolute"
+      position="fixed"
       className="bg-black bg-opacity-50"
       contentClassName="bg-white rounded-lg p-6 max-w-lg w-full mx-4"
       showCloseButton

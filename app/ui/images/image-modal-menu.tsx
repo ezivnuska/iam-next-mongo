@@ -67,6 +67,7 @@ const ImageModalMenu = forwardRef<ImageModalMenuHandle, ImageModalMenuProps>(({
 		itemType: 'Image',
 		initialCommentCount,
 		onCommentCountChange,
+		currentUserId: currentUserId || user?.id,
 	})
 
 	// Load comments when expanded
