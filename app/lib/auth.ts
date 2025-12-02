@@ -9,23 +9,21 @@ import UserModel from "@/app/lib/models/user";
 import bcrypt from "bcrypt";
 import { UserRole } from "@/app/lib/definitions/user";
 
-console.log('[AUTH CONFIG]', {
-  AUTH_URL: process.env.AUTH_URL,
-  NEXTAUTH_URL: process.env.NEXTAUTH_URL,
-  NODE_ENV: process.env.NODE_ENV,
-});
+const isProduction = process.env.NODE_ENV === 'production';
 
 export const authOptions: NextAuthConfig = {
   trustHost: true,
-  useSecureCookies: true, // Force secure cookies in production
+  useSecureCookies: isProduction,
   cookies: {
     sessionToken: {
-      name: '__Secure-next-auth.session-token',
+      name: isProduction
+        ? '__Secure-next-auth.session-token'
+        : 'next-auth.session-token',
       options: {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: true, // Always use secure cookies
+        secure: isProduction,
       }
     }
   },
@@ -64,26 +62,16 @@ export const authOptions: NextAuthConfig = {
     strategy: "jwt",
   },
   callbacks: {
-    // ----------------------
-    // JWT callback (runs on sign-in and token refresh)
-    // ----------------------
     async jwt({ token, user }: { token: JWT; user?: User }) {
-        console.log('[AUTH] JWT callback:', { hasUser: !!user, tokenId: token?.id });
         if (user) {
             Object.assign(token, user, {
                 emailVerified: (user as any).emailVerified ?? null,
             });
-            console.log('[AUTH] JWT token created with user:', { id: user.id, email: user.email });
         }
-
         return token;
     },
 
-    // ----------------------
-    // Session callback (runs when client calls getSession/useSession)
-    // ----------------------
     async session({ session, token }) {
-        console.log('[AUTH] Session callback:', { hasToken: !!token, tokenId: token?.id });
         if (!token?.id) return session;
         session.user = {
           id: token.id,
@@ -92,13 +80,11 @@ export const authOptions: NextAuthConfig = {
           role: token.role ?? UserRole.User,
           emailVerified: token.emailVerified ?? null,
         };
-        console.log('[AUTH] Session created for user:', session.user.id);
-
         return session;
     },
   },
   pages: { signIn: "/" },
-  debug: process.env.NODE_ENV === "development",
+  debug: !isProduction,
 };
 
 export const { auth, handlers, signIn, signOut } = NextAuth(authOptions);

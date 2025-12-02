@@ -11,12 +11,16 @@ import { getToken } from "next-auth/jwt";
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  const isProduction = process.env.NODE_ENV === 'production';
+
   // Get JWT token from cookies (Edge-compatible)
   const token = await getToken({
     req,
     secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
-    secureCookie: true,
-    cookieName: '__Secure-next-auth.session-token',
+    secureCookie: isProduction,
+    cookieName: isProduction
+      ? '__Secure-next-auth.session-token'
+      : 'next-auth.session-token',
   });
 
   const isAuthenticated = !!token;
