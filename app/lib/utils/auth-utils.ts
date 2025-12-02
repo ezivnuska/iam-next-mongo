@@ -10,6 +10,12 @@ import { UserRole } from "@/app/lib/definitions/user";
  */
 export async function requireAuth() {
   const session = await auth();
+  console.log('[requireAuth] Session check:', {
+    hasSession: !!session,
+    hasUser: !!session?.user,
+    userId: session?.user?.id,
+    email: session?.user?.email,
+  });
   if (!session?.user?.id) {
     throw new Error("Unauthorized");
   }
