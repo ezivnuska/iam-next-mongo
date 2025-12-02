@@ -6,8 +6,14 @@ import UserModel from "@/app/lib/models/user";
 import { normalizeUser } from "@/app/lib/utils/normalizeUser";
 import { requireAuth } from "@/app/lib/utils/auth-utils";
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
+        console.log('[/api/users/me] Request headers:', {
+            cookie: request.headers.get('cookie'),
+            host: request.headers.get('host'),
+            'x-forwarded-proto': request.headers.get('x-forwarded-proto'),
+            'x-forwarded-host': request.headers.get('x-forwarded-host'),
+        });
         const { id: userId } = await requireAuth();
 
         await connectToDatabase();
