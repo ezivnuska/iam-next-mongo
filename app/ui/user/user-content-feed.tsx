@@ -15,6 +15,7 @@ import Modal from "@/app/ui/modal";
 import CreateMemoryForm from "@/app/ui/memories/create-memory-form";
 import CreatePostForm from "@/app/ui/posts/create-post-form";
 import UploadForm from "@/app/ui/images/upload-form";
+import { useUser } from "@/app/lib/providers/user-provider";
 
 interface UserContentFeedProps {
     initialContent: ContentItem[];
@@ -24,10 +25,21 @@ interface UserContentFeedProps {
 type ModalType = 'memory' | 'post' | 'image' | null;
 
 export default function UserContentFeed({ initialContent, editable = false }: UserContentFeedProps) {
+    const { user } = useUser();
     const [content, setContent] = useState<ContentItem[]>(initialContent);
     const [selectedFilters, setSelectedFilters] = useState<Set<string>>(new Set());
     const [modalType, setModalType] = useState<ModalType>(null);
     const [editingItem, setEditingItem] = useState<Memory | Post | undefined>(undefined);
+
+    // Check if current user is the author of an item
+    const isCurrentUserAuthor = (item: ContentItem): boolean => {
+        if (!user?.id) return false;
+
+        if (item.contentType === 'image') {
+            return item.userId === user.id;
+        }
+        return item.author.id === user.id;
+    };
 
     const handleDeleted = (id: string) => {
         setContent(prev => prev.filter(item => item.id !== id));
@@ -116,7 +128,7 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                     <p className="text-center text-gray-500">No content to display</p>
                 ) : (
                     filteredContent.map((item) => (
-                        editable ? (
+                        isCurrentUserAuthor(item) ? (
                             <UserContentItemCard
                                 key={`${item.contentType}-${item.id}`}
                                 item={item}

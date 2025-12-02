@@ -28,7 +28,7 @@ export default function ContentCardWrapper({ username, avatar, createdAt, childr
   };
 
   return (
-    <div className="flex flex-row items-start mb-4 gap-2">
+    <div className="flex flex-row items-start gap-2">
         <div className="w-12 h-12">
             <UserAvatar
                 username={username}

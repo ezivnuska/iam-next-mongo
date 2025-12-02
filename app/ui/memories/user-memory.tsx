@@ -10,6 +10,7 @@ import FlagContentButton from "../flag-content-button";
 import UserContentHeader from "../user-content-header";
 import UserAvatar from "../user/user-avatar";
 import DeleteButtonWithConfirm from "../delete-button-with-confirm";
+import ContentInteractions from "../content-interactions";
 import { useRouter } from "next/navigation";
 
 interface UserMemoryProps {
@@ -96,7 +97,14 @@ export default function UserMemory({ memory, onDeleted, onEdit, onFlag }: UserMe
                             className="max-w-full max-h-96 rounded my-2 object-cover"
                         />
                     )}
-                    <p className="whitespace-pre-wrap">{memory.content}</p>
+                    {memory.content && <p className="whitespace-pre-wrap">{memory.content}</p>}
+                    <ContentInteractions
+                        itemId={memory.id}
+                        itemType="Memory"
+                        initialLiked={memory.likedByCurrentUser}
+                        initialLikeCount={memory.likes?.length || 0}
+                        initialCommentCount={memory.commentCount || 0}
+                    />
                 </div>
                 <div className='flex flex-col items-start gap-2 pt-1'>
                     {canEdit && <EditContentButton onEdit={() => onEdit(memory)} />}

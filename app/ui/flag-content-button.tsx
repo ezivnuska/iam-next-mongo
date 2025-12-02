@@ -3,7 +3,7 @@
 "use client";
 
 import { Button } from "@/app/ui/button";
-import { FlagIcon } from "@heroicons/react/24/outline";
+import { FlagIcon } from "@heroicons/react/24/solid";
 
 interface FlagContentButtonProps {
     onFlag: () => void;

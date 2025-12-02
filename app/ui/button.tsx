@@ -35,7 +35,7 @@ export function Button({
         ghost: 'bg-transparent text-blue-500 hover:bg-blue-50',
         link: 'bg-transparent text-blue-500 hover:underline px-0',
         active: 'bg-blue-500 text-white hover:bg-blue-600',
-        warn: 'bg-white text-red-500 hover:bg-red-200',
+        warn: 'hover:bg-red-500 hover:text-white bg-red-200 text-red-500',
         confirm: 'text-red-500 hover:bg-red-500 hover:text-white',
     };
 

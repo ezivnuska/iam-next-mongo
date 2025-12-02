@@ -11,6 +11,7 @@ import FlagContentButton from "../flag-content-button";
 import UserAvatar from "../user/user-avatar";
 import { useRouter } from "next/navigation";
 import DeleteButtonWithConfirm from "../delete-button-with-confirm";
+import ContentInteractions from "../content-interactions";
 
 interface UserPostProps {
     post: Post;
@@ -46,7 +47,7 @@ export default function UserPost({ post, onDeleted, onEdit, onFlag }: UserPostPr
     if (!user) return null;
 
     return (
-        <div className="flex flex-row items-stretch mb-4 gap-2">
+        <div className="flex flex-row items-stretch gap-2">
             <div className="flex flex-col items-center justify-between gap-2 pb-1">
                 <div className="flex w-12 h-12">
                     <UserAvatar
@@ -76,15 +77,22 @@ export default function UserPost({ post, onDeleted, onEdit, onFlag }: UserPostPr
                             <img
                                 src={medium?.url}
                                 alt="Post image"
-                                className="w-full max-h-96 rounded my-2 object-cover"
+                                className="w-full max-h-96 rounded mt-2 object-cover"
                             />
                         )}
-                        <p>{post.content}</p>
+                        {post.content && <p className='my-2'>{post.content}</p>}
                         {post.linkUrl && (
                             <a href={post.linkUrl} target="_blank" className="text-blue-500 underline mt-2 block">
                                 [source]
                             </a>
                         )}
+                        <ContentInteractions
+                            itemId={post.id}
+                            itemType="Post"
+                            initialLiked={post.likedByCurrentUser}
+                            initialLikeCount={post.likes?.length || 0}
+                            initialCommentCount={post.commentCount || 0}
+                        />
                     </div>
                     <div className='flex flex-col items-start gap-2 pt-1'>
                         {canEdit && <EditContentButton onEdit={() => onEdit(post)} />}

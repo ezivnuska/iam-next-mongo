@@ -2,7 +2,6 @@
 
 "use client";
 
-import Image from "next/image";
 import type { ContentItem } from "@/app/lib/definitions/content";
 import ContentCardWrapper from "@/app/ui/content-card-wrapper";
 import ContentInteractions from "@/app/ui/content-interactions";
@@ -99,15 +98,11 @@ export default function ContentItemCard({ item }: ContentItemCardProps) {
         createdAt={image.createdAt || new Date().toISOString()}
       >
         {medium?.url && (
-          <div className="relative flex w-full h-64 my-2">
-            <Image
-              src={medium.url}
-              alt={image.alt || "Image"}
-              fill
-              style={{ objectFit: "cover" }}
-              className="rounded"
-            />
-          </div>
+          <img
+            src={medium.url}
+            alt={image.alt || "Image"}
+            className="max-w-full max-h-96 rounded my-2 object-cover"
+          />
         )}
         <ContentInteractions
           itemId={image.id}
