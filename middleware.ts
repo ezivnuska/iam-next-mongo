@@ -12,10 +12,13 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Get JWT token from cookies (Edge-compatible)
-  // getToken() will automatically detect the cookie name
   const token = await getToken({
     req,
     secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+    secureCookie: process.env.NODE_ENV === 'production',
+    cookieName: process.env.NODE_ENV === 'production'
+      ? '__Secure-next-auth.session-token'
+      : 'next-auth.session-token',
   });
 
   const isAuthenticated = !!token;

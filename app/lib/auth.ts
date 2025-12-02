@@ -17,6 +17,21 @@ console.log('[AUTH CONFIG]', {
 
 export const authOptions: NextAuthConfig = {
   trustHost: true,
+  useSecureCookies: process.env.NODE_ENV === 'production',
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === 'production'
+        ? '__Secure-next-auth.session-token'
+        : 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        domain: process.env.NODE_ENV === 'production' ? '.iameric.me' : undefined,
+      }
+    }
+  },
   providers: [
     CredentialsProvider({
       name: "Credentials",
