@@ -12,6 +12,7 @@ import UserAvatar from "../user/user-avatar";
 import { useRouter } from "next/navigation";
 import DeleteButtonWithConfirm from "../delete-button-with-confirm";
 import ContentInteractions from "../content-interactions";
+import { getBestVariant, IMAGE_SIZES } from "@/app/lib/utils/image-variant";
 
 interface UserPostProps {
     post: Post;
@@ -22,7 +23,7 @@ interface UserPostProps {
 
 export default function UserPost({ post, onDeleted, onEdit, onFlag }: UserPostProps) {
     const { user } = useUser();
-    const medium = post.image?.variants.find((v) => v.size === "medium");
+    const imageVariant = getBestVariant(post.image, IMAGE_SIZES.CONTENT);
     const isAuthor = user?.id === post.author.id;
     const isAdmin = user?.role === "admin";
     const canEdit = isAuthor;
@@ -73,14 +74,14 @@ export default function UserPost({ post, onDeleted, onEdit, onFlag }: UserPostPr
                 </div>
                 <div className="flex flex-row items-stretch pt-1">
                     <div className='flex flex-1 flex-col pt-2'>
-                        {post.image && (
+                        {imageVariant && (
                             <img
-                                src={medium?.url}
+                                src={imageVariant.url}
                                 alt="Post image"
-                                className="w-full max-h-96 rounded mt-2 object-cover"
+                                className="rounded mt-2 object-cover"
                             />
                         )}
-                        {post.content && <p className='my-2'>{post.content}</p>}
+                        {post.content && <p className='mt-2'>{post.content}</p>}
                         {post.linkUrl && (
                             <a href={post.linkUrl} target="_blank" className="text-blue-500 underline mt-2 block">
                                 [source]

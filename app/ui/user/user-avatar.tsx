@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import type { Image as ImageType } from '@/app/lib/definitions/image'
 import { ComputerDesktopIcon } from '@heroicons/react/24/solid'
+import { getBestVariant } from '@/app/lib/utils/image-variant'
 
 interface UserAvatarProps {
 	username: string
@@ -50,14 +51,9 @@ export default function UserAvatar({
 	let imageUrl = avatarUrl
 
 	// If avatar object is provided, select best variant
-	if (!imageUrl && avatarToUse?.variants?.length) {
-		const bestVariant = avatarToUse.variants.reduce((closest, current) => {
-			if (!current.width) return closest
-			return Math.abs(current.width - size) < Math.abs((closest.width ?? 0) - size)
-				? current
-				: closest
-		}, avatarToUse.variants[0])
-		imageUrl = bestVariant.url
+	if (!imageUrl && avatarToUse) {
+		const bestVariant = getBestVariant(avatarToUse, size)
+		imageUrl = bestVariant?.url
 	}
 
 	// Guard against null/undefined/"null" string values

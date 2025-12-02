@@ -10,6 +10,7 @@ import UserAvatar from "../user/user-avatar";
 import { useRouter } from "next/navigation";
 import DeleteButtonWithConfirm from "../delete-button-with-confirm";
 import ContentInteractions from "../content-interactions";
+import { getBestVariant, IMAGE_SIZES } from "@/app/lib/utils/image-variant";
 
 interface UserImageProps {
     image: Image;
@@ -18,7 +19,7 @@ interface UserImageProps {
 
 export default function UserImage({ image, onDeleted }: UserImageProps) {
     const { user } = useUser();
-    const medium = image.variants.find((v) => v.size === "medium");
+    const bestVariant = getBestVariant(image, IMAGE_SIZES.CONTENT);
     const isAuthor = user?.id === image.userId;
     const isAdmin = user?.role === "admin";
     const canDelete = isAuthor || isAdmin;
@@ -68,12 +69,12 @@ export default function UserImage({ image, onDeleted }: UserImageProps) {
                     {canDelete && <DeleteButtonWithConfirm onDelete={handleDelete} />}
                 </div>
                 <div className="flex flex-row items-stretch pt-1">
-                    <div className='flex flex-1 flex-col pt-2'>
-                        {medium?.url && (
+                    <div className='flex flex-1 flex-col'>
+                        {bestVariant?.url && (
                             <img
-                                src={medium.url}
+                                src={bestVariant.url}
                                 alt={image.alt || "Image"}
-                                className="max-w-full max-h-96 rounded object-cover"
+                                className="rounded mt-2 object-cover"
                             />
                         )}
                         <ContentInteractions

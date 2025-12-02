@@ -5,6 +5,7 @@
 import type { ContentItem } from "@/app/lib/definitions/content";
 import ContentCardWrapper from "@/app/ui/content-card-wrapper";
 import ContentInteractions from "@/app/ui/content-interactions";
+import { getBestVariant, IMAGE_SIZES } from "@/app/lib/utils/image-variant";
 
 type ContentItemCardProps = {
   item: ContentItem;
@@ -13,7 +14,7 @@ type ContentItemCardProps = {
 export default function ContentItemCard({ item }: ContentItemCardProps) {
   if (item.contentType === 'memory') {
     const memory = item;
-    const medium = memory.image?.variants.find((v) => v.size === "medium");
+    const imageVariant = getBestVariant(memory.image, IMAGE_SIZES.CONTENT);
     const memoryDate = new Date(memory.date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -31,9 +32,9 @@ export default function ContentItemCard({ item }: ContentItemCardProps) {
                 <p className="text-lg font-medium text-gray-700">{memory.title || "Untitled"}</p>
                 <p className="text-sm text-gray-500">{memoryDate}</p>
             </div>
-            {memory.image && (
+            {imageVariant && (
                 <img
-                    src={medium?.url}
+                    src={imageVariant.url}
                     alt="Memory image"
                     className="max-w-full max-h-96 rounded object-cover"
                 />
@@ -53,7 +54,7 @@ export default function ContentItemCard({ item }: ContentItemCardProps) {
 
   if (item.contentType === 'post') {
     const post = item;
-    const medium = post.image?.variants.find((v) => v.size === "medium");
+    const imageVariant = getBestVariant(post.image, IMAGE_SIZES.CONTENT);
 
     return (
       <ContentCardWrapper
@@ -62,9 +63,9 @@ export default function ContentItemCard({ item }: ContentItemCardProps) {
         createdAt={post.createdAt}
       >
         <div className='flex flex-col gap-2 my-2'>
-            {post.image && (
+            {imageVariant && (
                 <img
-                    src={medium?.url}
+                    src={imageVariant.url}
                     alt="Post image"
                     className="max-w-full max-h-96 rounded my-2 object-cover"
                 />
@@ -89,7 +90,7 @@ export default function ContentItemCard({ item }: ContentItemCardProps) {
 
   if (item.contentType === 'image') {
     const image = item;
-    const medium = image.variants.find((v) => v.size === "medium");
+    const imageVariant = getBestVariant(image, IMAGE_SIZES.CONTENT);
 
     return (
       <ContentCardWrapper
@@ -97,9 +98,9 @@ export default function ContentItemCard({ item }: ContentItemCardProps) {
         avatar={undefined}
         createdAt={image.createdAt || new Date().toISOString()}
       >
-        {medium?.url && (
+        {imageVariant && (
           <img
-            src={medium.url}
+            src={imageVariant.url}
             alt={image.alt || "Image"}
             className="max-w-full max-h-96 rounded my-2 object-cover"
           />

@@ -12,6 +12,7 @@ import UserAvatar from "../user/user-avatar";
 import DeleteButtonWithConfirm from "../delete-button-with-confirm";
 import ContentInteractions from "../content-interactions";
 import { useRouter } from "next/navigation";
+import { getBestVariant, IMAGE_SIZES } from "@/app/lib/utils/image-variant";
 
 interface UserMemoryProps {
   memory: Memory;
@@ -22,7 +23,7 @@ interface UserMemoryProps {
 
 export default function UserMemory({ memory, onDeleted, onEdit, onFlag }: UserMemoryProps) {
   const { user } = useUser();
-  const medium = memory.image?.variants.find((v) => v.size === "medium");
+  const imageVariant = getBestVariant(memory.image, IMAGE_SIZES.CONTENT);
   const isAuthor = user?.id === memory.author.id;
   const isAdmin = user?.role === "admin";
   const canDelete = isAuthor || isAdmin;
@@ -90,9 +91,9 @@ export default function UserMemory({ memory, onDeleted, onEdit, onFlag }: UserMe
                         <p className="text-lg font-medium text-gray-700">{memory.title || "Untitled"}</p>
                         <p className="text-sm text-gray-500">{memoryDate}</p>
                     </div>
-                    {memory.image && (
+                    {imageVariant && (
                         <img
-                            src={medium?.url}
+                            src={imageVariant.url}
                             alt="Memory image"
                             className="max-w-full max-h-96 rounded my-2 object-cover"
                         />
