@@ -9,6 +9,12 @@ import UserModel from "@/app/lib/models/user";
 import bcrypt from "bcrypt";
 import { UserRole } from "@/app/lib/definitions/user";
 
+console.log('[AUTH CONFIG]', {
+  AUTH_URL: process.env.AUTH_URL,
+  NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+  NODE_ENV: process.env.NODE_ENV,
+});
+
 export const authOptions: NextAuthConfig = {
   trustHost: true,
   providers: [

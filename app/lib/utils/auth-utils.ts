@@ -9,6 +9,12 @@ import { UserRole } from "@/app/lib/definitions/user";
  * @returns The authenticated user's session data
  */
 export async function requireAuth() {
+  // Check cookies in the request
+  const { cookies } = await import('next/headers');
+  const cookieStore = await cookies();
+  const allCookies = cookieStore.getAll();
+  console.log('[requireAuth] Cookies:', allCookies.map(c => ({ name: c.name, hasValue: !!c.value })));
+
   const session = await auth();
   console.log('[requireAuth] Session check:', {
     hasSession: !!session,
