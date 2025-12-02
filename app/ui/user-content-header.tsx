@@ -23,12 +23,14 @@ export default function UserContentHeader({
   onDelete
 }: UserContentHeaderProps) {
   return (
-    <div className="flex items-start gap-3">
-      <UserAvatar
-        username={username}
-        avatar={avatar}
-        size={40}
-      />
+    <div className="flex flex-1 items-start gap-3 border">
+        {/* <div className="w-12 h-12 border">
+            <UserAvatar
+                username={username}
+                avatar={avatar}
+                // size={40}
+            />
+      </div> */}
       <div className="flex-1 min-w-0">
         <div className="flex flex-row items-center justify-between mb-2">
           <div className="flex flex-col">

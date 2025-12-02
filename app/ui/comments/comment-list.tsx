@@ -30,7 +30,7 @@ export default function CommentList({ comments, currentUserId, currentUserRole, 
 				const canDelete = canDeleteComment(comment.author.id, currentUserId, currentUserRole)
 				return (
 					<div key={comment.id} className="flex gap-3">
-						<div className="flex-shrink-0">
+						<div className="w-12 h-12">
 							<UserAvatar
 								username={comment.author.username}
 								avatarUrl={avatarUrl}

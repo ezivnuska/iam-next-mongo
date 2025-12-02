@@ -28,26 +28,26 @@ export default function ContentCardWrapper({ username, avatar, createdAt, childr
   };
 
   return (
-    <div className="mb-4 py-3 rounded-lg bg-white">
-      <div className="flex items-start gap-3">
-        <UserAvatar
-          username={username}
-          avatar={avatar}
-          size={40}
-        />
-        <div className="flex w-full flex-col gap-2">
-          <div className="flex flex-col">
-            <p
-              className="font-semibold cursor-pointer hover:underline"
-              onClick={handleUsernameClick}
-            >
-              {username}
-            </p>
-            <span className="text-xs text-gray-500">{formatRelativeTime(createdAt)}</span>
-          </div>
+    <div className="flex flex-row items-start mb-4 gap-2">
+        <div className="w-12 h-12">
+            <UserAvatar
+                username={username}
+                avatar={avatar}
+                // size={40}
+            />
+        </div>
+        <div className="flex flex-1 flex-col">
+            <div className="flex flex-1 flex-col">
+                <p
+                    className="text-lg font-semibold cursor-pointer hover:underline"
+                    onClick={handleUsernameClick}
+                >
+                    {username}
+                </p>
+                <span className="text-sm text-gray-500">{formatRelativeTime(createdAt)}</span>
+            </div>
           {children}
         </div>
-      </div>
     </div>
   );
 }

@@ -81,8 +81,10 @@ export default function Player({
             <div className={clsx('flex flex-row items-center justify-start gap-2 rounded-full bg-black/50 p-1', {
                 'bg-black': isCurrentPlayer && (!isCurrentUser || !actionTriggered),
             })}>
-                <UserAvatar size={24} username={player.username} isAI={player.isAI} />
-                <span className='inline-block text-sm text-white text-center'>{player.username}</span>
+                <div className='w-6 h-6'>
+                    <UserAvatar username={player.username} isAI={player.isAI} />
+                </div>
+                <span className='block text-sm text-white text-center'>{player.username}</span>
             </div>
             <div className={clsx(
                 'flex flex-1 flex-row justify-center gap-2',

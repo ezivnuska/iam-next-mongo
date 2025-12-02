@@ -30,11 +30,13 @@ export default function ActivityList({ initialActivities }: ActivityListProps) {
           className="flex items-start gap-3 p-4 bg-white rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
         >
           {/* User Avatar */}
-          <UserAvatar
-            username={activity.user.username}
-            avatar={activity.user.avatar}
-            size={40}
-          />
+          <div className='w-12 h-12'>
+            <UserAvatar
+                username={activity.user.username}
+                avatar={activity.user.avatar}
+                // size={40}
+            />
+          </div>
 
           {/* Activity Content */}
           <div className="flex-1 min-w-0">
@@ -53,7 +55,7 @@ export default function ActivityList({ initialActivities }: ActivityListProps) {
 
             {/* Entity Data Preview (if available) */}
             {activity.entityData && (
-              <div className="text-sm text-gray-700 bg-gray-50 rounded p-2 mt-2">
+              <div className="text-sm text-gray-700 bg-gray-50 rounded py-2 mt-2">
                 {activity.entityData.content && (
                   <p className="line-clamp-2">{activity.entityData.content}</p>
                 )}

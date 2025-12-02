@@ -2,11 +2,15 @@
 
 "use client";
 
+import { formatRelativeTime } from "@/app/lib/utils/format-date";
 import { useUser } from "@/app/lib/providers/user-provider";
 import type { Memory } from "@/app/lib/definitions/memory";
 import EditContentButton from "../edit-content-button";
 import FlagContentButton from "../flag-content-button";
 import UserContentHeader from "../user-content-header";
+import UserAvatar from "../user/user-avatar";
+import DeleteButtonWithConfirm from "../delete-button-with-confirm";
+import { useRouter } from "next/navigation";
 
 interface UserMemoryProps {
   memory: Memory;
@@ -34,49 +38,70 @@ export default function UserMemory({ memory, onDeleted, onEdit, onFlag }: UserMe
     if (!res.ok) throw new Error("Failed to delete memory");
     onDeleted(memory.id);
   };
+  
+    const router = useRouter();
+
+  const handleUsernameClick = () => {
+      if (user?.username === memory.author.username) {
+          router.push('/profile');
+      } else {
+          router.push(`/users/${memory.author.username}`);
+      }
+  };
+
+  if (!user) return null;
 
   return (
-    <div className="mb-4 py-3 rounded-lg bg-white">
-      <UserContentHeader
-        username={memory.author.username}
-        avatar={memory.author.avatar}
-        createdAt={memory.createdAt}
-        canDelete={canDelete}
-        onDelete={handleDelete}
-      />
-      <div className="flex items-start gap-3">
-        <div className="w-10 shrink-0" /> {/* Spacer for alignment */}
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-row items-start grow gap-2">
-              <div className="flex flex-col grow gap-2 overflow-hidden">
-                <div className="flex flex-col mb-1 gap-2">
-                  <div>
-                    <p className="text-lg font-medium text-gray-700">{memory.title || "Untitled"}</p>
-                    <p className="text-sm text-gray-500">{memoryDate}</p>
-                    {memory.shared && (
-                      <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded mt-1">
-                        Shared
-                      </span>
-                    )}
-                  </div>
+    <div className="flex flex-row items-stretch mb-4 gap-2">
+        <div className="flex flex-col items-center justify-between gap-2 pb-1">
+            <div className="flex flex-col items-center gap-2 pb-1">
+                <div className="flex w-12 h-12">
+                    <UserAvatar
+                        username={user.username}
+                        avatar={user.avatar}
+                        // size={40}
+                    />
                 </div>
-                {memory.image && (
-                  <img
-                    src={medium?.url}
-                    alt="Memory image"
-                    className="max-w-full max-h-96 rounded mb-2 object-cover"
-                  />
+                {memory.shared && (
+                    <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded mt-1">
+                        Shared
+                    </span>
                 )}
-                <p className="whitespace-pre-wrap">{memory.content}</p>
-              </div>
-              <div className='shrink'>
-                {canEdit && (
-                  <EditContentButton onEdit={() => onEdit(memory)} />
-                )}
-                <FlagContentButton onFlag={() => onFlag(memory)} />
-              </div>
             </div>
-          </div>
+            <FlagContentButton onFlag={() => onFlag(memory)} />
+        </div>
+        <div className="flex flex-1 flex-col">
+            <div className="flex flex-row items-center">
+                <div className="flex flex-1 flex-col">
+                    <p
+                        className="text-lg font-semibold cursor-pointer hover:underline"
+                        onClick={handleUsernameClick}
+                    >
+                        {memory.author.username}
+                    </p>
+                    <span className="text-sm text-gray-500">{formatRelativeTime(memory.createdAt)}</span>
+                </div>
+                {canDelete && <DeleteButtonWithConfirm onDelete={handleDelete} />}
+            </div>
+            <div className="flex flex-row items-stretch">
+                <div className="flex flex-1 flex-col pt-2 gap-2">
+                    <div>
+                        <p className="text-lg font-medium text-gray-700">{memory.title || "Untitled"}</p>
+                        <p className="text-sm text-gray-500">{memoryDate}</p>
+                    </div>
+                    {memory.image && (
+                        <img
+                            src={medium?.url}
+                            alt="Memory image"
+                            className="max-w-full max-h-96 rounded my-2 object-cover"
+                        />
+                    )}
+                    <p className="whitespace-pre-wrap">{memory.content}</p>
+                </div>
+                <div className='flex flex-col items-start gap-2 pt-1'>
+                    {canEdit && <EditContentButton onEdit={() => onEdit(memory)} />}
+                </div>
+            </div>
         </div>
       </div>
     );

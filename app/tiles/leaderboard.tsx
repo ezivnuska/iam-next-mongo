@@ -24,11 +24,13 @@ export default function Leaderboard({ scores, clearScores }: LeaderboardProps) {
             >
                 <div className="flex items-center gap-3">
                     <span className="font-bold text-gray-400 w-6">{index + 1}</span>
-                    <UserAvatar
-                        username={item.user.username}
-                        avatar={item.user.avatar}
-                        size={32}
-                    />
+                    <div className='w-24 h-24'>
+                        <UserAvatar
+                            username={item.user.username}
+                            avatar={item.user.avatar}
+                            // size={32}
+                        />
+                    </div>
                     <span className="text-sm">{item.user.username}</span>
                 </div>
                 <span className="font-mono font-semibold">{item.score}</span>

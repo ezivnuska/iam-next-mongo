@@ -93,11 +93,13 @@ export default function TileGameHeader() {
                 <span className="text-sm">›</span>
             </div>
             <div className="flex items-center gap-2">
-                <UserAvatar
-                    username={topScore.user.username}
-                    avatar={topScore.user.avatar}
-                    size={24}
-                />
+                <div className='w-8 h-8'>
+                    <UserAvatar
+                        username={topScore.user.username}
+                        avatar={topScore.user.avatar}
+                        // size={24}
+                    />
+                </div>
                 <span className="text-sm">{topScore.score}</span>
             </div>
         </button>

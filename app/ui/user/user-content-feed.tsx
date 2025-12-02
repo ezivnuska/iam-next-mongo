@@ -79,7 +79,7 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
         : content.filter(item => selectedFilters.has(item.contentType));
 
     return (
-        <div className="mt-4">
+        <div>
             {/* Add Buttons - only show when editable */}
             {editable && (
                 <div className="flex justify-between gap-2 mb-4 px-2">
@@ -111,9 +111,9 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
             />
 
             {/* Content List */}
-            <div className="space-y-4">
+            <div className="mt-4 space-y-4">
                 {filteredContent.length === 0 ? (
-                    <p className="text-center text-gray-500 py-8">No content to display</p>
+                    <p className="text-center text-gray-500">No content to display</p>
                 ) : (
                     filteredContent.map((item) => (
                         editable ? (

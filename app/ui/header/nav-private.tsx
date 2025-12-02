@@ -26,8 +26,8 @@ export default function NavPrivate() {
     // Show nav when authenticated or signing out
     const shouldShow = user && (status === "authenticated" || status === "signing-out");
     return shouldShow && (
-        <div className='flex flex-row w-full items-center justify-between gap-1'>
-            <div className='flex flex-1 flex-row items-center justify-start gap-1'>
+        <div className='flex flex-1 flex-row items-center justify-between'>
+            <div className='flex flex-row items-center justify-start gap-1'>
                 {links.map((link) => {
                     const LinkIcon = link.icon;
                     return (
@@ -51,10 +51,10 @@ export default function NavPrivate() {
             {pathname === '/profile'
                 ? <SignOutButton />
                 : (
-                    <Link href='/profile'>
+                    <Link href='/profile' className='w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12'>
                         <UserAvatar
                             username={user.username}
-                            size={36}
+                            // size={36}
                         />
                     </Link>
                 )

@@ -27,21 +27,19 @@ export default function ContentItemCard({ item }: ContentItemCardProps) {
         avatar={memory.author.avatar}
         createdAt={memory.createdAt}
       >
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-col mb-1 gap-2">
-            <div>
-              <p className="text-lg font-medium text-gray-700">{memory.title || "Untitled"}</p>
-              <p className="text-sm text-gray-500">{memoryDate}</p>
+        <div className="flex flex-col gap-2 my-2">
+            <div className="flex flex-col gap-2">
+                <p className="text-lg font-medium text-gray-700">{memory.title || "Untitled"}</p>
+                <p className="text-sm text-gray-500">{memoryDate}</p>
             </div>
-          </div>
-          {memory.image && (
-            <img
-              src={medium?.url}
-              alt="Memory image"
-              className="max-w-full max-h-96 rounded mb-2 object-cover"
-            />
-          )}
-          <p className="whitespace-pre-wrap">{memory.content}</p>
+            {memory.image && (
+                <img
+                    src={medium?.url}
+                    alt="Memory image"
+                    className="max-w-full max-h-96 rounded object-cover"
+                />
+            )}
+            <p className="whitespace-pre-wrap">{memory.content}</p>
         </div>
         <ContentInteractions
           itemId={memory.id}
@@ -64,19 +62,21 @@ export default function ContentItemCard({ item }: ContentItemCardProps) {
         avatar={post.author.avatar}
         createdAt={post.createdAt}
       >
-        {post.image && (
-          <img
-            src={medium?.url}
-            alt="Post image"
-            className="max-w-full max-h-96 rounded mb-2 object-cover"
-          />
-        )}
-        <p>{post.content}</p>
-        {post.linkUrl && (
-          <a href={post.linkUrl} target="_blank" className="text-blue-500 underline mt-2 block">
-            [source]
-          </a>
-        )}
+        <div className='flex flex-col gap-2 my-2'>
+            {post.image && (
+                <img
+                    src={medium?.url}
+                    alt="Post image"
+                    className="max-w-full max-h-96 rounded my-2 object-cover"
+                />
+            )}
+            <p>{post.content}</p>
+            {post.linkUrl && (
+                <a href={post.linkUrl} target="_blank" className="text-blue-500 underline mt-2 block">
+                    [source]
+                </a>
+            )}
+        </div>
         <ContentInteractions
           itemId={post.id}
           itemType="Post"
@@ -99,7 +99,7 @@ export default function ContentItemCard({ item }: ContentItemCardProps) {
         createdAt={image.createdAt || new Date().toISOString()}
       >
         {medium?.url && (
-          <div className="relative flex w-full h-64">
+          <div className="relative flex w-full h-64 my-2">
             <Image
               src={medium.url}
               alt={image.alt || "Image"}

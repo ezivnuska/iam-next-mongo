@@ -38,11 +38,13 @@ export default function UserList({ users }: UserListProps) {
                             className="flex items-center gap-3 flex-1 hover:text-blue-600 transition-colors"
                         >
                             <div className="relative">
-                                <UserAvatar
-                                    username={user.username}
-                                    avatar={user.avatar}
-                                    size={36}
-                                />
+                                <div className='w-12 h-12'>
+                                    <UserAvatar
+                                        username={user.username}
+                                        avatar={user.avatar}
+                                        // size={36}
+                                    />
+                                </div>
                                 <div className="absolute bottom-0 -right-1 z-100">
                                     <OnlineStatusIndicator size={14} isOnline={isOnline} />
                                 </div>

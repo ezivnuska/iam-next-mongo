@@ -52,11 +52,13 @@ export default function UserProfileCard({ username }: UserProfileCardProps) {
     return (
         <div className="flex mt-2">
             <div className="flex flex-1 flex-row flex-wrap gap-4">
-                <UserAvatar
-                    username={displayUser.username}
-                    avatar={displayUser.avatar}
-                    size={100}
-                />
+                <div className="w-24 h-24">
+                    <UserAvatar
+                        username={displayUser.username}
+                        avatar={displayUser.avatar}
+                        // size={100}
+                    />
+                </div>
                 <div className="flex flex-1 flex-col gap-1">
                     <h1 className="text-2xl font-bold mb-1">
                         {displayUser.username}

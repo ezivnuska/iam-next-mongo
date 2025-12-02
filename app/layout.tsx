@@ -7,12 +7,19 @@ import { UserProvider } from "@/app/lib/providers/user-provider";
 import { AuthModalProvider } from "@/app/lib/providers/auth-modal-provider";
 import { SocketProvider } from './lib/providers/socket-provider';
 import { TileProvider } from './lib/providers/tile-provider';
+import type { Viewport } from 'next';
+
+export const viewport: Viewport = {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
+};
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
     const session = await auth();
     return (
         <html lang="en">
-            <body className={`${ubuntu.className} antialiased flex min-h-screen flex-col`}>
+            <body className={`${ubuntu.className} antialiased flex min-h-screen flex-col overflow-x-hidden`}>
                 <UserProvider initialUser={session?.user ?? null}>
                     <AuthModalProvider>
                         <SocketProvider>

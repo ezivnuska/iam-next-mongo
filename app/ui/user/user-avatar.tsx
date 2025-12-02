@@ -20,7 +20,7 @@ export default function UserAvatar({
 	username,
 	avatar,
 	avatarUrl,
-	size = 40,
+	size = 20,
 	className = '',
 	isAI = false
 }: UserAvatarProps) {
@@ -65,29 +65,29 @@ export default function UserAvatar({
 
 	if (validImageUrl) {
 		return (
-			<div
-				className={`rounded-full overflow-hidden flex-shrink-0 border-1 ${className}`}
-				style={{ width: size, height: size }}
-			>
+			// <div
+				// className={`rounded-full overflow-hidden flex-shrink-0 border-1 ${className}`}
+				// style={{ width: size, height: size }}
+			// >
 				<Image
 					src={validImageUrl}
 					alt={username}
 					width={size}
 					height={size}
-					className="w-full h-full object-cover"
+					className="w-full h-full object-cover rounded-full overflow-hidden"
 				/>
-			</div>
+			// </div>
 		)
 	}
 	return (
 		<div
-			className={`rounded-full bg-gray-400 flex items-center justify-center text-gray-600 font-semibold flex-shrink-0 ${className}`}
-			style={{ width: size, height: size }}
+			className={`flex flex-row items-center justify-center w-full h-full rounded-full bg-gray-400 text-gray-600 font-semibold flex-shrink-0 ${className}`}
+			// style={{ width: size, height: size }}
 		>
 			{isAI ? (
-				<ComputerDesktopIcon className="text-white" style={{ width: size * 0.6, height: size * 0.6 }} />
+				<ComputerDesktopIcon className="text-white" style={{ width: 16, height: 16 }} />
 			) : (
-				<p className={`text-[30px] text-white`}>{username?.[0]?.toUpperCase() || '?'}</p>
+				<p className={`text-[16px] text-white`}>{username?.[0]?.toUpperCase() || '?'}</p>
 			)}
 		</div>
 	)
