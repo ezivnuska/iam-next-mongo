@@ -11,6 +11,9 @@
 
   echo "🔨 Building application..."
   NODE_OPTIONS="--max-old-space-size=1536" pnpm build
+  
+  echo "🔄 Clearing Logs..."
+  pm2 flush
 
   echo "🔄 Restarting application..."
   pm2 restart iam-app
