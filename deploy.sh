@@ -1,7 +1,7 @@
   #!/bin/bash
   echo "🚀 Starting deployment..."
 
-  cd ~/iam-next-mongo
+  cd /var/www/iameric.me/html/iam-next-mongo
 
   echo "📥 Pulling latest code..."
   git pull origin main
