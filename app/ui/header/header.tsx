@@ -8,10 +8,12 @@ import Brand from "./brand";
 export default function Header() {
 
     return (
-        <div className="flex flex-row items-center justify-center">
-            <div className="flex flex-row w-full min-w-[375px] max-w-[600px] items-stretch gap-2 px-2 py-1">
+        <div className="flex flex-row w-full items-center justify-center max-w-[600px]">
+            <div className="flex flex-row w-full min-w-[375px] items-stretch gap-2 px-2 py-1">
                 <Brand />
-                <Nav />
+                {/* <div className='flex flex-1 flex-row items-center border'> */}
+                    <Nav />
+                {/* </div> */}
             </div>
         </div>
     );

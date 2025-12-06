@@ -23,7 +23,7 @@ export default function UserList({ users }: UserListProps) {
 	}
 
 	return (
-		<div className="space-y-1">
+		<div className="flex flex-1 flex-col space-y-1">
 			{users.map((user) => {
 				const isCurrentUser = currentUser?.id === user.id
 				const isOnline = onlineUsers.has(user.id)
