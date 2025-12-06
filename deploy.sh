@@ -10,7 +10,7 @@
   pnpm install
 
   echo "🔨 Building application..."
-  NODE_OPTIONS="--max-old-space-size=1536" pnpm build
+  NODE_ENV=production NODE_OPTIONS="--max-old-space-size=1536" pnpm build
   
   echo "🔄 Clearing Logs..."
   pm2 flush
