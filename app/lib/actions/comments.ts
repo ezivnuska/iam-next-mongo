@@ -22,6 +22,16 @@ export async function createComment(
 		throw new Error("Missing required fields");
 	}
 
+	// Validate content length (reasonable limit for comments)
+	if (content.length > 2000) {
+		throw new Error("Comment must be 2000 characters or less");
+	}
+
+	// Validate refId is a valid MongoDB ObjectId
+	if (!/^[a-f\d]{24}$/i.test(refId)) {
+		throw new Error("Invalid reference ID format");
+	}
+
 	await connectToDatabase();
 
 	const comment = await Comment.create({
@@ -141,6 +151,11 @@ export async function getComments(refId: string, refType: CommentRefType) {
 
 export async function deleteComment(commentId: string) {
 	const user = await requireAuth();
+
+	// Validate commentId format
+	if (!/^[a-f\d]{24}$/i.test(commentId)) {
+		throw new Error("Invalid comment ID format");
+	}
 
 	await connectToDatabase();
 

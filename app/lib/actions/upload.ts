@@ -29,13 +29,42 @@ const VARIANT_DEFINITIONS: { name: string; width: number | null }[] = [
 export async function uploadFile(file: File): Promise<Image> {
     const user = await requireAuthWithUsername();
     const { id, username } = user;
-  
+
     await connectToDatabase();
-  
-    const extension = file.name.split(".").pop();
+
+    // 1. Validate MIME type
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedMimeTypes.includes(file.type)) {
+        throw new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.');
+    }
+
+    // 2. Validate file extension
+    const extension = file.name.split(".").pop()?.toLowerCase();
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    if (!extension || !allowedExtensions.includes(extension)) {
+        throw new Error('Invalid file extension.');
+    }
+
+    // 3. Validate file size (10MB limit)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+        throw new Error('File size exceeds 10MB limit.');
+    }
+
     const baseFilename = uuidv4();
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+
+    // 4. Validate actual file content (magic bytes check)
+    let metadata;
+    try {
+        metadata = await sharp(buffer).metadata();
+        if (!metadata.format || !['jpeg', 'png', 'gif', 'webp'].includes(metadata.format)) {
+            throw new Error('Invalid image format detected.');
+        }
+    } catch (err) {
+        throw new Error('File is not a valid image.');
+    }
   
     const variants: ImageVariant[] = [];
   

@@ -43,12 +43,27 @@ export async function POST(req: Request) {
 
     const { date, title, content, shared, imageId } = await req.json();
 
+    // Validate content length
+    if (content && content.length > 5000) {
+      return NextResponse.json({ error: "Content must be 5000 characters or less" }, { status: 400 });
+    }
+
     if (!content || !content.trim()) {
       return NextResponse.json({ error: "Memory must have content" }, { status: 400 });
     }
 
+    // Validate title length
+    if (title && title.length > 200) {
+      return NextResponse.json({ error: "Title must be 200 characters or less" }, { status: 400 });
+    }
+
     if (!date) {
       return NextResponse.json({ error: "Memory must have a date" }, { status: 400 });
+    }
+
+    // Validate imageId format if provided
+    if (imageId && !/^[a-f\d]{24}$/i.test(imageId)) {
+      return NextResponse.json({ error: "Invalid image ID" }, { status: 400 });
     }
 
     await connectToDatabase();

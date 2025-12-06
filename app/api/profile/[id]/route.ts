@@ -23,6 +23,11 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "id and imageId required" }, { status: 400 });
         }
 
+        // Validate imageId is a valid MongoDB ObjectId (24 hex characters)
+        if (!/^[a-f\d]{24}$/i.test(imageId)) {
+            return NextResponse.json({ error: "Invalid imageId format" }, { status: 400 });
+        }
+
         await connectToDatabase();
 
         const user = await UserModel.findByIdAndUpdate(userId, { avatar: imageId }, { new: true })

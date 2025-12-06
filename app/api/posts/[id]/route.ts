@@ -50,10 +50,25 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Missing post ID" }, { status: 400 });
     }
 
+    // Validate post ID format
+    if (!/^[a-f\d]{24}$/i.test(id)) {
+      return NextResponse.json({ error: "Invalid post ID format" }, { status: 400 });
+    }
+
     const { content, imageId } = await req.json();
+
+    // Validate content length (server-side)
+    if (content && content.length > 1000) {
+      return NextResponse.json({ error: "Content must be 1000 characters or less" }, { status: 400 });
+    }
 
     if (!content || !content.trim()) {
       return NextResponse.json({ error: "Post must have content" }, { status: 400 });
+    }
+
+    // Validate imageId format if provided
+    if (imageId && imageId !== null && !/^[a-f\d]{24}$/i.test(imageId)) {
+      return NextResponse.json({ error: "Invalid image ID" }, { status: 400 });
     }
 
     await connectToDatabase();
@@ -128,6 +143,11 @@ export async function DELETE(req: Request) {
     const id = url.pathname.split("/").pop();
     if (!id) {
       return NextResponse.json({ error: "Missing post ID" }, { status: 400 });
+    }
+
+    // Validate post ID format
+    if (!/^[a-f\d]{24}$/i.test(id)) {
+      return NextResponse.json({ error: "Invalid post ID format" }, { status: 400 });
     }
 
     await connectToDatabase();

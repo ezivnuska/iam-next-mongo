@@ -40,8 +40,18 @@ export async function POST(req: Request) {
 
     const { content, imageId } = await req.json();
 
+    // Validate content length (server-side)
+    if (content && content.length > 1000) {
+      return NextResponse.json({ error: "Content must be 1000 characters or less" }, { status: 400 });
+    }
+
     if ((!content || !content.trim()) && !imageId) {
       return NextResponse.json({ error: "Post must have either content or an image" }, { status: 400 });
+    }
+
+    // Validate imageId format if provided
+    if (imageId && !/^[a-f\d]{24}$/i.test(imageId)) {
+      return NextResponse.json({ error: "Invalid image ID" }, { status: 400 });
     }
 
     await connectToDatabase();

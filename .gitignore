@@ -47,3 +47,5 @@ next-env.d.ts
 */**/*.txt
 
 ccswitch.sh
+
+/security

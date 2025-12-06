@@ -26,6 +26,11 @@ export async function setAvatar(imageId: string | null) {
     await connectToDatabase();
 
     try {
+      // Validate imageId format if provided
+      if (imageId !== null && !/^[a-f\d]{24}$/i.test(imageId)) {
+        return { success: false, error: "Invalid imageId format" };
+      }
+
       const user = await UserModel.findByIdAndUpdate(
         userId,
         { avatar: imageId },
@@ -48,9 +53,19 @@ export async function updateBio(bio: string) {
     await connectToDatabase();
 
     try {
+      // Server-side validation
+      const trimmedBio = bio.trim();
+
+      if (trimmedBio.length > 500) {
+        return { success: false, error: "Bio must be 500 characters or less" };
+      }
+
+      // Sanitize: remove potentially dangerous characters
+      const sanitizedBio = trimmedBio.replace(/[<>]/g, '');
+
       const user = await UserModel.findByIdAndUpdate(
         userId,
-        { bio },
+        { bio: sanitizedBio },
         { new: true }
       )
       .populate("avatar", "_id variants");
