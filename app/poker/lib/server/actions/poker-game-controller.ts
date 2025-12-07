@@ -588,6 +588,18 @@ async function resetGameForSinglePlayer(game: any, gameId: string): Promise<void
   remainingPlayer.hand = [];
   game.deck = initializeDeck();
 
+  // Reset AI player's chip count to default if they're the only player left
+  if (remainingPlayer.isAI) {
+    remainingPlayer.chipCount = POKER_GAME_CONFIG.DEFAULT_STARTING_CHIPS;
+
+    // Update the AI player's balance in the database
+    await PokerBalance.findOneAndUpdate(
+      { userId: remainingPlayer.id },
+      { chipCount: POKER_GAME_CONFIG.DEFAULT_STARTING_CHIPS },
+      { upsert: true }
+    );
+  }
+
   // Mark modified for Mongoose (explicitly mark all reset fields)
   game.markModified('winner');
   game.markModified('locked');

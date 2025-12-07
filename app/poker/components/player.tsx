@@ -6,6 +6,7 @@ import Hand from './player-hand';
 import type { Player as PlayerType, PlayerOrientation } from '@/app/poker/lib/definitions/poker';
 import clsx from 'clsx';
 import { useGameState } from '@/app/poker/lib/providers/poker-provider';
+import { usePlayers } from '@/app/poker/lib/providers/poker-hooks';
 import UserAvatar from '@/app/ui/user/user-avatar';
 import PlayerConnectionStatus from './player-connection-status';
 import { useActionTimerPercentage } from '@/app/poker/lib/hooks/use-action-timer-percentage';
@@ -59,7 +60,11 @@ export default function Player({
     const chipTotal = player.chipCount;
     const isCurrentPlayer = index === currentPlayerIndex;
     const { winner, actionTimer, locked } = useGameState();
+    const { players } = usePlayers();
     const isWinner = player.id === winner?.winnerId;
+
+    // Check if there's at least one human player
+    const hasHumanPlayer = players.some(p => !p.isAI);
 
     // Timer progress bar - only show for current player
     const timerForCurrentPlayer = isCurrentPlayer ? actionTimer : undefined;
@@ -95,7 +100,9 @@ export default function Player({
                         <span className="text-white px-1.5 py-0.5 bg-red-500 overflow-hidden rounded text-xs font-bold text-center">
                             ALL-IN
                         </span>
-                    ) : <span className='text-sm text-white px-1 text-center'>{chipTotal}</span>}
+                    ) : hasHumanPlayer ? (
+                        <span className='text-sm text-white px-1 text-center'>{chipTotal}</span>
+                    ) : null}
                     {isSmallBlind && locked && !winner && (
                         <div className='flex flex-row items-center justify-center h-5 w-5 rounded-full bg-blue-500 text-white overflow-hidden'>
                             <span className='text-xs font-bold text-white'>
