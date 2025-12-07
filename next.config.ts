@@ -34,8 +34,6 @@ const nextConfig: NextConfig = {
             // Allow server actions to handle missing action IDs gracefully
             allowedOrigins: ['*'],
         },
-        // Enable instrumentation for error filtering
-        instrumentationHook: true,
     },
     images: {
         remotePatterns: [
