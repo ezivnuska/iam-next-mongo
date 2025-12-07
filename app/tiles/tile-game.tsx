@@ -252,7 +252,7 @@ export default function TileGame() {
     }
 
     return (
-        <div ref={containerRef} className='flex grow'>
+        <div ref={containerRef} className='flex flex-1'>
             {tiles && (
                 <div className="relative flex grow rounded-md">
                     {renderTiles()}
