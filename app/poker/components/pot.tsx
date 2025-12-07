@@ -21,14 +21,13 @@ function Pot() {
     return calculateSidePots(players, playerBets);
   }, [players, playerBets, locked]);
 
-  if (potTotal > 0) return null;
   return (
     <div className='h-9'>
         {potTotal > 0 && (
             <>
                 {/* If there are side pots, display them separately */}
                 {(sidePots && sidePots.length > 1) ? (
-                    <div id="pot" className="flex flex-col rounded-xl px-3 py-2 gap-2 border-1 border-green-400">
+                    <div id="pot" className="flex flex-col rounded-xl px-3 py-2 gap-2 border border-green-400">
                         <div className="text-xs text-gray-300 font-semibold">POTS</div>
                         {sidePots.map((pot, index) => (
                         <div key={index} className="flex flex-col gap-0.5">

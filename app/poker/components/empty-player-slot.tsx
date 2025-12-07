@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import type { PlayerOrientation } from '@/app/poker/lib/definitions/poker';
-import { useUser } from '@/app/lib/providers/user-provider';
+import { useUser, createGuestUser } from '@/app/lib/providers/user-provider';
 import GuestUsernameModal from './guest-username-modal';
 
 interface EmptyPlayerSlotProps {
@@ -37,7 +37,7 @@ function getOrientationClasses(orientation: PlayerOrientation): string {
  * Clickable to join the game - shows modal for guest users
  */
 export default function EmptyPlayerSlot({ orientation, gameId, isGameLocked, onJoinGame, isClickable = true }: EmptyPlayerSlotProps) {
-  const { user, status } = useUser();
+  const { user, status, setUser } = useUser();
   const [showGuestModal, setShowGuestModal] = useState(false);
   const orientationClasses = getOrientationClasses(orientation);
 
@@ -56,8 +56,19 @@ export default function EmptyPlayerSlot({ orientation, gameId, isGameLocked, onJ
     }
   };
 
-  const handleGuestSubmit = (username: string) => {
+  const handleGuestSubmit = async (username: string) => {
     if (gameId) {
+      // Create guest user object with the provided username
+      const guestUser = createGuestUser();
+      guestUser.username = username;
+
+      // Set the guest user in context so the poker game can use it
+      setUser(guestUser);
+
+      // Wait briefly for socket registration to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Join the game as a guest
       onJoinGame(gameId, username);
       setShowGuestModal(false);
     }

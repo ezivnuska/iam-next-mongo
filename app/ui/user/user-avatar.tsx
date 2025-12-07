@@ -59,32 +59,22 @@ export default function UserAvatar({
 	// Guard against null/undefined/"null" string values
 	const validImageUrl = imageUrl && imageUrl !== 'null' && imageUrl !== 'undefined' ? imageUrl : null;
 
-	if (validImageUrl) {
-		return (
-			// <div
-				// className={`rounded-full overflow-hidden flex-shrink-0 border-1 ${className}`}
-				// style={{ width: size, height: size }}
-			// >
-				<Image
-					src={validImageUrl}
-					alt={username}
-					width={size}
-					height={size}
-					className="w-full h-full object-cover rounded-full overflow-hidden"
-				/>
-			// </div>
-		)
-	}
 	return (
-		<div
-			className={`flex flex-row items-center justify-center w-full h-full rounded-full bg-gray-400 text-gray-600 font-semibold flex-shrink-0 ${className}`}
-			// style={{ width: size, height: size }}
-		>
-			{isAI ? (
-				<ComputerDesktopIcon className="text-white" style={{ width: 16, height: 16 }} />
-			) : (
-				<p className={`text-[16px] text-white`}>{username?.[0]?.toUpperCase() || '?'}</p>
-			)}
+		<div className={`flex flex-row items-center justify-center w-full h-full rounded-full bg-gray-400 text-gray-600 font-semibold ${className}`}>
+			{isAI
+                ? <ComputerDesktopIcon className="text-white" style={{ width: 16, height: 16 }} />
+			    : validImageUrl
+                    ? (
+                        <Image
+                            src={validImageUrl}
+                            alt={username}
+                            width={size}
+                            height={size}
+                            className="w-full h-full object-cover rounded-full overflow-hidden"
+                        />
+                    )
+                    : <p className={`text-[16px] text-white`}>{username?.[0]?.toUpperCase() || '?'}</p>
+            }
 		</div>
 	)
 }

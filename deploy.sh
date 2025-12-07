@@ -9,6 +9,9 @@
   echo "📦 Installing dependencies..."
   pnpm install
 
+  echo "🧹 Cleaning build cache..."
+  rm -rf .next
+
   echo "🔨 Building application..."
   NODE_ENV=production NODE_OPTIONS="--max-old-space-size=1536" pnpm build
   

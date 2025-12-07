@@ -34,20 +34,8 @@ export default function PokerNotificationDisplay({ notification }: PokerNotifica
   // Check if this is a game_starting notification
   const isGameStarting = notification?.metadata?.notificationType === 'game_starting';
 
-  useEffect(() => {
-    if (!notification) return;
-
-    // Play sound effect based on notification type
-    if (playSound) {
-      if (notification.type === 'blind') {
-        playSound('chips');
-      } else if (notification.type === 'action') {
-        playSound('chips');
-      }
-      // Note: 'deal' type notifications do not play sounds here
-      // Card sounds are played by the stage coordinator when cards are revealed
-    }
-  }, [notification, playSound]);
+  // Note: Sound effects are handled by use-poker-event-handler.ts
+  // to avoid duplicate sounds and maintain proper context awareness
 
   if (!notification) {
     return null;

@@ -3,7 +3,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useUser } from '@/app/lib/providers/user-provider';
+import { useUser, createGuestUser } from '@/app/lib/providers/user-provider';
 import { Button } from '@/app/ui/button';
 import { validateGuestUsername } from '@/app/poker/lib/definitions/validation';
 
@@ -18,7 +18,7 @@ interface JoinGameControlProps {
  * - Guest users: Username input + "Play" button
  */
 export default function JoinGameControl({ gameId, onJoinGame }: JoinGameControlProps) {
-  const { user, status } = useUser();
+  const { user, status, setUser } = useUser();
   const [guestUsername, setGuestUsername] = useState('');
   const [error, setError] = useState('');
 
@@ -33,10 +33,18 @@ export default function JoinGameControl({ gameId, onJoinGame }: JoinGameControlP
       return;
     }
 
+    // Create guest user object with the provided username
+    const trimmedUsername = guestUsername.trim();
+    const guestUser = createGuestUser();
+    guestUser.username = trimmedUsername;
+
+    // Set the guest user in context so the poker game can use it
+    setUser(guestUser);
+
     // Clear error and join game
     setError('');
     if (gameId) {
-      onJoinGame(gameId, guestUsername.trim());
+      onJoinGame(gameId, trimmedUsername);
     }
   };
 

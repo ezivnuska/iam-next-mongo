@@ -37,17 +37,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 		})
 
 		socketInstance.on('connect', () => {
-			console.log('[SocketProvider] Socket connected, userId:', user?.id);
+			console.log('[SocketProvider] Socket connected');
 			setIsConnected(true)
-
-			// Always register, even for guest users
-			// Guest users will have 'guest-pending' ID until they join a game
-			if (user?.id) {
-				console.log('[SocketProvider] Registering user:', user.id);
-				socketInstance.emit('register', user.id)
-			} else {
-				console.log('[SocketProvider] No user ID available for registration');
-			}
 		})
 
 		socketInstance.on('disconnect', () => {
@@ -92,7 +83,19 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 		return () => {
 			socketInstance.disconnect()
 		}
-	}, [user?.id])
+	}, [])
+
+	// Register/re-register user when user changes (including when guest user is created)
+	useEffect(() => {
+		if (!socket || !isConnected) return
+
+		if (user?.id) {
+			console.log('[SocketProvider] Registering user:', user.id);
+			socket.emit('register', user.id)
+		} else {
+			console.log('[SocketProvider] No user ID available for registration');
+		}
+	}, [user?.id, socket, isConnected])
 
 	return (
 		<SocketContext.Provider value={{ socket, isConnected, onlineUsers }}>
