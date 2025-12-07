@@ -152,13 +152,7 @@ export class PokerSocketEmitter {
     winner: any;
     players: any[];
   }) {
-    console.log('[PokerSocketEmitter] ✅ emitRoundComplete called with payload:', {
-      hasWinner: !!payload.winner,
-      winner: payload.winner,
-      playerCount: payload.players.length,
-    });
     await emitViaAPI(SOCKET_EVENTS.POKER_ROUND_COMPLETE, payload);
-    console.log('[PokerSocketEmitter] ✅ emitRoundComplete API call completed');
   }
 
   /**
@@ -251,11 +245,6 @@ export class PokerSocketEmitter {
       await this.emitBetPlaced(results.betPlaced);
     }
     if (results.cardsDealt) {
-      console.log('[SocketHelper] Emitting cards dealt event:', {
-        stage: results.cardsDealt.stage,
-        communalCardsCount: results.cardsDealt.communalCards?.length,
-        playersCount: results.cardsDealt.players?.length
-      });
       // Note: Stage transition notifications are already emitted by poker-game-flow.ts
       // before cards are dealt, so we don't emit duplicate notifications here
       await this.emitCardsDealt(results.cardsDealt);
@@ -272,14 +261,8 @@ export class PokerSocketEmitter {
    * @param excludeUserId - Optional user ID to exclude from receiving this notification (for optimistic updates)
    */
   static async emitNotification(payload: PokerNotificationPayload, excludeUserId?: string) {
-    console.log('[PokerSocketEmitter] Emitting notification:', {
-      event: SOCKET_EVENTS.POKER_NOTIFICATION,
-      payload,
-      excludeUserId
-    });
     try {
       const result = await emitViaAPI(SOCKET_EVENTS.POKER_NOTIFICATION, payload, undefined, excludeUserId);
-      console.log('[PokerSocketEmitter] Notification emitted successfully:', result);
       return result;
     } catch (error) {
       console.error('[PokerSocketEmitter] Failed to emit notification:', error);
@@ -292,10 +275,8 @@ export class PokerSocketEmitter {
    * Used when game state changes make the notification irrelevant (e.g., player leaves during countdown)
    */
   static async emitNotificationCanceled() {
-    console.log('[PokerSocketEmitter] Emitting notification canceled event');
     try {
       const result = await emitViaAPI(SOCKET_EVENTS.POKER_NOTIFICATION_CANCELED, {});
-      console.log('[PokerSocketEmitter] Notification canceled event emitted successfully');
       return result;
     } catch (error) {
       console.error('[PokerSocketEmitter] Failed to emit notification canceled:', error);
@@ -308,10 +289,8 @@ export class PokerSocketEmitter {
    * Clients should show modal and reload
    */
   static async emitGameStaleReset() {
-    console.log('[PokerSocketEmitter] Emitting game stale reset event');
     try {
       const result = await emitViaAPI(SOCKET_EVENTS.POKER_GAME_STALE_RESET, {});
-      console.log('[PokerSocketEmitter] Game stale reset event emitted successfully');
       return result;
     } catch (error) {
       console.error('[PokerSocketEmitter] Failed to emit game stale reset:', error);

@@ -39,8 +39,6 @@ export async function POST(request: NextRequest) {
 
 		// Handle incoming client signals
 		if (signal) {
-			console.log('[Socket Emit Route] Received signal:', signal, gameId ? `for game: ${gameId}` : '(no gameId)');
-
 			// Ensure database connection for all signal handlers
 			const { connectToDatabase } = await import('@/app/lib/mongoose');
 			await connectToDatabase();
@@ -74,8 +72,6 @@ export async function POST(request: NextRequest) {
 						// No username provided, generate random
 						validatedUsername = generateGuestUsername();
 					}
-
-					console.log('[Socket Emit Route] Guest user:', validatedUserId, validatedUsername);
 				} else {
 					// Authenticated user - validate that user exists in database
 					try {
@@ -89,7 +85,6 @@ export async function POST(request: NextRequest) {
 
 						validatedUserId = user._id.toString();
 						validatedUsername = user.username || 'Player';
-						console.log('[Socket Emit Route] Validated authenticated user:', validatedUserId, validatedUsername);
 					} catch (error) {
 						console.error('[Socket Emit Route] Error validating user:', error);
 						return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
@@ -348,8 +343,6 @@ export async function POST(request: NextRequest) {
 					playerId: userId,
 					isAway: false,
 				});
-
-				console.log('[Socket Emit Route] Cleared away status for reconnected player:', userId);
 			}
 
 			return NextResponse.json({ success: true, wasAway: player.isAway });
@@ -357,8 +350,6 @@ export async function POST(request: NextRequest) {
 
 		return NextResponse.json({ error: 'Unknown signal' }, { status: 400 });
 		}
-
-		console.log('[Socket Emit Route] Received emit request:', { event, room, hasData: !!data, excludeUserId });
 
 		if (typeof global.io === 'undefined') {
 			console.error('Socket.IO not initialized')
@@ -385,16 +376,11 @@ export async function POST(request: NextRequest) {
 				}
 			}
 		} else if (room) {
-			console.log('[Socket Emit Route] Emitting to room:', room);
 			io.to(room).emit(event, data)
 		} else {
-			console.log('[Socket Emit Route] Broadcasting to ALL connected sockets');
-			const connectedSockets = await io.fetchSockets();
-			console.log('[Socket Emit Route] Number of connected sockets:', connectedSockets.length);
 			io.emit(event, data)
 		}
 
-		console.log('[Socket Emit Route] Emit completed successfully');
 		return NextResponse.json({ success: true })
 	} catch (error: any) {
 		console.error('Socket emit error:', error)

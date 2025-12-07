@@ -98,8 +98,6 @@ export function placeSmallBlind(game: PokerGameDocument): {
   const actualTotal = totalChipsAfter + potAfter;
   if (actualTotal !== expectedTotal) {
     console.error(`[SmallBlind] ❌ CHIP MISMATCH! Expected total=${expectedTotal}, Actual total=${actualTotal}, Lost=${expectedTotal - actualTotal} chips`);
-  } else {
-    console.log(`[SmallBlind] ✓ Chips conserved: ${actualTotal} total`);
   }
 
   return {
@@ -194,8 +192,6 @@ export function placeBigBlind(game: PokerGameDocument): {
   const actualTotal = totalChipsAfter + potAfter;
   if (actualTotal !== expectedTotal) {
     console.error(`[BigBlind] ❌ CHIP MISMATCH! Expected total=${expectedTotal}, Actual total=${actualTotal}, Lost=${expectedTotal - actualTotal} chips`);
-  } else {
-    console.log(`[BigBlind] ✓ Chips conserved: ${actualTotal} total`);
   }
 
   return {

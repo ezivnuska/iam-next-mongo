@@ -37,7 +37,6 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 		})
 
 		socketInstance.on('connect', () => {
-			console.log('[SocketProvider] Socket connected');
 			setIsConnected(true)
 		})
 
@@ -90,10 +89,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 		if (!socket || !isConnected) return
 
 		if (user?.id) {
-			console.log('[SocketProvider] Registering user:', user.id);
 			socket.emit('register', user.id)
-		} else {
-			console.log('[SocketProvider] No user ID available for registration');
 		}
 	}, [user?.id, socket, isConnected])
 
