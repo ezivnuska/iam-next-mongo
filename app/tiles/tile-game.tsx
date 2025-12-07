@@ -5,6 +5,7 @@
 import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import { Direction, GameStatus, TileType } from '@/app/lib/definitions/tiles'
 import { useTiles } from '@/app/lib/providers/tile-provider'
+import ResponsiveSquare from '@/app/ui/responsive-square'
 
 export type Dimensions = {
     width: number
@@ -34,7 +35,7 @@ export default function TileGame() {
         const handleResize = () => {
             if (containerRef.current) {
                 const rect = containerRef.current.getBoundingClientRect()
-                const size = Math.min(rect.width, rect.height, 600)
+                const size = Math.min(rect.width, rect.height)
                 setDims({ width: size, height: size })
             }
         }
@@ -252,12 +253,14 @@ export default function TileGame() {
     }
 
     return (
-        <div ref={containerRef} className='flex flex-1'>
-            {tiles && (
-                <div className="relative flex grow rounded-md">
-                    {renderTiles()}
-                </div>
-            )}
-        </div>
+        <ResponsiveSquare className="flex items-center justify-center">
+            <div ref={containerRef} className='flex w-full h-full'>
+                {tiles && (
+                    <div className="relative flex grow rounded-md">
+                        {renderTiles()}
+                    </div>
+                )}
+            </div>
+        </ResponsiveSquare>
     )
 }
