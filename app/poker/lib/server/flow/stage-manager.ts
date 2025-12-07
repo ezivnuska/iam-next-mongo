@@ -709,6 +709,17 @@ export class StageManager {
       // Check if we have enough players to continue (need at least 2)
       if (gameToReset.players.length < 2) {
 
+        // Reset AI player chip count to 100 when all other players leave
+        gameToReset.players = gameToReset.players.map((p: Player) => {
+          if (p.isAI) {
+            return {
+              ...p,
+              chipCount: POKER_GAME_CONFIG.DEFAULT_STARTING_CHIPS, // Reset to 100
+            };
+          }
+          return p;
+        });
+
         // Reset dealer button to 0 when only AI remains
         gameToReset.dealerButtonPosition = 0;
         gameToReset.markModified('dealerButtonPosition');

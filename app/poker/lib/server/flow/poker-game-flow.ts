@@ -64,6 +64,11 @@ export async function savePlayerBalances(players: Player[]) {
  * Supports multiple pots (main pot + side pots) for all-in scenarios
  */
 export function awardPotToWinners(game: PokerGameDoc, winnerInfo: WinnerInfo): void {
+  // CHIP CONSERVATION CHECK: Log total chips before awarding pot
+  const totalChipsBefore = game.players.reduce((sum, p) => sum + p.chipCount, 0);
+  const potTotal = game.pot.reduce((sum: number, bet: Bet) => sum + bet.chipCount, 0);
+  console.log(`[AwardPot] BEFORE: Player chips=${totalChipsBefore}, Pot=${potTotal}, Total=${totalChipsBefore + potTotal}`);
+
   // Calculate cumulative bets from game.pot (tracks ALL bets across all stages)
   // playerBets is reset each stage, so we need to reconstruct total bets from game.pot
   const cumulativePlayerBets = new Array(game.players.length).fill(0);
@@ -177,6 +182,15 @@ export function awardPotToWinners(game: PokerGameDoc, winnerInfo: WinnerInfo): v
   // Update winner info with pot winnings breakdown
   if (potWinnings.length > 0) {
     winnerInfo.potWinnings = potWinnings;
+  }
+
+  // CHIP CONSERVATION CHECK: Log total chips after awarding pot
+  const totalChipsAfter = game.players.reduce((sum, p) => sum + p.chipCount, 0);
+  const expectedTotal = totalChipsBefore + potTotal;
+  console.log(`[AwardPot] AFTER: Player chips=${totalChipsAfter}, Expected=${expectedTotal}`);
+  if (totalChipsAfter !== expectedTotal) {
+    console.error(`[AwardPot] ❌ CHIP MISMATCH! Lost ${expectedTotal - totalChipsAfter} chips!`);
+    console.error(`[AwardPot] Player chip counts:`, game.players.map(p => `${p.username}=${p.chipCount}`));
   }
 }
 

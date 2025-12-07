@@ -40,6 +40,10 @@ export function placeSmallBlind(game: PokerGameDocument): {
     throw new Error('Need at least 2 players to place blinds');
   }
 
+  // CHIP CONSERVATION CHECK
+  const totalChipsBefore = game.players.reduce((sum, p) => sum + p.chipCount, 0);
+  const potBefore = game.pot.reduce((sum, bet) => sum + bet.chipCount, 0);
+
   const { smallBlind } = DEFAULT_BLINDS;
   const smallBlindPosition = getSmallBlindPosition(game.dealerButtonPosition || 0, game.players.length);
   const smallBlindPlayer = game.players[smallBlindPosition];
@@ -87,6 +91,17 @@ export function placeSmallBlind(game: PokerGameDocument): {
   game.markModified('playerBets');
   game.markModified('actionHistory');
 
+  // CHIP CONSERVATION CHECK
+  const totalChipsAfter = game.players.reduce((sum, p) => sum + p.chipCount, 0);
+  const potAfter = game.pot.reduce((sum, bet) => sum + bet.chipCount, 0);
+  const expectedTotal = totalChipsBefore + potBefore;
+  const actualTotal = totalChipsAfter + potAfter;
+  if (actualTotal !== expectedTotal) {
+    console.error(`[SmallBlind] ❌ CHIP MISMATCH! Expected total=${expectedTotal}, Actual total=${actualTotal}, Lost=${expectedTotal - actualTotal} chips`);
+  } else {
+    console.log(`[SmallBlind] ✓ Chips conserved: ${actualTotal} total`);
+  }
+
   return {
     player: smallBlindPlayer,
     amount: blindAmount,
@@ -117,6 +132,10 @@ export function placeBigBlind(game: PokerGameDocument): {
   if (game.players.length < 2) {
     throw new Error('Need at least 2 players to place blinds');
   }
+
+  // CHIP CONSERVATION CHECK
+  const totalChipsBefore = game.players.reduce((sum, p) => sum + p.chipCount, 0);
+  const potBefore = game.pot.reduce((sum, bet) => sum + bet.chipCount, 0);
 
   const { bigBlind } = DEFAULT_BLINDS;
   const bigBlindPosition = getBigBlindPosition(game.dealerButtonPosition || 0, game.players.length);
@@ -167,6 +186,17 @@ export function placeBigBlind(game: PokerGameDocument): {
   game.markModified('pot');
   game.markModified('playerBets');
   game.markModified('actionHistory');
+
+  // CHIP CONSERVATION CHECK
+  const totalChipsAfter = game.players.reduce((sum, p) => sum + p.chipCount, 0);
+  const potAfter = game.pot.reduce((sum, bet) => sum + bet.chipCount, 0);
+  const expectedTotal = totalChipsBefore + potBefore;
+  const actualTotal = totalChipsAfter + potAfter;
+  if (actualTotal !== expectedTotal) {
+    console.error(`[BigBlind] ❌ CHIP MISMATCH! Expected total=${expectedTotal}, Actual total=${actualTotal}, Lost=${expectedTotal - actualTotal} chips`);
+  } else {
+    console.log(`[BigBlind] ✓ Chips conserved: ${actualTotal} total`);
+  }
 
   return {
     player: bigBlindPlayer,
