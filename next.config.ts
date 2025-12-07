@@ -1,10 +1,41 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+    // Generate unique build ID to force cache invalidation on each deployment
+    generateBuildId: async () => {
+        return `build-${Date.now()}`;
+    },
+    // Add headers to force cache revalidation
+    async headers() {
+        return [
+            {
+                source: '/_next/static/:path*',
+                headers: [
+                    {
+                        key: 'Cache-Control',
+                        value: 'public, max-age=31536000, immutable',
+                    },
+                ],
+            },
+            {
+                source: '/:path*',
+                headers: [
+                    {
+                        key: 'Cache-Control',
+                        value: 'no-cache, no-store, must-revalidate',
+                    },
+                ],
+            },
+        ];
+    },
     experimental: {
         serverActions: {
             bodySizeLimit: '10mb',
+            // Allow server actions to handle missing action IDs gracefully
+            allowedOrigins: ['*'],
         },
+        // Enable instrumentation for error filtering
+        instrumentationHook: true,
     },
     images: {
         remotePatterns: [

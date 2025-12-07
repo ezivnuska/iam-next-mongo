@@ -90,10 +90,17 @@ export default function PokerDashboard({
   // - Not showing player controls or acting player placeholder
   const showWaitingForPlayers = !hasHumanPlayers && !currentNotification && !showPlayerControls && !showActingPlayerPlaceholder;
 
+  // Check if this is a winner notification
+  const isWinnerNotification = currentNotification?.metadata?.notificationType === 'winner_determined' ||
+                                 currentNotification?.metadata?.notificationType === 'game_tied';
+
   return (
     <div className='relative w-full h-10 flex-row items-center justify-center rounded-full bg-green-900 overflow-hidden border'>
       {/* Background Progress Bar */}
-      {currentNotification?.type !== 'action' && currentNotification?.type !== 'deal' && progressPercentage > 0 && (
+      {currentNotification?.type !== 'action' &&
+       currentNotification?.type !== 'deal' &&
+       !isWinnerNotification &&
+       progressPercentage > 0 && (
         <div
           className="absolute left-0 top-0 bottom-0 bg-green-500 transition-all duration-100 ease-linear z-5"
           style={{

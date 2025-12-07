@@ -126,18 +126,18 @@ export default function PokerTable() {
   }
 
   return (
-    <div className='flex flex-1 flex-row items-center justify-center max-h-dvh gap-2 relative'>
+    <div className='flex flex-1 flex-row items-start justify-center max-h-dvh gap-2 relative'>
         <Link href='/' className='absolute top-0 left-0 z-20 p-2'>
             <ArrowLeftIcon className={`h-6 w-6 text-white`} />
         </Link>
-        <div className={clsx('flex flex-1 flex-col w-full max-w-[400px] h-dvh min-h-[300px] max-h-[500px] relative', {
+        <div className={clsx('flex flex-1 flex-col w-full max-w-[500px] h-dvh min-h-[300px] relative', {
             'mx-7 min-h-[320px] max-w-[580px] min-w-[580px]': orientation === 'landscape',
         })}>
 
             {/* Player slots sidebar */}
-            <div className={clsx('flex h-[47%] z-15', {
+            <div className={clsx('flex flex-1 z-15', {
                 'z-5': userGameInfo.isUserInGame,
-                'h-[50%]': orientation === 'landscape',
+                'max-h-[44%]': orientation === 'landscape',
             })}>
                 <PlayerSlots
                     players={players}
@@ -152,7 +152,7 @@ export default function PokerTable() {
             </div>
             
             {/* Main table area */}
-            <div className={clsx('absolute right-0 bottom-0 left-0 z-5 h-[60%]', {
+            <div className={clsx('absolute right-0 bottom-0 left-0 z-5 h-[53%]', {
                 'z-15': userGameInfo.isUserInGame,
                 'h-[64%]': orientation === 'landscape',
             })}>

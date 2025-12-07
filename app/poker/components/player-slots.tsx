@@ -63,18 +63,19 @@ const SLOT_CONFIGS: SlotConfig[] = [
   // Slot 0: Bottom-left (START - Player 1)
   {
     slotIndex: 0,
-    portraitPosition: 'bottom-0 left-[1%]',
+    portraitPosition: 'top-[34%] left-[2%]',
     portraitOrientation: 'ltr',
-    landscapePosition: 'top-[39%] left-0',
+    landscapePosition: 'top-[52%] left-[1%]',
     landscapeOrientation: 'ltr',
   },
 
   // Slot 1: Top-left (Player 2 - clockwise from slot 0)
   {
     slotIndex: 1,
-    portraitPosition: 'top-[17%] left-[2%]',
+    portraitPosition: 'top-[17%] left-[11%]',
+    // portraitPosition: 'top-[17%] left-[2%]',
     portraitOrientation: 'ltr',
-    landscapePosition: 'top-[6%] left-[18%]',
+    landscapePosition: 'top-[8%] sm:top-[10%] left-[18%]',
     landscapeOrientation: 'ltr',
   },
 
@@ -83,25 +84,26 @@ const SLOT_CONFIGS: SlotConfig[] = [
     slotIndex: 2,
     portraitPosition: 'top-[2%] left-1/2 -translate-x-1/2',
     portraitOrientation: 'ltr',
-    landscapePosition: 'top-[2%] left-1/2 -translate-x-1/2',
+    landscapePosition: 'top-[3%] left-1/2 -translate-x-1/2',
     landscapeOrientation: 'ltr',
   },
 
   // Slot 3: Top-right (Player 4 - clockwise from slot 2)
   {
     slotIndex: 3,
-    portraitPosition: 'top-[17%] right-[2%]',
+    portraitPosition: 'top-[17%] right-[11%]',
+    // portraitPosition: 'top-[17%] right-[2%]',
     portraitOrientation: 'rtl',
-    landscapePosition: 'top-[6%] right-[18%]',
+    landscapePosition: 'top-[8%] sm:top-[10%] right-[18%]',
     landscapeOrientation: 'rtl',
   },
 
   // Slot 4: Right side or Bottom-right (Player 5 - clockwise from slot 3)
   {
     slotIndex: 4,
-    portraitPosition: 'bottom-0 right-[1%]',
+    portraitPosition: 'top-[34%] right-[2%]',
     portraitOrientation: 'rtl',
-    landscapePosition: 'top-[39%] right-0',
+    landscapePosition: 'top-[52%] right-[1%]',
     landscapeOrientation: 'rtl',
   },
 ];
@@ -141,6 +143,9 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
 
   const { dealerButtonPosition, winner } = useGameState();
   const orientation = useScreenOrientation();
+
+  // Check if current user is already in the game
+  const isUserInGame = players.some(player => player.id === currentUserId);
 
   // Calculate blind positions
   const { smallBlindPos, bigBlindPos } = getBlindPositions(dealerButtonPosition, players.length);
@@ -192,14 +197,14 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
           return (
             <li
               key={`empty-${slot.slotIndex}`}
-              className={clsx('absolute w-[120px] h-[96px] bg-green-400/25 border-2 border-dashed border-yellow-300/50 rounded-full', position)}
+              className={clsx('absolute w-[120px] h-[96px]', position)}
             >
               <EmptyPlayerSlot
                 orientation={playerOrientation}
                 gameId={gameId}
                 isGameLocked={locked}
                 onJoinGame={onJoinGame}
-                isClickable={slot.isFirstEmpty}
+                isClickable={slot.isFirstEmpty && !isUserInGame}
               />
             </li>
           );

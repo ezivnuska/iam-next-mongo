@@ -80,7 +80,7 @@ export default function EmptyPlayerSlot({ orientation, gameId, isGameLocked, onJ
         onClick={handleClick}
         disabled={!isClickable}
         className={clsx(
-          'flex h-full w-full items-center justify-center gap-2 transition-opacity focus:outline-none',
+          'flex h-full w-full items-center justify-center gap-2 transition-opacity focus:outline-none bg-green-400/25 border-2 border-dashed border-yellow-300/50 rounded-full',
           orientationClasses,
           {
             'cursor-pointer hover:opacity-100': isClickable,
@@ -89,15 +89,17 @@ export default function EmptyPlayerSlot({ orientation, gameId, isGameLocked, onJ
         )}
         aria-label={isClickable ? 'Join game' : 'Player slot'}
       >
-        <div className='flex flex-col items-center justify-center gap-1'>
-          {/* Empty avatar circle with dashed border */}
-          <div className='rounded-full border-2 border-dashed border-green-400/25 w-[28px] h-[28px] flex items-center justify-center bg-gray-800/30'>
-            {isClickable && <span className='text-white text-lg font-bold'>+</span>}
-          </div>
+        {isClickable && (
+            <div className='flex flex-col items-center justify-center gap-1'>
+                {/* Empty avatar circle with dashed border */}
+                <div className='rounded-full border-green-400/25 w-[28px] h-[28px] flex items-center justify-center bg-gray-800/30'>
+                    <span className='text-white text-lg font-bold'>+</span>
+                </div>
 
-          {/* Empty slot label */}
-          {isClickable && <span className='text-xs text-white'>Join</span>}
-        </div>
+                {/* Empty slot label */}
+                {isClickable && <span className='text-xs text-white'>Join</span>}
+            </div>
+        )}
       </button>
 
       {/* Guest Username Modal - Rendered via Portal to avoid transform issues */}
