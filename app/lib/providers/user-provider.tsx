@@ -10,45 +10,32 @@ import { UserRole } from "@/app/lib/definitions/user";
 type AuthStatus = "loading" | "authenticated" | "unauthenticated" | "signing-out";
 
 /**
- * Creates a guest user object for unauthenticated users
+ * Creates a guest user object for the poker game
  *
- * IMPORTANT: Guest User Pattern Rationale
+ * IMPORTANT: Guest User Pattern
  *
- * This application uses a guest user object (instead of null) for unauthenticated users
- * to support the poker game feature, which allows anonymous users to play without creating an account.
+ * Guest users are ONLY created for the poker game, allowing anonymous users to play
+ * without creating an account. For general site browsing, unauthenticated users are `null`.
  *
- * Why guest users are NOT just `null`:
+ * **Poker Game Requirements**:
+ * - Guest users can join poker games by providing only a username
+ * - The game needs a consistent user object to track players across socket events
+ * - Guest IDs transition from 'guest-pending' → 'guest-{uuid}' when joining a game
+ * - Socket synchronization matches guests by username: `player.username === user.username`
  *
- * 1. **Poker Game Requirements**:
- *    - Guest users can join poker games by providing only a username
- *    - The game needs a consistent user object to track players across socket events
- *    - Guest IDs transition from 'guest-pending' → 'guest-{uuid}' when joining a game
- *    - Socket synchronization matches guests by username: `player.username === user.username`
- *
- * 2. **State Management**:
- *    - All poker components expect `user` to be an object, never null
- *    - Client-side logic uses `user?.id`, `user?.username`, `user?.isGuest` throughout
- *    - Socket handlers update guest IDs via object spreading: `{...prevUser, id: newGuestId}`
- *    - If `user` were `null`, 26+ locations across 8 poker files would break
- *
- * 3. **Consistent API**:
- *    - Components can safely access `user.id` and `user.username` without extensive null checks
- *    - The `isGuest: true` flag clearly distinguishes guest vs authenticated users
- *    - Guest users are filtered out of balance persistence: `if (!isGuestId(player.id)) { saveBalance() }`
- *
- * 4. **Security Considerations**:
- *    - Protected routes (profile, activity, users) use middleware + server-side checks
- *    - Server actions and API routes validate authentication via `requireAuth()`
- *    - Guest users can ONLY access public content and the poker game
- *    - Guest user balances are ephemeral (not persisted to database)
+ * **Security Considerations**:
+ * - Protected routes (profile, activity, users) use middleware + server-side checks
+ * - Server actions and API routes validate authentication via `requireAuth()`
+ * - Guest users can ONLY access the poker game
+ * - Guest user balances are ephemeral (not persisted to database)
  *
  * For protected routes that should NOT allow guest access, check:
- * - `if (!user || user.isGuest)` on the client
+ * - `if (!user)` on the client (guest users will be null outside poker game)
  * - `await requireAuth()` throws "Unauthorized" for guest users on the server
  *
  * @returns User object with isGuest: true and temporary ID 'guest-pending'
  */
-function createGuestUser(): User {
+export function createGuestUser(): User {
     return {
         id: 'guest-pending',        // Temporary ID - replaced when joining poker game
         username: 'Guest',          // Default display name - replaced when joining poker game
@@ -90,9 +77,8 @@ export function UserProvider({ children, initialUser }: UserProviderProps) {
     useEffect(() => {
         async function fetchFullUser() {
             if (!initialUser) {
-                // Create guest user object for unauthenticated users
-                // Actual guest ID will be assigned server-side when joining a game
-                setUser(createGuestUser());
+                // Unauthenticated users are null (guest users only created in poker game)
+                setUser(null);
                 setStatus("unauthenticated");
                 return;
             }
@@ -101,8 +87,8 @@ export function UserProvider({ children, initialUser }: UserProviderProps) {
             try {
                 const res = await fetch("/api/users/me");
                 if (!res.ok) {
-                    // Create guest user on failed authentication
-                    setUser(createGuestUser());
+                    // Failed authentication - set user to null
+                    setUser(null);
                     setStatus("unauthenticated");
                     return;
                 }
@@ -111,8 +97,8 @@ export function UserProvider({ children, initialUser }: UserProviderProps) {
                 setStatus("authenticated");
             } catch (err) {
                 console.error("Failed to fetch full user:", err);
-                // Create guest user on error
-                setUser(createGuestUser());
+                // Error fetching user - set user to null
+                setUser(null);
                 setStatus("unauthenticated");
             }
         }

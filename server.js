@@ -448,7 +448,7 @@ app.prepare().then(() => {
 			console.error(err)
 			process.exit(1)
 		})
-		.listen(port, () => {
+		.listen(port, hostname, () => {
 			console.log(`> Ready on http://${hostname}:${port}`)
 			console.log(`> Socket.IO server running on path: /api/socket/io`)
 			console.log(`> Stale game health check: Conditional (only runs when players are active)`)
