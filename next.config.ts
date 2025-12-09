@@ -31,8 +31,6 @@ const nextConfig: NextConfig = {
     experimental: {
         serverActions: {
             bodySizeLimit: '10mb',
-            // Allow server actions to handle missing action IDs gracefully
-            allowedOrigins: ['*'],
         },
     },
     images: {
