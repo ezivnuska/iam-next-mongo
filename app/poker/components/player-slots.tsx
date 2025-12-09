@@ -238,7 +238,7 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUser, gameId,
             />
             {isDealer && locked && !winner && (
               <div className={`absolute z-20 ${dealerButtonClasses}`}>
-                <div className='flex flex-row items-center justify-center h-5 w-5 rounded-full bg-yellow-500 text-black overflow-hidden border-1'>
+                <div className='flex flex-row items-center justify-center h-5 w-5 rounded-full bg-yellow-500 text-black overflow-hidden'>
                   <span className='text-xs font-bold text-black'>
                     D
                   </span>

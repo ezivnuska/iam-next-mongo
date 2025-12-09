@@ -57,7 +57,7 @@ export default function UserList({ users }: UserListProps) {
                             </div>
                         </Link>
 
-						<div className="flex-shrink-0 ml-3">
+						<div className="shrink-0 ml-3">
 							<FriendshipButton
 								userId={user.id}
 								username={user.username}

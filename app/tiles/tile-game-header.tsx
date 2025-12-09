@@ -9,10 +9,13 @@ import { GameStatus } from '@/app/lib/definitions/tiles'
 import UserAvatar from '@/app/ui/user/user-avatar'
 import Modal from '@/app/ui/modal'
 import Leaderboard from './leaderboard'
+import clsx from 'clsx';
+import { useScreenOrientation } from '../poker/lib/hooks/use-screen-orientation';
 
 export default function TileGameHeader() {
     const [showLeaderboardModal, setShowLeaderboardModal] = useState(false)
-
+    const orientation = useScreenOrientation()
+    console.log('ORIENTATION', orientation)
     const {
         scores,
         status,
@@ -106,20 +109,23 @@ export default function TileGameHeader() {
     ) : null
 
     return (
-        <>
-            <div className="flex items-center justify-between w-full py-4 gap-4">
-                <div className="flex items-center gap-2">
-                    {renderNavButton()}
-                    {renderKillButton()}
-                </div>
-                <div className="flex-1 flex items-center justify-center">
-                    {time && ticks > 0 && (
-                        <span className="font-bold text-xl">{time}</span>
-                    )}
-                </div>
-                {renderTopScore()}
-            </div>
-
+        <div className={clsx('flex flex-col items-center justify-between w-full py-4 gap-4',
+            {
+                'flex-row': orientation === 'portrait',
+            }
+        )}>
+            {renderNavButton()}
+            {/* <div className='flex border'>
+            </div> */}
+            {/* <div className='flex border'>
+            </div> */}
+            {renderKillButton()}
+                {time && ticks > 0 && (
+                    <span className="font-bold text-xl">{time}</span>
+                )}
+            {/* <div className='flex border'>
+            </div> */}
+            {renderTopScore()}
             {/* Leaderboard Modal */}
             {showLeaderboardModal && (
                 <Modal
@@ -142,6 +148,6 @@ export default function TileGameHeader() {
                     </div>
                 </Modal>
             )}
-        </>
+        </div>
     )
 }

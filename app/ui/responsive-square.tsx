@@ -43,6 +43,13 @@ export default function ResponsiveSquare({ children, className = '' }: Responsiv
       setSize(squareSize);
     };
 
+    // Delayed update for orientation changes (parent dimensions may not be updated immediately)
+    const updateSizeDelayed = () => {
+      requestAnimationFrame(() => {
+        setTimeout(updateSize, 100);
+      });
+    };
+
     // Initial size calculation
     updateSize();
 
@@ -56,19 +63,33 @@ export default function ResponsiveSquare({ children, className = '' }: Responsiv
       resizeObserver.observe(containerRef.current.parentElement);
     }
 
-    // Also listen to window resize as fallback
+    // Listen to window resize
     window.addEventListener('resize', updateSize);
+
+    // Listen to orientation changes (for mobile devices)
+    window.addEventListener('orientationchange', updateSizeDelayed);
+
+    // Modern orientation change listener (if supported)
+    let orientationListener: (() => void) | null = null;
+    if (window.screen?.orientation) {
+      orientationListener = () => updateSizeDelayed();
+      window.screen.orientation.addEventListener('change', orientationListener);
+    }
 
     return () => {
       resizeObserver.disconnect();
       window.removeEventListener('resize', updateSize);
+      window.removeEventListener('orientationchange', updateSizeDelayed);
+      if (orientationListener && window.screen?.orientation) {
+        window.screen.orientation.removeEventListener('change', orientationListener);
+      }
     };
   }, []);
 
   return (
     <div
       ref={containerRef}
-      className={`${className}`}
+      className={`${className} flex items-stretch`}
       style={{
         width: size > 0 ? `${size}px` : '100%',
         height: size > 0 ? `${size}px` : '100%',

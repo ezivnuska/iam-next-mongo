@@ -1,14 +1,12 @@
 // app/tiles/page.tsx
 
-import DefaultPage from "../ui/layout/page/default-page";
+import FullscreenPageWithHeader from "../ui/layout/page/fullscreen-page-with-header";
 import TileGame from "./tile-game";
-import TileGameHeader from "./tile-game-header";
 
 export default function Page() {
     return (
-        <DefaultPage>
-            <TileGameHeader />
+        <FullscreenPageWithHeader>
             <TileGame />
-        </DefaultPage>
+        </FullscreenPageWithHeader>
     )
 }
