@@ -19,9 +19,9 @@ type AuthStatus = "loading" | "authenticated" | "unauthenticated" | "signing-out
  *
  * **Poker Game Requirements**:
  * - Guest users can join poker games by providing only a username
+ * - Each guest gets a unique ID (guest-{uuid}) generated on creation
+ * - Guest ID and username are persisted in localStorage for reconnection after refresh
  * - The game needs a consistent user object to track players across socket events
- * - Guest IDs transition from 'guest-pending' → 'guest-{uuid}' when joining a game
- * - Socket synchronization matches guests by username: `player.username === user.username`
  *
  * **Security Considerations**:
  * - Protected routes (profile, activity, users) use middleware + server-side checks
@@ -33,12 +33,15 @@ type AuthStatus = "loading" | "authenticated" | "unauthenticated" | "signing-out
  * - `if (!user)` on the client (guest users will be null outside poker game)
  * - `await requireAuth()` throws "Unauthorized" for guest users on the server
  *
- * @returns User object with isGuest: true and temporary ID 'guest-pending'
+ * @returns User object with isGuest: true and a unique guest ID
  */
 export function createGuestUser(): User {
+    // Import guest utils - use dynamic import to avoid issues in non-poker contexts
+    const { generateGuestId } = require('@/app/poker/lib/utils/guest-utils');
+
     return {
-        id: 'guest-pending',        // Temporary ID - replaced when joining poker game
-        username: 'Guest',          // Default display name - replaced when joining poker game
+        id: generateGuestId(),      // Unique guest ID generated immediately
+        username: 'Guest',          // Default display name - updated when joining poker game
         email: '',
         role: UserRole.User,
         bio: '',
@@ -95,6 +98,15 @@ export function UserProvider({ children, initialUser }: UserProviderProps) {
                 const fullUser: User = await res.json();
                 setUser(fullUser);
                 setStatus("authenticated");
+
+                // Clear guest credentials when user authenticates
+                try {
+                    localStorage.removeItem('poker_guest_id');
+                    localStorage.removeItem('poker_guest_username');
+                    localStorage.removeItem('poker_guest_created_at');
+                } catch (e) {
+                    console.warn('Failed to clear guest credentials on authentication:', e);
+                }
             } catch (err) {
                 console.error("Failed to fetch full user:", err);
                 // Error fetching user - set user to null

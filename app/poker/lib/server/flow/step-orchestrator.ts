@@ -104,9 +104,6 @@ async function tryAdvanceStep(gameId: string): Promise<void> {
     return;
   }
 
-  if (stageChanged) {
-  }
-
   // Execute the next step
   await executeCurrentStep(gameId);
 }
@@ -137,18 +134,4 @@ export async function onPlayerAction(
   // NOTE: Early completion check removed from here to prevent premature stage advancement
   // The turn-handler will check for early completion when handleReadyForNextTurn is called
   // This ensures action notifications have time to display before stage advances
-}
-
-/**
- * Pause the game flow (for disconnections, etc.)
- */
-export async function pauseStepFlow(gameId: string): Promise<void> {
-  // TODO: Implement pause logic
-}
-
-/**
- * Resume the game flow
- */
-export async function resumeStepFlow(gameId: string): Promise<void> {
-  await executeCurrentStep(gameId);
 }

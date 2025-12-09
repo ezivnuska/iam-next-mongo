@@ -50,7 +50,6 @@ export interface SocketHandlerDeps {
   setAutoAdvanceMode: (mode: boolean) => void;
   playSound: (sound: PokerSoundType) => void;
   getGameNotification?: () => { type: string; timestamp: number; duration: number } | null;
-  userId?: string | null;
   user?: any;
   setUser?: (user: any) => void;
 }
@@ -169,7 +168,7 @@ export const createPlayerLeftHandler = (
   updateGameStatus: (locked: boolean, lockTime?: string, winner?: any) => void,
   setActionHistory: (history: any[]) => void,
   playSound?: (sound: PokerSoundType) => void,
-  userId?: string | null
+  user?: any
 ) => {
   return (payload: any) => {
     updatePlayers(payload.players);
@@ -183,6 +182,17 @@ export const createPlayerLeftHandler = (
     // If game was reset (all players left), reset game status
     if (payload.gameReset) {
       updateGameStatus(false, undefined, undefined);
+    }
+
+    // If the removed player is the current guest user, clear their credentials
+    if (user?.isGuest && payload.playerId === user.id) {
+      try {
+        localStorage.removeItem('poker_guest_id');
+        localStorage.removeItem('poker_guest_username');
+        localStorage.removeItem('poker_guest_created_at');
+      } catch (e) {
+        console.warn('Failed to clear guest credentials on auto-removal:', e);
+      }
     }
   };
 };
@@ -221,8 +231,7 @@ export const createBetPlacedHandler = (
   setIsActionProcessing: (processing: boolean) => void,
   setPendingAction: (action: { type: 'bet' | 'fold' | 'call' | 'raise'; playerId: string } | null) => void,
   playSound: (sound: PokerSoundType) => void,
-  updatePlayers?: (players: Player[]) => void,
-  userId?: string | null
+  updatePlayers?: (players: Player[]) => void
 ) => {
   return (payload: any) => {
     updateBettingState(payload.pot, payload.playerBets, payload.currentPlayerIndex);
@@ -308,13 +317,21 @@ export const createPlayerPresenceUpdatedHandler = (
   updatePlayers: (players: Player[]) => void,
   getPlayers: () => Player[]
 ) => {
-  return (payload: { playerId: string; isAway: boolean }) => {
+  return (payload: { playerId: string; isAway: boolean; username?: string }) => {
     const currentPlayers = getPlayers();
-    const updatedPlayers = currentPlayers.map(p =>
-      p.id === payload.playerId
-        ? { ...p, isAway: payload.isAway }
-        : p
-    );
+
+    const updatedPlayers = currentPlayers.map(p => {
+      // Match by ID first
+      let isMatch = p.id === payload.playerId;
+
+      // For guest players, also try username match as fallback
+      if (!isMatch && payload.playerId.startsWith('guest-') && payload.username && p.username) {
+        isMatch = p.username === payload.username;
+      }
+
+      return isMatch ? { ...p, isAway: payload.isAway } : p;
+    });
+
     updatePlayers(updatedPlayers);
   };
 };

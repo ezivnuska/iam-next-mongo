@@ -138,6 +138,9 @@ export async function addPlayer(
         return game.toObject();
       }
 
+      // Guest users joining a locked game - they should be queued just like any other player
+      // No special reconnection logic needed since guest IDs are now stable
+
       // Add to queue
       if (!game.queuedPlayers) {
         game.queuedPlayers = [];
@@ -162,10 +165,11 @@ export async function addPlayer(
       throw new Error(`Game is full - maximum ${POKER_GAME_CONFIG.MAX_PLAYERS} players allowed`);
     }
 
-    // Check if player already in game (may have been added in a previous retry)
+    // Check if player already in game by ID (may have been added in a previous retry)
     const alreadyIn = game.players.some((p: Player) => p.id === user.id);
     if (alreadyIn) return game.toObject();
 
+    // Add player to game
     game.players.push({
       id: user.id,
       username: user.username,
@@ -246,9 +250,7 @@ export async function processQueuedPlayers(gameId: string): Promise<void> {
         queuedPlayer.username,
         { skipLockTimeReset: true } // Don't reset the countdown when adding queued players
       );
-      if (result.success) {
-        console.log(`[ProcessQueuedPlayers] Added ${queuedPlayer.username} from queue`);
-      } else {
+      if (!result.success) {
         console.error(`[ProcessQueuedPlayers] Failed to add ${queuedPlayer.username}:`, result.error);
       }
     } catch (error: any) {
@@ -308,8 +310,6 @@ export async function handlePlayerJoin(
     // If this player join brings the count to 2+ and game isn't locked, queue notifications
     // Note: lockTime may be undefined during restart, but we still queue notifications to cancel timers
     if (gameState.players.length >= 2 && !gameState.locked) {
-      const context = gameState.lockTime ? 'initial join' : 'join during restart';
-
       // Import notification queue manager
       const { queuePlayerJoinedNotification } = await import('../notifications/notification-queue-manager');
 
@@ -432,16 +432,25 @@ export async function setPlayerPresence(
   if (playerIndex === -1) {
     // Player not in game - this is common and not an error
     // Happens when: player left, was removed during reset, or timing issues
-    console.log(`[SetPlayerPresence] Player ${userId} not in game ${gameId} - ignoring presence update`);
     return; // Silent no-op
   }
 
   const actualPlayerId = game.players[playerIndex].id;
 
-  // Update player presence
-  game.players[playerIndex].isAway = isAway;
-  game.markModified('players');
-  await game.save();
+  // Use atomic update to avoid race conditions with concurrent operations
+  // This updates only the specific player's isAway field without overwriting other changes
+  await PokerGame.findOneAndUpdate(
+    {
+      _id: gameId,
+      [`players.${playerIndex}.id`]: actualPlayerId  // Ensure we're updating the right player
+    },
+    {
+      $set: { [`players.${playerIndex}.isAway`]: isAway }
+    },
+    {
+      runValidators: true
+    }
+  );
 
   // Emit presence update to all clients with the actual player ID
   await PokerSocketEmitter.emitPlayerPresenceUpdated({

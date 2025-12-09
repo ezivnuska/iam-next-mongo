@@ -27,7 +27,7 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
   // Determine if player can check (no bet to match, including when currentBet is undefined)
   const canCheck = currentBet === undefined || currentBet === 0;
 
-  // Check if current user is the active player (for getting player data)
+  // Check if current user is the active player (match by ID)
   const isMyTurn = user && players[currentPlayerIndex]?.id === user.id;
 
   // Get current player's chip count and all-in status

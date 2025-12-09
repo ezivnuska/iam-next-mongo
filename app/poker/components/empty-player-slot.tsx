@@ -62,6 +62,16 @@ export default function EmptyPlayerSlot({ orientation, gameId, isGameLocked, onJ
       const guestUser = createGuestUser();
       guestUser.username = username;
 
+      // Store guest ID, username, and creation timestamp in localStorage for reconnection handling
+      // Credentials expire after 30 days for privacy
+      try {
+        localStorage.setItem('poker_guest_id', guestUser.id);
+        localStorage.setItem('poker_guest_username', username);
+        localStorage.setItem('poker_guest_created_at', new Date().toISOString());
+      } catch (e) {
+        console.warn('[EmptySlot] Failed to store guest credentials in localStorage:', e);
+      }
+
       // Set the guest user in context so the poker game can use it
       setUser(guestUser);
 

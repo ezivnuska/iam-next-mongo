@@ -105,36 +105,10 @@ export async function handleReadyForNextTurn(gameId: string): Promise<void> {
       return;
     }
 
-    // Check if player is connected (only for human players, not AI)
-    if (!currentPlayer.isAI) {
-      const { isPlayerConnected } = await import('@/app/lib/utils/socket-helper');
-      const isConnected = isPlayerConnected(currentPlayer.id);
-
-      // If player is connected but was marked as away, clear the away status
-      if (isConnected && currentPlayer.isAway) {
-        currentPlayer.isAway = false;
-        await saveGameSafe(game, 'player reconnected');
-
-        // Emit presence update to all clients
-        await PokerSocketEmitter.emitPlayerPresenceUpdated({
-          playerId: currentPlayer.id,
-          isAway: false,
-        });
-      }
-
-      // If player is disconnected and not already marked as away, mark them
-      if (!isConnected && !currentPlayer.isAway) {
-        currentPlayer.isAway = true;
-        await saveGameSafe(game, 'player disconnected');
-
-        // Emit presence update to all clients
-        await PokerSocketEmitter.emitPlayerPresenceUpdated({
-          playerId: currentPlayer.id,
-          isAway: true,
-        });
-      }
-
-    }
+    // Note: Player presence (isAway) is managed by the poker:set_presence system
+    // Client sends presence updates when navigating to/from poker page
+    // We trust the current player.isAway value without checking socket connection
+    // because socket connection ≠ being on the poker page
 
     // Start timer for current player (both human and AI)
     await startActionTimer(

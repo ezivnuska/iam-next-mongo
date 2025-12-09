@@ -108,9 +108,6 @@ export const TileProvider: React.FC<TileProviderProps> = ({ children }) => {
         if (savedScore) {
             if (user) {
                 handleNewScore()
-            } else {
-                // TODO: Show auth modal
-                console.log('User must be logged in to save score')
             }
         }
     }, [user, savedScore])

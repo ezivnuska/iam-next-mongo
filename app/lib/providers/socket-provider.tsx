@@ -2,7 +2,7 @@
 
 'use client'
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react'
 import { io as socketIO, Socket } from 'socket.io-client'
 import { useUser } from '@/app/lib/providers/user-provider'
 import { SOCKET_EVENTS } from '@/app/lib/socket/events'
@@ -29,6 +29,14 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 	const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
 	const { user } = useUser()
 
+	// Use ref to track current user for event handlers without triggering socket reconnection
+	const userRef = useRef(user)
+
+	// Update ref when user changes
+	useEffect(() => {
+		userRef.current = user
+	}, [user])
+
 	useEffect(() => {
 		const socketInstance = socketIO(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000', {
 			path: '/api/socket/io',
@@ -47,11 +55,6 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 		socketInstance.on('connect_error', (error) => {
 			console.error('Socket connection error:', error)
 		})
-
-		// Debug: Listen to ALL events
-		// socketInstance.onAny((eventName, ...args) => {
-		// 	console.log('**', eventName, 'with args:', args)
-		// })
 
 		// Listen for initial online users list
 		socketInstance.on('users:online', ({ userIds }: { userIds: string[] }) => {
@@ -75,6 +78,25 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 			})
 		})
 
+		// Listen for poker player removal (to clear guest credentials when away player is auto-removed)
+		// This listener stays active even when user navigates away from poker page
+		socketInstance.on(SOCKET_EVENTS.POKER_PLAYER_LEFT, (payload: { playerId: string; players: any[]; playerCount: number; gameReset?: boolean; actionHistory: any[] }) => {
+			// Use ref to get current user without causing socket reconnection
+			const currentUser = userRef.current
+			if (!currentUser?.isGuest) return
+
+			// If the removed player is the current guest user, clear their credentials
+			if (payload.playerId === currentUser.id) {
+				try {
+					localStorage.removeItem('poker_guest_id')
+					localStorage.removeItem('poker_guest_username')
+					localStorage.removeItem('poker_guest_created_at')
+				} catch (e) {
+					console.warn('Failed to clear guest credentials on auto-removal:', e)
+				}
+			}
+		})
+
 		setSocket(socketInstance)
 
 		socketInstance.connect()
@@ -89,9 +111,14 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 		if (!socket || !isConnected) return
 
 		if (user?.id) {
-			socket.emit('register', user.id)
+			// For guest users, include username in registration for reconnection matching
+			const registrationData = user.isGuest && user.username
+				? { userId: user.id, username: user.username }
+				: user.id;
+
+			socket.emit('register', registrationData)
 		}
-	}, [user?.id, socket, isConnected])
+	}, [user?.id, user?.username, user?.isGuest, socket, isConnected])
 
 	return (
 		<SocketContext.Provider value={{ socket, isConnected, onlineUsers }}>

@@ -302,9 +302,10 @@ export class PokerSocketEmitter {
 /**
  * Check if a player is currently connected via socket.io
  * @param playerId - The player's user ID
+ * @param playerUsername - Optional username for guest player fallback matching
  * @returns true if the player has an active socket connection, false otherwise
  */
-export function isPlayerConnected(playerId: string): boolean {
+export function isPlayerConnected(playerId: string, playerUsername?: string): boolean {
   const io = (global as any).io;
   if (!io) {
     console.warn('[SocketHelper] Socket.IO instance not available');
@@ -313,7 +314,16 @@ export function isPlayerConnected(playerId: string): boolean {
 
   // Check if any socket is connected with this userId
   const sockets = Array.from(io.sockets.sockets.values());
-  const isConnected = sockets.some((socket: any) => socket.userId === playerId);
+  let isConnected = sockets.some((socket: any) => socket.userId === playerId);
+
+  // For guest players, also check by username as a fallback
+  // This handles any ID mismatch scenarios (pending updates, reconnections, etc.)
+  if (!isConnected && playerUsername && playerId.startsWith('guest-')) {
+    isConnected = sockets.some((socket: any) =>
+      socket.username === playerUsername &&
+      (socket.userId === 'guest-pending' || socket.userId?.startsWith('guest-'))
+    );
+  }
 
   return isConnected;
 }

@@ -37,7 +37,6 @@ import type { NotificationType } from './notification-provider';
 export interface PokerSocketEffectsDeps {
   socket: Socket | null;
   gameId: string | null;
-  userId: string | null | undefined;
   user: any;
   setUser: (user: any) => void;
   stateRef: React.MutableRefObject<GameStateSnapshot>;
@@ -96,7 +95,6 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
   const {
     socket,
     gameId,
-    userId,
     user,
     setUser,
     stateRef,
@@ -145,7 +143,6 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
       setPendingAction,
       setAutoAdvanceMode,
       playSound,
-      userId,
       user,
       setUser,
     });
@@ -153,11 +150,11 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
     const handleGameCreated = createGameCreatedHandler(setAvailableGames);
     const handleGameDeleted = createGameDeletedHandler(gameId, resetGameState, setAvailableGames);
     const handlePlayerJoined = createPlayerJoinedHandler(updaters.updatePlayers, setActionHistory, updaters.updateGameStatus);
-    const handlePlayerLeft = createPlayerLeftHandler(updaters.updatePlayers, updaters.updateGameStatus, setActionHistory, playSound, userId);
+    const handlePlayerLeft = createPlayerLeftHandler(updaters.updatePlayers, updaters.updateGameStatus, setActionHistory, playSound, user);
     const handlePlayerPresenceUpdated = createPlayerPresenceUpdatedHandler(updaters.updatePlayers, () => stateRef.current.players);
     const handleGameLocked = createGameLockedHandler(updaters.updatePlayers, updaters.updateGameStatus, setStage, updaters.updateBettingState, setActionHistory, playSound);
     const handleGameUnlocked = createGameUnlockedHandler(updaters.updateGameStatus, setStage, setDealerButtonPosition);
-    const handleBetPlaced = createBetPlacedHandler(updaters.updateBettingState, setActionHistory, setIsActionProcessing, setPendingAction, playSound, updaters.updatePlayers, userId);
+    const handleBetPlaced = createBetPlacedHandler(updaters.updateBettingState, setActionHistory, setIsActionProcessing, setPendingAction, playSound, updaters.updatePlayers);
 
     const handleCardsDealt = createCardsDealtHandler(updaters.updateStageState, updaters.updatePlayers, playSound, setCurrentPlayerIndex);
     const handleRoundComplete = createRoundCompleteHandler(setWinner, updaters.updatePlayers, playSound, showNotification, gameId);
@@ -197,6 +194,8 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
   }, [
     socket,
     gameId,
+    user,
+    setUser,
     stateRef,
     updaters,
     resetGameState,
@@ -211,5 +210,7 @@ export function usePokerSocketEffects(deps: PokerSocketEffectsDeps) {
     playSound,
     setCurrentPlayerIndex,
     setDealerButtonPosition,
+    showNotification,
+    clearAllPlayerNotifications,
   ]);
 }

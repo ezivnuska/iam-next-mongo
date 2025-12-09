@@ -3,8 +3,6 @@
  * Utility functions for guest user management in poker games
  */
 
-import { randomUUID } from 'crypto';
-
 const ADJECTIVES = [
   'Swift', 'Lucky', 'Bold', 'Clever', 'Brave',
   'Quick', 'Sharp', 'Bright', 'Wise', 'Cool',
@@ -20,11 +18,35 @@ const NOUNS = [
 ];
 
 /**
+ * Generate a UUID v4 compatible with both browser and Node.js
+ */
+function generateUUID(): string {
+  // Browser environment
+  if (typeof window !== 'undefined' && window.crypto?.randomUUID) {
+    return window.crypto.randomUUID();
+  }
+
+  // Node.js environment
+  if (typeof require !== 'undefined') {
+    const { randomUUID } = require('crypto');
+    return randomUUID();
+  }
+
+  // Fallback for older browsers (simple UUID v4 implementation)
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+/**
  * Generate a unique guest ID
  * Format: guest-{uuid}
+ * Works in both browser and Node.js environments
  */
 export function generateGuestId(): string {
-  return `guest-${randomUUID()}`;
+  return `guest-${generateUUID()}`;
 }
 
 /**

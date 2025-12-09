@@ -53,7 +53,7 @@ import { useStageCoordinator } from '../hooks/use-stage-coordinator';
 // ============= Inner Provider Component (with NotificationProvider access) =============
 
 function PokerProviderInner({ children }: { children: ReactNode }) {
-  const { socket } = useSocket();
+  const { socket, isConnected } = useSocket();
   const { user, setUser } = useUser();
   const { playSound, initSounds } = usePokerSounds();
   const { isActionNotificationActive } = useNotifications();
@@ -117,9 +117,14 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
 
   // Determine if the current user can act (it's their turn AND notifications are complete)
   const canPlayerAct = useMemo(() => {
-    if (!user) return false;
+    if (!user) {
+      return false;
+    }
     const currentPlayer = players[currentPlayerIndex];
+
+    // Match by ID (works for both authenticated and guest users with stable IDs)
     const isCurrentPlayer = currentPlayer?.id === user.id;
+
     const notificationsActive = isActionNotificationActive();
 
     // In Pre-Flop (stage 0), player must have hole cards dealt before they can act
@@ -186,7 +191,9 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
   }, [resetNotifications, resetCoordinator]);
 
   const updateGameId = useCallback(createUpdateGameId(setGameId), []);
-  const updatePlayers = useCallback(createUpdatePlayers(setPlayers), []);
+  const updatePlayers = useCallback((newPlayers: Player[]) => {
+    createUpdatePlayers(setPlayers)(newPlayers);
+  }, []);
 
   // Coordinated betting state updater - uses turn coordinator for currentPlayerIndex
   const updateBettingState = useCallback((
@@ -236,17 +243,19 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
   );
 
   const updateGameState = useCallback(
-    createUpdateGameState(
-      updateGameId,
-      updatePlayers,
-      updateBettingState,
-      updateStageState,
-      updateGameStatus,
-      setActionHistory,
-      setActionTimer,
-      setDealerButtonPosition
-    ),
-    [updateGameId, updatePlayers, updateBettingState, updateStageState, updateGameStatus]
+    (state: any) => {
+      createUpdateGameState(
+        updateGameId,
+        updatePlayers,
+        updateBettingState,
+        updateStageState,
+        updateGameStatus,
+        setActionHistory,
+        setActionTimer,
+        setDealerButtonPosition
+      )(state);
+    },
+    [updateGameId, updatePlayers, updateBettingState, updateStageState, updateGameStatus, user]
   );
 
   // --- Create API actions ---
@@ -263,7 +272,7 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
 
     const actionType = currentBet === 0 ? 'bet' : (chipCount > currentBet ? 'raise' : 'call');
 
-    // Find current player's username
+    // Find current player by ID
     const currentPlayer = players.find(p => p.id === user.id);
     if (!currentPlayer) {
       console.error('Current player not found');
@@ -351,7 +360,7 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
   const fold = useCallback(async () => {
     if (isActionProcessing || !user?.id) return;
 
-    // Find current player's username
+    // Find current player by ID
     const currentPlayer = players.find(p => p.id === user.id);
     if (!currentPlayer) {
       console.error('Current player not found');
@@ -386,8 +395,8 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
     }
   }, [foldOriginal, isActionProcessing, user, players, showPlayerNotification, gameId, playSound]);
   const leaveGame = useCallback(
-    createLeaveGameAction(gameId, resetGameState, setAvailableGames, socket),
-    [gameId, resetGameState, socket]
+    createLeaveGameAction(gameId, resetGameState, setAvailableGames, socket, user),
+    [gameId, resetGameState, socket, user]
   );
   const deleteGameFromLobby = useCallback(
     createDeleteGameAction(setAvailableGames),
@@ -403,41 +412,28 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
   // Track if player is a human player in the game
   const isUserInGame = useMemo(() => {
     if (!user) return false;
-
-    // Direct ID match (works for authenticated users and guests who haven't refreshed)
-    const directMatch = players.some(p => p.id === user.id && !p.isAI);
-    if (directMatch) return true;
-
-    // For guest users who refreshed/returned (their client ID resets to guest-pending)
-    // Check if there's a guest player with matching username
-    if (user.isGuest && user.username && user.id === 'guest-pending') {
-      return players.some(p =>
-        p.id.startsWith('guest-') &&
-        p.username === user.username &&
-        !p.isAI
-      );
-    }
-
-    return false;
+    // Simple ID match - guest IDs are stable from creation
+    return players.some(p => p.id === user.id && !p.isAI);
   }, [user, players]);
 
   // Refs to store values for cleanup function
-  const presenceRef = useRef<{ socket: typeof socket; gameId: string | null; isUserInGame: boolean }>({
+  const presenceRef = useRef<{ socket: typeof socket; gameId: string | null; isUserInGame: boolean; isConnected: boolean }>({
     socket: null,
     gameId: null,
     isUserInGame: false,
+    isConnected: false,
   });
 
   // Keep refs updated
   useEffect(() => {
-    presenceRef.current = { socket, gameId, isUserInGame: !!isUserInGame };
-    if (isUserInGame) {
-    }
-  }, [socket, gameId, isUserInGame]);
+    presenceRef.current = { socket, gameId, isUserInGame: !!isUserInGame, isConnected };
+  }, [socket, gameId, isUserInGame, isConnected]);
 
   // Track player presence when navigating to/from the /poker route
   useEffect(() => {
-    if (!isUserInGame || !socket?.connected || !gameId) return;
+    if (!isUserInGame || !isConnected || !gameId) {
+      return;
+    }
 
     // Mark as present when entering the route
     setPresence(false);
@@ -461,7 +457,7 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
         console.error('[PokerProvider] Failed to send away presence:', error);
       }
     };
-  }, [isUserInGame, socket, gameId, setPresence]);
+  }, [isUserInGame, isConnected, gameId, setPresence]);
 
   // Optimistically clear timer locally without waiting for server
   const clearTimerOptimistically = useCallback(() => {
@@ -508,7 +504,6 @@ function PokerProviderInner({ children }: { children: ReactNode }) {
   usePokerSocketEffects({
     socket,
     gameId,
-    userId: user?.id,
     user,
     setUser,
     stateRef,

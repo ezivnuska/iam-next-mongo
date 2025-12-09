@@ -12,7 +12,6 @@ export async function getProfile() {
     await connectToDatabase()
     try {
         const user = await UserModel.findById(userId).populate('avatar', '_id, variants');
-        console.log('profile', user);
         return user;
     } catch (e) {
         console.error(e);

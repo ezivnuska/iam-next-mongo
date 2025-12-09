@@ -53,7 +53,6 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
 
     const handleFlag = (item: Memory | Post) => {
         // TODO: Implement flag functionality
-        console.log('Flag item:', item);
     };
 
     const handleCloseModal = () => {

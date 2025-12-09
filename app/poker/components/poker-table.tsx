@@ -4,9 +4,11 @@
 
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { usePlayers, useGameState, useViewers, usePokerActions } from '@/app/poker/lib/providers/poker-provider';
-import { useUser } from '@/app/lib/providers/user-provider';
+import { useUser, createGuestUser } from '@/app/lib/providers/user-provider';
 import { useSocket } from '@/app/lib/providers/socket-provider';
 import { SOCKET_EVENTS } from '@/app/lib/socket/events';
+import type { User } from '@/app/lib/definitions';
+import { UserRole } from '@/app/lib/definitions/user';
 import PlayerSlots from './player-slots';
 import CommunalCards from './communal-cards';
 import Pot from './pot';
@@ -23,9 +25,74 @@ export default function PokerTable() {
   const { stage, locked, currentPlayerIndex, winner, isLoading, canPlayerAct } = useGameState();
   const { gameId } = useViewers();
   const { joinGame, leaveGame, resetSingleton } = usePokerActions();
-  const { user } = useUser();
+  const { user, status, setUser } = useUser();
   const { socket } = useSocket();
   const orientation = useScreenOrientation();
+
+  // Restore guest user from localStorage on page load (for reconnection after refresh)
+  // Use state to track restoration status to prevent rendering until complete
+  const [guestRestorationComplete, setGuestRestorationComplete] = useState(false);
+
+  useEffect(() => {
+    // Only attempt restoration if not authenticated
+    if (status !== 'unauthenticated') {
+      // If authenticated, mark as complete immediately
+      if (status === 'authenticated') {
+        setGuestRestorationComplete(true);
+      }
+      return;
+    }
+
+    // Skip if user is already set (already authenticated or guest already restored)
+    if (user) {
+      setGuestRestorationComplete(true);
+      return;
+    }
+
+    try {
+      const storedGuestId = localStorage.getItem('poker_guest_id');
+      const storedGuestUsername = localStorage.getItem('poker_guest_username');
+      const storedCreatedAt = localStorage.getItem('poker_guest_created_at');
+
+      if (storedGuestId && storedGuestUsername) {
+        // Check if credentials have expired (30 days)
+        const EXPIRATION_DAYS = 30;
+        const isExpired = storedCreatedAt
+          ? (Date.now() - new Date(storedCreatedAt).getTime()) > (EXPIRATION_DAYS * 24 * 60 * 60 * 1000)
+          : false;
+
+        if (isExpired) {
+          localStorage.removeItem('poker_guest_id');
+          localStorage.removeItem('poker_guest_username');
+          localStorage.removeItem('poker_guest_created_at');
+          setGuestRestorationComplete(true);
+          return;
+        }
+
+        // Create guest user object directly without generating new ID
+        const guestUser: User = {
+          id: storedGuestId,
+          username: storedGuestUsername,
+          email: '',
+          role: UserRole.User,
+          bio: '',
+          avatar: null,
+          verified: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          isGuest: true,
+        };
+
+        setUser(guestUser);
+      }
+
+      // Mark restoration as complete regardless of whether credentials existed
+      setGuestRestorationComplete(true);
+    } catch (e) {
+      console.warn('[PokerTable] Failed to restore guest user from localStorage:', e);
+      setGuestRestorationComplete(true);
+    }
+  }, [status, user, setUser]);
 
   // Listen for stale game reset from server
   const [showStaleModal, setShowStaleModal] = useState(false);
@@ -34,7 +101,6 @@ export default function PokerTable() {
     if (!socket) return;
 
     const handleStaleReset = () => {
-      console.log('[PokerTable] Received stale game reset event from server');
       setShowStaleModal(true);
     };
 
@@ -47,7 +113,6 @@ export default function PokerTable() {
 
   // Handle reset triggered by stale modal
   const handleStaleReset = () => {
-    console.log('[PokerTable] Stale game reset triggered - reloading page');
     // Simply reload the page - the server-side check will have already reset the game
     // This avoids authentication issues with guest users
     window.location.reload();
@@ -120,8 +185,9 @@ export default function PokerTable() {
     setActionTriggered(true);
   };
 
-  // Show loading screen while initial data is being fetched
-  if (isLoading) {
+  // Show loading screen while initial data is being fetched or guest user is being restored
+  // This prevents race conditions where game state renders before user is restored
+  if (isLoading || !guestRestorationComplete) {
     return null;
   }
 
@@ -143,7 +209,7 @@ export default function PokerTable() {
                     players={players}
                     locked={locked}
                     currentPlayerIndex={currentPlayerIndex}
-                    currentUserId={user?.id}
+                    currentUser={user}
                     gameId={gameId}
                     onJoinGame={joinGame}
                     onLeaveGame={leaveGame}

@@ -51,10 +51,7 @@ export async function POST(request: NextRequest) {
 				let validatedUsername: string;
 
 				// Check if this is a guest user request
-				if (userId === 'guest-pending' || isGuestId(userId)) {
-					// Guest user - generate new guest ID, use provided username or generate one
-					validatedUserId = generateGuestId();
-
+				if (isGuestId(userId)) {
 					// Validate and use provided username if available
 					if (username && username.trim()) {
 						const trimmedUsername = username.trim();
@@ -72,6 +69,9 @@ export async function POST(request: NextRequest) {
 						// No username provided, generate random
 						validatedUsername = generateGuestUsername();
 					}
+
+					// Guest ID is already generated on the client, use it directly
+					validatedUserId = userId;
 				} else {
 					// Authenticated user - validate that user exists in database
 					try {
@@ -111,6 +111,7 @@ export async function POST(request: NextRequest) {
 					return NextResponse.json({ error: errorMessage }, { status: 500 });
 				}
 
+				// Return the user ID and game state
 				return NextResponse.json({
 					success: true,
 					gameState: result.gameState,
@@ -322,8 +323,9 @@ export async function POST(request: NextRequest) {
 				return NextResponse.json({ error: 'No active game' }, { status: 404 });
 			}
 
-			// Check if player is in the game
+			// Check if player is in the game (simple ID match now)
 			const playerIndex = game.players.findIndex((p: any) => p.id === userId);
+
 			if (playerIndex === -1) {
 				// Player not in game - this is fine, just return success
 				return NextResponse.json({ success: true, message: 'Player not in game' });

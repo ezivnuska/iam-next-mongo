@@ -112,7 +112,7 @@ interface PlayerSlotsProps {
   players: PlayerType[];
   locked: boolean;
   currentPlayerIndex: number;
-  currentUserId?: string;
+  currentUser: any;
   gameId: string | null;
   onJoinGame: (gameId: string, guestUsername?: string) => void;
   onLeaveGame: () => void;
@@ -138,14 +138,14 @@ function getBlindPositions(dealerButtonPosition: number, playerCount: number) {
   return { smallBlindPos, bigBlindPos };
 }
 
-function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameId, onJoinGame, onLeaveGame, actionTriggered }: PlayerSlotsProps) {
+function PlayerSlots({ players, locked, currentPlayerIndex, currentUser, gameId, onJoinGame, onLeaveGame, actionTriggered }: PlayerSlotsProps) {
   const MAX_SLOTS = 5;
 
   const { dealerButtonPosition, winner } = useGameState();
   const orientation = useScreenOrientation();
 
-  // Check if current user is already in the game
-  const isUserInGame = players.some(player => player.id === currentUserId);
+  // Check if current user is already in the game (match by ID)
+  const isUserInGame = currentUser && players.some(player => player.id === currentUser.id);
 
   // Calculate blind positions
   const { smallBlindPos, bigBlindPos } = getBlindPositions(dealerButtonPosition, players.length);
@@ -210,8 +210,9 @@ function PlayerSlots({ players, locked, currentPlayerIndex, currentUserId, gameI
           );
         }
 
-        // Render player
-        const isCurrentUser = slot.player.id === currentUserId;
+        // Render player (match by ID)
+        const isCurrentUser = currentUser && slot.player.id === currentUser.id;
+
         const isDealer = slot.playerIndex === dealerButtonPosition;
         const isSmallBlind = slot.playerIndex === smallBlindPos;
         const isBigBlind = slot.playerIndex === bigBlindPos;

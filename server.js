@@ -73,10 +73,15 @@ app.prepare().then(() => {
 	// Socket.IO connection handling
 	io.on('connection', (socket) => {
 		// Handle user registration (join user-specific room)
-		socket.on('register', async (userId) => {
+		socket.on('register', async (data) => {
+			// Support both old format (string userId) and new format (object with userId and username)
+			const userId = typeof data === 'string' ? data : data?.userId;
+			const username = typeof data === 'object' ? data?.username : undefined;
+
 			if (userId) {
 				socket.join(`user:${userId}`)
 				socket.userId = userId
+				socket.username = username // Store username for guest reconnection
 
 				// Track this user as online
 				const isNewUser = !onlineUsers.has(userId)
@@ -104,9 +109,12 @@ app.prepare().then(() => {
 						headers: { 'Content-Type': 'application/json' },
 						body: JSON.stringify({
 							signal: 'poker:player_reconnected',
-							userId: userId
+							userId: userId,
+							username: username // Include username for guest reconnection
 						}),
 					});
+
+					const result = await response.json();
 
 					if (!response.ok) {
 						// Silently fail - user might not be in a game
@@ -149,16 +157,6 @@ app.prepare().then(() => {
 					socket.emit('poker:join_error', { error: result.error });
 				} else {
 					console.log('[Socket] Successfully joined game');
-
-					// Update socket.userId if a new guest ID was assigned
-					if (result.userId && socket.userId === 'guest-pending') {
-						console.log('[Socket] Updating socket.userId from guest-pending to', result.userId);
-						socket.userId = result.userId;
-
-						// Update the socket room membership
-						socket.leave(`user:guest-pending`);
-						socket.join(`user:${result.userId}`);
-					}
 
 					// Track this user as an active poker player
 					activePokerPlayers.add(socket.userId);

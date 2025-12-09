@@ -781,7 +781,6 @@ export class StageManager {
         } catch (error: any) {
           saveAttempts++;
           if (error.name === 'VersionError' && saveAttempts < MAX_SAVE_ATTEMPTS) {
-            console.log(`[StageManager] Version conflict on save, retrying (${saveAttempts}/${MAX_SAVE_ATTEMPTS})...`);
             // Refetch the document with latest version
             const freshGame = await PokerGame.findById(gameToReset._id);
             if (freshGame) {
