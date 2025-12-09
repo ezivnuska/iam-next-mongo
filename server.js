@@ -41,17 +41,14 @@ app.prepare().then(() => {
 	// Track online users
 	const onlineUsers = new Map() // Map<userId, Set<socketId>>
 
-	// Track active poker players
-	const activePokerPlayers = new Set() // Set<userId>
+	// Stale game check interval - runs continuously to detect stale games
+	// even when no players are currently on the poker page
 	let staleGameCheckInterval = null
 
-	// Function to start/stop stale game checking based on active players
-	function manageStaleGameCheck() {
-		const hasActivePlayers = activePokerPlayers.size > 0
-
-		if (hasActivePlayers && !staleGameCheckInterval) {
-			// Start the interval - players are active
-			console.log('[Stale Check] Starting health check (active players:', activePokerPlayers.size, ')')
+	// Start the stale game health check interval
+	function startStaleGameCheck() {
+		if (!staleGameCheckInterval) {
+			console.log('[Stale Check] Starting continuous health check')
 			staleGameCheckInterval = setInterval(async () => {
 				try {
 					await fetch(`http://localhost:${port}/api/poker/check-stale`, {
@@ -62,11 +59,6 @@ app.prepare().then(() => {
 					// Silently fail - don't spam logs
 				}
 			}, 30000) // Check every 30 seconds
-		} else if (!hasActivePlayers && staleGameCheckInterval) {
-			// Stop the interval - no active players
-			console.log('[Stale Check] Stopping health check (no active players)')
-			clearInterval(staleGameCheckInterval)
-			staleGameCheckInterval = null
 		}
 	}
 
@@ -158,10 +150,6 @@ app.prepare().then(() => {
 				} else {
 					console.log('[Socket] Successfully joined game');
 
-					// Track this user as an active poker player
-					activePokerPlayers.add(socket.userId);
-					manageStaleGameCheck();
-
 					// Success event will be sent via emitPlayerJoined and emitStateUpdate
 					socket.emit('poker:join_success', {
 					gameState: result.gameState,
@@ -204,10 +192,6 @@ app.prepare().then(() => {
 					socket.emit('poker:leave_error', { error: result.error });
 				} else {
 					console.log('[Socket] Successfully left game');
-
-					// Remove this user from active poker players
-					activePokerPlayers.delete(socket.userId);
-					manageStaleGameCheck();
 
 					// Success event will be sent via emitPlayerLeft
 					socket.emit('poker:leave_success', { gameState: result.gameState });
@@ -428,13 +412,6 @@ app.prepare().then(() => {
 						onlineUsers.delete(userId)
 						// Broadcast that user is offline
 						io.emit('user:offline', { userId })
-
-						// Remove from active poker players if they were playing
-						if (activePokerPlayers.has(userId)) {
-							activePokerPlayers.delete(userId)
-							manageStaleGameCheck()
-							console.log('[Stale Check] Player disconnected, removed from active players')
-						}
 					}
 				}
 			}
@@ -449,6 +426,9 @@ app.prepare().then(() => {
 		.listen(port, hostname, () => {
 			console.log(`> Ready on http://${hostname}:${port}`)
 			console.log(`> Socket.IO server running on path: /api/socket/io`)
-			console.log(`> Stale game health check: Conditional (only runs when players are active)`)
+			console.log(`> Stale game health check: Continuous (runs every 30 seconds)`)
+
+			// Start the stale game health check
+			startStaleGameCheck()
 		})
 })
