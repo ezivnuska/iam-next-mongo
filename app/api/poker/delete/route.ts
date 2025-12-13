@@ -1,7 +1,7 @@
 // app/api/poker/delete/route.ts
 
 import { withAuth } from '@/app/lib/api/with-auth';
-import { deleteGame } from '@/app/poker/lib/server/actions/poker-game-controller';
+import { deleteGame } from '@/app/games/poker/lib/server/actions/poker-game-controller';
 import { PokerSocketEmitter } from '@/app/lib/utils/socket-helper';
 import { withRateLimit, RATE_LIMITS } from '@/app/lib/api/rate-limiter';
 

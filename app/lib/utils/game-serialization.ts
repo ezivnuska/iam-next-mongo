@@ -1,7 +1,7 @@
 // app/lib/utils/game-serialization.ts
 
-import type { PokerGameDocument } from '@/app/poker/lib/models/poker-game';
-import type { SerializedGameActionHistory } from '@/app/poker/lib/definitions/action-history';
+import type { PokerGameDocument } from '@/app/games/poker/lib/models/poker-game';
+import type { SerializedGameActionHistory } from '@/app/games/poker/lib/definitions/action-history';
 
 /**
  * Serialized game state for API responses

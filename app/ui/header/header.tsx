@@ -12,7 +12,7 @@ export default function Header() {
         <div className="flex flex-row w-full items-center justify-center min-w-[375px] max-w-[600px] gap-2 px-2 py-1">
             <Brand />
             <Nav />
-            <UserButton />    
+            <UserButton />
         </div>
     );
 }

@@ -3,11 +3,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import clsx from 'clsx';
 import { useSocket } from '@/app/lib/providers/socket-provider';
 import { SOCKET_EVENTS } from '@/app/lib/socket/events';
+import NavLinkCard from '@/app/ui/header/nav-link-card';
 
 // Simple poker chip icon
 function PokerChipIcon({ className }: { className?: string }) {
@@ -29,7 +27,6 @@ function PokerChipIcon({ className }: { className?: string }) {
 }
 
 export default function PokerNavButton() {
-  const pathname = usePathname();
   const { socket } = useSocket();
   const [humanPlayerCount, setHumanPlayerCount] = useState(0);
 
@@ -90,24 +87,12 @@ export default function PokerNavButton() {
   }, [socket]);
 
   return (
-    <Link
-      href="/poker"
-      className={clsx(
-        'relative flex flex-col items-center justify-center rounded-md bg-gray-50 text-sm font-medium py-1 px-1 hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start md:px-3',
-        {
-          'bg-sky-100 text-blue-600': pathname === '/poker',
-        },
-      )}
-    >
-      <PokerChipIcon className="w-6 max-[375px]:w-5 self-center" />
-      <p className="text-xs hidden md:block">Poker</p>
-
-      {/* Player count badge */}
-      {humanPlayerCount > 0 && (
-        <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-xs font-bold text-white bg-red-500 rounded-full">
-          {humanPlayerCount}
-        </span>
-      )}
-    </Link>
+    <NavLinkCard
+      href="/games/poker"
+      title="Poker"
+      subtitle="Play Texas Hold'em"
+      icon={<PokerChipIcon className="w-12 max-[375px]:w-5" />}
+      badge={humanPlayerCount}
+    />
   );
 }

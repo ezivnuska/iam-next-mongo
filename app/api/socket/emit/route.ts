@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { checkSocketRateLimit, SOCKET_RATE_LIMITS } from '@/app/lib/api/socket-rate-limiter'
-import { generateGuestId, generateGuestUsername, isGuestId } from '@/app/poker/lib/utils/guest-utils'
+import { generateGuestId, generateGuestUsername, isGuestId } from '@/app/games/poker/lib/utils/guest-utils'
 
 export async function POST(request: NextRequest) {
 	try {
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
 					}
 				}
 
-				const { handlePlayerJoin } = await import('@/app/poker/lib/server/actions/poker-game-controller');
+				const { handlePlayerJoin } = await import('@/app/games/poker/lib/server/actions/poker-game-controller');
 
 				const result = await handlePlayerJoin(gameId, validatedUserId, validatedUsername);
 
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
 					return NextResponse.json({ error: validation.error }, { status: 403 });
 				}
 
-				const { handlePlayerLeave } = await import('@/app/poker/lib/server/actions/poker-game-controller');
+				const { handlePlayerLeave } = await import('@/app/games/poker/lib/server/actions/poker-game-controller');
 
 				const result = await handlePlayerLeave(gameId, userId);
 
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
 			}
 
 			if (signal === 'poker:ready_for_next_turn' && gameId) {
-				const { handleReadyForNextTurn } = await import('@/app/poker/lib/server/turn/turn-handler');
+				const { handleReadyForNextTurn } = await import('@/app/games/poker/lib/server/turn/turn-handler');
 				await handleReadyForNextTurn(gameId);
 				return NextResponse.json({ success: true });
 			}
@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
 				);
 			}
 
-			const { placeBet } = await import('@/app/poker/lib/server/actions/poker-game-controller');
+			const { placeBet } = await import('@/app/games/poker/lib/server/actions/poker-game-controller');
 			const { chipCount } = body;
 
 			try {
@@ -216,7 +216,7 @@ export async function POST(request: NextRequest) {
 				);
 			}
 
-			const { fold } = await import('@/app/poker/lib/server/actions/poker-game-controller');
+			const { fold } = await import('@/app/games/poker/lib/server/actions/poker-game-controller');
 
 			try {
 				await fold(gameId, userId);
@@ -251,7 +251,7 @@ export async function POST(request: NextRequest) {
 				);
 			}
 
-			const { setTurnTimerAction } = await import('@/app/poker/lib/server/actions/poker-game-controller');
+			const { setTurnTimerAction } = await import('@/app/games/poker/lib/server/actions/poker-game-controller');
 			const { timerAction, betAmount } = body;
 
 			if (!timerAction || !['fold', 'call', 'check', 'bet', 'raise'].includes(timerAction)) {
@@ -278,7 +278,7 @@ export async function POST(request: NextRequest) {
 				return NextResponse.json({ error: validation.error }, { status: 403 });
 			}
 
-			const { setPlayerPresence } = await import('@/app/poker/lib/server/actions/poker-game-controller');
+			const { setPlayerPresence } = await import('@/app/games/poker/lib/server/actions/poker-game-controller');
 			const { isAway } = body;
 
 			try {
@@ -294,8 +294,8 @@ export async function POST(request: NextRequest) {
 		if (signal === 'poker:winner_notification_complete' && gameId) {
 			// No rate limiting or auth needed - this is just a client signal that notification finished
 			// Trigger the game reset now that winner notification has completed on client
-			const { StageManager } = await import('@/app/poker/lib/server/flow/stage-manager');
-			const { PokerGame } = await import('@/app/poker/lib/models/poker-game');
+			const { StageManager } = await import('@/app/games/poker/lib/server/flow/stage-manager');
+			const { PokerGame } = await import('@/app/games/poker/lib/models/poker-game');
 
 			const game = await PokerGame.findById(gameId);
 			if (!game) {
@@ -316,7 +316,7 @@ export async function POST(request: NextRequest) {
 			}
 
 			// Find the singleton game and check if this player is in it
-			const { PokerGame } = await import('@/app/poker/lib/models/poker-game');
+			const { PokerGame } = await import('@/app/games/poker/lib/models/poker-game');
 			const game = await PokerGame.findOne({ isSingleton: true });
 
 			if (!game) {

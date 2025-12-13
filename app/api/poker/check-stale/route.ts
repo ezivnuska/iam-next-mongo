@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PokerGame } from '@/app/poker/lib/models/poker-game';
+import { PokerGame } from '@/app/games/poker/lib/models/poker-game';
 import { connectToDatabase } from '@/app/lib/mongoose';
 
 const STALE_THRESHOLD_MS = 60 * 1000; // 1 minute
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Use the existing reset singleton logic
-    const { resetSingletonGame } = await import('@/app/poker/lib/server/game/singleton-game');
+    const { resetSingletonGame } = await import('@/app/games/poker/lib/server/game/singleton-game');
     await resetSingletonGame(gameId);
 
     // Notify all clients that the game was reset due to staleness

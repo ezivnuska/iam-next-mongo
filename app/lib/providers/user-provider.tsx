@@ -37,7 +37,7 @@ type AuthStatus = "loading" | "authenticated" | "unauthenticated" | "signing-out
  */
 export function createGuestUser(): User {
     // Import guest utils - use dynamic import to avoid issues in non-poker contexts
-    const { generateGuestId } = require('@/app/poker/lib/utils/guest-utils');
+    const { generateGuestId } = require('@/app/games/poker/lib/utils/guest-utils');
 
     return {
         id: generateGuestId(),      // Unique guest ID generated immediately

@@ -12,7 +12,7 @@ export default function Nav() {
     const showNavLinks = status === "authenticated" || status === "signing-out";
 
     return (
-        <div className='flex flex-1 flex-row items-center justify-center gap-1 min-[375px]:gap-1'>
+        <div className='flex flex-row items-center justify-center gap-1 min-[375px]:gap-1'>
             <NavPublic />
             {showNavLinks && <NavPrivate />}
         </div>

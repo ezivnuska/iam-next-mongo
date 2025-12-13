@@ -1,7 +1,7 @@
 // scripts/unlock-game.ts
 // Quick script to unlock stuck poker games
 
-import { PokerGame } from '../app/poker/lib/models/poker-game';
+import { PokerGame } from '../app/games/poker/lib/models/poker-game';
 import mongoose from 'mongoose';
 
 async function unlockAllGames() {

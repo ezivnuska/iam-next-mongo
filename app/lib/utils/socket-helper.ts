@@ -3,7 +3,7 @@
 import { emitViaAPI } from '@/app/api/socket/io';
 import { SOCKET_EVENTS } from '@/app/lib/socket/events';
 import { serializeGame } from './game-serialization';
-import type { PokerGameDocument } from '@/app/poker/lib/models/poker-game';
+import type { PokerGameDocument } from '@/app/games/poker/lib/models/poker-game';
 import type { PokerNotificationPayload } from '@/app/lib/socket/events';
 
 /**

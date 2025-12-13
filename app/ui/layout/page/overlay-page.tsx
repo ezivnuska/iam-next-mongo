@@ -1,0 +1,100 @@
+// app/ui/layout/page/overlay-page.tsx
+
+'use client';
+
+import { useState, Suspense } from 'react';
+import { useScreenOrientation } from '@/app/games/poker/lib/hooks/use-screen-orientation';
+import { clsx } from 'clsx';
+import Brand from '@/app/ui/header/brand';
+import UserButton from '@/app/ui/header/user-button';
+import NavLinkList from '@/app/ui/header/nav-link-list';
+import AuthRedirectHandler from '@/app/ui/auth/auth-redirect-handler';
+
+interface OverlayPageProps {
+  children: React.ReactNode;
+  headerClassName?: string;
+  overlayClassName?: string;
+}
+
+export default function OverlayPage({
+  children,
+  headerClassName = 'bg-gray-900',
+  overlayClassName = 'bg-gray-900',
+}: OverlayPageProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const orientation = useScreenOrientation();
+  const isPortrait = orientation === 'portrait';
+
+  return (
+    <div className={clsx(
+      'w-full h-screen flex overflow-hidden',
+      {
+        'flex-col': isPortrait,
+        'flex-row': !isPortrait,
+      }
+    )}>
+      <Suspense fallback={null}>
+        <AuthRedirectHandler />
+      </Suspense>
+
+      {/* Fixed Header */}
+      <header
+        className={clsx(
+          headerClassName,
+          'shrink-0 overflow-hidden'
+        )}
+        style={{
+          ...(isPortrait
+            ? { height: '10vh', width: '100%' }
+            : { width: '20vw', height: '100%' }
+          )
+        }}
+      >
+        <div className="flex flex-row flex-wrap items-center justify-center p-2 gap-2 h-full">
+          <Brand />
+          <UserButton />
+
+          {/* Toggle button */}
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="px-4 py-2 rounded-lg bg-white text-black font-semibold shrink-0 hover:bg-gray-200 active:bg-gray-300 transition-colors"
+          >
+            {isOpen ? 'Close' : 'Open'}
+          </button>
+        </div>
+      </header>
+
+      {/* Main Content Area with Animated Overlay */}
+      <main className="relative flex-1 overflow-hidden">
+        {/* Page Content */}
+        <div className="absolute inset-0 w-full h-full overflow-auto">
+          {children}
+        </div>
+
+        {/* Animated Overlay */}
+        <div
+          className={clsx(
+            overlayClassName,
+            'absolute pointer-events-auto',
+            'transition-all duration-500 ease-in-out',
+            {
+              // Portrait mode - overlay from bottom
+              'left-0 right-0 bottom-0': isPortrait,
+
+              // Landscape mode - overlay from right
+              'top-0 bottom-0 right-0': !isPortrait,
+            }
+          )}
+          style={{
+            ...(isPortrait
+              ? { height: isOpen ? '0vh' : '100%' }
+              : { width: isOpen ? '0vw' : '100%' }
+            )
+          }}
+        >
+          <NavLinkList />
+        </div>
+      </main>
+    </div>
+  );
+}
