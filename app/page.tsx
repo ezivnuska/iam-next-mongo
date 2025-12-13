@@ -6,6 +6,8 @@ import DefaultPage from "./ui/layout/page/default-page";
 import { Suspense } from "react";
 import AuthRedirectHandler from "./ui/auth/auth-redirect-handler";
 
+export const dynamic = 'force-dynamic';
+
 export default async function Page() {
     const content = await getPublicContent();
     return (
