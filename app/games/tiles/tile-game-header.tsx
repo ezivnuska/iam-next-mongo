@@ -15,7 +15,7 @@ import { useScreenOrientation } from '../poker/lib/hooks/use-screen-orientation'
 export default function TileGameHeader() {
     const [showLeaderboardModal, setShowLeaderboardModal] = useState(false)
     const orientation = useScreenOrientation()
-    console.log('ORIENTATION', orientation)
+    
     const {
         scores,
         status,
@@ -109,22 +109,16 @@ export default function TileGameHeader() {
     ) : null
 
     return (
-        <div className={clsx('flex flex-col items-center justify-between w-full py-4 gap-4',
+        <div className={clsx('flex flex-col items-center justify-between w-full gap-4',
             {
-                'flex-row': orientation === 'portrait',
+                'flex-row items-center border': orientation === 'portrait',
             }
         )}>
             {renderNavButton()}
-            {/* <div className='flex border'>
-            </div> */}
-            {/* <div className='flex border'>
-            </div> */}
             {renderKillButton()}
-                {time && ticks > 0 && (
-                    <span className="font-bold text-xl">{time}</span>
-                )}
-            {/* <div className='flex border'>
-            </div> */}
+            {time && ticks > 0 && (
+                <span className="font-bold text-xl">{time}</span>
+            )}
             {renderTopScore()}
             {/* Leaderboard Modal */}
             {showLeaderboardModal && (

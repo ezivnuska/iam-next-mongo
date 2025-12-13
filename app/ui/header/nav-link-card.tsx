@@ -16,6 +16,7 @@ interface NavLinkCardProps {
   className?: string;
   iconClassName?: string;
   textClassName?: string;
+  onClick?: () => void;
 }
 
 export default function NavLinkCard({
@@ -26,15 +27,24 @@ export default function NavLinkCard({
   badge,
   className,
   iconClassName,
-  textClassName
+  textClassName,
+  onClick
 }: NavLinkCardProps) {
   const pathname = usePathname();
 
   const isActive = pathname === href;
 
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+    }
+  };
+
   return (
     <Link
       href={href}
+      prefetch={true}
+      onClick={handleClick}
       className={clsx(
         'flex w-full flex-row justify-center items-evenly rounded-lg border border-red-500 text-md text-white font-medium py-1 px-1 hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start md:px-3 relative',
         {

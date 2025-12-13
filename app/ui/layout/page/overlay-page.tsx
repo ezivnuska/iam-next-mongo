@@ -25,6 +25,15 @@ export default function OverlayPage({
   const orientation = useScreenOrientation();
   const isPortrait = orientation === 'portrait';
 
+  const handleNavLinkClick = () => {
+    setIsOpen(false); // Close overlay to cover screen
+
+    // Wait for content to load then reveal
+    setTimeout(() => {
+      setIsOpen(true); // Open to reveal content
+    }, 600);
+  };
+
   return (
     <div className={clsx(
       'w-full h-screen flex overflow-hidden',
@@ -65,9 +74,9 @@ export default function OverlayPage({
       </header>
 
       {/* Main Content Area with Animated Overlay */}
-      <main className="relative flex-1 overflow-hidden">
+      <main className="relative flex-1 overflow-hidden bg-amber-400">
         {/* Page Content */}
-        <div className="absolute inset-0 w-full h-full overflow-auto">
+        <div className="absolute inset-0 w-full h-full overflow-auto p-2 bg-blue-300">
           {children}
         </div>
 
@@ -92,7 +101,7 @@ export default function OverlayPage({
             )
           }}
         >
-          <NavLinkList />
+          <NavLinkList onLinkClick={handleNavLinkClick} />
         </div>
       </main>
     </div>

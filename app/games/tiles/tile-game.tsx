@@ -18,13 +18,13 @@ export default function TileGame() {
     const orientation = useScreenOrientation()
 
     return (
-        <div className={clsx('flex flex-1 flex-col', {
-            'flex-row': orientation === 'landscape',
+        <div className={clsx('flex flex-1 h-full w-full flex-col gap-1', {
+            'flex-row justify-between': orientation === 'landscape',
         })}>
-            <div className='flex flex-1'>
-                <TileGameHeader />
-            </div>
-            <div className='flex flex-5 items-center justify-center'>
+            <TileGameHeader />
+            <div className={clsx('flex flex-1 grow items-center justify-end border', {
+                'grow': orientation === 'portrait',
+            })}>
                 <ResponsiveSquare>
                     <TileBoard />
                 </ResponsiveSquare>

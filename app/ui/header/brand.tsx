@@ -8,7 +8,7 @@ export default function Brand() {
 
     return (
         <Link href="/" className="flex flex-row items-center">
-            <h1 className="text-[24px] sm:text-[32px] font-bold">iameric</h1>
+            <h1 className="text-[24px] sm:text-[32px] font-bold text-white">iameric</h1>
         </Link>
     );
 }

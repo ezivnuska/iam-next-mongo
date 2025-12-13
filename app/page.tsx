@@ -14,11 +14,12 @@ export default async function Page() {
     return (
         // <OverlayPage>
         <DefaultPage>
+            <div />
             {/* <Suspense fallback={null}>
                 <AuthRedirectHandler />
             </Suspense> */}
             {/* <div className="mt-4"> */}
-                <UserContentFeed initialContent={content} />
+                {/* <UserContentFeed initialContent={content} /> */}
             {/* </div> */}
             {/* <SplitPanel
                 defaultOpen={false}
