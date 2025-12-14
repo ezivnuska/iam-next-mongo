@@ -1,6 +1,5 @@
 // app/work/page.tsx
 
-import DefaultPage from '../ui/layout/page/default-page';
 import jobs from './jobs'
 import { Metadata } from 'next';
 import PageHeader from '../ui/layout/page-header';
@@ -22,7 +21,7 @@ interface Job {
 
 export default function WorkPage() {
     return (
-        <DefaultPage>
+        <>
             <PageHeader
                 title='Work'
                 subtitle='Professional work history'
@@ -64,6 +63,6 @@ export default function WorkPage() {
                     </div>
                 ))}
             </div>
-        </DefaultPage>
+        </>
     );
 }

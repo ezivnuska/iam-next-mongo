@@ -5,6 +5,7 @@
 import { useState } from "react";
 import { updateBio } from "@/app/lib/actions/profile";
 import { useUser } from "@/app/lib/providers/user-provider";
+import { PencilSquareIcon } from "@heroicons/react/24/solid";
 
 export default function BioForm() {
     const { user, setUser } = useUser();
@@ -42,20 +43,13 @@ export default function BioForm() {
 
     if (!isEditing) {
         return (
-            <div className="mb-2">
-                <div className="flex items-center justify-between mb-2">
-                    <h2 className="text-lg font-semibold">Bio</h2>
-                    <button
-                        onClick={() => setIsEditing(true)}
-                        className="text-sm text-blue-600 hover:text-blue-800"
-                    >
-                        Edit
-                    </button>
-                </div>
-                <p className="text-gray-700">
-                    {user?.bio || "No bio yet. Click edit to add one."}
-                </p>
-            </div>
+            <button
+                onClick={() => setIsEditing(true)}
+                className="text-sm text-blue-600 hover:text-blue-800"
+            >
+                {/* Edit */}
+                <PencilSquareIcon className='w-6 h-6' />
+            </button>
         );
     }
 

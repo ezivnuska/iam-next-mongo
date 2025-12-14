@@ -16,10 +16,12 @@ export default function SignOutButton() {
     return (
         <Button
             onClick={handleSignOut}
-            variant="link"
+            variant='link'
+            size='sm'
             disabled={isSigningOut}
+            className='text-blue-300'
         >
-            {`Sign${isSigningOut ? 'ing' : ''} Out`}
+            Sign Out
         </Button>
     );
 }

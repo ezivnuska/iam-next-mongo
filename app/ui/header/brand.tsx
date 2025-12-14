@@ -1,14 +1,21 @@
 // app/ui/header/brand.tsx
 
-"use client";
+'use client';
 
-import Link from "next/link";
+import { useScreenOrientation } from '@/app/games/poker/lib/hooks/use-screen-orientation';
+import clsx from 'clsx';
+import Link from 'next/link';
 
 export default function Brand() {
 
+    const orientation = useScreenOrientation();
+    const isPortrait = orientation === 'portrait';
     return (
-        <Link href="/" className="flex flex-row items-center">
-            <h1 className="text-[24px] sm:text-[32px] font-bold text-white">iameric</h1>
+        <Link href='/' className={clsx('flex flex-col w-full items-start', {
+            'flex-row justify-start': isPortrait,
+        })}>
+            <span className='text-[24px] leading-none sm:text-[32px] font-bold text-white'>iam</span>
+            <span className='text-[24px] leading-none sm:text-[32px] font-bold text-white'>eric</span>
         </Link>
     );
 }

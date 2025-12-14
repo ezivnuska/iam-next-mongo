@@ -22,8 +22,8 @@ export default function TileGame() {
             'flex-row justify-between': orientation === 'landscape',
         })}>
             <TileGameHeader />
-            <div className={clsx('flex flex-1 grow items-center justify-end border', {
-                'grow': orientation === 'portrait',
+            <div className={clsx('flex flex-1 grow items-center justify-center', {
+                // 'grow justify-center': orientation === 'portrait',
             })}>
                 <ResponsiveSquare>
                     <TileBoard />

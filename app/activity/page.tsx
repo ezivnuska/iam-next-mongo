@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import Breadcrumbs from "@/app/ui/layout/breadcrumbs";
 import ActivityFeed from "@/app/ui/activity/activity-feed";
 import { getActivities } from "@/app/lib/actions/activities";
-import DefaultPage from "../ui/layout/page/default-page";
 
 export default async function ActivityPage() {
     const session = await auth();
@@ -16,13 +15,13 @@ export default async function ActivityPage() {
     const activities = await getActivities();
 
     return (
-        <DefaultPage>
+        <>
             <Breadcrumbs
                 breadcrumbs={[
                     { label: "Activity", href: "/activity", active: true },
                 ]}
             />
             <ActivityFeed initialActivities={activities} />
-        </DefaultPage>
+        </>
     );
 }

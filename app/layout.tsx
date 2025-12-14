@@ -8,6 +8,7 @@ import { AuthModalProvider } from "@/app/lib/providers/auth-modal-provider";
 import { SocketProvider } from './lib/providers/socket-provider';
 import { TileProvider } from './lib/providers/tile-provider';
 import type { Viewport } from 'next';
+import DefaultScreen from './ui/layout/screen/default-screen';
 
 export const viewport: Viewport = {
     width: 'device-width',
@@ -24,7 +25,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     <AuthModalProvider>
                         <SocketProvider>
                             <TileProvider>
-                                {children}
+                                <DefaultScreen>
+                                    {children}
+                                </DefaultScreen>
                             </TileProvider>
                         </SocketProvider>
                     </AuthModalProvider>

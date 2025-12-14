@@ -111,7 +111,7 @@ export default function TileGameHeader() {
     return (
         <div className={clsx('flex flex-col items-center justify-between w-full gap-4',
             {
-                'flex-row items-center border': orientation === 'portrait',
+                'flex-row items-center': orientation === 'portrait',
             }
         )}>
             {renderNavButton()}

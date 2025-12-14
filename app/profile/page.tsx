@@ -6,7 +6,6 @@ import { redirect } from "next/navigation";
 import UserProfileCard from "@/app/ui/user/user-profile-card";
 import UserContentFeed from "@/app/ui/user/user-content-feed";
 import { getUserContent } from "@/app/lib/actions/user-content";
-import DefaultPage from "../ui/layout/page/default-page";
 
 export default async function ProfilePage() {
     const session = await auth();
@@ -17,7 +16,7 @@ export default async function ProfilePage() {
     const content = await getUserContent();
 
     return (
-        <DefaultPage>
+        <>
             <Breadcrumbs
                 breadcrumbs={[
                     { label: "Profile", href: "/profile", active: true },
@@ -26,6 +25,6 @@ export default async function ProfilePage() {
             />
             <UserProfileCard />
             <UserContentFeed initialContent={content} editable />
-        </DefaultPage>
+        </>
     );
 }

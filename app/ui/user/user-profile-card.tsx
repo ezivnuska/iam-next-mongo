@@ -1,12 +1,12 @@
 // app/ui/user-profile-card.tsx
 
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useUser } from "@/app/lib/providers/user-provider";
-import UserAvatar from "@/app/ui/user/user-avatar";
-import BioForm from "@/app/profile/bio-form";
-import type { User } from "@/app/lib/definitions";
+import { useEffect, useState } from 'react';
+import { useUser } from '@/app/lib/providers/user-provider';
+import UserAvatar from '@/app/ui/user/user-avatar';
+import BioForm from '@/app/profile/bio-form';
+import type { User } from '@/app/lib/definitions';
 
 interface UserProfileCardProps {
   username?: string;
@@ -35,7 +35,7 @@ export default function UserProfileCard({ username }: UserProfileCardProps) {
                 const profile = await fetchUserByUsername(username);
                 if (mounted) setProfileUser(profile);
             } catch (err) {
-                console.error("Failed to fetch user profile:", err);
+                console.error('Failed to fetch user profile:', err);
                 if (mounted) setProfileUser(null);
             } finally {
                 if (mounted) setLoading(false);
@@ -50,30 +50,26 @@ export default function UserProfileCard({ username }: UserProfileCardProps) {
     if (!displayUser) return <p>User not found</p>;
 
     return (
-        <div className="flex mt-2">
-            <div className="flex flex-1 flex-row flex-wrap gap-4">
-                <div className="w-24 h-24">
+        <div className='flex my-4'>
+            <div className='flex flex-1 flex-row flex-wrap gap-4'>
+                <div className='w-24 h-24'>
                     <UserAvatar
                         username={displayUser.username}
                         avatar={displayUser.avatar}
                         // size={100}
                     />
                 </div>
-                <div className="flex flex-1 flex-col gap-1">
-                    <h1 className="text-2xl font-bold mb-1">
+                <div className='flex flex-1 flex-col gap-2'>
+                    <h1 className='text-2xl font-bold'>
                         {displayUser.username}
                     </h1>
 
-                    {isCurrentUser ? (
-                        <BioForm />
-                    ) : (
-                        <div className="mb-2">
-                            <h2 className="text-lg font-semibold mb-2">Bio</h2>
-                            <p className="text-gray-700">
-                                {displayUser.bio || "No bio yet."}
-                            </p>
-                        </div>
-                    )}
+                    <div className='flex flex-1 flex-row items-start gap-4'>
+                        <p className='flex flex-1 text-gray-700'>
+                            {displayUser.bio || ''}
+                        </p>
+                        {isCurrentUser && <BioForm />}
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,6 +1,5 @@
 // app/games/page.tsx
 
-import DefaultPage from '../ui/layout/page/default-page';
 import PageHeader from '../ui/layout/page-header';
 import Link from 'next/link';
 import { PuzzlePieceIcon } from '@heroicons/react/24/solid';
@@ -47,7 +46,7 @@ const games = [
 
 export default function GamesPage() {
     return (
-        <DefaultPage>
+        <>
             <PageHeader
                 title='Games'
                 subtitle='Interactive games and projects'
@@ -82,6 +81,6 @@ export default function GamesPage() {
                     );
                 })}
             </div>
-        </DefaultPage>
+        </>
     );
 }

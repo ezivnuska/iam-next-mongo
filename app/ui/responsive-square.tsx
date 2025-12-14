@@ -63,8 +63,8 @@ export default function ResponsiveSquare({ children, className = '' }: Responsiv
       resizeObserver.observe(containerRef.current.parentElement);
     }
 
-    // Listen to window resize
-    window.addEventListener('resize', updateSize);
+    // Listen to window resize with delay to ensure parent has resized
+    window.addEventListener('resize', updateSizeDelayed);
 
     // Listen to orientation changes (for mobile devices)
     window.addEventListener('orientationchange', updateSizeDelayed);
@@ -78,7 +78,7 @@ export default function ResponsiveSquare({ children, className = '' }: Responsiv
 
     return () => {
       resizeObserver.disconnect();
-      window.removeEventListener('resize', updateSize);
+      window.removeEventListener('resize', updateSizeDelayed);
       window.removeEventListener('orientationchange', updateSizeDelayed);
       if (orientationListener && window.screen?.orientation) {
         window.screen.orientation.removeEventListener('change', orientationListener);

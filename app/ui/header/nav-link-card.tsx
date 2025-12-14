@@ -16,7 +16,7 @@ interface NavLinkCardProps {
   className?: string;
   iconClassName?: string;
   textClassName?: string;
-  onClick?: () => void;
+  onClick?: (href: string) => void;
 }
 
 export default function NavLinkCard({
@@ -36,7 +36,7 @@ export default function NavLinkCard({
 
   const handleClick = () => {
     if (onClick) {
-      onClick();
+      onClick(href);
     }
   };
 
@@ -46,22 +46,22 @@ export default function NavLinkCard({
       prefetch={true}
       onClick={handleClick}
       className={clsx(
-        'flex w-full flex-row justify-center items-evenly rounded-lg border border-red-500 text-md text-white font-medium py-1 px-1 hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start md:px-3 relative',
+        'flex w-full flex-row justify-center items-evenly rounded-lg border bg-red-940 text-md text-white font-medium py-1 px-1 hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start md:px-3 relative',
         {
-          'bg-sky-100 text-blue-600': isActive,
+          'border-red-500 text-white': isActive,
         },
         className
       )}
     >
-      <div className='flex flex-1 w-full flex-row gap-2 border'>
+      <div className='flex flex-1 w-full flex-row gap-2'>
         <div className={clsx(
-          'flex flex-2 flex-row items-center justify-center border px-1',
+          'flex flex-1 flex-row items-center justify-center',
           iconClassName
         )}>
           {icon}
         </div>
         <div className={clsx(
-          'flex flex-3 flex-col justify-center py-2 px-4 border',
+          'flex flex-4 flex-col justify-center py-2 px-4',
           textClassName
         )}>
           <p className="text-lg">{title}</p>
