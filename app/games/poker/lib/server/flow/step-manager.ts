@@ -23,24 +23,29 @@ import {
 } from './step-definitions';
 import { queueCardsDealtNotification } from '../notifications/notification-queue-manager';
 import { POKER_TIMERS } from '../../config/poker-constants';
+import { executeWithRetry, saveWithRetry } from '../../utils/mongoose-retry';
 
 /**
  * Initialize step tracking for a new game
  */
 export async function initializeStepTracking(gameId: string): Promise<void> {
-  const game = await PokerGame.findById(gameId);
-  if (!game) throw new Error('Game not found');
-
-  // Start at Stage 0, Step 1 (Pre-Flop stage notification)
-  game.currentStep = {
-    stageNumber: 0,
-    stepNumber: 1,
-    stepId: 'stage_0_step_1',
-    startedAt: new Date(),
-    completedRequirements: []
-  };
-
-  await game.save();
+  await executeWithRetry(
+    async () => {
+      const game = await PokerGame.findById(gameId);
+      if (!game) throw new Error('Game not found');
+      return game;
+    },
+    async (game) => {
+      // Start at Stage 0, Step 1 (Pre-Flop stage notification)
+      game.currentStep = {
+        stageNumber: 0,
+        stepNumber: 1,
+        stepId: 'stage_0_step_1',
+        startedAt: new Date(),
+        completedRequirements: []
+      };
+    }
+  );
 }
 
 /**
@@ -50,17 +55,28 @@ export async function completeRequirement(
   gameId: string,
   requirementType: RequirementType
 ): Promise<boolean> {
-  const game = await PokerGame.findById(gameId);
-  if (!game || !game.currentStep) {
-    console.error('[StepManager] Cannot complete requirement - no current step');
-    return false;
-  }
+  const game = await executeWithRetry(
+    async () => {
+      const game = await PokerGame.findById(gameId);
+      if (!game || !game.currentStep) {
+        throw new Error('Cannot complete requirement - no current step');
+      }
+      return game;
+    },
+    async (game) => {
+      // Add requirement to completed list if not already there
+      if (!game.currentStep!.completedRequirements.includes(requirementType)) {
+        game.currentStep!.completedRequirements.push(requirementType);
+        game.markModified('currentStep');
+      }
+    }
+  ).catch(error => {
+    console.error('[StepManager]', error.message);
+    return null;
+  });
 
-  // Add requirement to completed list if not already there
-  if (!game.currentStep.completedRequirements.includes(requirementType)) {
-    game.currentStep.completedRequirements.push(requirementType);
-    game.markModified('currentStep');
-    await game.save();
+  if (!game || !game.currentStep) {
+    return false;
   }
 
   // Check if all requirements are met
@@ -82,41 +98,58 @@ export async function advanceToNextStep(gameId: string): Promise<{
   nextStep?: GameStep;
   stageChanged: boolean;
 }> {
-  const game = await PokerGame.findById(gameId);
-  if (!game || !game.currentStep) {
-    console.error('[StepManager] Cannot advance - no current step');
+  let nextStepInfo: { stage: number; step: number; stepId: string } | null = null;
+  let stageChanged = false;
+
+  const game = await executeWithRetry(
+    async () => {
+      const game = await PokerGame.findById(gameId);
+      if (!game || !game.currentStep) {
+        throw new Error('Cannot advance - no current step');
+      }
+      return game;
+    },
+    async (game) => {
+      const currentStageNumber = game.currentStep!.stageNumber;
+      const currentStepNumber = game.currentStep!.stepNumber;
+
+      // Get next step
+      nextStepInfo = getNextStep(currentStageNumber, currentStepNumber);
+      if (!nextStepInfo) {
+        throw new Error('No next step available');
+      }
+
+      stageChanged = nextStepInfo.stage !== currentStageNumber;
+
+      // Update game step
+      game.currentStep = {
+        stageNumber: nextStepInfo.stage,
+        stepNumber: nextStepInfo.step,
+        stepId: nextStepInfo.stepId,
+        startedAt: new Date(),
+        completedRequirements: []
+      };
+
+      // Update game.stage if stage changed
+      if (stageChanged) {
+        game.stage = nextStepInfo.stage;
+      }
+
+      game.markModified('currentStep');
+    }
+  ).catch(error => {
+    if (error.message === 'Cannot advance - no current step' || error.message === 'No next step available') {
+      console.error('[StepManager]', error.message);
+      return null;
+    }
+    throw error;
+  });
+
+  if (!game || !nextStepInfo) {
     return { advanced: false, stageChanged: false };
   }
 
-  const currentStageNumber = game.currentStep.stageNumber;
-  const currentStepNumber = game.currentStep.stepNumber;
-
-  // Get next step
-  const nextStepInfo = getNextStep(currentStageNumber, currentStepNumber);
-  if (!nextStepInfo) {
-    return { advanced: false, stageChanged: false };
-  }
-
-  const stageChanged = nextStepInfo.stage !== currentStageNumber;
-
-  // Update game step
-  game.currentStep = {
-    stageNumber: nextStepInfo.stage,
-    stepNumber: nextStepInfo.step,
-    stepId: nextStepInfo.stepId,
-    startedAt: new Date(),
-    completedRequirements: []
-  };
-
-  // Update game.stage if stage changed
-  if (stageChanged) {
-    game.stage = nextStepInfo.stage;
-  }
-
-  game.markModified('currentStep');
-  await game.save();
-
-  const nextStep = getStepDefinition(nextStepInfo.stepId);
+  const nextStep = getStepDefinition((nextStepInfo as { stage: number; step: number; stepId: string }).stepId);
 
   return {
     advanced: true,
@@ -175,23 +208,26 @@ export async function checkEarlyCompletion(gameId: string): Promise<boolean> {
  * Called when all players except one have folded
  */
 export async function skipToWinner(gameId: string): Promise<void> {
-  const game = await PokerGame.findById(gameId);
-  if (!game) throw new Error('Game not found');
+  await executeWithRetry(
+    async () => {
+      const game = await PokerGame.findById(gameId);
+      if (!game) throw new Error('Game not found');
+      return game;
+    },
+    async (game) => {
+      // Jump directly to Stage 4 (Showdown), Step 1 (Stage notification)
+      game.currentStep = {
+        stageNumber: 4,
+        stepNumber: 1,
+        stepId: 'stage_4_step_1',
+        startedAt: new Date(),
+        completedRequirements: []
+      };
 
-
-  // Jump directly to Stage 4 (Showdown), Step 1 (Stage notification)
-  game.currentStep = {
-    stageNumber: 4,
-    stepNumber: 1,
-    stepId: 'stage_4_step_1',
-    startedAt: new Date(),
-    completedRequirements: []
-  };
-
-  game.stage = 4; // Showdown
-  game.markModified('currentStep');
-  await game.save();
-
+      game.stage = 4; // Showdown
+      game.markModified('currentStep');
+    }
+  );
 }
 
 /**
@@ -280,7 +316,7 @@ async function executePostSmallBlind(gameId: string): Promise<number> {
 
   const smallBlindInfo = placeSmallBlind(game);
 
-  await game.save();
+  await saveWithRetry(game);
 
   // Emit notification
   await PokerSocketEmitter.emitNotification({
@@ -315,7 +351,7 @@ async function executePostBigBlind(gameId: string): Promise<number> {
 
   const bigBlindInfo = placeBigBlind(game);
 
-  await game.save();
+  await saveWithRetry(game);
 
   // Emit notification
   await PokerSocketEmitter.emitNotification({
@@ -412,7 +448,7 @@ async function executeDealHoleCards(gameId: string): Promise<number> {
   });
   game.markModified('actionHistory');
 
-  await game.save();
+  await saveWithRetry(game);
 
   // Queue notification (hole cards = Pre-Flop)
   // The notification queue manager will handle timing and sequential display
@@ -464,7 +500,7 @@ async function executeDealFlop(gameId: string): Promise<number> {
   }
   game.markModified('currentPlayerIndex');
 
-  await game.save();
+  await saveWithRetry(game);
 
   // Queue notification
   await queueCardsDealtNotification(gameId, 'FLOP');
@@ -512,7 +548,7 @@ async function executeDealTurn(gameId: string): Promise<number> {
   }
   game.markModified('currentPlayerIndex');
 
-  await game.save();
+  await saveWithRetry(game);
 
   // Queue notification
   await queueCardsDealtNotification(gameId, 'TURN');
@@ -559,7 +595,7 @@ async function executeDealRiver(gameId: string): Promise<number> {
   }
   game.markModified('currentPlayerIndex');
 
-  await game.save();
+  await saveWithRetry(game);
 
   // Queue notification
   await queueCardsDealtNotification(gameId, 'RIVER');
@@ -603,7 +639,7 @@ async function executeBettingCycle(gameId: string): Promise<number> {
   // Update currentPlayerIndex to first player to act
   game.currentPlayerIndex = currentIndex;
   game.markModified('currentPlayerIndex');
-  await game.save();
+  await saveWithRetry(game);
 
 
   // Emit state update so UI shows border on first player
@@ -652,7 +688,7 @@ async function executeDetermineWinner(gameId: string): Promise<number> {
 
   // Calculate winner and end game
   await StageManager.endGame(game);
-  await game.save();
+  await saveWithRetry(game);
 
   await completeRequirement(gameId, RequirementType.WINNER_DETERMINED);
   await completeRequirement(gameId, RequirementType.NOTIFICATION_COMPLETE);

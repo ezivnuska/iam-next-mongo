@@ -11,7 +11,7 @@ export default function Brand() {
     const orientation = useScreenOrientation();
     const isPortrait = orientation === 'portrait';
     return (
-        <Link href='/' className={clsx('flex flex-col w-full items-start', {
+        <Link href='/' className={clsx('flex flex-col justify-center', {
             'flex-row justify-start': isPortrait,
         })}>
             <span className='text-[24px] leading-none sm:text-[32px] font-bold text-white'>iam</span>

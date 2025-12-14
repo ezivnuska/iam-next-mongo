@@ -63,7 +63,7 @@ export default function TileBoard() {
 
     useEffect(() => {
         if (dims) {
-            setItemSize(dims.width / level)
+            setItemSize((dims.width - 2) / level)
         }
     }, [dims, level])
 
@@ -93,8 +93,8 @@ export default function TileBoard() {
         if (!itemSize) return null
         const { col, row } = tile
         const coords = {
-            x: col * itemSize,
-            y: row * itemSize,
+            x: col * (itemSize + 1),
+            y: row * (itemSize + 1),
         }
         return coords
     }

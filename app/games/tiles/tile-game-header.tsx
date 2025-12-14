@@ -13,8 +13,9 @@ import clsx from 'clsx';
 import { useScreenOrientation } from '../poker/lib/hooks/use-screen-orientation';
 
 export default function TileGameHeader() {
-    const [showLeaderboardModal, setShowLeaderboardModal] = useState(false)
-    const orientation = useScreenOrientation()
+    const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
+    const orientation = useScreenOrientation();
+    const isPortrait = orientation === 'portrait';
     
     const {
         scores,
@@ -23,44 +24,44 @@ export default function TileGameHeader() {
         time,
         clearScores,
         setStatus,
-    } = useTiles()
+    } = useTiles();
 
-    const startPlay = () => setStatus(GameStatus.START)
-    const unpause = () => setStatus(GameStatus.PLAYING)
-    const pause = () => setStatus(GameStatus.PAUSED)
-    const reset = () => setStatus(GameStatus.IDLE)
+    const startPlay = () => setStatus(GameStatus.START);
+    const unpause = () => setStatus(GameStatus.PLAYING);
+    const pause = () => setStatus(GameStatus.PAUSED);
+    const reset = () => setStatus(GameStatus.IDLE);
 
     const topScore = useMemo(() => {
         if (scores.length > 0) {
-            return scores[0]
+            return scores[0];
         }
-        return null
-    }, [scores])
+        return null;
+    }, [scores]);
 
     const renderNavButton = () => {
         switch (status) {
-            case GameStatus.IDLE: return renderStartButton()
-            case GameStatus.PLAYING: return renderPauseButton()
-            case GameStatus.PAUSED: return renderResumeButton()
-            case GameStatus.RESOLVED: return renderReplayButton()
-            default: return null
+            case GameStatus.IDLE: return renderStartButton();
+            case GameStatus.PLAYING: return renderPauseButton();
+            case GameStatus.PAUSED: return renderResumeButton();
+            case GameStatus.RESOLVED: return renderReplayButton();
+            default: return null;
         }
     }
 
     const handleClearScores = async () => {
-        await clearScores()
-        setShowLeaderboardModal(false)
+        await clearScores();
+        setShowLeaderboardModal(false);
     }
 
     const showLeaderboard = () => {
-        setShowLeaderboardModal(true)
+        setShowLeaderboardModal(true);
     }
 
     const renderStartButton = () => status === GameStatus.IDLE ? (
         <Button onClick={startPlay} variant="default">
             ▶ Play
         </Button>
-    ) : null
+    ) : null;
 
     const renderPauseButton = () => status === GameStatus.PLAYING ? (
         <Button onClick={pause} variant="default">
@@ -109,10 +110,10 @@ export default function TileGameHeader() {
     ) : null
 
     return (
-        <div className={clsx('flex flex-col items-center justify-between w-full gap-4',
-            {
-                'flex-row items-center': orientation === 'portrait',
-            }
+        <div className={clsx('flex flex-row items-center justify-between w-full gap-4',
+            // {
+            //     'flex-row items-center': orientation === 'portrait',
+            // }
         )}>
             {renderNavButton()}
             {renderKillButton()}

@@ -172,7 +172,6 @@ export default function DefaultScreen({
                         className={clsx(
                             'flex flex-1 h-full flex-row items-center justify-center transition-opacity duration-200',
                             {
-                                // 'h-full': !isPortrait,
                                 'opacity-100': showDrawerContent,
                                 'opacity-0': !showDrawerContent,
                             }
@@ -184,13 +183,13 @@ export default function DefaultScreen({
             </header>
 
             {/* Main Content Container */}
-            <main className='relative flex-1 overflow-hidden'>
+            <main className='relative w-full h-full overflow-hidden'>
                 {showLoading && !isContentLoaded ? (
                     <LoadingSpinner />
                 ) : (
                     <Suspense fallback={<LoadingSpinner />}>
-                        <div className='absolute inset-0 w-full h-full overflow-auto px-4 py-1'>
-                            <div className='max-w-[600px] p-1'>
+                        <div className='absolute inset-0 overflow-auto'>
+                            <div className='max-w-[600px] px-3 h-full'>
                                 {children}
                             </div>
                         </div>
