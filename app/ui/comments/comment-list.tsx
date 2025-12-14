@@ -3,7 +3,7 @@
 import { TrashIcon } from '@/app/ui/icons'
 import UserAvatar from '@/app/ui/user/user-avatar'
 import { formatRelativeTime } from '@/app/lib/utils/format-date'
-import { canDeleteComment } from '@/app/lib/utils/permissions'
+import { canDeleteComment } from '@/app/lib/utils/auth'
 import type { Comment } from '@/app/lib/definitions/comment'
 
 type CommentListProps = {

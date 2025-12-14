@@ -6,7 +6,7 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import Activity from "@/app/lib/models/activity";
 import { transformPopulatedAuthor } from "@/app/lib/utils/transformers";
 import type { Activity as ActivityType, ActivityAction, ActivityEntityType } from "@/app/lib/definitions/activity";
-import { requireAuth } from "@/app/lib/utils/auth-utils";
+import { requireAuth } from "@/app/lib/utils/auth";
 
 interface GetActivitiesParams {
   userId?: string;

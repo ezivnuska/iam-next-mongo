@@ -23,7 +23,7 @@ import {
 } from './step-definitions';
 import { queueCardsDealtNotification } from '../notifications/notification-queue-manager';
 import { POKER_TIMERS } from '../../config/poker-constants';
-import { executeWithRetry, saveWithRetry } from '../../utils/mongoose-retry';
+import { executeWithRetry, saveWithRetry } from '@/app/lib/utils/retry';
 
 /**
  * Initialize step tracking for a new game

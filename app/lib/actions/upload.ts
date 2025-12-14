@@ -9,8 +9,8 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import type { Image, ImageVariant } from "@/app/lib/definitions/image";
 import sharp from "sharp";
 import { logActivity } from "@/app/lib/utils/activity-logger";
-import { getS3UrlFromKey } from "@/app/lib/utils/image-url";
-import { requireAuthWithUsername } from "@/app/lib/utils/auth-utils";
+import { getS3UrlFromKey } from "@/app/lib/utils/images";
+import { requireAuthWithUsername } from "@/app/lib/utils/auth";
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION!,

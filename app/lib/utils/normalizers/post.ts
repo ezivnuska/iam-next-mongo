@@ -1,7 +1,7 @@
 // app/lib/utils/normalizePost.ts
 
 import { Post } from '@/app/lib/definitions'
-import { normalizeUser } from './normalizeUser'
+import { normalizeUser } from './user'
 
 export function normalizePost(rawPost: any): Post {
     return {

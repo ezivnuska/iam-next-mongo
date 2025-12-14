@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import type { Image as ImageType } from '@/app/lib/definitions/image'
 import { ComputerDesktopIcon } from '@heroicons/react/24/solid'
-import { getBestVariant } from '@/app/lib/utils/image-variant'
+import { getBestVariant } from '@/app/lib/utils/images'
 
 interface UserAvatarProps {
 	username: string

@@ -7,7 +7,7 @@ import type { Types } from "mongoose";
 import type { ImageVariant } from "@/app/lib/definitions/image";
 import { transformPopulatedImage, transformPopulatedAuthor } from "@/app/lib/utils/transformers";
 import { logActivity, getRequestMetadata } from "@/app/lib/utils/activity-logger";
-import { requireAuth } from "@/app/lib/utils/auth-utils";
+import { requireAuth } from "@/app/lib/utils/auth";
 
 interface PopulatedMemoryObj {
   _id: Types.ObjectId;

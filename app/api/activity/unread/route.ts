@@ -3,7 +3,7 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import Activity from "@/app/lib/models/activity";
-import { requireAuth } from "@/app/lib/utils/auth-utils";
+import { requireAuth } from "@/app/lib/utils/auth";
 
 export async function GET(req: Request) {
   try {

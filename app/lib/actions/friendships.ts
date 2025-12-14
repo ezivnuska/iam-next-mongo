@@ -12,7 +12,7 @@ import {
 	emitFriendshipRemoved,
 } from "@/app/lib/socket/emit"
 import { logActivity } from "@/app/lib/utils/activity-logger"
-import { requireAuth } from "@/app/lib/utils/auth-utils"
+import { requireAuth } from "@/app/lib/utils/auth"
 import { auth } from "@/app/lib/auth"
 
 export async function sendFriendRequest(recipientId: string) {

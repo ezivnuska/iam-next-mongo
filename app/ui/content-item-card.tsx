@@ -5,7 +5,7 @@
 import type { ContentItem } from "@/app/lib/definitions/content";
 import ContentCardWrapper from "@/app/ui/content-card-wrapper";
 import ContentInteractions from "@/app/ui/content-interactions";
-import { getBestVariant, IMAGE_SIZES } from "@/app/lib/utils/image-variant";
+import { getBestVariant, IMAGE_SIZES } from "@/app/lib/utils/images";
 
 type ContentItemCardProps = {
   item: ContentItem;

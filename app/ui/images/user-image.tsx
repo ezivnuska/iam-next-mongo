@@ -10,7 +10,7 @@ import UserAvatar from "../user/user-avatar";
 import { useRouter } from "next/navigation";
 import DeleteButtonWithConfirm from "../delete-button-with-confirm";
 import ContentInteractions from "../content-interactions";
-import { getBestVariant, IMAGE_SIZES } from "@/app/lib/utils/image-variant";
+import { getBestVariant, IMAGE_SIZES } from "@/app/lib/utils/images";
 
 interface UserImageProps {
     image: Image;

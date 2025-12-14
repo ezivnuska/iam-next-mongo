@@ -13,7 +13,7 @@ import {
   transformImage,
   getCommentCountsForContent,
   sortContentByDate
-} from "@/app/lib/utils/content-transformers";
+} from "@/app/lib/utils/transformers";
 import type { ContentItem } from "@/app/lib/definitions/content";
 
 export type PublicContentItem = ContentItem;

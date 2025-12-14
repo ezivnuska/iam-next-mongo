@@ -4,8 +4,8 @@
 
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "../models/user";
-import { normalizeUser } from "../utils/normalizeUser";
-import { requireAuth } from "@/app/lib/utils/auth-utils";
+import { normalizeUser } from "../utils/normalizers";
+import { requireAuth } from "@/app/lib/utils/auth";
 
 export async function getProfile() {
     const { id: userId } = await requireAuth();

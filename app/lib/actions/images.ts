@@ -13,8 +13,8 @@ import { auth } from "@/app/lib/auth";
 import { getCommentCounts } from "@/app/lib/actions/comments";
 import { Types } from "mongoose";
 import { logActivity } from "@/app/lib/utils/activity-logger";
-import { getS3ImageUrl } from "@/app/lib/utils/image-url";
-import { requireAuth } from "@/app/lib/utils/auth-utils";
+import { getS3ImageUrl } from "@/app/lib/utils/images";
+import { requireAuth } from "@/app/lib/utils/auth";
 /**
  * Fetch images from the database
  * @param userId Optional filter to get images for a specific user

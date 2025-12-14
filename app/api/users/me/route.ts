@@ -3,8 +3,8 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
-import { normalizeUser } from "@/app/lib/utils/normalizeUser";
-import { requireAuth } from "@/app/lib/utils/auth-utils";
+import { normalizeUser } from "@/app/lib/utils/normalizers";
+import { requireAuth } from "@/app/lib/utils/auth";
 
 export async function GET() {
     try {

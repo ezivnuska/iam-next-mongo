@@ -12,7 +12,7 @@ import UserAvatar from "../user/user-avatar";
 import DeleteButtonWithConfirm from "../delete-button-with-confirm";
 import ContentInteractions from "../content-interactions";
 import { useRouter } from "next/navigation";
-import { getBestVariant, IMAGE_SIZES } from "@/app/lib/utils/image-variant";
+import { getBestVariant, IMAGE_SIZES } from "@/app/lib/utils/images";
 
 interface UserMemoryProps {
   memory: Memory;

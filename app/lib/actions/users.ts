@@ -4,7 +4,7 @@
 
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "../models/user";
-import { normalizeUser, normalizeUsers } from "../utils/normalizeUser";
+import { normalizeUser, normalizeUsers } from "../utils/normalizers";
 import { auth } from "@/app/lib/auth";
 
 // ------------------------------

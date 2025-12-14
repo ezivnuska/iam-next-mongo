@@ -8,7 +8,7 @@ import Post from "@/app/lib/models/post";
 import Memory from "@/app/lib/models/memory";
 import { logActivity } from "@/app/lib/utils/activity-logger";
 import { emitLikeAdded, emitLikeRemoved } from "@/app/lib/socket/emit";
-import { requireAuth } from "@/app/lib/utils/auth-utils";
+import { requireAuth } from "@/app/lib/utils/auth";
 
 type LikeableType = 'Image' | 'Post' | 'Memory';
 

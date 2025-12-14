@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import { getActivities } from "@/app/lib/actions/activities";
 import type { ActivityAction, ActivityEntityType } from "@/app/lib/definitions/activity";
-import { requireAuth } from "@/app/lib/utils/auth-utils";
+import { requireAuth } from "@/app/lib/utils/auth";
 
 /**
  * GET /api/activities

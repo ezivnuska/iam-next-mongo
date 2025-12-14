@@ -196,7 +196,7 @@ export function awardPotToWinners(game: PokerGameDoc, winnerInfo: WinnerInfo): v
  * Deal communal cards for the next stage using the dealer module
  * Updates game state with new cards and advances stage
  */
-export function dealCommunalCards(game: PokerGameDoc, currentStage: GameStage): void {
+export function dealCommunalCardsForStage(game: PokerGameDoc, currentStage: GameStage): void {
   const result = dealCommunalCardsFromDealer(game.deck, game.communalCards, currentStage);
 
   if (!result) {

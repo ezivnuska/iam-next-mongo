@@ -8,7 +8,7 @@ import type { CommentRefType } from "@/app/lib/definitions/comment";
 import { Types } from "mongoose";
 import { logActivity } from "@/app/lib/utils/activity-logger";
 import { emitCommentAdded, emitCommentDeleted } from "@/app/lib/socket/emit";
-import { requireAuth } from "@/app/lib/utils/auth-utils";
+import { requireAuth } from "@/app/lib/utils/auth";
 
 export async function createComment(
 	refId: string,

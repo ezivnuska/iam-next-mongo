@@ -1,8 +1,13 @@
-// app/lib/utils/transformers.ts
+// app/lib/utils/transformers/index.ts
+// Barrel export for transformer utilities
 
 import type { Image, ImageVariant } from "@/app/lib/definitions/image";
 import type { PartialUser } from "@/app/lib/definitions/user";
 
+// Re-export from content.ts
+export * from './content';
+
+// Transformer functions (original transformers.ts content)
 export function transformImageVariant(variant: any): ImageVariant {
   return {
     size: variant.size,

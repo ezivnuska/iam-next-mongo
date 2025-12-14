@@ -13,9 +13,9 @@ import {
   transformImage,
   getCommentCountsForContent,
   sortContentByDate
-} from "@/app/lib/utils/content-transformers";
+} from "@/app/lib/utils/transformers";
 import type { ContentItem } from "@/app/lib/definitions/content";
-import { requireAuth } from "@/app/lib/utils/auth-utils";
+import { requireAuth } from "@/app/lib/utils/auth";
 
 export type { ContentItem };
 

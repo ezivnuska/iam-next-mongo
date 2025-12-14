@@ -26,7 +26,7 @@ export {
 export {
   savePlayerBalances,
   awardPotToWinners,
-  dealCommunalCards as dealCommunalCardsWithStageUpdate,
+  dealCommunalCardsForStage as dealCommunalCardsWithStageUpdate,
 } from './flow/poker-game-flow';
 
 // Export timer management functions

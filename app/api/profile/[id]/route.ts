@@ -5,7 +5,7 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
 import bcrypt from "bcrypt";
 import ImageModel from "@/app/lib/models/image";
-import { requireAuth } from "@/app/lib/utils/auth-utils";
+import { requireAuth } from "@/app/lib/utils/auth";
 
 export async function POST(req: NextRequest) {
     try {
