@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+    serverExternalPackages: ['mongoose', 'bcrypt'],
     // Add headers to force cache revalidation
     async headers() {
         return [
@@ -59,10 +60,11 @@ const nextConfig: NextConfig = {
                 child_process: false,
             };
 
-            // Completely exclude bcrypt and node-pre-gyp from client bundle
+            // Completely exclude bcrypt, mongoose, and node-pre-gyp from client bundle
             config.externals = config.externals || [];
             config.externals.push({
                 bcrypt: 'bcrypt',
+                mongoose: 'mongoose',
                 '@mapbox/node-pre-gyp': '@mapbox/node-pre-gyp',
             });
 

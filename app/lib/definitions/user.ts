@@ -1,7 +1,6 @@
 //app/lib/definitions/user.ts
 
-import { Document, PopulatedDoc, Types } from "mongoose";
-import type { ObjectId } from "mongoose";
+import type { Document, PopulatedDoc, Types, ObjectId } from "mongoose";
 import type { Image, ImageVariant, ImageDocument } from "./image";
 
 export enum UserRole {

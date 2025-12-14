@@ -4,8 +4,8 @@
 import type { Image, ImageVariant } from "@/app/lib/definitions/image";
 import type { PartialUser } from "@/app/lib/definitions/user";
 
-// Re-export from content.ts
-export * from './content';
+// Note: content.ts is NOT re-exported here because it contains server-only functions
+// Import directly from './content' when needed in server-side code
 
 // Transformer functions (original transformers.ts content)
 export function transformImageVariant(variant: any): ImageVariant {

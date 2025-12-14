@@ -2,7 +2,7 @@
 
 import Breadcrumbs from "@/app/ui/layout/breadcrumbs";
 import ImagesClient from "@/app/ui/images/images-client";
-import { fetchUserByUsername } from "@/app/lib/actions";
+import { fetchUserByUsername } from "@/app/lib/actions/users";
 import { auth } from "@/app/lib/auth";
 import { redirect } from "next/navigation";
 

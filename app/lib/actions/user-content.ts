@@ -13,7 +13,7 @@ import {
   transformImage,
   getCommentCountsForContent,
   sortContentByDate
-} from "@/app/lib/utils/transformers";
+} from "@/app/lib/utils/transformers/content";
 import type { ContentItem } from "@/app/lib/definitions/content";
 import { requireAuth } from "@/app/lib/utils/auth";
 

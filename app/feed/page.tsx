@@ -2,7 +2,7 @@
 
 import { Metadata } from 'next';
 import PageHeader from '../ui/layout/page-header';
-import { getPublicContent } from '../lib/actions';
+import { getPublicContent } from '../lib/actions/public-content';
 import UserContentFeed from '../ui/user/user-content-feed';
 
 export const metadata: Metadata = {

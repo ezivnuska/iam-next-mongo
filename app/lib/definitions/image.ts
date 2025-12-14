@@ -1,6 +1,6 @@
 // app/lib/definitions/image.ts
 
-import { Types } from "mongoose";
+import type { Types } from "mongoose";
 
 // Each variant (original, small, medium, etc.)
 export interface ImageVariant {

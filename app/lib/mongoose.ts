@@ -1,8 +1,6 @@
 // app/lib/mongoose.ts
 
 import mongoose from 'mongoose';
-import '@/app/lib/models/image';
-import '@/app/lib/models/user';
 
 if (!process.env.MONGO_URI) {
   throw new Error('Invalid/Missing environment variable: "MONGO_URI"');

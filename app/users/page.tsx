@@ -1,6 +1,6 @@
 // app/users/page.tsx
 
-import { getUsers } from '@/app/lib/actions';
+import { getUsers } from '@/app/lib/actions/users';
 import UserList from '@/app/ui/user/user-list';
 import PageHeader from '@/app/ui/layout/page-header';
 import { auth } from '@/app/lib/auth';
