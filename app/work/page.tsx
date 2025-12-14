@@ -24,20 +24,20 @@ export default function WorkPage() {
         <>
             <PageHeader
                 title='Work'
-                subtitle='Professional work history'
+                subtitle='Professional Experience'
             />
 
             <div className="space-y-8 px-2 pb-8">
                 {jobs.map((job: Job, index: number) => (
                     <div
                         key={`${job.company}-${job.start}-${index}`}
-                        className="relative pl-8 border-l-2 border-gray-200 pb-8 last:pb-0"
+                        className="relative pl-8 border-l-2 border-gray-200 pb-2 last:pb-0 pt-8"
                     >
                         {/* Timeline dot */}
                         <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-blue-500 border-2 border-white"></div>
 
                         {/* Job header */}
-                        <div className="mb-3">
+                        <div className="absolute -top-2">
                             <div className="flex flex-wrap items-baseline justify-between gap-2 mb-1">
                                 <h2 className="text-2xl font-bold text-gray-900">{job.company}</h2>
                                 <span className="text-sm text-gray-500 font-medium">
@@ -52,7 +52,7 @@ export default function WorkPage() {
                         </div>
 
                         {/* Job responsibilities */}
-                        <ul className="space-y-2">
+                        <ul className="mt-8 space-y-2">
                             {job.bullets.map((bullet: string, bulletIndex: number) => (
                                 <li key={bulletIndex} className="flex items-start gap-2 text-gray-700">
                                     <span className="text-blue-500">▸</span>

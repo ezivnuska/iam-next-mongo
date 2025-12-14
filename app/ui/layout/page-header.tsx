@@ -4,9 +4,9 @@ import { ubuntu } from '@/app/ui/fonts';
 import { clsx } from 'clsx';
 
 interface PageHeaderProps {
-  title: string;
-  subtitle?: string;
-  className?: string;
+    title: string;
+    subtitle?: string;
+    className?: string;
 }
 
 /**
@@ -27,26 +27,26 @@ interface PageHeaderProps {
  * ```
  */
 export default function PageHeader({ title, subtitle, className }: PageHeaderProps) {
-  return (
-    <header className={clsx('mb-6', className)}>
-      <h1
-        className={clsx(
-          ubuntu.className,
-          'text-2xl font-bold text-gray-900 md:text-3xl'
-        )}
-      >
-        {title}
-      </h1>
-      {subtitle && (
-        <p
-          className={clsx(
-            ubuntu.className,
-            'mt-1 text-xl text-gray-500 md:text-2xl'
-          )}
-        >
-          {subtitle}
-        </p>
-      )}
-    </header>
-  );
+    return (
+        <header className={clsx('my-2', className)}>
+            <h1
+                className={clsx(
+                    ubuntu.className,
+                    'text-2xl font-bold text-gray-900 md:text-3xl'
+                )}
+            >
+                {title}
+            </h1>
+            {subtitle && (
+                <p
+                    className={clsx(
+                        ubuntu.className,
+                        'mt-0.5 text-xl text-gray-500 md:text-2xl'
+                    )}
+                >
+                    {subtitle}
+                </p>
+            )}
+        </header>
+    );
 }

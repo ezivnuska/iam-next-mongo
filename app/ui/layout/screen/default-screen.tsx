@@ -76,10 +76,10 @@ export default function DefaultScreen({
     };
 
     // Calculate header dimensions based on orientation
-    const headerHeight = isPortrait ? '7.5vh' : '100vh';
+    const headerHeight = isPortrait ? '10vh' : '100vh';
     const headerWidth = isPortrait ? '100vw' : '15vw';
-    const drawerMaxHeight = isPortrait ? '50vh' : '100vh';
-    const drawerMaxWidth = isPortrait ? '100vw' : '35vw';
+    const drawerMaxHeight = isPortrait ? '100vh' : '100vh';
+    const drawerMaxWidth = isPortrait ? '100vw' : 'calc(100vw - 15vw)';
 
     return (
         <div className={clsx(
@@ -113,10 +113,10 @@ export default function DefaultScreen({
                 }}
             >
                 <div className={clsx(
-                    'flex h-full items-center justify-between p-2 gap-4 self-center',
+                    'flex h-full items-center justify-between py-3 px-2 gap-4 self-center',
                     {
-                        'flex-row': isPortrait,
-                        'h-full flex-col': !isPortrait,
+                        'flex-row px-3': isPortrait,
+                        'flex-col': !isPortrait,
                     }
                 )}>
                     {/* Brand */}
@@ -128,7 +128,7 @@ export default function DefaultScreen({
                     {/* Center - Drawer Toggle Button */}
                     <button
                         onClick={toggleDrawer}
-                        className='flex flex-1 w-full items-center justify-center rounded-lg hover:text-blue-300 transition-colors text-white'
+                        className='flex flex-1 w-full items-center justify-center rounded-lg hover:text-blue-300 transition-colors text-white cursor-pointer'
                         aria-label={isDrawerOpen ? 'Close menu' : 'Open menu'}
                     >
                         {isDrawerOpen ?
@@ -138,7 +138,7 @@ export default function DefaultScreen({
                             : !isPortrait
                                 ? <ChevronRightIcon className='w-8 h-8' />
                                 : <ChevronDownIcon className='w-8 h-8' />
-                            }
+                        }
                     </button>
 
                     {isPortrait && (
@@ -170,11 +170,12 @@ export default function DefaultScreen({
                     {/* Drawer Content with Fade Animation */}
                     <div
                         className={clsx(
-                        'w-full h-full transition-opacity duration-200',
-                        {
-                            'opacity-100': showDrawerContent,
-                            'opacity-0': !showDrawerContent,
-                        }
+                            'flex flex-1 h-full flex-row items-center justify-center transition-opacity duration-200',
+                            {
+                                // 'h-full': !isPortrait,
+                                'opacity-100': showDrawerContent,
+                                'opacity-0': !showDrawerContent,
+                            }
                         )}
                     >
                         <NavLinkList onLinkClick={() => {}} />
@@ -183,13 +184,15 @@ export default function DefaultScreen({
             </header>
 
             {/* Main Content Container */}
-            <main className='relative flex-1 max-w-[600px] overflow-hidden'>
+            <main className='relative flex-1 overflow-hidden'>
                 {showLoading && !isContentLoaded ? (
                     <LoadingSpinner />
                 ) : (
                     <Suspense fallback={<LoadingSpinner />}>
-                        <div className='absolute inset-0 w-full h-full overflow-auto p-4'>
-                            {children}
+                        <div className='absolute inset-0 w-full h-full overflow-auto px-4 py-1'>
+                            <div className='max-w-[600px] p-1'>
+                                {children}
+                            </div>
                         </div>
                     </Suspense>
                 )}
