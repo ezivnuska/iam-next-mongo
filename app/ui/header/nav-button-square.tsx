@@ -38,7 +38,7 @@ export default function NavButtonSquare({
                 prefetch={true}
                 onClick={handleClick}
                 className={clsx(
-                    'aspect-square flex flex-1 flex-col items-center justify-center p-3 rounded-lg font-medium transition-all relative border',
+                    'aspect-square flex flex-1 flex-col items-center justify-center p-3 rounded-lg font-medium transition-all relative gap-2',
                     {
                         'bg-blue-300/25 text-black': isActive,
                         'bg-gray-800 text-white hover:bg-sky-100 hover:text-blue-600 hover:border-sky-300': !isActive,
@@ -51,7 +51,7 @@ export default function NavButtonSquare({
                 </div>
 
                 {/* Title */}
-                <span className="text-xs text-center leading-tight">
+                <span className="text-md text-center leading-tight">
                     {title}
                 </span>
 
