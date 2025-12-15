@@ -38,6 +38,7 @@ const nextConfig: NextConfig = {
         serverActions: {
             bodySizeLimit: '10mb',
         },
+        serverComponentsExternalPackages: ['mongoose', 'bcrypt'],
     },
     images: {
         remotePatterns: [

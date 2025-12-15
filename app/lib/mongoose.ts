@@ -1,10 +1,5 @@
 // app/lib/mongoose.ts
 
-// Prevent execution on client side
-if (typeof window !== 'undefined') {
-  throw new Error('Server-only module');
-}
-
 import mongoose from 'mongoose';
 
 interface MongooseCache {
