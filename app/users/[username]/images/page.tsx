@@ -1,5 +1,7 @@
 // app/users/[username]/images/page.tsx
 
+export const dynamic = 'force-dynamic';
+
 import Breadcrumbs from "@/app/ui/layout/breadcrumbs";
 import ImagesClient from "@/app/ui/images/images-client";
 import { fetchUserByUsername } from "@/app/lib/actions/users";

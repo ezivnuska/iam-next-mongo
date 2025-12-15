@@ -1,5 +1,7 @@
 // app/activity/page.tsx
 
+export const dynamic = 'force-dynamic';
+
 import { auth } from "@/app/lib/auth";
 import { redirect } from "next/navigation";
 import Breadcrumbs from "@/app/ui/layout/breadcrumbs";

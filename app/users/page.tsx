@@ -1,5 +1,7 @@
 // app/users/page.tsx
 
+export const dynamic = 'force-dynamic';
+
 import { getUsers } from '@/app/lib/actions/users';
 import UserList from '@/app/ui/user/user-list';
 import PageHeader from '@/app/ui/layout/page-header';

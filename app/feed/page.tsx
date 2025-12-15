@@ -1,5 +1,7 @@
 // app/feed/page.tsx
 
+export const dynamic = 'force-dynamic';
+
 import { Metadata } from 'next';
 import PageHeader from '../ui/layout/page-header';
 import { getPublicContent } from '../lib/actions/public-content';

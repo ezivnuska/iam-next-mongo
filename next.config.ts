@@ -59,6 +59,9 @@ const nextConfig: NextConfig = {
                 crypto: false,
                 child_process: false,
                 mongoose: false,
+                'aws-sdk': false,
+                nock: false,
+                'mock-aws-s3': false,
             };
 
             // Ignore HTML files from node-pre-gyp

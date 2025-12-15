@@ -1,5 +1,7 @@
 // app/users/[username]/page.tsx
 
+export const dynamic = 'force-dynamic';
+
 import { auth } from '@/app/lib/auth';
 import { redirect } from 'next/navigation';
 import UserProfileCard from '@/app/ui/user/user-profile-card';
