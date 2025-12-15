@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import User from "@/app/lib/models/user";
+import "@/app/lib/models/image"; // Required for populate("avatar")
 import { transformPopulatedImage } from "@/app/lib/utils/transformers";
 
 export async function GET(

@@ -58,15 +58,8 @@ const nextConfig: NextConfig = {
                 tls: false,
                 crypto: false,
                 child_process: false,
+                mongoose: false,
             };
-
-            // Completely exclude bcrypt, mongoose, and node-pre-gyp from client bundle
-            config.externals = config.externals || [];
-            config.externals.push({
-                bcrypt: 'bcrypt',
-                mongoose: 'mongoose',
-                '@mapbox/node-pre-gyp': '@mapbox/node-pre-gyp',
-            });
 
             // Ignore HTML files from node-pre-gyp
             config.module.rules.push({

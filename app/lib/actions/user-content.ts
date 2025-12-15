@@ -5,7 +5,7 @@
 import { connectToDatabase } from "@/app/lib/mongoose";
 import Memory from "@/app/lib/models/memory";
 import Post from "@/app/lib/models/post";
-import Image from "@/app/lib/models/image";
+import Image from "@/app/lib/models/image"; // Also registers Image model for populate
 import User from "@/app/lib/models/user";
 import {
   transformMemory,

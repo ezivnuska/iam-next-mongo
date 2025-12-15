@@ -1,6 +1,7 @@
 // app/lib/actions/posts.ts
 
 import Post from "@/app/lib/models/post";
+import "@/app/lib/models/image"; // Required for populate("image")
 import type { Post as PostType } from "@/app/lib/definitions/post";
 import { connectToDatabase } from "../mongoose";
 import { transformPopulatedImage, transformPopulatedAuthor } from "@/app/lib/utils/transformers";

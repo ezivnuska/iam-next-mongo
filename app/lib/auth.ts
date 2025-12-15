@@ -6,6 +6,7 @@ import type { JWT } from "next-auth/jwt";
 import type { User } from "next-auth";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
+import "@/app/lib/models/image"; // Required for populate("avatar")
 import bcrypt from "bcrypt";
 import { UserRole } from "@/app/lib/definitions/user";
 

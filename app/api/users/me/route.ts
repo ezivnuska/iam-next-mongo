@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
+import "@/app/lib/models/image"; // Required for populate("avatar")
 import { normalizeUser } from "@/app/lib/utils/normalizers";
 import { requireAuth } from "@/app/lib/utils/auth";
 

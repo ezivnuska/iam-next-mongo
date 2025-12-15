@@ -4,6 +4,7 @@
 
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "../models/user";
+import "@/app/lib/models/image"; // Required for populate("avatar")
 import { normalizeUser, normalizeUsers } from "../utils/normalizers";
 import { auth } from "@/app/lib/auth";
 

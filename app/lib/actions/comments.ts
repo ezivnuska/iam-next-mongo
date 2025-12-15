@@ -4,6 +4,7 @@
 
 import { connectToDatabase } from "@/app/lib/mongoose";
 import Comment from "@/app/lib/models/comment";
+import "@/app/lib/models/image"; // Required for populate("author.avatar")
 import type { CommentRefType } from "@/app/lib/definitions/comment";
 import { Types } from "mongoose";
 import { logActivity } from "@/app/lib/utils/activity-logger";

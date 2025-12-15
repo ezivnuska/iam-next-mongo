@@ -4,6 +4,8 @@
 
 import { connectToDatabase } from "@/app/lib/mongoose"
 import Friendship from "@/app/lib/models/friendship"
+import "@/app/lib/models/user"; // Required for populate("requester") and populate("recipient")
+import "@/app/lib/models/image"; // Required for populate("requester.avatar") and populate("recipient.avatar")
 import type { Friendship as FriendshipType, Friend } from "@/app/lib/definitions/friendship"
 import {
 	emitFriendRequest,

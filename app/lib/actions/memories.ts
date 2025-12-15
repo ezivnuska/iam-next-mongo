@@ -1,6 +1,7 @@
 // app/lib/actions/memories.ts
 
 import Memory from "@/app/lib/models/memory";
+import "@/app/lib/models/image"; // Required for populate("image")
 import type { Memory as MemoryType } from "@/app/lib/definitions/memory";
 import { connectToDatabase } from "../mongoose";
 import { transformPopulatedImage, transformPopulatedAuthor } from "@/app/lib/utils/transformers";
