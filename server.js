@@ -1,6 +1,22 @@
 // server.js
 // Custom Next.js server with Socket.IO support
 
+// Load environment variables from .env files
+const { config } = require('dotenv')
+const { expand } = require('dotenv-expand')
+const path = require('path')
+
+// Determine which env file to load based on NODE_ENV
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development'
+const envPath = path.resolve(process.cwd(), envFile)
+
+// Load and expand env variables
+const envConfig = config({ path: envPath })
+expand(envConfig)
+
+// Also load .env as fallback
+config({ path: path.resolve(process.cwd(), '.env') })
+
 const { createServer } = require('http')
 const { parse } = require('url')
 const next = require('next')

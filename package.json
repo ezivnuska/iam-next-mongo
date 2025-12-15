@@ -12,6 +12,8 @@
     "@heroicons/react": "^2.2.0",
     "bcrypt": "^5.1.1",
     "clsx": "^2.1.1",
+    "dotenv": "^17.2.3",
+    "dotenv-expand": "^12.0.3",
     "mongodb": "^6.21.0",
     "mongoose": "^8.20.2",
     "next": "15.5.7",
