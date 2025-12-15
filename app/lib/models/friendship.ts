@@ -1,5 +1,10 @@
 // app/lib/models/friendship.ts
 
+// Prevent execution on client side
+if (typeof window !== 'undefined') {
+  throw new Error('Server-only module');
+}
+
 import mongoose, { Schema } from 'mongoose'
 
 const friendshipSchema = new Schema({

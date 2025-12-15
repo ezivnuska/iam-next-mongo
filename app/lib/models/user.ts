@@ -1,5 +1,10 @@
 // app/lib/models/user.ts
 
+// Prevent execution on client side
+if (typeof window !== 'undefined') {
+  throw new Error('Server-only module');
+}
+
 import mongoose, { Schema, Model } from "mongoose";
 import { UserDocument, UserRole } from "@/app/lib/definitions/user";
 

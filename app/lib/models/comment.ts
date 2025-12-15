@@ -1,5 +1,10 @@
 // app/lib/models/comment.ts
 
+// Prevent execution on client side
+if (typeof window !== 'undefined') {
+  throw new Error('Server-only module');
+}
+
 import mongoose from 'mongoose'
 
 const commentSchema = new mongoose.Schema({

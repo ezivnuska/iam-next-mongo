@@ -1,5 +1,10 @@
 // app/lib/models/like.ts
 
+// Prevent execution on client side
+if (typeof window !== 'undefined') {
+  throw new Error('Server-only module');
+}
+
 import mongoose from 'mongoose'
 
 const LikeSchema = new mongoose.Schema(

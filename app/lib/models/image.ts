@@ -1,5 +1,10 @@
 // app/lib/models/image.ts
 
+// Prevent execution on client side
+if (typeof window !== 'undefined') {
+  throw new Error('Server-only module');
+}
+
 import mongoose, { Schema, model, Model, Types, Document } from "mongoose";
 import { ImageVariant } from "@/app/lib/definitions/image";
 

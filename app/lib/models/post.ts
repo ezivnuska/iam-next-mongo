@@ -1,5 +1,10 @@
 // app/lib/models/post.ts
 
+// Prevent execution on client side
+if (typeof window !== 'undefined') {
+  throw new Error('Server-only module');
+}
+
 import mongoose, { Schema, Model } from 'mongoose'
 import { IPost } from '@/app/lib/definitions/post'
 
