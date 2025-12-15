@@ -51,6 +51,20 @@ const nextConfig: NextConfig = {
     webpack: (config, { isServer }) => {
         // Exclude server-only packages from client bundle
         if (!isServer) {
+            config.resolve.alias = {
+                ...config.resolve.alias,
+                // Stub out mongoose and models for client builds
+                '@/app/lib/mongoose': false,
+                '@/app/lib/models/user': false,
+                '@/app/lib/models/image': false,
+                '@/app/lib/models/post': false,
+                '@/app/lib/models/memory': false,
+                '@/app/lib/models/comment': false,
+                '@/app/lib/models/activity': false,
+                '@/app/lib/models/friendship': false,
+                '@/app/lib/models/like': false,
+            };
+
             config.resolve.fallback = {
                 ...config.resolve.fallback,
                 fs: false,
