@@ -12,7 +12,9 @@ export default function TileGame() {
     const orientation = useScreenOrientation()
     const isPortrait = orientation === 'portrait'
     return (
-        <div className='flex flex-col flex-1 h-full w-full gap-2'>
+        <div className={clsx('flex flex-col flex-1 h-full w-full gap-2', {
+            'flex-row items-start': !isPortrait,
+        })}>
             <TileGameHeader />
             <div className={clsx('flex flex-1 items-center justify-center', {
                 'justify-center': isPortrait,

@@ -54,7 +54,7 @@ export default function UserMemory({ memory, onDeleted, onEdit, onFlag }: UserMe
   if (!user) return null;
 
   return (
-    <div className="flex flex-row items-stretch mb-4 gap-2">
+    <div className="flex flex-row items-stretch gap-2">
         <div className="flex flex-col items-center justify-between gap-2 pb-1">
             <div className="flex flex-col items-center gap-2 pb-1">
                 <div className="flex w-12 h-12">
