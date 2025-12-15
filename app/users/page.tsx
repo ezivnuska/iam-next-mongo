@@ -8,6 +8,7 @@ import PageHeader from '@/app/ui/layout/page-header';
 import { auth } from '@/app/lib/auth';
 import { redirect } from 'next/navigation';
 import ProtectedRoute from '../ui/auth/protected-route';
+import PageContent from '../ui/page-content';
 
 export default async function Page() {
     // Server-side authentication check
@@ -20,8 +21,10 @@ export default async function Page() {
 
     return (
         <ProtectedRoute>
-            <PageHeader title="Users" />
-            <UserList users={users || []} />
+            <PageContent>
+                <PageHeader title="Users" />
+                <UserList users={users || []} />
+            </PageContent>
         </ProtectedRoute>
     );
 }

@@ -18,21 +18,15 @@ interface PageHeaderProps {
  * @param subtitle - Optional subtitle or description text
  * @param className - Optional additional CSS classes
  *
- * @example
- * ```tsx
- * <PageHeader
- *   title="Users"
- *   subtitle="Browse and manage user profiles"
- * />
- * ```
  */
+
 export default function PageHeader({ title, subtitle, className }: PageHeaderProps) {
     return (
-        <header className={clsx('my-2', className)}>
+        <header className={clsx('mb-4', className)}>
             <h1
                 className={clsx(
                     ubuntu.className,
-                    'text-2xl font-bold text-gray-900 md:text-3xl'
+                    'leading-none text-xl font-bold text-gray-900 md:text-xl'
                 )}
             >
                 {title}
@@ -41,7 +35,7 @@ export default function PageHeader({ title, subtitle, className }: PageHeaderPro
                 <p
                     className={clsx(
                         ubuntu.className,
-                        'mt-0.5 text-xl text-gray-500 md:text-2xl'
+                        'mt-0.5 text-lg text-gray-500 md:text-lg'
                     )}
                 >
                     {subtitle}

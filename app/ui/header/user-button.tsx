@@ -26,8 +26,8 @@ export default function UserButton() {
         : pathname === '/profile'
             ? <SignOutButton />
             : (
-                <Link href='/profile' className={clsx('w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12', {
-                    'w-14 h-14': !isPortrait,
+                <Link href='/profile' className={clsx('w-10 h-10 sm:w-10 sm:h-10 md:w-12 md:h-12', {
+                    'w-15 h-15 sm:w-15 sm:h-15': !isPortrait,
                 })}>
                     <UserAvatar username={user.username} />
                 </Link>

@@ -3,6 +3,7 @@
 import jobs from './jobs'
 import { Metadata } from 'next';
 import PageHeader from '../ui/layout/page-header';
+import PageContent from '../ui/page-content';
 
 export const metadata: Metadata = {
     title: 'Work',
@@ -21,7 +22,7 @@ interface Job {
 
 export default function WorkPage() {
     return (
-        <>
+        <PageContent>
             <PageHeader
                 title='Work'
                 subtitle='Professional Experience'
@@ -63,6 +64,6 @@ export default function WorkPage() {
                     </div>
                 ))}
             </div>
-        </>
+        </PageContent>
     );
 }

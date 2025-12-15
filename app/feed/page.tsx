@@ -6,6 +6,7 @@ import { Metadata } from 'next';
 import PageHeader from '../ui/layout/page-header';
 import { getPublicContent } from '../lib/actions/public-content';
 import UserContentFeed from '../ui/user/user-content-feed';
+import PageContent from '../ui/page-content';
 
 export const metadata: Metadata = {
     title: 'Feed',
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
 export default async function SocialPage() {
     const content = await getPublicContent();
     return (
-        <>
+        <PageContent>
             <PageHeader
                 title='Feed'
                 subtitle='Public Posts'
@@ -24,6 +25,6 @@ export default async function SocialPage() {
             <div className="space-y-8 px-2 pb-8">
                 <UserContentFeed initialContent={content} />
             </div>
-        </>
+        </PageContent>
     );
 }

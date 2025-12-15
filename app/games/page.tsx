@@ -4,6 +4,7 @@ import PageHeader from '../ui/layout/page-header';
 import Link from 'next/link';
 import { PuzzlePieceIcon } from '@heroicons/react/24/solid';
 import { Metadata } from 'next';
+import PageContent from '../ui/page-content';
 
 export const metadata: Metadata = {
     title: 'Games',
@@ -46,7 +47,7 @@ const games = [
 
 export default function GamesPage() {
     return (
-        <>
+        <PageContent>
             <PageHeader
                 title='Games'
                 subtitle='Interactive games and projects'
@@ -81,6 +82,6 @@ export default function GamesPage() {
                     );
                 })}
             </div>
-        </>
+        </PageContent>
     );
 }

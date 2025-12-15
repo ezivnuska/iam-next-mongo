@@ -189,9 +189,9 @@ export default function DefaultScreen({
                 ) : (
                     <Suspense fallback={<LoadingSpinner />}>
                         <div className='absolute inset-0 overflow-auto'>
-                            <div className='max-w-[600px] px-3 h-full'>
+                            {/* <div className='max-w-[600px] h-full'> */}
                                 {children}
-                            </div>
+                            {/* </div> */}
                         </div>
                     </Suspense>
                 )}

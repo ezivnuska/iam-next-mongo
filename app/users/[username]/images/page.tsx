@@ -7,6 +7,7 @@ import ImagesClient from "@/app/ui/images/images-client";
 import { fetchUserByUsername } from "@/app/lib/actions/users";
 import { auth } from "@/app/lib/auth";
 import { redirect } from "next/navigation";
+import PageContent from "@/app/ui/page-content";
 
 interface Props {
     params: Promise<{ username: string }>;
@@ -26,7 +27,7 @@ export default async function Page({ params }: Props) {
     const { id } = user;
 
     return (
-        <>
+        <PageContent>
             <Breadcrumbs
                 breadcrumbs={[
                     { label: 'Users', href: `/users` },
@@ -35,6 +36,6 @@ export default async function Page({ params }: Props) {
                 ]}
             />
             <ImagesClient userId={id} />
-        </>
+        </PageContent>
     );
 }

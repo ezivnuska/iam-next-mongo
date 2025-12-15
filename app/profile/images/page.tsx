@@ -6,6 +6,7 @@ import Breadcrumbs from "@/app/ui/layout/breadcrumbs";
 import { auth } from "@/app/lib/auth";
 import { redirect } from "next/navigation";
 import ImagesClient from "@/app/ui/images/images-client";
+import PageContent from "@/app/ui/page-content";
 
 export default async function Page() {
     const session = await auth();
@@ -14,7 +15,7 @@ export default async function Page() {
     }
 
     return (
-        <>
+        <PageContent>
             <Breadcrumbs
                 breadcrumbs={[
                     { label: "Profile", href: "/profile" },
@@ -22,6 +23,6 @@ export default async function Page() {
                 ]}
             />
             <ImagesClient authorized={true} />
-        </>
+        </PageContent>
     );
 }

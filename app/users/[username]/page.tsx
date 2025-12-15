@@ -8,6 +8,7 @@ import UserProfileCard from '@/app/ui/user/user-profile-card';
 import UserContentFeed from '@/app/ui/user/user-content-feed';
 import Breadcrumbs from '@/app/ui/layout/breadcrumbs';
 import { getUserContent } from '@/app/lib/actions/user-content';
+import PageContent from '@/app/ui/page-content';
 
 interface Props {
   params: Promise<{ username: string }>;
@@ -23,7 +24,7 @@ export default async function UserProfilePage({ params }: Props) {
     const content = await getUserContent(username);
 
     return (
-        <>
+        <PageContent>
             <Breadcrumbs
                 breadcrumbs={[
                     { label: "Users", href: "/users" },
@@ -33,6 +34,6 @@ export default async function UserProfilePage({ params }: Props) {
             />
             <UserProfileCard username={username} />
             <UserContentFeed initialContent={content} />
-        </>
+        </PageContent>
     );
 }
