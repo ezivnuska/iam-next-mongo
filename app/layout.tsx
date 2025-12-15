@@ -1,5 +1,7 @@
 // app/layout.tsx
 
+export const dynamic = 'force-dynamic';
+
 import '@/app/ui/global.css';
 import { ubuntu } from '@/app/ui/fonts';
 import { auth } from "@/app/lib/auth";
