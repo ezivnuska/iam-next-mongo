@@ -77,6 +77,7 @@ const nextConfig: NextConfig = {
                 nock: false,
                 'mock-aws-s3': false,
                 npm: false,
+                'node-gyp': false,
             };
 
             // Ignore HTML files from node-pre-gyp
