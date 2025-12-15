@@ -1,6 +1,6 @@
 // app/lib/hooks/use-comments.ts
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { getComments, deleteComment as deleteCommentAction, createComment as createCommentAction } from '@/app/lib/actions/comments';
 import { handleError } from '@/app/lib/utils/error-handler';
 import { useSocket } from '@/app/lib/providers/socket-provider';
@@ -44,11 +44,8 @@ export function useComments({
   const [loadingComments, setLoadingComments] = useState(false);
   const [commentsLoaded, setCommentsLoaded] = useState(false);
 
-  // Update comment count and notify parent
-  const updateCommentCount = useCallback((newCount: number) => {
-    setCommentCount(newCount);
-    onCommentCountChange?.(newCount);
-  }, [onCommentCountChange]);
+  // Store callback in ref to avoid dependency issues
+  const onCommentCountChangeRef = useRef(onCommentCountChange);
 
   // Load comments from server
   const loadComments = useCallback(async () => {
@@ -57,25 +54,21 @@ export function useComments({
     try {
       const fetchedComments = await getComments(itemId, itemType);
       setComments(fetchedComments);
-      updateCommentCount(fetchedComments.length);
+      setCommentCount(fetchedComments.length);
       setCommentsLoaded(true);
     } catch (error) {
       handleError(error, 'Failed to load comments');
     } finally {
       setLoadingComments(false);
     }
-  }, [itemId, itemType, updateCommentCount]);
+  }, [itemId, itemType]);
 
   // Add a comment optimistically
   const addComment = useCallback((comment: Comment) => {
     setComments(prev => [comment, ...prev]);
-    setCommentCount(prev => {
-      const newCount = prev + 1;
-      onCommentCountChange?.(newCount);
-      return newCount;
-    });
+    setCommentCount(prev => prev + 1);
     setCommentsLoaded(true);
-  }, [onCommentCountChange]);
+  }, []);
 
   // Delete a comment with optimistic update
   const deleteComment = useCallback(async (commentId: string) => {
@@ -91,9 +84,7 @@ export function useComments({
 
     setCommentCount(prev => {
       previousCount = prev;
-      const newCount = Math.max(0, prev - 1);
-      onCommentCountChange?.(newCount);
-      return newCount;
+      return Math.max(0, prev - 1);
     });
 
     try {
@@ -103,9 +94,8 @@ export function useComments({
       handleError(error, 'Failed to delete comment');
       setComments(previousComments);
       setCommentCount(previousCount);
-      onCommentCountChange?.(previousCount);
     }
-  }, [onCommentCountChange]);
+  }, []);
 
   // Create a new comment
   const createComment = useCallback(async (content: string): Promise<Comment> => {
@@ -125,8 +115,8 @@ export function useComments({
     setCommentCount(initialCommentCount);
     setCommentsLoaded(false);
     setLoadingComments(false);
-    onCommentCountChange?.(initialCommentCount);
-  }, [initialCommentCount, onCommentCountChange]);
+    // Don't call onCommentCountChange here - parent already knows the initial count
+  }, [initialCommentCount]);
 
   // Listen for socket events to update comments in real-time
   useEffect(() => {
@@ -145,21 +135,13 @@ export function useComments({
 
           // If comment doesn't exist and we have full comment data, add it
           if (!commentExists && payload.comment) {
-            setCommentCount(current => {
-              const newCount = current + 1;
-              onCommentCountChange?.(newCount);
-              return newCount;
-            });
+            setCommentCount(current => current + 1);
             return [payload.comment as Comment, ...prev];
           }
 
           // If comment doesn't exist but no full data, just update count
           if (!commentExists && !payload.comment) {
-            setCommentCount(current => {
-              const newCount = current + 1;
-              onCommentCountChange?.(newCount);
-              return newCount;
-            });
+            setCommentCount(current => current + 1);
           }
 
           // Comment already exists, don't change anything
@@ -176,21 +158,13 @@ export function useComments({
             const commentExists = prev.some(c => c.id === payload.commentId);
             // Only decrement count if comment actually exists (wasn't optimistically deleted by us)
             if (commentExists) {
-              setCommentCount(current => {
-                const newCount = Math.max(0, current - 1);
-                onCommentCountChange?.(newCount);
-                return newCount;
-              });
+              setCommentCount(current => Math.max(0, current - 1));
             }
             return prev.filter(c => c.id !== payload.commentId);
           });
         } else {
           // If comments not loaded, update count from socket event
-          setCommentCount(prev => {
-            const newCount = Math.max(0, prev - 1);
-            onCommentCountChange?.(newCount);
-            return newCount;
-          });
+          setCommentCount(prev => Math.max(0, prev - 1));
         }
       }
     };
@@ -202,7 +176,17 @@ export function useComments({
       socket.off(SOCKET_EVENTS.COMMENT_ADDED, handleCommentAdded);
       socket.off(SOCKET_EVENTS.COMMENT_DELETED, handleCommentDeleted);
     };
-  }, [socket, itemId, itemType, commentsLoaded, onCommentCountChange, currentUserId]);
+  }, [socket, itemId, itemType, commentsLoaded, currentUserId]);
+
+  // Keep callback ref up to date
+  useEffect(() => {
+    onCommentCountChangeRef.current = onCommentCountChange;
+  }, [onCommentCountChange]);
+
+  // Notify parent of comment count changes (after render)
+  useEffect(() => {
+    onCommentCountChangeRef.current?.(commentCount);
+  }, [commentCount]);
 
   // Auto-load on mount if requested
   useEffect(() => {

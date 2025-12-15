@@ -80,8 +80,7 @@ const ImageModalMenu = forwardRef<ImageModalMenuHandle, ImageModalMenuProps>(({
 	// Reset comments when image changes
 	useEffect(() => {
 		resetComments()
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [imageId])
+	}, [imageId, resetComments])
 
 	// Expose methods to parent via ref
 	useImperativeHandle(ref, () => ({
