@@ -7,7 +7,7 @@ import ImagesClient from "@/app/ui/images/images-client";
 import { fetchUserByUsername } from "@/app/lib/actions/users";
 import { auth } from "@/app/lib/auth";
 import { redirect } from "next/navigation";
-import PageContent from "@/app/ui/page-content";
+import PageContent from "@/app/ui/layout/page/page-content";
 
 interface Props {
     params: Promise<{ username: string }>;

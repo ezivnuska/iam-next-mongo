@@ -19,7 +19,7 @@ import { ArrowLeftIcon } from "@heroicons/react/20/solid";
 import { useScreenOrientation } from '../lib/hooks/use-screen-orientation';
 import { StaleGameModal } from './stale-game-modal';
 import clsx from 'clsx';
-import PageContent from '@/app/ui/page-content';
+import PageContent from '@/app/ui/layout/page/page-content';
 
 export default function PokerTable() {
   const { players } = usePlayers();

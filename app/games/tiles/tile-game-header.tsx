@@ -10,12 +10,11 @@ import UserAvatar from '@/app/ui/user/user-avatar'
 import Modal from '@/app/ui/modal'
 import Leaderboard from './leaderboard'
 import clsx from 'clsx';
-import { useScreenOrientation } from '../poker/lib/hooks/use-screen-orientation';
+import { useHorizontalLayout } from '@/app/lib/hooks/use-horizontal-layout';
 
 export default function TileGameHeader() {
     const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
-    const orientation = useScreenOrientation();
-    const isPortrait = orientation === 'portrait';
+    const horizontalLayout = useHorizontalLayout();
     
     const {
         scores,
@@ -110,11 +109,7 @@ export default function TileGameHeader() {
     ) : null
 
     return (
-        <div className={clsx('flex flex-row items-center justify-between w-full gap-4',
-            // {
-            //     'flex-row items-center': orientation === 'portrait',
-            // }
-        )}>
+        <div className='flex flex-row items-center justify-between'>
             {renderNavButton()}
             {renderKillButton()}
             {time && ticks > 0 && (

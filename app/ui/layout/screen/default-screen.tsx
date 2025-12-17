@@ -4,7 +4,7 @@
 
 import { useState, Suspense, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { useScreenOrientation } from '@/app/games/poker/lib/hooks/use-screen-orientation';
+import { useHorizontalLayout } from '@/app/lib/hooks/use-horizontal-layout';
 import { clsx } from 'clsx';
 import Brand from '@/app/ui/header/brand';
 import UserButton from '@/app/ui/header/user-button';
@@ -32,7 +32,7 @@ const LoadingSpinner = () => (
 
 export default function DefaultScreen({
     children,
-    headerClassName = 'bg-gray-900',
+    headerClassName = '',
     drawerClassName = 'bg-gray-800',
     fullscreen = false,
     showLoading = true,
@@ -40,9 +40,8 @@ export default function DefaultScreen({
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [showDrawerContent, setShowDrawerContent] = useState(false);
     const [isContentLoaded, setIsContentLoaded] = useState(false);
-    const orientation = useScreenOrientation();
-    const isPortrait = orientation === 'portrait';
     const pathname = usePathname();
+    const horizontalLayout = useHorizontalLayout();
 
     // Handle drawer animation: expand height first, then fade in content
     useEffect(() => {
@@ -75,127 +74,123 @@ export default function DefaultScreen({
         setIsDrawerOpen(!isDrawerOpen);
     };
 
-    // Calculate header dimensions based on orientation
-    const headerHeight = isPortrait ? '10vh' : '100vh';
-    const headerWidth = isPortrait ? '100vw' : '15vw';
-    const drawerMaxHeight = isPortrait ? '100vh' : '100vh';
-    const drawerMaxWidth = isPortrait ? '100vw' : 'calc(100vw - 15vw)';
+    // Calculate drawer dimensions based on layout
+    const drawerMaxHeight = '100vh';
+    const drawerMaxWidth = horizontalLayout ? 'calc(100vw - 15vw)' : '100vw';
 
     return (
         <div className={clsx(
-            'w-full h-screen flex overflow-hidden',
-            {
-                'flex-col': isPortrait,
-                'flex-row': !isPortrait,
-            }
+            'w-screen h-screen flex overflow-hidden'
         )}>
-            <Suspense fallback={null}>
-                <AuthRedirectHandler />
-            </Suspense>
+            <div className={clsx('flex w-full', {
+                'flex-col': !horizontalLayout,
+                'flex-row': horizontalLayout,
+            })}>
+                <Suspense fallback={null}>
+                    <AuthRedirectHandler />
+                </Suspense>
 
-            {/* Fixed Header */}
-            <header
-                className={clsx(
-                    headerClassName,
-                    'shrink-0 overflow-visible z-50 transition-transform duration-500 ease-in-out',
-                    {
-                        // Portrait mode - slide up
-                        '-translate-y-full': fullscreen && isPortrait,
-                        'translate-y-0': !fullscreen || !isPortrait,
-                        // Landscape mode - slide left
-                        '-translate-x-full': fullscreen && !isPortrait,
-                        'translate-x-0': !fullscreen || isPortrait,
-                    }
-                )}
-                style={{
-                    height: headerHeight,
-                    width: headerWidth,
-                }}
-            >
-                <div className={clsx(
-                    'flex h-full items-center justify-between py-3 px-2 gap-4 self-center',
-                    {
-                        'flex-row px-3': isPortrait,
-                        'flex-col': !isPortrait,
-                    }
-                )}>
-                    {/* Brand */}
-                    <div className='flex flex-col items-center justify-center gap-4'>
-                        <Brand />
-                        {!isPortrait && <UserButton />}
+                {/* Fixed Header */}
+                <header
+                    className={clsx(
+                        headerClassName,
+                        'shrink-0 overflow-visible z-50 transition-transform duration-500 ease-in-out bg-black',
+                        {
+                            // Vertical layout - slide up
+                            '-translate-y-full': fullscreen && !horizontalLayout,
+                            'translate-y-0': !fullscreen || horizontalLayout,
+                            // Horizontal layout - slide left
+                            '-translate-x-full min-w-[375px]': fullscreen && horizontalLayout,
+                            'translate-x-0': !fullscreen || !horizontalLayout,
+                            // Responsive sizing based on layout
+                            'h-[60px] w-screen': !horizontalLayout,
+                            'h-screen w-[15vw]': horizontalLayout,
+                        }
+                    )}
+                >
+                    <div className={clsx(
+                        'flex h-full items-center justify-between py-3 px-2 gap-4 self-center max-w-[600px] mx-auto',
+                        {
+                            'flex-row px-3': !horizontalLayout,
+                            'flex-col': horizontalLayout,
+                        }
+                    )}>
+                        {/* Brand */}
+                        <div className='flex flex-col items-center justify-center gap-4'>
+                            <Brand />
+                            {horizontalLayout && <UserButton />}
+                        </div>
+
+                        {/* Center - Drawer Toggle Button */}
+                        <button
+                            onClick={toggleDrawer}
+                            className='flex flex-1 w-full items-center justify-center rounded-lg hover:text-blue-300 transition-colors text-white cursor-pointer'
+                            aria-label={isDrawerOpen ? 'Close menu' : 'Open menu'}
+                        >
+                            {isDrawerOpen ?
+                                horizontalLayout
+                                    ? <ChevronLeftIcon className='w-8 h-8' />
+                                    : <ChevronUpIcon className='w-8 h-8' />
+                                : horizontalLayout
+                                    ? <ChevronRightIcon className='w-8 h-8' />
+                                    : <ChevronDownIcon className='w-8 h-8' />
+                            }
+                        </button>
+
+                        {!horizontalLayout && (
+                            <div className='flex flex-row items-center justify-end'>
+                                <UserButton />
+                            </div>
+                        )}
                     </div>
 
-                    {/* Center - Drawer Toggle Button */}
-                    <button
-                        onClick={toggleDrawer}
-                        className='flex flex-1 w-full items-center justify-center rounded-lg hover:text-blue-300 transition-colors text-white cursor-pointer'
-                        aria-label={isDrawerOpen ? 'Close menu' : 'Open menu'}
-                    >
-                        {isDrawerOpen ?
-                            !isPortrait
-                                ? <ChevronLeftIcon className='w-8 h-8' />
-                                : <ChevronUpIcon className='w-8 h-8' />
-                            : !isPortrait
-                                ? <ChevronRightIcon className='w-8 h-8' />
-                                : <ChevronDownIcon className='w-8 h-8' />
-                        }
-                    </button>
-
-                    {isPortrait && (
-                        <div className='flex flex-row items-center justify-end'>
-                            <UserButton />
-                        </div>
-                    )}
-                </div>
-
-                {/* Expandable Drawer */}
-                <div
-                    className={clsx(
-                        drawerClassName,
-                        'absolute overflow-hidden transition-all duration-300 ease-in-out',
-                        {
-                            // Portrait mode - expand downward
-                            'left-0 right-0 top-full': isPortrait,
-                            // Landscape mode - expand to the right
-                            'top-0 bottom-0 left-full': !isPortrait,
-                        }
-                    )}
-                    style={{
-                        ...(isPortrait
-                            ? { height: isDrawerOpen ? drawerMaxHeight : '0px', width: '100%' }
-                            : { width: isDrawerOpen ? drawerMaxWidth : '0px', height: '100%' }
-                        ),
-                    }}
-                >
-                    {/* Drawer Content with Fade Animation */}
+                    {/* Expandable Drawer */}
                     <div
                         className={clsx(
-                            'flex flex-1 h-full flex-row items-center justify-center transition-opacity duration-200',
+                            drawerClassName,
+                            'absolute overflow-hidden transition-all duration-300 ease-in-out',
                             {
-                                'opacity-100': showDrawerContent,
-                                'opacity-0': !showDrawerContent,
+                                // Vertical layout - expand downward
+                                'left-0 right-0 top-full': !horizontalLayout,
+                                // Horizontal layout - expand to the right
+                                'top-0 bottom-0 left-full': horizontalLayout,
                             }
                         )}
+                        style={{
+                            ...(!horizontalLayout
+                                ? { height: isDrawerOpen ? drawerMaxHeight : '0px', width: '100%' }
+                                : { width: isDrawerOpen ? drawerMaxWidth : '0px', height: '100%' }
+                            ),
+                        }}
                     >
-                        <NavLinkList onLinkClick={() => {}} />
-                    </div>
-                </div>
-            </header>
-
-            {/* Main Content Container */}
-            <main className='relative w-full h-full overflow-hidden'>
-                {showLoading && !isContentLoaded ? (
-                    <LoadingSpinner />
-                ) : (
-                    <Suspense fallback={<LoadingSpinner />}>
-                        <div className='absolute inset-0 overflow-auto'>
-                            {/* <div className='max-w-[600px] h-full'> */}
-                                {children}
-                            {/* </div> */}
+                        {/* Drawer Content with Fade Animation */}
+                        <div
+                            className={clsx(
+                                'flex flex-1 h-full flex-row items-center justify-center transition-opacity duration-200',
+                                {
+                                    'opacity-100': showDrawerContent,
+                                    'opacity-0': !showDrawerContent,
+                                }
+                            )}
+                        >
+                            <NavLinkList onLinkClick={() => {}} />
                         </div>
-                    </Suspense>
-                )}
-            </main>
+                    </div>
+                </header>
+
+                {/* Main Content Container */}
+                <main className='flex flex-col flex-1 w-full min-h-0 min-w-0 overflow-hidden'>
+                    {showLoading && !isContentLoaded ? (
+                        <LoadingSpinner />
+                    ) : (
+                        <Suspense fallback={<LoadingSpinner />}>
+                            <div className='flex flex-col flex-1 min-h-0 min-w-0 overflow-auto'>
+                                {children}
+                            </div>
+                        </Suspense>
+                    )}
+                </main>
+            </div>
         </div>
     );
 }

@@ -56,7 +56,7 @@ export default function UserProfileCard({ username }: UserProfileCardProps) {
                     <UserAvatar
                         username={displayUser.username}
                         avatar={displayUser.avatar}
-                        // size={100}
+                        size={100}
                     />
                 </div>
                 <div className='flex flex-1 flex-col gap-2'>

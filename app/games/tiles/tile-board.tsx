@@ -1,15 +1,12 @@
 // app/ui/tile-board.tsx
 
-"use client";
+'use client';
 
 import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import { Direction, GameStatus, TileType } from '@/app/lib/definitions/tiles'
 import { useTiles } from '@/app/lib/providers/tile-provider'
-
-export type Dimensions = {
-    width: number
-    height: number
-}
+import { useHorizontalLayout } from '@/app/lib/hooks/use-horizontal-layout'
+import { useResponsiveSquareSize } from '@/app/lib/hooks/use-responsive-square-size'
 
 export default function TileBoard() {
 
@@ -23,49 +20,17 @@ export default function TileBoard() {
     } = useTiles()
 
     const containerRef = useRef<HTMLDivElement>(null)
-    const [dims, setDims] = useState<Dimensions>()
-    const [itemSize, setItemSize] = useState<number>()
     const [draggedTile, setDraggedTile] = useState<TileType | null>()
     const [offset, setOffset] = useState({ x: 0, y: 0 })
     const [startPos, setStartPos] = useState({ x: 0, y: 0 })
     const dragDirection = useMemo(() => draggedTile && draggedTile.direction, [draggedTile])
+    const horizontalLayout = useHorizontalLayout()
 
-    useEffect(() => {
-        const handleResize = () => {
-            if (containerRef.current) {
-                const rect = containerRef.current.getBoundingClientRect()
-                const size = Math.min(rect.width, rect.height)
-                setDims({ width: size, height: size })
-            }
-        }
+    // Calculate square size based on parent dimensions
+    const size = useResponsiveSquareSize(containerRef, [horizontalLayout])
 
-        // Initial size calculation
-        handleResize()
-
-        // Create ResizeObserver to watch for container size changes
-        const resizeObserver = new ResizeObserver(() => {
-            handleResize()
-        })
-
-        // Observe the container element itself
-        if (containerRef.current) {
-            resizeObserver.observe(containerRef.current)
-        }
-
-        // Also listen to window resize as fallback
-        window.addEventListener('resize', handleResize)
-
-        return () => {
-            resizeObserver.disconnect()
-            window.removeEventListener('resize', handleResize)
-        }
-    }, [])
-
-    useEffect(() => {
-        if (dims) {
-            setItemSize((dims.width - 2) / level)
-        }
-    }, [dims, level])
+    // Calculate item size based on container size
+    const itemSize = size > 0 ? (size - 2) / level : 0
 
     useEffect(() => {
         if (draggedTile) {
@@ -232,6 +197,8 @@ export default function TileBoard() {
     }
 
     const renderTiles = () => {
+        if (!itemSize || itemSize <= 0) return null;
+
         return tiles.map((tile) => {
             const coords = getTileCoords(tile);
             if (!coords) return null;
@@ -245,7 +212,7 @@ export default function TileBoard() {
 
             return (
                 <div
-                    key={tile.id}
+                    key={`${tile.id}-${itemSize}`}
                     style={{
                         position: 'absolute',
                         top: y,
@@ -254,7 +221,7 @@ export default function TileBoard() {
                         transition: dragging ? 'none' : 'transform 0.1s ease',
                         cursor: draggable ? 'pointer' : 'auto',
                     }}
-                    className="rounded-md overflow-hidden"
+                    className='rounded-md overflow-hidden'
                     onMouseDown={(e) => onTouchStart(e, tile)}
                     onMouseMove={onTouchMove}
                     onMouseUp={handleMove}
@@ -269,12 +236,17 @@ export default function TileBoard() {
     }
 
     return (
-        <div ref={containerRef} className='w-full h-full'>
-            {tiles && (
-                <div className="relative w-full h-full rounded-md">
-                    {renderTiles()}
-                </div>
-            )}
+        <div
+            ref={containerRef}
+            className='rounded-md relative'
+            style={{
+                width: size > 0 ? `${size}px` : '100%',
+                height: size > 0 ? `${size}px` : '100%',
+                maxWidth: '100%',
+                maxHeight: '100%',
+            }}
+        >
+            {tiles && renderTiles()}
         </div>
     )
 }

@@ -4,7 +4,7 @@ import PageHeader from '../ui/layout/page-header';
 import Link from 'next/link';
 import { PuzzlePieceIcon } from '@heroicons/react/24/solid';
 import { Metadata } from 'next';
-import PageContent from '../ui/page-content';
+import PageContent from '../ui/layout/page/page-content';
 
 export const metadata: Metadata = {
     title: 'Games',

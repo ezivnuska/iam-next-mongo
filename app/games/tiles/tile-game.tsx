@@ -2,27 +2,20 @@
 
 'use client'
 
-import clsx from 'clsx';
-import { useScreenOrientation } from '../poker/lib/hooks/use-screen-orientation';
 import TileGameHeader from './tile-game-header';
 import TileBoard from './tile-board';
-import ResponsiveSquare from '@/app/ui/responsive-square'
+import PageContent from '@/app/ui/layout/page/page-content';
+import { FlexContainer, FlexCenter } from '@/app/ui/flex-container';
 
 export default function TileGame() {
-    const orientation = useScreenOrientation()
-    const isPortrait = orientation === 'portrait'
     return (
-        <div className={clsx('flex flex-col flex-1 h-full w-full gap-2', {
-            'flex-row items-start': !isPortrait,
-        })}>
-            <TileGameHeader />
-            <div className={clsx('flex flex-1 items-center justify-center', {
-                'justify-center': isPortrait,
-            })}>
-                <ResponsiveSquare>
+        <PageContent>
+            <FlexContainer className='items-stretch gap-2'>
+                <TileGameHeader />
+                <FlexCenter>
                     <TileBoard />
-                </ResponsiveSquare>
-            </div>
-        </div>
+                </FlexCenter>
+            </FlexContainer>
+        </PageContent>
     );
 }

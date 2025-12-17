@@ -6,14 +6,14 @@ import { Metadata } from 'next';
 import PageHeader from '../ui/layout/page-header';
 import { getPublicContent } from '../lib/actions/public-content';
 import UserContentFeed from '../ui/user/user-content-feed';
-import PageContent from '../ui/page-content';
+import PageContent from '../ui/layout/page/page-content';
 
 export const metadata: Metadata = {
     title: 'Feed',
     description: ' Public Posts',
 };
 
-export default async function SocialPage() {
+export default async function FeedPage() {
     const content = await getPublicContent();
     return (
         <PageContent>

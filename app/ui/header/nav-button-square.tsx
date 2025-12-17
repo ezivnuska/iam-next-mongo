@@ -40,7 +40,7 @@ export default function NavButtonSquare({
                 className={clsx(
                     'aspect-square flex flex-1 flex-col items-center justify-center p-3 rounded-lg font-medium transition-all relative gap-2',
                     {
-                        'bg-blue-300/25 text-black': isActive,
+                        'bg-blue-300/25 text-white': isActive,
                         'bg-gray-800 text-white hover:bg-sky-100 hover:text-blue-600 hover:border-sky-300': !isActive,
                     }
                 )}
