@@ -26,12 +26,12 @@ export default function PageContent({
     }, []);
 
     return (
-        <div className='flex flex-1 flex-col justify-center max-w-[600px] mx-auto'>
+        <div className='flex flex-1 flex-col max-w-[600px]'>
             {showLoading && !isContentLoaded ? (
                 <LoadingSpinner />
             ) : (
                 <Suspense fallback={<LoadingSpinner />}>
-                    <FlexContainer className='max-w-[600px] mb-4 py-4 px-2 items-stretch'>
+                    <FlexContainer className='max-w-[600px] mb-4 py-4 px-2'>
                         {children}
                     </FlexContainer>
                 </Suspense>

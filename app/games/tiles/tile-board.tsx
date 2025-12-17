@@ -19,7 +19,7 @@ export default function TileBoard() {
         setTiles,
     } = useTiles()
 
-    const containerRef = useRef<HTMLDivElement>(null)
+    const containerRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>
     const [draggedTile, setDraggedTile] = useState<TileType | null>()
     const [offset, setOffset] = useState({ x: 0, y: 0 })
     const [startPos, setStartPos] = useState({ x: 0, y: 0 })
