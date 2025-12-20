@@ -3,6 +3,7 @@
 
 export * from './action-history-helpers';
 export * from './betting-helpers';
+export * from './betting-round-helpers';
 export * from './guest-utils';
 export * from './notification-formatter';
 export * from './player-helpers';

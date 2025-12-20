@@ -10,7 +10,7 @@ import { FlexContainer, FlexCenter } from '@/app/ui/flex-container';
 export default function TileGame() {
     return (
         <PageContent>
-            <FlexContainer className='items-stretch gap-2'>
+            <FlexContainer className='items-stretch gap-4'>
                 <TileGameHeader />
                 <FlexCenter>
                     <TileBoard />

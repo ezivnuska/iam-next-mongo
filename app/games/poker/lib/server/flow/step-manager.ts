@@ -21,9 +21,9 @@ import {
   RequirementType,
   type GameStep
 } from './step-definitions';
-import { queueCardsDealtNotification } from '../notifications/notification-queue-manager';
 import { POKER_TIMERS } from '../../config/poker-constants';
 import { executeWithRetry, saveWithRetry } from '@/app/lib/utils/retry';
+import { calculateFirstToActForBettingRound } from '../../utils/betting-round-helpers';
 
 /**
  * Initialize step tracking for a new game
@@ -375,54 +375,6 @@ async function executePostBigBlind(gameId: string): Promise<number> {
 }
 
 /**
- * Helper function to calculate the first player to act for current betting round
- * Works for both pre-flop and post-flop stages
- * Skips folded and all-in players to find first active player
- */
-export function calculateFirstToActForBettingRound(game: any): number {
-  const buttonPosition = game.dealerButtonPosition || 0;
-  const isHeadsUp = game.players.length === 2;
-
-  let firstToAct: number;
-
-  if (game.stage === 0) {
-    // Pre-flop: First to act is different
-    // Heads-up: Small blind (button) acts first
-    // 3+: UTG (player after big blind) acts first
-    const bigBlindPos = isHeadsUp
-      ? (buttonPosition + 1) % game.players.length
-      : (buttonPosition + 2) % game.players.length;
-
-    firstToAct = isHeadsUp
-      ? buttonPosition  // Heads-up: button (SB) acts first
-      : (bigBlindPos + 1) % game.players.length;  // 3+: UTG (after BB)
-  } else {
-    // Post-flop: Small blind acts first (or first active player after SB)
-    const smallBlindPos = isHeadsUp
-      ? buttonPosition
-      : (buttonPosition + 1) % game.players.length;
-
-    firstToAct = smallBlindPos;
-  }
-
-  // Find first active player starting from firstToAct position
-  // Skip any players who are folded or all-in
-  let attempts = 0;
-  let currentIndex = firstToAct;
-
-  while (attempts < game.players.length) {
-    const candidate = game.players[currentIndex];
-    if (!candidate.isAllIn && !candidate.folded) {
-      break; // Found an active player
-    }
-    currentIndex = (currentIndex + 1) % game.players.length;
-    attempts++;
-  }
-
-  return currentIndex;
-}
-
-/**
  * Execute deal hole cards step
  */
 async function executeDealHoleCards(gameId: string): Promise<number> {
@@ -452,6 +404,7 @@ async function executeDealHoleCards(gameId: string): Promise<number> {
 
   // Queue notification (hole cards = Pre-Flop)
   // The notification queue manager will handle timing and sequential display
+  const { queueCardsDealtNotification } = await import('../notifications/notification-queue-manager');
   await queueCardsDealtNotification(gameId, 'PRE-FLOP');
 
   // Emit cards dealt event immediately (for state updates and sound effects)
@@ -503,7 +456,8 @@ async function executeDealFlop(gameId: string): Promise<number> {
   await saveWithRetry(game);
 
   // Queue notification
-  await queueCardsDealtNotification(gameId, 'FLOP');
+  const { queueCardsDealtNotification: queueFlopNotification } = await import('../notifications/notification-queue-manager');
+  await queueFlopNotification(gameId, 'FLOP');
 
   // Emit cards dealt event immediately (for state updates and sound effects)
   await PokerSocketEmitter.emitCardsDealt({
@@ -551,7 +505,8 @@ async function executeDealTurn(gameId: string): Promise<number> {
   await saveWithRetry(game);
 
   // Queue notification
-  await queueCardsDealtNotification(gameId, 'TURN');
+  const { queueCardsDealtNotification: queueTurnNotification } = await import('../notifications/notification-queue-manager');
+  await queueTurnNotification(gameId, 'TURN');
 
   // Emit cards dealt event immediately (for state updates and sound effects)
   await PokerSocketEmitter.emitCardsDealt({
@@ -598,7 +553,8 @@ async function executeDealRiver(gameId: string): Promise<number> {
   await saveWithRetry(game);
 
   // Queue notification
-  await queueCardsDealtNotification(gameId, 'RIVER');
+  const { queueCardsDealtNotification: queueRiverNotification } = await import('../notifications/notification-queue-manager');
+  await queueRiverNotification(gameId, 'RIVER');
 
   // Emit cards dealt event immediately (for state updates and sound effects)
   await PokerSocketEmitter.emitCardsDealt({

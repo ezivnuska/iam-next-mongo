@@ -1,6 +1,6 @@
 // app/ui/tile-game-header.tsx
 
-"use client";
+'use client';
 
 import React, { useMemo, useState } from 'react'
 import { Button } from '@/app/ui/button'
@@ -11,6 +11,11 @@ import Modal from '@/app/ui/modal'
 import Leaderboard from './leaderboard'
 import clsx from 'clsx';
 import { useHorizontalLayout } from '@/app/lib/hooks/use-horizontal-layout';
+import {
+    PauseCircleIcon,
+    PlayCircleIcon,
+    StopCircleIcon,
+} from '@heroicons/react/24/solid';
 
 export default function TileGameHeader() {
     const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
@@ -57,45 +62,49 @@ export default function TileGameHeader() {
     }
 
     const renderStartButton = () => status === GameStatus.IDLE ? (
-        <Button onClick={startPlay} variant="default">
-            ▶ Play
+        <Button onClick={startPlay} variant='ghost'>
+            <PlayCircleIcon className='w-12 h-12' />
+            <span className='text-lg'>Play</span>
         </Button>
     ) : null;
 
     const renderPauseButton = () => status === GameStatus.PLAYING ? (
-        <Button onClick={pause} variant="default">
-            ⏸ Pause
+        <Button onClick={pause} variant='ghost'>
+            <PauseCircleIcon className='w-12 h-12' />
+            <span className='text-lg'>Pause</span>
         </Button>
     ) : null
 
     const renderResumeButton = () => status === GameStatus.PAUSED ? (
-        <Button onClick={unpause} variant="default">
-            ▶ Resume
+        <Button onClick={unpause} variant='ghost'>
+            <PlayCircleIcon className='w-12 h-12' />
+            <span className='text-lg'>Resume</span>
         </Button>
     ) : null
 
     const renderReplayButton = () => status === GameStatus.RESOLVED ? (
-        <Button onClick={startPlay} variant="default">
-            🏆 Winner!
+        <Button onClick={startPlay} variant='default'>
+            Winner!
         </Button>
     ) : null
 
     const renderKillButton = () => status === GameStatus.PAUSED ? (
-        <Button onClick={reset} variant="warn" size="sm">
-            ✕
+        <Button onClick={reset} variant='ghost' className='text-red-500'>
+            <span className='text-lg'>Quit</span>
+            <StopCircleIcon className='w-12 h-12' />
         </Button>
     ) : null
 
     const renderTopScore = () => topScore ? (
         <button
             onClick={showLeaderboard}
-            className="flex flex-col items-center justify-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
+            className='flex flex-col items-center justify-center gap-1 cursor-pointer hover:opacity-80 transition-opacity'
         >
-            <div className="flex items-center gap-1">
-                <span className="font-bold text-sm">Fastest</span>
-                <span className="text-sm">›</span>
+            <div className='flex items-center gap-1'>
+                <span className='font-bold text-sm'>Fastest</span>
+                <span className='text-sm'>›</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className='flex items-center gap-2'>
                 <div className='w-8 h-8'>
                     <UserAvatar
                         username={topScore.user.username}
@@ -103,34 +112,40 @@ export default function TileGameHeader() {
                         // size={24}
                     />
                 </div>
-                <span className="text-sm">{topScore.score}</span>
+                <span className='text-sm'>{topScore.score}</span>
             </div>
         </button>
     ) : null
 
     return (
-        <div className='flex flex-row items-center justify-between'>
-            {renderNavButton()}
-            {renderKillButton()}
-            {time && ticks > 0 && (
-                <span className="font-bold text-xl">{time}</span>
-            )}
+        <div className='flex flex-row items-stretch justify-between'>
+            <div className='flex flex-1 flex-row items-center justify-start'>
+                {renderNavButton()}
+            </div>
+            <div className='flex flex-2 flex-row items-center justify-center'>
+                {time && ticks > 0 && (
+                    <span className='font-bold text-xl'>{time}</span>
+                )}
+            </div>
+            <div className='flex flex-1 flex-row items-center justify-end'>
+                {renderKillButton()}
+            </div>
             {renderTopScore()}
             {/* Leaderboard Modal */}
             {showLeaderboardModal && (
                 <Modal
                     onClose={() => setShowLeaderboardModal(false)}
-                    position="fixed"
+                    position='fixed'
                     showCloseButton
                 >
-                    <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                    <div className='bg-white rounded-lg p-6 max-w-md w-full'>
                         <Leaderboard scores={scores} clearScores={handleClearScores} />
 
-                        <div className="mt-6">
+                        <div className='mt-6'>
                             <Button
                                 onClick={() => setShowLeaderboardModal(false)}
-                                variant="ghost"
-                                className="w-full"
+                                variant='ghost'
+                                className='w-full'
                             >
                                 Close
                             </Button>

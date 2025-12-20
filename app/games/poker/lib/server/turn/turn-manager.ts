@@ -9,7 +9,7 @@ import type { Player } from '../../definitions/poker';
 import type { ValidationResult, TurnContext, BettingRoundState } from '../../definitions/validation';
 import { validationSuccess, validationFailure } from '../../definitions/validation';
 import { getPlayersWhoCanAct, getActivePlayers } from '../../utils/player-helpers';
-import { calculateFirstToActForBettingRound } from '../flow/step-manager';
+import { calculateFirstToActForBettingRound } from '../../utils/betting-round-helpers';
 
 export class TurnManager {
   /**
