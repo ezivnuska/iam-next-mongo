@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 
 /**
  * Next.js Middleware for Route Protection
@@ -26,7 +26,7 @@ export async function middleware(req: NextRequest) {
   const isAuthenticated = !!token;
 
   // Define protected routes
-  const protectedRoutes = ['/profile', '/activity', '/users'];
+  const protectedRoutes = ['/profile', '/activity', '/social'];
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
   // Redirect unauthenticated users from protected routes
@@ -47,6 +47,6 @@ export const config = {
   matcher: [
     '/profile/:path*',
     '/activity/:path*',
-    '/users/:path*',
+    '/social/:path*',
   ],
 };

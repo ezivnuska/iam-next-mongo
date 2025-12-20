@@ -1,10 +1,10 @@
 // app/lib/providers/auth-modal-provider.tsx
 
-"use client";
+'use client';
 
-import { createContext, useContext, useState } from "react";
-import { usePathname } from "next/navigation";
-import AuthModal from "@/app/ui/auth/auth-modal";
+import { createContext, useContext, useState } from 'react';
+import { usePathname } from 'next/navigation';
+import AuthModal from '@/app/ui/auth/auth-modal';
 
 type AuthMode = 'signin' | 'signup';
 
@@ -94,6 +94,6 @@ export function AuthModalProvider({ children }: AuthModalProviderProps) {
 
 export function useAuthModal() {
   const ctx = useContext(AuthModalContext);
-  if (!ctx) throw new Error("useAuthModal must be used within AuthModalProvider");
+  if (!ctx) throw new Error('useAuthModal must be used within AuthModalProvider');
   return ctx;
 }

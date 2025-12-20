@@ -62,36 +62,36 @@ export default function TileGameHeader() {
     }
 
     const renderStartButton = () => status === GameStatus.IDLE ? (
-        <Button onClick={startPlay} variant='ghost'>
-            <PlayCircleIcon className='w-12 h-12' />
+        <Button onClick={startPlay} variant='link' className='gap-2'>
+            <PlayCircleIcon className='w-8 h-8' />
             <span className='text-lg'>Play</span>
         </Button>
     ) : null;
 
     const renderPauseButton = () => status === GameStatus.PLAYING ? (
-        <Button onClick={pause} variant='ghost'>
-            <PauseCircleIcon className='w-12 h-12' />
+        <Button onClick={pause} variant='link' className='gap-2'>
+            <PauseCircleIcon className='w-8 h-8' />
             <span className='text-lg'>Pause</span>
         </Button>
     ) : null
 
     const renderResumeButton = () => status === GameStatus.PAUSED ? (
-        <Button onClick={unpause} variant='ghost'>
-            <PlayCircleIcon className='w-12 h-12' />
+        <Button onClick={unpause} variant='link' className='gap-2'>
+            <PlayCircleIcon className='w-8 h-8' />
             <span className='text-lg'>Resume</span>
         </Button>
     ) : null
 
     const renderReplayButton = () => status === GameStatus.RESOLVED ? (
-        <Button onClick={startPlay} variant='default'>
+        <Button onClick={startPlay} variant='default' className='gap-2'>
             Winner!
         </Button>
     ) : null
 
     const renderKillButton = () => status === GameStatus.PAUSED ? (
-        <Button onClick={reset} variant='ghost' className='text-red-500'>
+        <Button onClick={reset} variant='link' className='text-red-500 gap-2'>
             <span className='text-lg'>Quit</span>
-            <StopCircleIcon className='w-12 h-12' />
+            <StopCircleIcon className='w-8 h-8' />
         </Button>
     ) : null
 

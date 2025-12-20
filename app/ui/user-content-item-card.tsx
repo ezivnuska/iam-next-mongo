@@ -1,14 +1,14 @@
 // app/ui/user-content-item-card.tsx
 
-"use client";
+'use client';
 
-import type { ContentItem } from "@/app/lib/definitions/content";
-import UserMemory from "@/app/ui/memories/user-memory";
-import UserPost from "@/app/ui/posts/user-post";
-import UserImage from "@/app/ui/images/user-image";
-import type { Memory } from "@/app/lib/definitions/memory";
-import type { Post } from "@/app/lib/definitions/post";
-import type { Image } from "@/app/lib/definitions/image";
+import type { ContentItem } from '@/app/lib/definitions/content';
+import UserMemory from '@/app/ui/memories/user-memory';
+import UserPost from '@/app/ui/posts/user-post';
+import UserImage from '@/app/ui/images/user-image';
+import type { Memory } from '@/app/lib/definitions/memory';
+import type { Post } from '@/app/lib/definitions/post';
+import type { Image } from '@/app/lib/definitions/image';
 
 type UserContentItemCardProps = {
     item: ContentItem;

@@ -1,21 +1,21 @@
 // app/ui/user/user-content-feed.tsx
 
-"use client";
+'use client';
 
-import { useState } from "react";
-import type { ContentItem } from "@/app/lib/definitions/content";
-import type { Memory } from "@/app/lib/definitions/memory";
-import type { Post } from "@/app/lib/definitions/post";
-import type { Image } from "@/app/lib/definitions/image";
-import { Button } from "@/app/ui/button";
-import ContentItemCard from "@/app/ui/content-item-card";
-import UserContentItemCard from "@/app/ui/user-content-item-card";
-import ContentFilterTabs from "@/app/ui/content-filter-tabs";
-import Modal from "@/app/ui/modal";
-import CreateMemoryForm from "@/app/ui/memories/create-memory-form";
-import CreatePostForm from "@/app/ui/posts/create-post-form";
-import UploadForm from "@/app/ui/images/upload-form";
-import { useUser } from "@/app/lib/providers/user-provider";
+import { useState } from 'react';
+import type { ContentItem } from '@/app/lib/definitions/content';
+import type { Memory } from '@/app/lib/definitions/memory';
+import type { Post } from '@/app/lib/definitions/post';
+import type { Image } from '@/app/lib/definitions/image';
+import { Button } from '@/app/ui/button';
+import ContentItemCard from '@/app/ui/content-item-card';
+import UserContentItemCard from '@/app/ui/user-content-item-card';
+import ContentFilterTabs from '@/app/ui/content-filter-tabs';
+import Modal from '@/app/ui/modal';
+import CreateMemoryForm from '@/app/ui/memories/create-memory-form';
+import CreatePostForm from '@/app/ui/posts/create-post-form';
+import UploadForm from '@/app/ui/images/upload-form';
+import { useUser } from '@/app/lib/providers/user-provider';
 
 interface UserContentFeedProps {
     initialContent: ContentItem[];
@@ -90,10 +90,10 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
         : content.filter(item => selectedFilters.has(item.contentType));
 
     return (
-        <div className="max-w-[600px]">
+        <div className='max-w-[600px]'>
             {/* Add Buttons - only show when editable */}
             {editable && (
-                <div className="flex justify-between gap-2 mb-4 px-2">
+                <div className='flex justify-between gap-2 mb-4 px-2'>
                     <Button
                         size='sm'
                         onClick={() => setModalType('memory')}
@@ -122,9 +122,9 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
             />
 
             {/* Content List */}
-            <div className="max-w-[600px] mt-4 space-y-4">
+            <div className='max-w-[600px] mt-4 space-y-4'>
                 {filteredContent.length === 0 ? (
-                    <p className="text-center text-gray-500">No content to display</p>
+                    <p className='text-center text-gray-500'>No content to display</p>
                 ) : (
                     filteredContent.map((item) => (
                         isCurrentUserAuthor(item) ? (
@@ -146,13 +146,13 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
             {modalType === 'memory' && (
                 <Modal isOpen={true} onClose={handleCloseModal}>
                     <div className='flex flex-row items-center justify-between mb-4'>
-                        <h1 className="text-2xl font-semibold">
+                        <h1 className='text-2xl font-semibold'>
                             {editingItem ? 'Edit Memory' : 'Create Memory'}
                         </h1>
                         <button
-                            className="text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer"
+                            className='text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer'
                             onClick={handleCloseModal}
-                            aria-label="Close"
+                            aria-label='Close'
                         >
                             ✕
                         </button>
@@ -169,13 +169,13 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
             {modalType === 'post' && (
                 <Modal isOpen={true} onClose={handleCloseModal}>
                     <div className='flex flex-row items-center justify-between mb-4'>
-                        <h1 className="text-2xl font-semibold">
+                        <h1 className='text-2xl font-semibold'>
                             {editingItem ? 'Edit Post' : 'Create Post'}
                         </h1>
                         <button
-                            className="text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer"
+                            className='text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer'
                             onClick={handleCloseModal}
-                            aria-label="Close"
+                            aria-label='Close'
                         >
                             ✕
                         </button>
@@ -192,13 +192,13 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
             {modalType === 'image' && (
                 <Modal isOpen={true} onClose={handleCloseModal}>
                     <div className='flex flex-row items-center justify-between mb-4'>
-                        <h1 className="text-2xl font-semibold">
+                        <h1 className='text-2xl font-semibold'>
                             Upload Image
                         </h1>
                         <button
-                            className="text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer"
+                            className='text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer'
                             onClick={handleCloseModal}
-                            aria-label="Close"
+                            aria-label='Close'
                         >
                             ✕
                         </button>

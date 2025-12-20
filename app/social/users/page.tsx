@@ -7,20 +7,20 @@ import UserList from '@/app/ui/user/user-list';
 import PageHeader from '@/app/ui/layout/page-header';
 import { auth } from '@/app/lib/auth';
 import { redirect } from 'next/navigation';
-import PageContent from '../ui/layout/page/page-content';
+import PageContent from '@/app/ui/layout/page/page-content';
 
 export default async function Page() {
     // Server-side authentication check
     const session = await auth();
     if (!session) {
-        redirect("/?auth=required&callbackUrl=/users");
+        redirect('/?auth=required&callbackUrl=/social/users');
     }
 
     const users = await getUsers();
 
     return (
         <PageContent>
-            <PageHeader title="Users" />
+            <PageHeader title='Users' />
             <UserList users={users || []} />
         </PageContent>
     );

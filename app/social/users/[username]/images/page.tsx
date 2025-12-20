@@ -2,12 +2,12 @@
 
 export const dynamic = 'force-dynamic';
 
-import Breadcrumbs from "@/app/ui/layout/breadcrumbs";
-import ImagesClient from "@/app/ui/images/images-client";
-import { fetchUserByUsername } from "@/app/lib/actions/users";
-import { auth } from "@/app/lib/auth";
-import { redirect } from "next/navigation";
-import PageContent from "@/app/ui/layout/page/page-content";
+import Breadcrumbs from '@/app/ui/layout/breadcrumbs';
+import ImagesClient from '@/app/ui/images/images-client';
+import { fetchUserByUsername } from '@/app/lib/actions/users';
+import { auth } from '@/app/lib/auth';
+import { redirect } from 'next/navigation';
+import PageContent from '@/app/ui/layout/page/page-content';
 
 interface Props {
     params: Promise<{ username: string }>;
@@ -19,7 +19,7 @@ export default async function Page({ params }: Props) {
     const { username } = await params;
 
     if (!session) {
-        redirect(`/?auth=required&callbackUrl=/users/${username}/images`);
+        redirect(`/?auth=required&callbackUrl=/social/users/${username}/images`);
     }
 
     const user = await fetchUserByUsername(username);
@@ -30,9 +30,9 @@ export default async function Page({ params }: Props) {
         <PageContent>
             <Breadcrumbs
                 breadcrumbs={[
-                    { label: 'Users', href: `/users` },
-                    { label: username, href: `/users/${username}` },
-                    { label: "Images", href: `/users/${username}/images`, active: true },
+                    { label: 'Users', href: `/social/users` },
+                    { label: username, href: `/social/users/${username}` },
+                    { label: 'Images', href: `/social/users/${username}/images`, active: true },
                 ]}
             />
             <ImagesClient userId={id} />

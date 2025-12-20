@@ -23,7 +23,7 @@ export default function ContentCardWrapper({ username, avatar, createdAt, childr
     if (user?.username === username) {
       router.push('/profile');
     } else {
-      router.push(`/users/${username}`);
+      router.push(`/social/users/${username}`);
     }
   };
 

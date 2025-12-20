@@ -1,20 +1,20 @@
 // app/lib/actions/public-content.ts
 
-"use server";
+'use server';
 
-import { connectToDatabase } from "@/app/lib/mongoose";
-import { auth } from "@/app/lib/auth";
-import Memory from "@/app/lib/models/memory";
-import Post from "@/app/lib/models/post";
-import Image from "@/app/lib/models/image"; // Also registers Image model for populate
+import { connectToDatabase } from '@/app/lib/mongoose';
+import { auth } from '@/app/lib/auth';
+import Memory from '@/app/lib/models/memory';
+import Post from '@/app/lib/models/post';
+import Image from '@/app/lib/models/image'; // Also registers Image model for populate
 import {
   transformMemory,
   transformPost,
   transformImage,
   getCommentCountsForContent,
   sortContentByDate
-} from "@/app/lib/utils/transformers/content";
-import type { ContentItem } from "@/app/lib/definitions/content";
+} from '@/app/lib/utils/transformers/content';
+import type { ContentItem } from '@/app/lib/definitions/content';
 
 export type PublicContentItem = ContentItem;
 
@@ -26,8 +26,8 @@ export async function getPublicContent(): Promise<PublicContentItem[]> {
   // Fetch shared memories only
   const memories = await Memory.find({ shared: true })
     .populate([
-      { path: "author", populate: { path: "avatar" } },
-      { path: "image" }
+      { path: 'author', populate: { path: 'avatar' } },
+      { path: 'image' }
     ])
     .sort({ createdAt: -1 })
     .lean();
@@ -35,8 +35,8 @@ export async function getPublicContent(): Promise<PublicContentItem[]> {
   // Fetch all posts
   const posts = await Post.find({})
     .populate([
-      { path: "author", populate: { path: "avatar" } },
-      { path: "image" }
+      { path: 'author', populate: { path: 'avatar' } },
+      { path: 'image' }
     ])
     .sort({ createdAt: -1 })
     .lean();

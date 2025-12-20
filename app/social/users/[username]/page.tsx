@@ -18,21 +18,21 @@ export default async function UserProfilePage({ params }: Props) {
     const { username } = await params;
     const session = await auth();
     if (!session) {
-        redirect(`/?auth=required&callbackUrl=/users/${username}`);
+        redirect(`/?auth=required&callbackUrl=/social/users/${username}`);
     }
 
     const content = await getUserContent(username);
 
     return (
         <PageContent>
+            <UserProfileCard username={username} />
             <Breadcrumbs
                 breadcrumbs={[
-                    { label: "Users", href: "/users" },
-                    { label: username, href: `/users/${username}`, active: true },
-                    { label: "Images", href: `/users/${username}/images` },
+                    { label: 'Users', href: '/social/users' },
+                    { label: username, href: `/social/users/${username}`, active: true },
+                    { label: 'Images', href: `/social/users/${username}/images` },
                 ]}
             />
-            <UserProfileCard username={username} />
             <UserContentFeed initialContent={content} />
         </PageContent>
     );

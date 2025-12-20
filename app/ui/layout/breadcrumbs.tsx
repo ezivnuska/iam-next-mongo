@@ -16,7 +16,7 @@ export default function Breadcrumbs({
   breadcrumbs: Breadcrumb[];
 }) {
   return (
-    <nav aria-label="Breadcrumb" className="block mb-4">
+    <nav aria-label='Breadcrumb' className='block'>
       <ol className={clsx(ubuntu.className, 'flex text-xl md:text-xl')}>
         {breadcrumbs.map((breadcrumb, index) => (
           <li
@@ -28,7 +28,7 @@ export default function Breadcrumbs({
           >
             <Link href={breadcrumb.href} className='leading-none'>{breadcrumb.label}</Link>
             {index < breadcrumbs.length - 1 ? (
-              <span className="mx-3 inline-block">/</span>
+              <span className='mx-3 inline-block'>/</span>
             ) : null}
           </li>
         ))}

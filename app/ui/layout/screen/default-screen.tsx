@@ -8,9 +8,9 @@ import { useHorizontalLayout } from '@/app/lib/hooks/use-horizontal-layout';
 import { clsx } from 'clsx';
 import Brand from '@/app/ui/header/brand';
 import UserButton from '@/app/ui/header/user-button';
-import NavLinkList from '@/app/ui/header/nav-link-list';
 import AuthRedirectHandler from '@/app/ui/auth/auth-redirect-handler';
 import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
+import NavLinkListSliding from '@/app/ui/header/nav-link-list-sliding';
 
 interface DefaultScreenProps {
     children: React.ReactNode;
@@ -166,14 +166,15 @@ export default function DefaultScreen({
                         {/* Drawer Content with Fade Animation */}
                         <div
                             className={clsx(
-                                'flex flex-1 h-full flex-row items-center justify-center transition-opacity duration-200',
+                                'flex flex-1 h-full flex-row items-stretch justify-stretch transition-opacity duration-200',
                                 {
                                     'opacity-100': showDrawerContent,
                                     'opacity-0': !showDrawerContent,
                                 }
                             )}
                         >
-                            <NavLinkList onLinkClick={() => {}} />
+                            {/* <NavLinkList onLinkClick={() => {}} /> */}
+                            <NavLinkListSliding isVisible={showDrawerContent} />
                         </div>
                     </div>
                 </header>

@@ -31,7 +31,7 @@ export default function PageContent({
                 <LoadingSpinner />
             ) : (
                 <Suspense fallback={<LoadingSpinner />}>
-                    <FlexContainer className='w-full max-w-[600px] mx-auto mb-4 py-4 px-2'>
+                    <FlexContainer className='w-full max-w-[600px] mx-auto mb-4 py-4 px-2 gap-4'>
                         {children}
                     </FlexContainer>
                 </Suspense>

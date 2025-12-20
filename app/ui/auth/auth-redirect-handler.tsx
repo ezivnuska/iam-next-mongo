@@ -13,11 +13,16 @@ export default function AuthRedirectHandler() {
   const hasTriggered = useRef(false);
 
   useEffect(() => {
-    // Check if auth is required and user is a guest
+    // Check if auth is required and user is not authenticated
     const authRequired = searchParams.get('auth') === 'required';
     const callbackUrl = searchParams.get('callbackUrl');
 
-    if (authRequired && user?.isGuest && callbackUrl && !hasTriggered.current) {
+    // Open auth modal when:
+    // - Auth is required (from middleware redirect)
+    // - User is not authenticated (user is null)
+    // - Callback URL is provided
+    // - Modal hasn't been triggered yet this session
+    if (authRequired && !user && callbackUrl && !hasTriggered.current) {
       hasTriggered.current = true;
       // Store the callback URL for after authentication
       sessionStorage.setItem('authCallbackUrl', callbackUrl);

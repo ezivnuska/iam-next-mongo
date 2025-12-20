@@ -1,12 +1,12 @@
-// app/feed/page.tsx
+// app/social/feed/page.tsx
 
 export const dynamic = 'force-dynamic';
 
 import { Metadata } from 'next';
-import PageHeader from '../ui/layout/page-header';
-import { getPublicContent } from '../lib/actions/public-content';
-import UserContentFeed from '../ui/user/user-content-feed';
-import PageContent from '../ui/layout/page/page-content';
+import PageHeader from '@/app/ui/layout/page-header';
+import { getPublicContent } from '@/app/lib/actions/public-content';
+import UserContentFeed from '@/app/ui/user/user-content-feed';
+import PageContent from '@/app/ui/layout/page/page-content';
 
 export const metadata: Metadata = {
     title: 'Feed',
@@ -22,7 +22,7 @@ export default async function FeedPage() {
                 subtitle='Public Posts'
             />
 
-            <div className="space-y-8 px-2 pb-8">
+            <div className='space-y-8 px-2 pb-8'>
                 <UserContentFeed initialContent={content} />
             </div>
         </PageContent>

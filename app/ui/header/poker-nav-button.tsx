@@ -6,25 +6,7 @@ import { useState, useEffect } from 'react';
 import { useSocket } from '@/app/lib/providers/socket-provider';
 import { SOCKET_EVENTS } from '@/app/lib/socket/events';
 import NavLinkCard from '@/app/ui/header/nav-link-card';
-
-// Simple poker chip icon
-function PokerChipIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" />
-      <circle cx="12" cy="12" r="6" fill="currentColor" />
-      <circle cx="12" cy="4" r="1.5" fill="currentColor" />
-      <circle cx="12" cy="20" r="1.5" fill="currentColor" />
-      <circle cx="4" cy="12" r="1.5" fill="currentColor" />
-      <circle cx="20" cy="12" r="1.5" fill="currentColor" />
-    </svg>
-  );
-}
+import PokerChipIcon from '@/app/ui/icons/poker-chip-icon';
 
 export default function PokerNavButton() {
   const { socket } = useSocket();
