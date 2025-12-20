@@ -40,12 +40,33 @@ interface NavLinkListSlidingProps {
 
 // Default links
 const defaultLinks: NavLink[] = [
+    // {
+    //     href: '/work',
+    //     title: 'Work',
+    //     subtitle: 'My Experience',
+    //     icon: <AcademicCapIcon className='w-10 h-10' />,
+    //     requiresAuth: false,
+    // },
     {
-        href: '/work',
-        title: 'Work',
-        subtitle: 'My Experience',
+        href: '/eric',
+        title: 'Eric',
+        subtitle: 'About Eric',
         icon: <AcademicCapIcon className='w-10 h-10' />,
         requiresAuth: false,
+        subLinks: [{
+            href: '/eric/about',
+            title: 'About',
+            subtitle: 'About Me',
+            icon: <AcademicCapIcon className='w-10 h-10' />,
+            requiresAuth: false,
+        },
+        {
+            href: '/eric/work',
+            title: 'Work',
+            subtitle: `Work History`,
+            icon: <PhotoIcon className='w-10 h-10' />,
+            requiresAuth: false,
+        }],
     },
     {
         href: '/profile',
