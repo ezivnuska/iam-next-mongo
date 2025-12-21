@@ -50,7 +50,7 @@ export default function UserProfileCard({ username }: UserProfileCardProps) {
     if (!displayUser) return <p>User not found</p>;
 
     return (
-        <div className='flex flex-1 flex-row flex-wrap gap-4 pt-4'>
+        <div className='flex flex-1 flex-row flex-wrap gap-4 py-4'>
             <div className='w-[72px] h-[72px]'>
                 <UserAvatar
                     username={displayUser.username}

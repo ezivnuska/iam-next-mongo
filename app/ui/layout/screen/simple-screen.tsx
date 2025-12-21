@@ -42,9 +42,9 @@ export default function SimpleScreen({
                     <AuthRedirectHandler />
                 </Suspense>
 
-                <div className={clsx('flex max-w-[600px] mx-auto items-center px-3 py-3 gap-4', {
+                <div className={clsx('flex max-w-[600px] mx-auto items-center py-3 gap-4', {
                     'flex-row w-full justify-between': !horizontalLayout,
-                    'flex-col py-4': horizontalLayout,
+                    'flex-col py-4 px-4': horizontalLayout,
                 })}>
                     <Brand />
                     <UserButton />
