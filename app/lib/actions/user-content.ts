@@ -64,8 +64,16 @@ export async function getUserContent(username?: string): Promise<ContentItem[]> 
     .lean();
 
   // Get comment counts for all content types (parallel execution)
-  const { memoryCommentCounts, postCommentCounts, imageCommentCounts } =
-    await getCommentCountsForContent(memories, posts, images);
+  const {
+    memoryCommentCounts,
+    postCommentCounts,
+    // imageCommentCounts,
+} =
+    await getCommentCountsForContent(
+        memories,
+        posts,
+        // images,
+    );
 
   // Transform all content
   const transformedMemories = memories.map((m: any) =>
@@ -76,15 +84,15 @@ export async function getUserContent(username?: string): Promise<ContentItem[]> 
     transformPost(p, postCommentCounts, userId)
   );
 
-  const transformedImages = images.map((img: any) =>
-    transformImage(img, imageCommentCounts, userId)
-  );
+//   const transformedImages = images.map((img: any) =>
+//     transformImage(img, imageCommentCounts, userId)
+//   );
 
   // Combine and sort by createdAt
   const allContent = sortContentByDate([
     ...transformedMemories,
     ...transformedPosts,
-    ...transformedImages
+    // ...transformedImages
   ]);
 
   return allContent;

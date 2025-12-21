@@ -60,7 +60,7 @@ export default function UserAvatar({
 	const validImageUrl = imageUrl && imageUrl !== 'null' && imageUrl !== 'undefined' ? imageUrl : null;
 
 	return (
-		<div className={`flex flex-row items-center justify-center w-full h-full rounded-full bg-gray-400 text-gray-600 font-semibold ${className}`}>
+		<div className={`flex flex-row items-center justify-center w-full h-full rounded-full bg-gray-400 text-gray-600 font-semibold border-2 border-white ${className}`}>
 			{isAI
                 ? <ComputerDesktopIcon className="text-white" style={{ width: 16, height: 16 }} />
 			    : validImageUrl

@@ -22,7 +22,9 @@ export default async function Page() {
                     { label: 'Images', href: '/profile/images', active: true },
                 ]}
             />
-            <ImagesClient authorized={true} />
+            <div className='flex flex-1'>
+                <ImagesClient authorized={true} />
+            </div>
         </PageContent>
     );
 }

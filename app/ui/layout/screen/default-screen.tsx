@@ -5,10 +5,12 @@
 import { useState, Suspense, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useHorizontalLayout } from '@/app/lib/hooks/use-horizontal-layout';
+import { useContentLoaded } from '@/app/hooks/useContentLoaded';
 import { clsx } from 'clsx';
 import Brand from '@/app/ui/header/brand';
 import UserButton from '@/app/ui/header/user-button';
 import AuthRedirectHandler from '@/app/ui/auth/auth-redirect-handler';
+import LoadingSpinner from '@/app/ui/loading-spinner';
 import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import NavLinkListSliding from '@/app/ui/header/nav-link-list-sliding';
 
@@ -20,16 +22,6 @@ interface DefaultScreenProps {
     showLoading?: boolean;
 }
 
-// Loading spinner component
-const LoadingSpinner = () => (
-    <div className='absolute inset-0 flex items-center justify-center bg-gray-50'>
-        <div className='text-center'>
-            <div className='inline-block w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4' />
-            <p className='text-gray-600'>Loading...</p>
-        </div>
-    </div>
-);
-
 export default function DefaultScreen({
     children,
     headerClassName = '',
@@ -39,9 +31,9 @@ export default function DefaultScreen({
 }: DefaultScreenProps) {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [showDrawerContent, setShowDrawerContent] = useState(false);
-    const [isContentLoaded, setIsContentLoaded] = useState(false);
     const pathname = usePathname();
     const horizontalLayout = useHorizontalLayout();
+    const isContentLoaded = useContentLoaded();
 
     // Handle drawer animation: expand height first, then fade in content
     useEffect(() => {
@@ -56,14 +48,6 @@ export default function DefaultScreen({
             setShowDrawerContent(false);
         }
     }, [isDrawerOpen]);
-
-    // Mark content as loaded after initial render
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setIsContentLoaded(true);
-        }, 100);
-        return () => clearTimeout(timer);
-    }, []);
 
     // Close drawer when pathname changes (after navigation)
     useEffect(() => {

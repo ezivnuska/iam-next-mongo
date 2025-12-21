@@ -43,7 +43,7 @@ export default function ImagesClient({ userId }: ImagesClientProps) {
     };
 
     return (
-        <>
+        <div className='flex flex-col w-full gap-4'>
             {!userId && (
                 <Button
                     onClick={() => setModalOpen(true)}
@@ -72,6 +72,6 @@ export default function ImagesClient({ userId }: ImagesClientProps) {
                     onClose={() => setModalOpen(false)}
                 />
             </Modal>
-        </>
+        </div>
     );
 }

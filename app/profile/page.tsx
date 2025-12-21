@@ -20,14 +20,18 @@ export default async function ProfilePage() {
 
     return (
         <PageContent>
-            <UserProfileCard />
-            <Breadcrumbs
-                breadcrumbs={[
-                    { label: 'Profile', href: '/profile', active: true },
-                    { label: 'Images', href: '/profile/images' },
-                ]}
-            />
-            <UserContentFeed initialContent={content} editable />
+            <div>
+                <UserProfileCard />
+                <Breadcrumbs
+                    breadcrumbs={[
+                        { label: 'Profile', href: '/profile', active: true },
+                        { label: 'Images', href: '/profile/images' },
+                    ]}
+                />
+            </div>
+            <div className='flex flex-1'>
+                <UserContentFeed initialContent={content} editable />
+            </div>
         </PageContent>
     );
 }

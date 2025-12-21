@@ -90,10 +90,10 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
         : content.filter(item => selectedFilters.has(item.contentType));
 
     return (
-        <div className='max-w-[600px]'>
+        <div className='w-full max-w-[600px] pb-4'>
             {/* Add Buttons - only show when editable */}
             {editable && (
-                <div className='flex justify-between gap-2 mb-4 px-2'>
+                <div className='flex justify-between gap-2 mb-4'>
                     <Button
                         size='sm'
                         onClick={() => setModalType('memory')}
@@ -106,12 +106,12 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                     >
                         + Post
                     </Button>
-                    <Button
+                    {/* <Button
                         size='sm'   
                         onClick={() => setModalType('image')}
                     >
                         + Image
-                    </Button>
+                    </Button> */}
                 </div>
             )}
 
@@ -122,9 +122,9 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
             />
 
             {/* Content List */}
-            <div className='max-w-[600px] mt-4 space-y-4'>
+            <div className='w-full max-w-[600px] mt-4 space-y-4 text-white'>
                 {filteredContent.length === 0 ? (
-                    <p className='text-center text-gray-500'>No content to display</p>
+                    <p className='text-gray-500'>No content to display</p>
                 ) : (
                     filteredContent.map((item) => (
                         isCurrentUserAuthor(item) ? (
@@ -189,7 +189,7 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
             )}
 
             {/* Image Upload Modal */}
-            {modalType === 'image' && (
+            {/* {modalType === 'image' && (
                 <Modal isOpen={true} onClose={handleCloseModal}>
                     <div className='flex flex-row items-center justify-between mb-4'>
                         <h1 className='text-2xl font-semibold'>
@@ -208,7 +208,7 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                         onClose={handleCloseModal}
                     />
                 </Modal>
-            )}
+            )} */}
         </div>
     );
 }

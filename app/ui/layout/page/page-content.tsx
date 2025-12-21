@@ -1,41 +1,25 @@
 // app/ui/layout/page/page-content.tsx
 
-'use client';
-
-import { useState, Suspense, useEffect } from 'react';
-import LoadingSpinner from '@/app/ui/loading-spinner';
 import { FlexContainer } from '@/app/ui/flex-container';
+import clsx from 'clsx';
 
 interface PageContentProps {
     children: React.ReactNode;
-    showLoading?: boolean;
+    fullscreen?: boolean;
 }
 
-export default function PageContent({
-    children,
-    showLoading = true,
-}: PageContentProps) {
-    const [isContentLoaded, setIsContentLoaded] = useState(false);
-
-    // Mark content as loaded after initial render
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setIsContentLoaded(true);
-        }, 100);
-        return () => clearTimeout(timer);
-    }, []);
-
+export default function PageContent({ children, fullscreen = false }: PageContentProps) {
     return (
-        <div className='flex flex-1 flex-col'>
-            {showLoading && !isContentLoaded ? (
-                <LoadingSpinner />
-            ) : (
-                <Suspense fallback={<LoadingSpinner />}>
-                    <FlexContainer className='w-full max-w-[600px] mx-auto mb-4 py-4 px-2 gap-4'>
+        <div className='flex flex-1 flex-col px-2'>
+            <FlexContainer className='w-full max-w-[600px] mx-auto'>
+                {/* <div className={clsx('flex flex-1 w-full border border-white', {
+                    'px-2': !fullscreen,
+                })}> */}
+                    {/* <div className='flex flex-1 w-full border-10 border-dotted border-yellow-500'> */}
                         {children}
-                    </FlexContainer>
-                </Suspense>
-            )}
+                    {/* </div> */}
+                {/* </div> */}
+            </FlexContainer>
         </div>
     );
 }

@@ -50,12 +50,12 @@ export default function UserProfileCard({ username }: UserProfileCardProps) {
     if (!displayUser) return <p>User not found</p>;
 
     return (
-        <div className='flex flex-1 flex-row flex-wrap gap-4'>
-            <div className='w-24 h-24'>
+        <div className='flex flex-1 flex-row flex-wrap gap-4 pt-4'>
+            <div className='w-[72px] h-[72px]'>
                 <UserAvatar
                     username={displayUser.username}
                     avatar={displayUser.avatar}
-                    size={100}
+                    size={72}
                 />
             </div>
             <div className='flex flex-1 flex-col gap-2'>
@@ -63,8 +63,8 @@ export default function UserProfileCard({ username }: UserProfileCardProps) {
                     {displayUser.username}
                 </h1>
 
-                <div className='flex flex-1 flex-row items-start gap-4'>
-                    <p className='flex flex-1 text-gray-700'>
+                <div className='flex flex-1 flex-row items-start gap-4 pr-1'>
+                    <p className='flex flex-1 text-gray-200'>
                         {displayUser.bio || ''}
                     </p>
                     {isCurrentUser && <BioForm />}

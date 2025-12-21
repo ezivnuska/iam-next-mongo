@@ -1,11 +1,11 @@
 // app/ui/content-item-card.tsx
 
-"use client";
+'use client';
 
-import type { ContentItem } from "@/app/lib/definitions/content";
-import ContentCardWrapper from "@/app/ui/content-card-wrapper";
-import ContentInteractions from "@/app/ui/content-interactions";
-import { getBestVariant, IMAGE_SIZES } from "@/app/lib/utils/images";
+import type { ContentItem } from '@/app/lib/definitions/content';
+import ContentCardWrapper from '@/app/ui/content-card-wrapper';
+import ContentInteractions from '@/app/ui/content-interactions';
+import { getBestVariant, IMAGE_SIZES } from '@/app/lib/utils/images';
 
 type ContentItemCardProps = {
   item: ContentItem;
@@ -27,23 +27,23 @@ export default function ContentItemCard({ item }: ContentItemCardProps) {
         avatar={memory.author.avatar}
         createdAt={memory.createdAt}
       >
-        <div className="flex flex-col gap-2 my-2">
-            <div className="flex flex-col gap-2">
-                <p className="text-lg font-medium text-gray-700">{memory.title || "Untitled"}</p>
-                <p className="text-sm text-gray-500">{memoryDate}</p>
+        <div className='flex flex-col gap-2 my-2'>
+            <div className='flex flex-col gap-2'>
+                <p className='text-lg font-medium text-gray-700'>{memory.title || 'Untitled'}</p>
+                <p className='text-sm text-gray-500'>{memoryDate}</p>
             </div>
             {imageVariant && (
                 <img
                     src={imageVariant.url}
-                    alt="Memory image"
-                    className="max-w-full max-h-96 rounded object-cover"
+                    alt='Memory image'
+                    className='max-w-full max-h-96 rounded object-cover'
                 />
             )}
-            <p className="whitespace-pre-wrap">{memory.content}</p>
+            <p className='whitespace-pre-wrap'>{memory.content}</p>
         </div>
         <ContentInteractions
           itemId={memory.id}
-          itemType="Memory"
+          itemType='Memory'
           initialLiked={memory.likedByCurrentUser}
           initialLikeCount={memory.likes?.length || 0}
           initialCommentCount={memory.commentCount || 0}
@@ -66,20 +66,20 @@ export default function ContentItemCard({ item }: ContentItemCardProps) {
             {imageVariant && (
                 <img
                     src={imageVariant.url}
-                    alt="Post image"
-                    className="max-w-full max-h-96 rounded my-2 object-cover"
+                    alt='Post image'
+                    className='max-w-full max-h-96 rounded my-2 object-cover'
                 />
             )}
             <p>{post.content}</p>
             {post.linkUrl && (
-                <a href={post.linkUrl} target="_blank" className="text-blue-500 underline mt-2 block">
+                <a href={post.linkUrl} target='_blank' className='text-blue-500 underline mt-2 block'>
                     [source]
                 </a>
             )}
         </div>
         <ContentInteractions
           itemId={post.id}
-          itemType="Post"
+          itemType='Post'
           initialLiked={post.likedByCurrentUser}
           initialLikeCount={post.likes?.length || 0}
           initialCommentCount={post.commentCount || 0}
@@ -101,13 +101,13 @@ export default function ContentItemCard({ item }: ContentItemCardProps) {
         {imageVariant && (
           <img
             src={imageVariant.url}
-            alt={image.alt || "Image"}
-            className="max-w-full max-h-96 rounded my-2 object-cover"
+            alt={image.alt || 'Image'}
+            className='max-w-full max-h-96 rounded my-2 object-cover'
           />
         )}
         <ContentInteractions
           itemId={image.id}
-          itemType="Image"
+          itemType='Image'
           initialLiked={image.likedByCurrentUser}
           initialLikeCount={image.likes?.length || 0}
           initialCommentCount={image.commentCount || 0}

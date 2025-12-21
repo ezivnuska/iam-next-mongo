@@ -1,6 +1,6 @@
 // app/ui/content-filter-tabs.tsx
 
-"use client";
+'use client';
 
 interface ContentFilterTabsProps {
   selectedFilters: Set<string>;
@@ -10,7 +10,7 @@ interface ContentFilterTabsProps {
 const filterOptions = [
   { value: 'memory', label: 'Memories' },
   { value: 'post', label: 'Posts' },
-  { value: 'image', label: 'Images' },
+//   { value: 'image', label: 'Images' },
 ];
 
 export default function ContentFilterTabs({ selectedFilters, onFilterChange }: ContentFilterTabsProps) {
@@ -27,19 +27,19 @@ export default function ContentFilterTabs({ selectedFilters, onFilterChange }: C
   };
 
   return (
-    <div className="flex justify-between gap-4 flex-wrap px-2">
+    <div className='flex justify-between gap-4 flex-wrap px-2'>
       {filterOptions.map((option) => (
         <label
           key={option.value}
-          className="flex items-center gap-2 cursor-pointer select-none"
+          className='flex items-center gap-2 cursor-pointer select-none'
         >
           <input
-            type="checkbox"
+            type='checkbox'
             checked={selectedFilters.has(option.value)}
             onChange={() => handleCheckboxChange(option.value)}
-            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+            className='w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2'
           />
-          <span className="text-sm font-medium text-gray-700">
+          <span className='text-sm font-medium text-blue-300'>
             {option.label}
           </span>
         </label>

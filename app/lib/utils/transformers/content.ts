@@ -126,21 +126,29 @@ export function sortContentByDate<T extends { createdAt?: string }>(content: T[]
 export async function getCommentCountsForContent(
   memories: any[],
   posts: any[],
-  images: any[]
+//   images: any[]
 ): Promise<{
   memoryCommentCounts: Record<string, number>;
   postCommentCounts: Record<string, number>;
-  imageCommentCounts: Record<string, number>;
+//   imageCommentCounts: Record<string, number>;
 }> {
-  const imageIds = images.map((img: any) => img._id.toString());
+//   const imageIds = images.map((img: any) => img._id.toString());
   const postIds = posts.map((p: any) => p._id.toString());
   const memoryIds = memories.map((m: any) => m._id.toString());
 
-  const [imageCommentCounts, postCommentCounts, memoryCommentCounts] = await Promise.all([
-    getCommentCounts(imageIds, 'Image'),
+  const [
+    // imageCommentCounts,
+    memoryCommentCounts,
+    postCommentCounts,
+  ] = await Promise.all([
+    // getCommentCounts(imageIds, 'Image'),
     getCommentCounts(postIds, 'Post'),
     getCommentCounts(memoryIds, 'Memory')
   ]);
 
-  return { memoryCommentCounts, postCommentCounts, imageCommentCounts };
+  return {
+    memoryCommentCounts,
+    postCommentCounts,
+    // imageCommentCounts,
+  };
 }
