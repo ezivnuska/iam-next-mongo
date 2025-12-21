@@ -25,10 +25,10 @@ export default function UserButton() {
         : pathname === '/profile'
             ? <SignOutButton />
             : (
-                <Link href='/profile' className={clsx('w-[40px] h-[40px]', {
+                <Link href='/profile' className={clsx('w-[50px] h-[50px]', {
                     'w-[72px] h-[72px]': horizontalLayout,
                 })}>
-                    <UserAvatar username={user.username} size={horizontalLayout ? 72 : 40} />
+                    <UserAvatar username={user.username} size={horizontalLayout ? 72 : 50} />
                 </Link>
             );
 };
