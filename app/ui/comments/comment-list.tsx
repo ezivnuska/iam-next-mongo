@@ -42,7 +42,7 @@ export default function CommentList({ comments, currentUserId, currentUserRole, 
 								<span className='font-semibold text-sm'>{comment.author.username}</span>
 								<span className='text-xs text-gray-500'>{formatRelativeTime(comment.createdAt)}</span>
 							</div>
-							<p className='text-sm text-gray-800 whitespace-pre-wrap break-words'>
+							<p className='text-sm text-gray-800 whitespace-pre-wrap wrap-break-word'>
 								{comment.content}
 							</p>
 						</div>

@@ -104,13 +104,19 @@ export default function UnifiedUserHeader({
     card: 'flex items-center gap-3',
   };
 
-  const avatarContainerClasses = showOnlineStatus ? 'relative' : 'shrink-0';
-
   const textContainerClasses = {
     compact: 'flex flex-1 flex-col min-w-0',
     default: 'flex-1 min-w-0',
     card: 'flex flex-col',
   };
+
+  const getCompactTextColor = (isDark: boolean) => ({
+    color: isDark ? '#ffffff' : '#111827'
+  });
+
+  const getCompactSecondaryColor = (isDark: boolean) => ({
+    color: isDark ? '#9ca3af' : '#6b7280'
+  });
 
   const renderAvatar = () => {
     const avatarProps = typeof avatar === 'string'
@@ -118,7 +124,7 @@ export default function UnifiedUserHeader({
       : { username: user.username, avatar: avatar, size: avatarSize };
 
     return (
-      <div className={avatarContainerClasses}>
+      <div className={showOnlineStatus ? 'relative' : 'shrink-0'}>
         <div style={{ width: `${avatarSize}px`, height: `${avatarSize}px` }}>
           <UserAvatar {...avatarProps} />
         </div>
@@ -132,29 +138,24 @@ export default function UnifiedUserHeader({
   };
 
   const renderActions = () => {
-    const hasBuiltInActions = onFlag || (canDelete && onDelete);
-
-    if (!actions && !hasBuiltInActions) {
-      return null;
+    if (actions) {
+      return <div className='flex gap-2 shrink-0'>{actions}</div>;
     }
 
-    if (variant === 'default' && (canDelete && onDelete)) {
-      return (
-        <DeleteButtonWithConfirm onDelete={onDelete} />
-      );
+    if (variant === 'default' && canDelete && onDelete) {
+      return <DeleteButtonWithConfirm onDelete={onDelete} />;
     }
 
-    if (variant === 'compact' && hasBuiltInActions) {
+    if (variant === 'compact') {
+      const hasActions = onFlag || (canDelete && onDelete);
+      if (!hasActions) return null;
+
       return (
         <div className='flex flex-row items-center gap-2 shrink-0'>
           {onFlag && <FlagContentButton onFlag={onFlag} />}
           {canDelete && onDelete && <DeleteButtonWithConfirm onDelete={onDelete} />}
         </div>
       );
-    }
-
-    if (actions) {
-      return <div className='flex gap-2 shrink-0'>{actions}</div>;
     }
 
     return null;
@@ -167,19 +168,15 @@ export default function UnifiedUserHeader({
       <div className={textContainerClasses[variant]}>
         {variant === 'default' ? (
           <div className='flex flex-row items-center justify-between mb-2'>
-            <div className='flex flex-col'>
+            <div className='flex flex-col flex-1'>
               <p
                 className={usernameClasses}
                 onClick={handleUsernameClick}
-                style={variant === 'compact' && isDark ? { color: '#ffffff' } : variant === 'compact' ? { color: '#111827' } : undefined}
               >
                 {user.username}
               </p>
               {secondaryText && (
-                <span
-                  className={secondaryClasses}
-                  style={variant === 'compact' && isDark ? { color: '#9ca3af' } : variant === 'compact' ? { color: '#6b7280' } : undefined}
-                >
+                <span className={secondaryClasses}>
                   {secondaryText}
                 </span>
               )}
@@ -191,14 +188,14 @@ export default function UnifiedUserHeader({
             <p
               className={usernameClasses}
               onClick={handleUsernameClick}
-              style={variant === 'compact' && isDark ? { color: '#ffffff' } : variant === 'compact' ? { color: '#111827' } : undefined}
+              style={variant === 'compact' ? getCompactTextColor(isDark) : undefined}
             >
               {user.username}
             </p>
             {secondaryText && (
               <span
                 className={secondaryClasses}
-                style={variant === 'compact' && isDark ? { color: '#9ca3af' } : variant === 'compact' ? { color: '#6b7280' } : undefined}
+                style={variant === 'compact' ? getCompactSecondaryColor(isDark) : undefined}
               >
                 {secondaryText}
               </span>

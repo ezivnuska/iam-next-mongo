@@ -5,6 +5,7 @@
 import ContentCardHeader from './content-card-header';
 import ContentInteractions from './content-interactions';
 import type { Image as ImageType } from '@/app/lib/definitions/image';
+import UnifiedUserHeader from './user/unified-user-header';
 
 interface ContentCardProps {
     author: { id: string; username: string };
@@ -37,13 +38,15 @@ export default function ContentCard({
 }: ContentCardProps) {
     return (
         <div className='flex flex-col'>
-            <ContentCardHeader
-                author={author}
-                avatar={avatar}
-                createdAt={createdAt}
-                onFlag={actions?.onFlag}
-                onDelete={actions?.onDelete}
-                canDelete={actions?.canDelete}
+            <UnifiedUserHeader
+              user={author}
+              avatar={avatar}
+              onFlag={actions?.onFlag}
+              onDelete={actions?.onDelete}
+              canDelete={actions?.canDelete}
+              avatarSize={40}
+              variant='compact'
+              clickable
             />
 
             {/* Content */}
