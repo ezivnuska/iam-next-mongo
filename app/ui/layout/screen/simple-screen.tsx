@@ -51,7 +51,7 @@ export default function SimpleScreen({
 
                 {/* Main Content Container */}
                 <main className={clsx('flex flex-col flex-1 w-full min-h-0 min-w-0 overflow-auto', {
-                    'py-6': horizontalLayout,
+                    'py-5': horizontalLayout,
                 })}>
                     {showLoading && !isContentLoaded
                         ? <LoadingSpinner />
