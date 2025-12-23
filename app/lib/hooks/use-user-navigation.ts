@@ -13,7 +13,7 @@ export function useUserNavigation() {
     if (user?.username === username) {
       router.push('/profile');
     } else {
-      router.push(`/social/users/${username}`);
+      router.push(`/us/users/${username}`);
     }
   };
 

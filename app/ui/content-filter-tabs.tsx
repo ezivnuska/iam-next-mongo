@@ -10,7 +10,6 @@ interface ContentFilterTabsProps {
 const filterOptions = [
   { value: 'memory', label: 'Memories' },
   { value: 'post', label: 'Posts' },
-//   { value: 'image', label: 'Images' },
 ];
 
 export default function ContentFilterTabs({ selectedFilters, onFilterChange }: ContentFilterTabsProps) {

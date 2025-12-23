@@ -1,7 +1,10 @@
 // app/ui/button.tsx
 
+'use client';
+
 import clsx from 'clsx';
-import { twMerge } from 'tailwind-merge'
+import { twMerge } from 'tailwind-merge';
+import { useTheme } from '@/app/lib/hooks/use-theme';
 
 type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
 type ButtonVariant = 'default' | 'outline' | 'ghost' | 'secondary' | 'active' | 'warn' | 'confirm' | 'link';
@@ -21,6 +24,9 @@ export function Button({
     disabled,
     ...rest
 }: ButtonProps) {
+    const { resolvedTheme } = useTheme();
+    const isDark = resolvedTheme === 'dark';
+
     const sizeClasses = {
         xs: 'h-8 px-2 text-xs',
         sm: 'h-8 px-2 text-md',
@@ -30,12 +36,20 @@ export function Button({
 
     const variantClasses = {
         default: 'bg-blue-500 text-white enabled:hover:bg-blue-400 active:bg-blue-600',
-        secondary: 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600 active:bg-gray-400 dark:active:bg-gray-800',
-        outline: 'border border-blue-500 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20',
-        ghost: 'bg-transparent text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20',
+        secondary: isDark
+            ? 'bg-gray-700 text-white hover:bg-gray-600 active:bg-gray-800'
+            : 'bg-gray-200 text-gray-900 hover:bg-gray-300 active:bg-gray-400',
+        outline: isDark
+            ? 'border border-blue-500 text-blue-500 hover:bg-blue-900/20'
+            : 'border border-blue-500 text-blue-500 hover:bg-blue-50',
+        ghost: isDark
+            ? 'bg-transparent text-blue-500 hover:bg-blue-900/20'
+            : 'bg-transparent text-blue-500 hover:bg-blue-50',
         link: 'bg-transparent text-blue-500 hover:underline px-0',
         active: 'bg-blue-500 text-white hover:bg-blue-600',
-        warn: 'hover:bg-red-500 hover:text-white bg-red-200 dark:bg-red-900/30 text-red-500',
+        warn: isDark
+            ? 'hover:bg-red-500 hover:text-white bg-red-900/30 text-red-500'
+            : 'hover:bg-red-500 hover:text-white bg-red-200 text-red-500',
         confirm: 'text-red-500 hover:bg-red-500 hover:text-white',
     };
 

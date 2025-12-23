@@ -40,13 +40,6 @@ interface NavLinkListSlidingProps {
 
 // Default links
 const defaultLinks: NavLink[] = [
-    // {
-    //     href: '/work',
-    //     title: 'Work',
-    //     subtitle: 'My Experience',
-    //     icon: <AcademicCapIcon className='w-10 h-10' />,
-    //     requiresAuth: false,
-    // },
     {
         href: '/eric',
         title: 'Eric',

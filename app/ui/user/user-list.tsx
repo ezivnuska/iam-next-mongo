@@ -50,7 +50,7 @@ export default function UserList({ users }: UserListProps) {
                                 </div>
                             </div>
                             <div className='flex flex-col flex-1'>
-								<p className='font-semibold'>{user.username}</p>
+								<p className='font-semibold dark:text-white'>{user.username}</p>
 								{user.bio && (
 									<p className='text-sm text-gray-500 dark:text-gray-400 truncate'>{user.bio}</p>
 								)}

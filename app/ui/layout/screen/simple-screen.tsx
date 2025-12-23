@@ -2,25 +2,18 @@
 
 'use client';
 
-import { useState, Suspense, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { Suspense } from 'react';
 import { useHorizontalLayout } from '@/app/lib/hooks/use-horizontal-layout';
 import { useContentLoaded } from '@/app/hooks/useContentLoaded';
 import { clsx } from 'clsx';
 import Brand from '@/app/ui/header/brand';
 import UserButton from '@/app/ui/header/user-button';
 import ThemeToggle from '@/app/ui/theme/theme-toggle';
-import ThemeDebug from '@/app/ui/theme/theme-debug';
 import LoadingSpinner from '@/app/ui/loading-spinner';
 import AuthRedirectHandler from '@/app/ui/auth/auth-redirect-handler';
-import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
-import SimpleBrand from '../../simple-brand';
 
 interface SimpleScreenProps {
     children: React.ReactNode;
-    headerClassName?: string;
-    drawerClassName?: string;
-    fullscreen?: boolean;
     showLoading?: boolean;
 }
 
@@ -28,7 +21,6 @@ export default function SimpleScreen({
     children,
     showLoading = true,
 }: SimpleScreenProps) {
-    const pathname = usePathname();
     const horizontalLayout = useHorizontalLayout();
     const isContentLoaded = useContentLoaded();
 
@@ -67,7 +59,6 @@ export default function SimpleScreen({
                     }
                 </main>
             </div>
-            <ThemeDebug />
         </div>
     );
 }

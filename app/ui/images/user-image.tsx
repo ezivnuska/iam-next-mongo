@@ -11,6 +11,8 @@ import DeleteButtonWithConfirm from "../delete-button-with-confirm";
 import ContentInteractions from "../content-interactions";
 import { getBestVariant, IMAGE_SIZES } from "@/app/lib/utils/images";
 import { useUserNavigation } from "@/app/lib/hooks/use-user-navigation";
+import { useContentPermissions } from "@/app/lib/hooks/use-content-permissions";
+import { useContentDelete } from "@/app/lib/hooks/use-content-delete";
 
 interface UserImageProps {
     image: Image;
@@ -20,16 +22,9 @@ interface UserImageProps {
 export default function UserImage({ image, onDeleted }: UserImageProps) {
     const { user } = useUser();
     const { navigateToUser } = useUserNavigation();
+    const { canDelete } = useContentPermissions(image.userId || '');
+    const handleDelete = useContentDelete('images', onDeleted);
     const bestVariant = getBestVariant(image, IMAGE_SIZES.CONTENT);
-    const isAuthor = user?.id === image.userId;
-    const isAdmin = user?.role === "admin";
-    const canDelete = isAuthor || isAdmin;
-
-    const handleDelete = async () => {
-        const res = await fetch(`/api/images/${image.id}`, { method: "DELETE" });
-        if (!res.ok) throw new Error("Failed to delete image");
-        onDeleted(image.id);
-    };
 
     if (!user) return null;
 
@@ -57,7 +52,7 @@ export default function UserImage({ image, onDeleted }: UserImageProps) {
                             {image.createdAt ? formatRelativeTime(image.createdAt) : ''}
                         </span>
                     </div>
-                    {canDelete && <DeleteButtonWithConfirm onDelete={handleDelete} />}
+                    {canDelete && <DeleteButtonWithConfirm onDelete={() => handleDelete(image.id)} />}
                 </div>
                 <div className="flex flex-row items-stretch pt-1">
                     <div className='flex flex-1 flex-col'>

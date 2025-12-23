@@ -108,12 +108,6 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                     >
                         + Post
                     </Button>
-                    {/* <Button
-                        size='sm'   
-                        onClick={() => setModalType('image')}
-                    >
-                        + Image
-                    </Button> */}
                 </div>
             )}
 
@@ -189,28 +183,6 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                     />
                 </Modal>
             )}
-
-            {/* Image Upload Modal */}
-            {/* {modalType === 'image' && (
-                <Modal isOpen={true} onClose={handleCloseModal}>
-                    <div className='flex flex-row items-center justify-between mb-4'>
-                        <h1 className='text-2xl font-semibold'>
-                            Upload Image
-                        </h1>
-                        <button
-                            className='text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer'
-                            onClick={handleCloseModal}
-                            aria-label='Close'
-                        >
-                            ✕
-                        </button>
-                    </div>
-                    <UploadForm
-                        onUploadSuccess={handleImageSuccess}
-                        onClose={handleCloseModal}
-                    />
-                </Modal>
-            )} */}
         </div>
     );
 }
