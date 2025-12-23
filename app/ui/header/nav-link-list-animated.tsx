@@ -56,20 +56,20 @@ const defaultLinks: NavLink[] = [
         }],
     },
     {
-        href: '/social',
+        href: '/us',
         title: 'Us',
         subtitle: 'User Posts',
         icon: <UserGroupIcon className='w-10 h-10' />,
         requiresAuth: true,
         subLinks: [{
-            href: '/social/feed',
+            href: '/us/feed',
             title: 'Feed',
             subtitle: 'Public Posts',
             icon: <NewspaperIcon className='w-10 h-10' />,
             requiresAuth: true,
         },
         {
-            href: '/social/users',
+            href: '/us/users',
             title: 'Users',
             subtitle: 'All Users',
             icon: <UsersIcon className='w-10 h-10' />,

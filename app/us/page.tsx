@@ -1,4 +1,4 @@
-// app/social/page.tsx
+// app/us/page.tsx
 
 import PageHeader from '@/app/ui/layout/page-header';
 import Link from 'next/link';
@@ -10,7 +10,7 @@ import { Metadata } from 'next';
 import PageContent from '@/app/ui/layout/page/page-content';
 
 export const metadata: Metadata = {
-    title: 'Social',
+    title: 'Us',
     description: 'User Activity',
 };
 
@@ -18,22 +18,22 @@ const links = [
     {
         title: 'Feed',
         description: 'Public Posts',
-        href: '/social/feed',
+        href: '/us/feed',
         icon: NewspaperIcon,
     },
     {
         title: 'Users',
         description: 'All Users',
-        href: '/social/users',
+        href: '/us/users',
         icon: UsersIcon,
     },
 ];
 
-export default function SocialPage() {
+export default function UsPage() {
     return (
         <PageContent>
             <PageHeader
-                title='Social'
+                title='Us'
                 subtitle='User Activity'
             />
 

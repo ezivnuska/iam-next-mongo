@@ -2,12 +2,7 @@
 
 'use client';
 
-import { formatRelativeTime } from '@/app/lib/utils/format-date';
-import { useUser } from '@/app/lib/providers/user-provider';
-import FlagContentButton from './flag-content-button';
-import UserAvatar from './user/user-avatar';
-import { useRouter } from 'next/navigation';
-import DeleteButtonWithConfirm from './delete-button-with-confirm';
+import ContentCardHeader from './content-card-header';
 import ContentInteractions from './content-interactions';
 import type { Image as ImageType } from '@/app/lib/definitions/image';
 
@@ -20,7 +15,6 @@ interface ContentCardProps {
     actions?: {
         onDelete?: () => Promise<void>;
         onFlag?: () => void;
-        canEdit?: boolean;
         canDelete?: boolean;
     };
     interactions?: {
@@ -41,63 +35,31 @@ export default function ContentCard({
     interactions,
     children,
 }: ContentCardProps) {
-    const { user } = useUser();
-    const router = useRouter();
-
-    const handleUsernameClick = () => {
-        if (user?.username === author.username) {
-            router.push('/profile');
-        } else {
-            router.push(`/social/users/${author.username}`);
-        }
-    };
-
     return (
-        <div className='flex flex-row items-stretch gap-2'>
-            <div className='flex flex-1 flex-col'>
-                {/* Header */}
-                <div className='flex flex-row items-center gap-4'>
-                    <div className='flex w-[50px] h-[50px]'>
-                        <UserAvatar
-                            username={author.username}
-                            avatar={avatar}
-                            size={50}
-                        />
-                    </div>
-                    <div className='flex flex-1 flex-col'>
-                        <p
-                            className='text-md font-semibold cursor-pointer hover:underline'
-                            onClick={handleUsernameClick}
-                        >
-                            {author.username}
-                        </p>
-                        <span className='text-sm text-gray-500 dark:text-gray-400'>{formatRelativeTime(createdAt)}</span>
-                    </div>
-                    {actions && (
-                        <div className='flex flex-row items-center gap-2'>
-                            {actions.onFlag && <FlagContentButton onFlag={actions.onFlag} />}
-                            {actions.canDelete && actions.onDelete && (
-                                <DeleteButtonWithConfirm onDelete={actions.onDelete} />
-                            )}
-                        </div>
-                    )}
-                </div>
+        <div className='flex flex-col'>
+            <ContentCardHeader
+                author={author}
+                avatar={avatar}
+                createdAt={createdAt}
+                onFlag={actions?.onFlag}
+                onDelete={actions?.onDelete}
+                canDelete={actions?.canDelete}
+            />
 
-                {/* Content */}
-                <div className='flex flex-col pt-2'>
-                    {children}
+            {/* Content */}
+            <div className='flex flex-col flex-1 pt-2'>
+                {children}
 
-                    {/* Footer Interactions */}
-                    {interactions && itemId && itemType && (
-                        <ContentInteractions
-                            itemId={itemId}
-                            itemType={itemType}
-                            initialLiked={interactions.initialLiked}
-                            initialLikeCount={interactions.initialLikeCount || 0}
-                            initialCommentCount={interactions.initialCommentCount || 0}
-                        />
-                    )}
-                </div>
+                {/* Footer Interactions */}
+                {interactions && itemId && itemType && (
+                    <ContentInteractions
+                        itemId={itemId}
+                        itemType={itemType}
+                        initialLiked={interactions.initialLiked}
+                        initialLikeCount={interactions.initialLikeCount || 0}
+                        initialCommentCount={interactions.initialCommentCount || 0}
+                    />
+                )}
             </div>
         </div>
     );

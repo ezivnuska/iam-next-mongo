@@ -1,4 +1,4 @@
-// app/users/[username]/images/page.tsx
+// app/us/users/[username]/images/page.tsx
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +19,7 @@ export default async function Page({ params }: Props) {
     const { username } = await params;
 
     if (!session) {
-        redirect(`/?auth=required&callbackUrl=/social/users/${username}/images`);
+        redirect(`/?auth=required&callbackUrl=/us/users/${username}/images`);
     }
 
     const user = await fetchUserByUsername(username);
@@ -30,9 +30,9 @@ export default async function Page({ params }: Props) {
         <PageContent>
             <Breadcrumbs
                 breadcrumbs={[
-                    { label: 'Users', href: `/social/users` },
-                    { label: username, href: `/social/users/${username}` },
-                    { label: 'Images', href: `/social/users/${username}/images`, active: true },
+                    { label: 'Users', href: `/us/users` },
+                    { label: username, href: `/us/users/${username}` },
+                    { label: 'Images', href: `/us/users/${username}/images`, active: true },
                 ]}
             />
             <ImagesClient userId={id} />

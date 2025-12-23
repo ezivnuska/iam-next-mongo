@@ -33,7 +33,6 @@ export default function UserPost({ post, onDeleted, onEdit, onFlag }: UserPostPr
             actions={{
                 onDelete: () => handleDelete(post.id),
                 onFlag: () => onFlag(post),
-                canEdit,
                 canDelete,
             }}
             interactions={{

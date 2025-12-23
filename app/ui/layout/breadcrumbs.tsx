@@ -5,6 +5,7 @@ import { clsx } from 'clsx';
 import Link from 'next/link';
 import { ubuntu } from '@/app/ui/fonts';
 import { useHorizontalLayout } from '@/app/lib/hooks/use-horizontal-layout';
+import { useTheme } from '@/app/lib/hooks/use-theme';
 
 interface Breadcrumb {
   label: string;
@@ -17,9 +18,12 @@ export default function Breadcrumbs({
 }: {
   breadcrumbs: Breadcrumb[];
 }) {
-    const horizontalLayout = useHorizontalLayout();
+  const horizontalLayout = useHorizontalLayout();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+
   return (
-    <nav aria-label='Breadcrumb' className={clsx('block text-white', {
+    <nav aria-label='Breadcrumb' className={clsx('block', {
         // 'py-4': horizontalLayout,
     })}>
       <ol className={clsx(ubuntu.className, 'flex text-xl md:text-xl')}>
@@ -27,13 +31,15 @@ export default function Breadcrumbs({
           <li
             key={breadcrumb.href}
             aria-current={breadcrumb.active}
-            className={clsx(
-              breadcrumb.active ? 'text-white' : 'text-blue-300',
-            )}
+            style={{
+              color: breadcrumb.active
+                ? (isDark ? '#ffffff' : '#000000')
+                : (isDark ? '#93c5fd' : '#2563eb')
+            }}
           >
             <Link href={breadcrumb.href} className='leading-none'>{breadcrumb.label}</Link>
             {index < breadcrumbs.length - 1 ? (
-              <span className='mx-3 inline-block text-gray-500'>/</span>
+              <span className='mx-3 inline-block' style={{ color: isDark ? '#6b7280' : '#9ca3af' }}>/</span>
             ) : null}
           </li>
         ))}

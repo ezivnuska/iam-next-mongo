@@ -1,4 +1,4 @@
-// app/users/[username]/page.tsx
+// app/us/users/[username]/page.tsx
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +18,7 @@ export default async function UserProfilePage({ params }: Props) {
     const { username } = await params;
     const session = await auth();
     if (!session) {
-        redirect(`/?auth=required&callbackUrl=/social/users/${username}`);
+        redirect(`/?auth=required&callbackUrl=/us/users/${username}`);
     }
 
     const content = await getUserContent(username);
@@ -27,9 +27,9 @@ export default async function UserProfilePage({ params }: Props) {
         <PageContent>
             <Breadcrumbs
                 breadcrumbs={[
-                    { label: 'Users', href: '/social/users' },
-                    { label: username, href: `/social/users/${username}`, active: true },
-                    { label: 'Images', href: `/social/users/${username}/images` },
+                    { label: 'Users', href: '/us/users' },
+                    { label: username, href: `/us/users/${username}`, active: true },
+                    { label: 'Images', href: `/us/users/${username}/images` },
                 ]}
             />
             <UserProfileCard username={username} />

@@ -26,7 +26,7 @@ export async function middleware(req: NextRequest) {
   const isAuthenticated = !!token;
 
   // Define protected routes
-  const protectedRoutes = ['/profile', '/activity', '/social'];
+  const protectedRoutes = ['/profile', '/activity', '/us'];
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
 
   // Redirect unauthenticated users from protected routes
@@ -47,6 +47,6 @@ export const config = {
   matcher: [
     '/profile/:path*',
     '/activity/:path*',
-    '/social/:path*',
+    '/us/:path*',
   ],
 };

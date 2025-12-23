@@ -39,7 +39,6 @@ export default function UserMemory({ memory, onDeleted, onEdit, onFlag }: UserMe
       actions={{
         onDelete: () => handleDelete(memory.id),
         onFlag: () => onFlag(memory),
-        canEdit,
         canDelete,
       }}
       interactions={{

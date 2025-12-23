@@ -1,4 +1,4 @@
-// app/social/feed/page.tsx
+// app/us/feed/page.tsx
 
 export const dynamic = 'force-dynamic';
 

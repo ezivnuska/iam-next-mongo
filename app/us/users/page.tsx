@@ -1,4 +1,4 @@
-// app/users/page.tsx
+// app/us/users/page.tsx
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +13,7 @@ export default async function Page() {
     // Server-side authentication check
     const session = await auth();
     if (!session) {
-        redirect('/?auth=required&callbackUrl=/social/users');
+        redirect('/?auth=required&callbackUrl=/us/users');
     }
 
     const users = await getUsers();

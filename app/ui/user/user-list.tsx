@@ -34,7 +34,7 @@ export default function UserList({ users }: UserListProps) {
 						className='flex items-center justify-between p-3 bg-white dark:bg-gray-800 hover:bg-amber-100 dark:hover:bg-gray-700 rounded-lg shadow hover:shadow-md transition-shadow'
 					>
                         <Link
-                            href={`/social/users/${user.username}`}
+                            href={`/us/users/${user.username}`}
                             className='flex items-center gap-3 flex-1 text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors'
                         >
                             <div className='relative'>

@@ -7,10 +7,10 @@ import { useUser } from "@/app/lib/providers/user-provider";
 import type { Image } from "@/app/lib/definitions/image";
 import FlagContentButton from "../flag-content-button";
 import UserAvatar from "../user/user-avatar";
-import { useRouter } from "next/navigation";
 import DeleteButtonWithConfirm from "../delete-button-with-confirm";
 import ContentInteractions from "../content-interactions";
 import { getBestVariant, IMAGE_SIZES } from "@/app/lib/utils/images";
+import { useUserNavigation } from "@/app/lib/hooks/use-user-navigation";
 
 interface UserImageProps {
     image: Image;
@@ -19,6 +19,7 @@ interface UserImageProps {
 
 export default function UserImage({ image, onDeleted }: UserImageProps) {
     const { user } = useUser();
+    const { navigateToUser } = useUserNavigation();
     const bestVariant = getBestVariant(image, IMAGE_SIZES.CONTENT);
     const isAuthor = user?.id === image.userId;
     const isAdmin = user?.role === "admin";
@@ -28,16 +29,6 @@ export default function UserImage({ image, onDeleted }: UserImageProps) {
         const res = await fetch(`/api/images/${image.id}`, { method: "DELETE" });
         if (!res.ok) throw new Error("Failed to delete image");
         onDeleted(image.id);
-    };
-
-    const router = useRouter();
-
-    const handleUsernameClick = () => {
-        if (user?.username === image.username) {
-            router.push('/profile');
-        } else {
-            router.push(`/users/${image.username}`);
-        }
     };
 
     if (!user) return null;
@@ -58,7 +49,7 @@ export default function UserImage({ image, onDeleted }: UserImageProps) {
                     <div className="flex flex-1 flex-col">
                         <p
                             className="text-lg font-semibold cursor-pointer hover:underline"
-                            onClick={handleUsernameClick}
+                            onClick={() => navigateToUser(image.username)}
                         >
                             {image.username}
                         </p>
