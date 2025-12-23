@@ -64,7 +64,7 @@ export default function UserProfileCard({ username }: UserProfileCardProps) {
                 </h1>
 
                 <div className='flex flex-1 flex-row items-start gap-4 pr-1'>
-                    <p className='flex flex-1 text-gray-200'>
+                    <p className='flex flex-1 text-gray-700 dark:text-gray-200'>
                         {displayUser.bio || ''}
                     </p>
                     {isCurrentUser && <BioForm />}

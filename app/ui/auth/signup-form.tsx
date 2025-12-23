@@ -48,14 +48,14 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
 
   return (
     <form action={formAction} className='space-y-3'>
-      <div className='flex-1 rounded-lg bg-gray-50 px-4 py-2'>
-        <h1 className={`${ubuntu.className} mb-1 text-2xl`}>
+      <div className='flex-1 rounded-lg bg-gray-50 dark:bg-gray-800 px-4 py-2'>
+        <h1 className={`${ubuntu.className} mb-1 text-2xl text-gray-900 dark:text-white`}>
           Create an account
         </h1>
 
         <div className='w-full'>
           <label
-            className='mb-2 mt-3 block text-s font-medium text-gray-900'
+            className='mb-2 mt-3 block text-s font-medium text-gray-900 dark:text-gray-200'
             htmlFor='username'
           >
             Username
@@ -69,13 +69,13 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
               required
               minLength={2}
               maxLength={20}
-              className='peer block w-full rounded-md border border-gray-200 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500'
+              className='peer block w-full rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500 dark:placeholder:text-gray-400'
             />
-            <UserIcon className='pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900' />
+            <UserIcon className='pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 dark:text-gray-400 peer-focus:text-gray-900 dark:peer-focus:text-white' />
           </div>
 
           <label
-            className='mb-2 mt-3 block text-s font-medium text-gray-900'
+            className='mb-2 mt-3 block text-s font-medium text-gray-900 dark:text-gray-200'
             htmlFor='email'
           >
             Email
@@ -87,13 +87,13 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
               type='email'
               placeholder='Enter your email address'
               required
-              className='peer block w-full rounded-md border border-gray-200 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500'
+              className='peer block w-full rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500 dark:placeholder:text-gray-400'
             />
-            <AtSymbolIcon className='pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900' />
+            <AtSymbolIcon className='pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 dark:text-gray-400 peer-focus:text-gray-900 dark:peer-focus:text-white' />
           </div>
 
           <label
-            className='mb-2 mt-3 block text-s font-medium text-gray-900'
+            className='mb-2 mt-3 block text-s font-medium text-gray-900 dark:text-gray-200'
             htmlFor='password'
           >
             Password
@@ -108,13 +108,13 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className='peer block w-full rounded-md border border-gray-200 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500'
+              className='peer block w-full rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500 dark:placeholder:text-gray-400'
             />
-            <KeyIcon className='pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900' />
+            <KeyIcon className='pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 dark:text-gray-400 peer-focus:text-gray-900 dark:peer-focus:text-white' />
           </div>
 
           <label
-            className='mb-2 mt-3 block text-s font-medium text-gray-900'
+            className='mb-2 mt-3 block text-s font-medium text-gray-900 dark:text-gray-200'
             htmlFor='confirmPassword'
           >
             Confirm Password
@@ -129,9 +129,9 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
               minLength={6}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className='peer block w-full rounded-md border border-gray-200 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500'
+              className='peer block w-full rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500 dark:placeholder:text-gray-400'
             />
-            <KeyIcon className='pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900' />
+            <KeyIcon className='pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 dark:text-gray-400 peer-focus:text-gray-900 dark:peer-focus:text-white' />
           </div>
 
           {/* Live password mismatch error */}
@@ -161,12 +161,12 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
         )}
 
         {onToggleMode && (
-          <div className='mt-4 text-center text-sm text-gray-600'>
+          <div className='mt-4 text-center text-sm text-gray-600 dark:text-gray-400'>
             Already have an account?{' '}
             <button
               type='button'
               onClick={onToggleMode}
-              className='text-blue-600 hover:text-blue-500 font-medium underline'
+              className='text-blue-600 dark:text-blue-400 hover:text-blue-500 font-medium underline'
             >
               Sign in
             </button>

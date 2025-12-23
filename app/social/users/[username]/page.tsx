@@ -25,7 +25,6 @@ export default async function UserProfilePage({ params }: Props) {
 
     return (
         <PageContent>
-            <UserProfileCard username={username} />
             <Breadcrumbs
                 breadcrumbs={[
                     { label: 'Users', href: '/social/users' },
@@ -33,6 +32,7 @@ export default async function UserProfilePage({ params }: Props) {
                     { label: 'Images', href: `/social/users/${username}/images` },
                 ]}
             />
+            <UserProfileCard username={username} />
             <UserContentFeed initialContent={content} />
         </PageContent>
     );

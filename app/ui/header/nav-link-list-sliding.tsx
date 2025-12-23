@@ -152,7 +152,7 @@ function NavButtonWithSublinks({ link, onClick }: NavButtonWithSublinksProps) {
                     'w-full aspect-square flex flex-1 flex-col items-center justify-center p-3 rounded-lg font-medium transition-all relative gap-2',
                     {
                         'bg-blue-300/25 text-white': isActive,
-                        'bg-gray-800 text-white hover:bg-sky-100 hover:text-blue-600 hover:border-sky-300': !isActive,
+                        'bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-sky-100 hover:text-blue-600 hover:border-sky-300': !isActive,
                     }
                 )}
             >
@@ -333,12 +333,12 @@ export default function NavLinkListSliding({
                             <div className='max-w-[600px] mx-auto p-4 flex items-center'>
                                 <button
                                     onClick={handleCloseSubMenu}
-                                    className='flex items-center gap-2 text-white hover:text-sky-300 transition-colors'
+                                    className='flex items-center gap-2 text-gray-900 dark:text-white hover:text-sky-600 dark:hover:text-sky-300 transition-colors'
                                 >
                                     <ChevronLeftIcon className='w-6 h-6' />
                                     {/* <span className='text-lg font-medium'>Back</span> */}
                                 </button>
-                                <span className='ml-4 text-lg font-medium text-white/70'>
+                                <span className='ml-4 text-lg font-medium text-gray-700 dark:text-white/70'>
                                     {activeSubMenu.title}
                                 </span>
                             </div>

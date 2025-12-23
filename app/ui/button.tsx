@@ -30,12 +30,12 @@ export function Button({
 
     const variantClasses = {
         default: 'bg-blue-500 text-white enabled:hover:bg-blue-400 active:bg-blue-600',
-        secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300 active:bg-gray-400',
-        outline: 'border border-blue-500 text-blue-500 hover:bg-blue-50',
-        ghost: 'bg-transparent text-blue-500 hover:bg-blue-50',
+        secondary: 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600 active:bg-gray-400 dark:active:bg-gray-800',
+        outline: 'border border-blue-500 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20',
+        ghost: 'bg-transparent text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20',
         link: 'bg-transparent text-blue-500 hover:underline px-0',
         active: 'bg-blue-500 text-white hover:bg-blue-600',
-        warn: 'hover:bg-red-500 hover:text-white bg-red-200 text-red-500',
+        warn: 'hover:bg-red-500 hover:text-white bg-red-200 dark:bg-red-900/30 text-red-500',
         confirm: 'text-red-500 hover:bg-red-500 hover:text-white',
     };
 

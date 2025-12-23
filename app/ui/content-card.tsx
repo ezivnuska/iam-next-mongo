@@ -71,7 +71,7 @@ export default function ContentCard({
                         >
                             {author.username}
                         </p>
-                        <span className='text-sm text-gray-500'>{formatRelativeTime(createdAt)}</span>
+                        <span className='text-sm text-gray-500 dark:text-gray-400'>{formatRelativeTime(createdAt)}</span>
                     </div>
                     {actions && (
                         <div className='flex flex-row items-center gap-2'>
@@ -84,21 +84,19 @@ export default function ContentCard({
                 </div>
 
                 {/* Content */}
-                <div className='flex flex-row items-stretch'>
-                    <div className='flex flex-1 flex-col pt-2'>
-                        {children}
+                <div className='flex flex-col pt-2'>
+                    {children}
 
-                        {/* Footer Interactions */}
-                        {interactions && itemId && itemType && (
-                            <ContentInteractions
-                                itemId={itemId}
-                                itemType={itemType}
-                                initialLiked={interactions.initialLiked}
-                                initialLikeCount={interactions.initialLikeCount || 0}
-                                initialCommentCount={interactions.initialCommentCount || 0}
-                            />
-                        )}
-                    </div>
+                    {/* Footer Interactions */}
+                    {interactions && itemId && itemType && (
+                        <ContentInteractions
+                            itemId={itemId}
+                            itemType={itemType}
+                            initialLiked={interactions.initialLiked}
+                            initialLikeCount={interactions.initialLikeCount || 0}
+                            initialCommentCount={interactions.initialCommentCount || 0}
+                        />
+                    )}
                 </div>
             </div>
         </div>

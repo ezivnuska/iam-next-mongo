@@ -48,7 +48,27 @@ html, body {
     width: 100%;
     max-width: 100vw;
     overflow-x: hidden;
-    background-color: #000;
+}
+
+/* Theme-aware background colors */
+html {
+    background-color: #ffffff;
+    --text-primary: #111827; /* gray-900 */
+}
+
+html.dark {
+    background-color: #000000;
+    --text-primary: #ffffff; /* white */
+}
+
+body {
+    background-color: inherit;
+}
+
+/* Force link colors to inherit */
+a {
+    color: inherit;
+    text-decoration: inherit;
 }
 
 

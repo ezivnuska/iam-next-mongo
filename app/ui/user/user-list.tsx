@@ -19,7 +19,7 @@ export default function UserList({ users }: UserListProps) {
 	const { onlineUsers } = useSocket()
 
 	if (!users || users.length === 0) {
-		return <p className='text-gray-500'>No users found</p>
+		return <p className='text-gray-500 dark:text-gray-400'>No users found</p>
 	}
 
 	return (
@@ -31,11 +31,11 @@ export default function UserList({ users }: UserListProps) {
 				return (
 					<div
 						key={user.id}
-						className='flex items-center justify-between p-3 bg-white hover:bg-amber-100 rounded-lg shadow hover:shadow-md transition-shadow'
+						className='flex items-center justify-between p-3 bg-white dark:bg-gray-800 hover:bg-amber-100 dark:hover:bg-gray-700 rounded-lg shadow hover:shadow-md transition-shadow'
 					>
                         <Link
                             href={`/social/users/${user.username}`}
-                            className='flex items-center gap-3 flex-1 hover:text-blue-600 transition-colors'
+                            className='flex items-center gap-3 flex-1 text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors'
                         >
                             <div className='relative'>
                                 <div className='w-12 h-12'>
@@ -52,7 +52,7 @@ export default function UserList({ users }: UserListProps) {
                             <div className='flex flex-col flex-1'>
 								<p className='font-semibold'>{user.username}</p>
 								{user.bio && (
-									<p className='text-sm text-gray-500 truncate'>{user.bio}</p>
+									<p className='text-sm text-gray-500 dark:text-gray-400 truncate'>{user.bio}</p>
 								)}
                             </div>
                         </Link>

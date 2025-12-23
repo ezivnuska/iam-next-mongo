@@ -83,7 +83,7 @@ export default function ActivityFeed({ initialActivities }: ActivityFeedProps) {
       {/* Filter Tabs */}
       <div className="mb-4">
         <div className="flex flex-wrap gap-2 mb-3">
-          <p className="text-sm font-medium text-gray-700 w-full mb-1">Filter by Action:</p>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-200 w-full mb-1">Filter by Action:</p>
           {ACTION_FILTERS.map(({ value, label }) => (
             <FilterButton
               key={value}
@@ -97,7 +97,7 @@ export default function ActivityFeed({ initialActivities }: ActivityFeedProps) {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <p className="text-sm font-medium text-gray-700 w-full mb-1">Filter by Type:</p>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-200 w-full mb-1">Filter by Type:</p>
           {ENTITY_TYPE_FILTERS.map(({ value, label }) => (
             <FilterButton
               key={value}
@@ -113,7 +113,7 @@ export default function ActivityFeed({ initialActivities }: ActivityFeedProps) {
 
       {/* Activity List */}
       {loading ? (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           Loading activities...
         </div>
       ) : (

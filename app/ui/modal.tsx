@@ -19,7 +19,7 @@ export default function Modal({
   isOpen = true,
   onClose,
   className = 'bg-black/50',
-  contentClassName = 'relative w-full max-w-md rounded-lg bg-white p-2 shadow-lg',
+  contentClassName = 'relative w-full max-w-md rounded-lg bg-white dark:bg-gray-800 p-2 shadow-lg',
   position = 'fixed',
 }: ModalProps) {
   if (!isOpen) return null;

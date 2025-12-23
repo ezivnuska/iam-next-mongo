@@ -9,6 +9,8 @@ import { useContentLoaded } from '@/app/hooks/useContentLoaded';
 import { clsx } from 'clsx';
 import Brand from '@/app/ui/header/brand';
 import UserButton from '@/app/ui/header/user-button';
+import ThemeToggle from '@/app/ui/theme/theme-toggle';
+import ThemeDebug from '@/app/ui/theme/theme-debug';
 import LoadingSpinner from '@/app/ui/loading-spinner';
 import AuthRedirectHandler from '@/app/ui/auth/auth-redirect-handler';
 import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
@@ -47,11 +49,16 @@ export default function SimpleScreen({
                     'flex-col py-4 px-4': horizontalLayout,
                 })}>
                     <Brand />
-                    <UserButton />
+                    <div className={clsx('flex items-center gap-6', {
+                        'flex-col-reverse items-between': horizontalLayout,
+                    })}>
+                        <ThemeToggle />
+                        <UserButton />
+                    </div>
                 </div>
 
                 {/* Main Content Container */}
-                <main className={clsx('flex flex-col flex-1 w-full min-h-0 min-w-0 overflow-auto text-white', {
+                <main className={clsx('flex flex-col flex-1 w-full min-h-0 min-w-0 overflow-auto', {
                     'py-6': horizontalLayout,
                 })}>
                     {showLoading && !isContentLoaded
@@ -60,6 +67,7 @@ export default function SimpleScreen({
                     }
                 </main>
             </div>
+            <ThemeDebug />
         </div>
     );
 }

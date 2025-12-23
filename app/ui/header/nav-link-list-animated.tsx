@@ -149,24 +149,24 @@ export default function NavLinkListAnimated({
                             animation: `fade-in 0.6s ease-out ${index * 150}ms both`,
                         }}
                     >
-                        <div className='flex items-center gap-4 p-6 rounded-2xl border-2 border-gray-700 bg-gray-800 hover:border-blue-500 hover:bg-gray-700 transition-all duration-200 group'>
+                        <div className='flex items-center gap-4 p-6 rounded-2xl border-2 border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 hover:border-blue-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 group'>
                             {/* Icon */}
-                            <div className='shrink-0 text-gray-400 group-hover:text-blue-500 transition-colors'>
+                            <div className='shrink-0 text-gray-600 dark:text-gray-400 group-hover:text-blue-500 transition-colors'>
                                 {link.icon}
                             </div>
 
                             {/* Text content */}
                             <div className='flex-1'>
-                                <h2 className='text-xl font-bold text-white group-hover:text-blue-400 transition-colors'>
+                                <h2 className='text-xl font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors'>
                                     {link.title}
                                 </h2>
-                                <p className='text-gray-400 mt-1'>
+                                <p className='text-gray-600 dark:text-gray-400 mt-1'>
                                     {link.subtitle}
                                 </p>
                             </div>
 
                             {/* Arrow icon */}
-                            <div className='shrink-0 text-gray-600 group-hover:text-blue-500 transition-colors'>
+                            <div className='shrink-0 text-gray-400 dark:text-gray-600 group-hover:text-blue-500 transition-colors'>
                                 <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                                     <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M9 5l7 7-7 7' />
                                 </svg>

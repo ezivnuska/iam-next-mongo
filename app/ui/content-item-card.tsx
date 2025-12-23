@@ -4,16 +4,18 @@
 
 import type { ContentItem } from '@/app/lib/definitions/content';
 import ContentCard from '@/app/ui/content-card';
-import { getBestVariant, IMAGE_SIZES } from '@/app/lib/utils/images';
+import ContentImage from '@/app/ui/content-image';
+import { useTheme } from '@/app/lib/hooks/use-theme';
 
 type ContentItemCardProps = {
   item: ContentItem;
 }
 
 export default function ContentItemCard({ item }: ContentItemCardProps) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
   if (item.contentType === 'memory') {
     const memory = item;
-    const imageVariant = getBestVariant(memory.image, IMAGE_SIZES.CONTENT);
     const memoryDate = new Date(memory.date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -34,18 +36,12 @@ export default function ContentItemCard({ item }: ContentItemCardProps) {
         }}
       >
         <div>
-          <p className='text-lg font-bold text-white'>{memoryDate}</p>
-          {memory.title && <p className='text-lg font-light text-gray-400'>{memory.title}</p>}
+          <p className='text-lg font-bold' style={{ color: isDark ? '#ffffff' : '#111827' }}>{memoryDate}</p>
+          {memory.title && <p className='text-lg font-light' style={{ color: isDark ? '#9ca3af' : '#4b5563' }}>{memory.title}</p>}
         </div>
-        {imageVariant && (
-          <img
-            src={imageVariant.url}
-            alt='Memory image'
-            className='max-w-full max-h-96 rounded my-2 object-cover'
-          />
-        )}
+        <ContentImage image={memory.image} alt='Memory image' className='max-w-full max-h-96 rounded my-2 object-cover' />
         {memory.content && (
-          <p className='text-white whitespace-pre-wrap'>{memory.content}</p>
+          <p className='whitespace-pre-wrap' style={{ color: isDark ? '#ffffff' : '#111827' }}>{memory.content}</p>
         )}
       </ContentCard>
     );
@@ -53,7 +49,6 @@ export default function ContentItemCard({ item }: ContentItemCardProps) {
 
   if (item.contentType === 'post') {
     const post = item;
-    const imageVariant = getBestVariant(post.image, IMAGE_SIZES.CONTENT);
 
     return (
       <ContentCard
@@ -68,15 +63,9 @@ export default function ContentItemCard({ item }: ContentItemCardProps) {
           initialCommentCount: post.commentCount || 0,
         }}
       >
-        {imageVariant && (
-          <img
-            src={imageVariant.url}
-            alt='Post image'
-            className='rounded mt-2 object-cover'
-          />
-        )}
+        <ContentImage image={post.image} alt='Post image' className='rounded mt-2 object-cover' />
         {post.content && (
-          <div className='text-white py-1'>
+          <div className='py-1' style={{ color: isDark ? '#ffffff' : '#111827' }}>
             <p>{post.content}</p>
             {post.linkUrl && (
               <a href={post.linkUrl} target='_blank' className='text-blue-500 underline mt-2 block'>
@@ -91,7 +80,6 @@ export default function ContentItemCard({ item }: ContentItemCardProps) {
 
   if (item.contentType === 'image') {
     const image = item;
-    const imageVariant = getBestVariant(image, IMAGE_SIZES.CONTENT);
 
     return (
       <ContentCard
@@ -106,13 +94,7 @@ export default function ContentItemCard({ item }: ContentItemCardProps) {
           initialCommentCount: image.commentCount || 0,
         }}
       >
-        {imageVariant && (
-          <img
-            src={imageVariant.url}
-            alt={image.alt || 'Image'}
-            className='rounded my-2 object-cover'
-          />
-        )}
+        <ContentImage image={image} alt={image.alt || 'Image'} className='rounded my-2 object-cover' />
       </ContentCard>
     );
   }

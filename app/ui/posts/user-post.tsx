@@ -2,11 +2,13 @@
 
 'use client';
 
-import { useUser } from '@/app/lib/providers/user-provider';
 import type { Post } from '@/app/lib/definitions/post';
 import EditContentButton from '../edit-content-button';
 import ContentCard from '../content-card';
-import { getBestVariant, IMAGE_SIZES } from '@/app/lib/utils/images';
+import ContentImage from '../content-image';
+import { useContentPermissions } from '@/app/lib/hooks/use-content-permissions';
+import { useContentDelete } from '@/app/lib/hooks/use-content-delete';
+import { useTheme } from '@/app/lib/hooks/use-theme';
 
 interface UserPostProps {
     post: Post;
@@ -16,18 +18,10 @@ interface UserPostProps {
 }
 
 export default function UserPost({ post, onDeleted, onEdit, onFlag }: UserPostProps) {
-    const { user } = useUser();
-    const imageVariant = getBestVariant(post.image, IMAGE_SIZES.CONTENT);
-    const isAuthor = user?.id === post.author.id;
-    const isAdmin = user?.role === 'admin';
-    const canEdit = isAuthor;
-    const canDelete = isAuthor || isAdmin;
-
-    const handleDelete = async () => {
-        const res = await fetch(`/api/posts/${post.id}`, { method: 'DELETE' });
-        if (!res.ok) throw new Error('Failed to delete post');
-        onDeleted(post.id);
-    };
+    const { canEdit, canDelete } = useContentPermissions(post.author.id);
+    const handleDelete = useContentDelete('posts', onDeleted);
+    const { resolvedTheme } = useTheme();
+    const isDark = resolvedTheme === 'dark';
 
     return (
         <ContentCard
@@ -37,7 +31,7 @@ export default function UserPost({ post, onDeleted, onEdit, onFlag }: UserPostPr
             itemId={post.id}
             itemType='Post'
             actions={{
-                onDelete: handleDelete,
+                onDelete: () => handleDelete(post.id),
                 onFlag: () => onFlag(post),
                 canEdit,
                 canDelete,
@@ -48,22 +42,18 @@ export default function UserPost({ post, onDeleted, onEdit, onFlag }: UserPostPr
                 initialCommentCount: post.commentCount || 0,
             }}
         >
-            {imageVariant && (
-                <img
-                    src={imageVariant.url}
-                    alt='Post image'
-                    className='rounded mt-2 object-cover'
-                />
-            )}
+            <ContentImage image={post.image} alt='Post image' className='rounded mt-2 object-cover' />
             {post.content && (
                 <div className='flex flex-row gap-2'>
-                    <div className='flex flex-1 text-white py-1 gap-2'>
-                        {post.content && <p>{post.content}</p>}
-                        {post.linkUrl && (
-                            <a href={post.linkUrl} target='_blank' className='text-blue-500 underline mt-2 block'>
-                                [source]
-                            </a>
-                        )}
+                    <div className='flex flex-1 py-1'>
+                        <div className='flex flex-col gap-1'>
+                            <p style={{ color: isDark ? '#ffffff' : '#111827' }}>{post.content}</p>
+                            {post.linkUrl && (
+                                <a href={post.linkUrl} target='_blank' className='text-blue-500 underline'>
+                                    [source]
+                                </a>
+                            )}
+                        </div>
                     </div>
                     {canEdit && <EditContentButton onEdit={() => onEdit(post)} />}
                 </div>

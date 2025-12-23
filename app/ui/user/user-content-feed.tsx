@@ -16,6 +16,7 @@ import CreateMemoryForm from '@/app/ui/memories/create-memory-form';
 import CreatePostForm from '@/app/ui/posts/create-post-form';
 import UploadForm from '@/app/ui/images/upload-form';
 import { useUser } from '@/app/lib/providers/user-provider';
+import { useTheme } from '@/app/lib/hooks/use-theme';
 
 interface UserContentFeedProps {
     initialContent: ContentItem[];
@@ -26,6 +27,7 @@ type ModalType = 'memory' | 'post' | 'image' | null;
 
 export default function UserContentFeed({ initialContent, editable = false }: UserContentFeedProps) {
     const { user } = useUser();
+    const { resolvedTheme } = useTheme();
     const [content, setContent] = useState<ContentItem[]>(initialContent);
     const [selectedFilters, setSelectedFilters] = useState<Set<string>>(new Set());
     const [modalType, setModalType] = useState<ModalType>(null);
@@ -122,9 +124,9 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
             />
 
             {/* Content List */}
-            <div className='w-full max-w-[600px] mt-4 space-y-4 text-white'>
+            <div className='w-full max-w-[600px] mt-4 space-y-4'>
                 {filteredContent.length === 0 ? (
-                    <p className='text-gray-500'>No content to display</p>
+                    <p className='text-gray-500 dark:text-gray-400'>No content to display</p>
                 ) : (
                     filteredContent.map((item) => (
                         isCurrentUserAuthor(item) ? (
@@ -146,11 +148,11 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
             {modalType === 'memory' && (
                 <Modal isOpen={true} onClose={handleCloseModal}>
                     <div className='flex flex-row items-center justify-between mb-4'>
-                        <h1 className='text-2xl font-semibold'>
+                        <h1 className='text-2xl font-semibold' style={{ color: resolvedTheme === 'dark' ? '#ffffff' : '#111827' }}>
                             {editingItem ? 'Edit Memory' : 'Create Memory'}
                         </h1>
                         <button
-                            className='text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer'
+                            className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl leading-none cursor-pointer'
                             onClick={handleCloseModal}
                             aria-label='Close'
                         >
@@ -169,11 +171,11 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
             {modalType === 'post' && (
                 <Modal isOpen={true} onClose={handleCloseModal}>
                     <div className='flex flex-row items-center justify-between mb-4'>
-                        <h1 className='text-2xl font-semibold'>
+                        <h1 className='text-2xl font-semibold' style={{ color: resolvedTheme === 'dark' ? '#ffffff' : '#111827' }}>
                             {editingItem ? 'Edit Post' : 'Create Post'}
                         </h1>
                         <button
-                            className='text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer'
+                            className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl leading-none cursor-pointer'
                             onClick={handleCloseModal}
                             aria-label='Close'
                         >

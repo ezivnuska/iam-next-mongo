@@ -51,7 +51,7 @@ export default function CommentForm({
 	return (
 		<form onSubmit={handleSubmit} className="w-full">
 			{error && (
-				<div className="mb-3 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+				<div className="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-lg text-sm">
 					{error}
 				</div>
 			)}
@@ -61,7 +61,7 @@ export default function CommentForm({
 					onChange={(e) => setContent(e.target.value)}
 					placeholder={placeholder}
 					disabled={isSubmitting}
-					className="flex-1 min-h-[80px] px-3 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+					className="flex-1 min-h-[80px] px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed placeholder:text-gray-500 dark:placeholder:text-gray-400"
 					rows={3}
 				/>
 			</div>
@@ -69,7 +69,7 @@ export default function CommentForm({
 				<button
 					type="submit"
 					disabled={isSubmitting || !content.trim()}
-					className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+					className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors"
 				>
 					{isSubmitting ? 'Posting...' : submitButtonText}
 				</button>

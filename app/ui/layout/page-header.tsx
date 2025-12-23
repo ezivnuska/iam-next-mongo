@@ -1,7 +1,9 @@
 // app/ui/layout/page-header.tsx
 
-import { ubuntu } from '@/app/ui/fonts';
+'use client';
+
 import { clsx } from 'clsx';
+import { useTheme } from '@/app/lib/hooks/use-theme';
 
 interface PageHeaderProps {
     title: string;
@@ -21,22 +23,21 @@ interface PageHeaderProps {
  */
 
 export default function PageHeader({ title, subtitle, className }: PageHeaderProps) {
+    const { resolvedTheme } = useTheme();
+    const isDark = resolvedTheme === 'dark';
+
     return (
         <header className={clsx('px-2', className)}>
             <h1
-                className={clsx(
-                    ubuntu.className,
-                    'leading-none text-xl font-bold md:text-xl'
-                )}
+                className='leading-none text-xl font-bold md:text-xl'
+                style={{ color: isDark ? '#ffffff' : '#111827' }}
             >
                 {title}
             </h1>
             {subtitle && (
                 <p
-                    className={clsx(
-                        ubuntu.className,
-                        'mt-0.5 text-lg text-gray-300 md:text-lg'
-                    )}
+                    className='mt-0.5 text-lg md:text-lg'
+                    style={{ color: isDark ? '#d1d5db' : '#4b5563' }}
                 >
                     {subtitle}
                 </p>

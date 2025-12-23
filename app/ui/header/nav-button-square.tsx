@@ -41,7 +41,7 @@ export default function NavButtonSquare({
                     'aspect-square flex flex-1 flex-col items-center justify-center p-3 rounded-lg font-medium transition-all relative gap-2',
                     {
                         'bg-blue-300/25 text-white': isActive,
-                        'bg-gray-800 text-white hover:bg-sky-100 hover:text-blue-600 hover:border-sky-300': !isActive,
+                        'bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-sky-100 hover:text-blue-600 hover:border-sky-300': !isActive,
                     }
                 )}
             >
