@@ -194,7 +194,7 @@ export default function PokerTable() {
 
   return (
     <div className='flex flex-1 flex-row items-start justify-center max-h-dvh gap-2 relative bg-green-700 h-full'>
-        <PageContent>
+        <PageContent fullscreen>
             <Link href='/games' className='absolute top-0 left-0 z-20 p-2'>
                 <ArrowLeftIcon className={`h-6 w-6 text-white`} />
             </Link>

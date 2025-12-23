@@ -1,4 +1,4 @@
-// app/ui/user-content-card.tsx
+// app/ui/content-card.tsx
 
 'use client';
 
@@ -9,36 +9,38 @@ import UserAvatar from './user/user-avatar';
 import { useRouter } from 'next/navigation';
 import DeleteButtonWithConfirm from './delete-button-with-confirm';
 import ContentInteractions from './content-interactions';
+import type { Image as ImageType } from '@/app/lib/definitions/image';
 
-interface UserContentCardProps {
+interface ContentCardProps {
     author: { id: string; username: string };
+    avatar?: ImageType | null;
     createdAt: string;
-    itemId: string;
-    itemType: 'Post' | 'Memory';
-    initialLiked?: boolean;
-    initialLikeCount: number;
-    initialCommentCount: number;
-    onDelete: () => Promise<void>;
-    onFlag: () => void;
+    itemId?: string;
+    itemType?: 'Post' | 'Memory' | 'Image';
+    actions?: {
+        onDelete?: () => Promise<void>;
+        onFlag?: () => void;
+        canEdit?: boolean;
+        canDelete?: boolean;
+    };
+    interactions?: {
+        initialLiked?: boolean;
+        initialLikeCount?: number;
+        initialCommentCount?: number;
+    };
     children: React.ReactNode;
-    canEdit: boolean;
-    canDelete: boolean;
 }
 
-export default function UserContentCard({
+export default function ContentCard({
     author,
+    avatar,
     createdAt,
     itemId,
     itemType,
-    initialLiked,
-    initialLikeCount,
-    initialCommentCount,
-    onDelete,
-    onFlag,
+    actions,
+    interactions,
     children,
-    canEdit,
-    canDelete,
-}: UserContentCardProps) {
+}: ContentCardProps) {
     const { user } = useUser();
     const router = useRouter();
 
@@ -50,8 +52,6 @@ export default function UserContentCard({
         }
     };
 
-    if (!user) return null;
-
     return (
         <div className='flex flex-row items-stretch gap-2'>
             <div className='flex flex-1 flex-col'>
@@ -59,8 +59,8 @@ export default function UserContentCard({
                 <div className='flex flex-row items-center gap-4'>
                     <div className='flex w-[50px] h-[50px]'>
                         <UserAvatar
-                            username={user.username}
-                            avatar={user.avatar}
+                            username={author.username}
+                            avatar={avatar}
                             size={50}
                         />
                     </div>
@@ -73,10 +73,14 @@ export default function UserContentCard({
                         </p>
                         <span className='text-sm text-gray-500'>{formatRelativeTime(createdAt)}</span>
                     </div>
-                    <div className='flex flex-row items-center gap-2'>
-                        <FlagContentButton onFlag={onFlag} />
-                        {canDelete && <DeleteButtonWithConfirm onDelete={onDelete} />}
-                    </div>
+                    {actions && (
+                        <div className='flex flex-row items-center gap-2'>
+                            {actions.onFlag && <FlagContentButton onFlag={actions.onFlag} />}
+                            {actions.canDelete && actions.onDelete && (
+                                <DeleteButtonWithConfirm onDelete={actions.onDelete} />
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Content */}
@@ -85,13 +89,15 @@ export default function UserContentCard({
                         {children}
 
                         {/* Footer Interactions */}
-                        <ContentInteractions
-                            itemId={itemId}
-                            itemType={itemType}
-                            initialLiked={initialLiked}
-                            initialLikeCount={initialLikeCount}
-                            initialCommentCount={initialCommentCount}
-                        />
+                        {interactions && itemId && itemType && (
+                            <ContentInteractions
+                                itemId={itemId}
+                                itemType={itemType}
+                                initialLiked={interactions.initialLiked}
+                                initialLikeCount={interactions.initialLikeCount || 0}
+                                initialCommentCount={interactions.initialCommentCount || 0}
+                            />
+                        )}
                     </div>
                 </div>
             </div>

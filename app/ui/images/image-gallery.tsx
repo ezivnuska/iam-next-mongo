@@ -1,17 +1,17 @@
 // app/ui/image-gallery.tsx
 
-"use client";
+'use client';
 
-import { useState, useCallback, useRef } from "react";
-import Image from "next/image";
-import { useUser } from "@/app/lib/providers/user-provider";
-import CommentForm from "@/app/ui/comments/comment-form";
-import Modal from "@/app/ui/modal";
-import ImageModalMenu from "@/app/ui/images/image-modal-menu";
-import { createComment } from "@/app/lib/actions/comments";
-import { handleError } from "@/app/lib/utils/error-handler";
-import type { Image as ImageType } from "@/app/lib/definitions/image";
-import type { Comment } from "@/app/lib/definitions/comment";
+import { useState, useCallback, useRef } from 'react';
+import Image from 'next/image';
+import { useUser } from '@/app/lib/providers/user-provider';
+import CommentForm from '@/app/ui/comments/comment-form';
+import Modal from '@/app/ui/modal';
+import ImageModalMenu from '@/app/ui/images/image-modal-menu';
+import { createComment } from '@/app/lib/actions/comments';
+import { handleError } from '@/app/lib/utils/error-handler';
+import type { Image as ImageType } from '@/app/lib/definitions/image';
+import type { Comment } from '@/app/lib/definitions/comment';
 
 interface ImageGalleryProps {
   authorized?: boolean;
@@ -114,26 +114,26 @@ export default function ImageGallery({ authorized, images, onDeleted, onImageUpd
 
   return (
     <>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4'>
         {images.length
             ? images.map((img) => {
-                const medium = img.variants.find((v) => v.size === "medium");
+                const medium = img.variants.find((v) => v.size === 'medium');
                 return (
                     <div
                         key={img.id}
-                        className="relative rounded-lg overflow-hidden shadow w-full h-48 cursor-pointer"
+                        className='relative rounded-lg overflow-hidden shadow w-full h-48 cursor-pointer'
                         onClick={() => setSelectedImage(img)}
                     >
                         {medium?.url ? (
                             <Image
                                 src={medium.url}
-                                alt={img.alt || "Uploaded image"}
+                                alt={img.alt || 'Uploaded image'}
                                 fill
-                                style={{ objectFit: "cover" }}
-                                sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                                style={{ objectFit: 'cover' }}
+                                sizes='(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw'
                             />
                         ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-500 text-sm">
+                            <div className='w-full h-full flex items-center justify-center bg-gray-200 text-gray-500 text-sm'>
                                 No preview
                             </div>
                         )}
@@ -147,7 +147,7 @@ export default function ImageGallery({ authorized, images, onDeleted, onImageUpd
         {/* Modal */}
         {selectedImage && (
             <div
-                className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"
+                className='fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50'
                 onClick={(e) => {
                   // Only close if comment form is not open
                   if (!showCommentForm) {
@@ -155,19 +155,19 @@ export default function ImageGallery({ authorized, images, onDeleted, onImageUpd
                   }
                 }}
             >
-                <div className="relative max-w-5xl w-full h-full flex items-center justify-center p-4" onClick={handleImageClick}>
+                <div className='relative max-w-5xl w-full h-full flex items-center justify-center p-4' onClick={handleImageClick}>
                     <Image
                         src={
-                            selectedImage.variants.find((v) => v.size === "original")?.url ||
+                            selectedImage.variants.find((v) => v.size === 'original')?.url ||
                             selectedImage.variants[0].url
                         }
-                        alt={selectedImage.alt || "Full image"}
+                        alt={selectedImage.alt || 'Full image'}
                         fill
-                        style={{ objectFit: "contain" }}
-                        sizes="100vw"
+                        style={{ objectFit: 'contain' }}
+                        sizes='100vw'
                     />
                     <button
-                        className="absolute top-4 right-4 bg-white rounded-full px-3 py-1 shadow text-black z-10"
+                        className='absolute top-4 right-4 bg-white rounded-full px-3 py-1 shadow text-black z-10'
                         onClick={closeModal}
                     >
                         ✕
@@ -195,15 +195,15 @@ export default function ImageGallery({ authorized, images, onDeleted, onImageUpd
                     {showCommentForm && (
                         <Modal
                             onClose={() => setShowCommentForm(false)}
-                            position="absolute"
-                            className="bg-black bg-opacity-60"
-                            contentClassName="bg-white rounded-lg p-6 max-w-2xl w-full"
+                            position='absolute'
+                            className='bg-black bg-opacity-60'
+                            contentClassName='bg-white rounded-lg p-6 max-w-2xl w-full'
                             showCloseButton
                         >
-                            <h3 className="text-lg font-semibold mb-4">Add a comment</h3>
+                            <h3 className='text-lg font-semibold mb-4'>Add a comment</h3>
                             <CommentForm
                                 refId={selectedImage.id}
-                                refType="Image"
+                                refType='Image'
                                 onSubmit={handleCommentSubmit}
                             />
                         </Modal>

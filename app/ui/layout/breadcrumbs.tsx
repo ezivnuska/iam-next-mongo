@@ -19,7 +19,7 @@ export default function Breadcrumbs({
 }) {
     const horizontalLayout = useHorizontalLayout();
   return (
-    <nav aria-label='Breadcrumb' className={clsx('block mb-4 px-2 text-white', {
+    <nav aria-label='Breadcrumb' className={clsx('block text-white', {
         // 'py-4': horizontalLayout,
     })}>
       <ol className={clsx(ubuntu.className, 'flex text-xl md:text-xl')}>

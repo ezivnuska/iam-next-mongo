@@ -22,11 +22,11 @@ interface PageHeaderProps {
 
 export default function PageHeader({ title, subtitle, className }: PageHeaderProps) {
     return (
-        <header className={clsx('mb-4 px-2', className)}>
+        <header className={clsx('px-2', className)}>
             <h1
                 className={clsx(
                     ubuntu.className,
-                    'leading-none text-xl font-bold text-gray-900 md:text-xl'
+                    'leading-none text-xl font-bold md:text-xl'
                 )}
             >
                 {title}
@@ -35,7 +35,7 @@ export default function PageHeader({ title, subtitle, className }: PageHeaderPro
                 <p
                     className={clsx(
                         ubuntu.className,
-                        'mt-0.5 text-lg text-gray-500 md:text-lg'
+                        'mt-0.5 text-lg text-gray-300 md:text-lg'
                     )}
                 >
                     {subtitle}

@@ -189,7 +189,7 @@ export default function TileBoard() {
                     backgroundColor: getTileColor(tile),
                 }}
             >
-                <span className='text-lg text-white font-bold cursor-default'>
+                <span className='text-2xl sm:text-4xl font-bold cursor-default'>
                     {tile.id + 1}
                 </span>
             </div>
@@ -221,7 +221,7 @@ export default function TileBoard() {
                         transition: dragging ? 'none' : 'transform 0.1s ease',
                         cursor: draggable ? 'pointer' : 'auto',
                     }}
-                    className='rounded-md overflow-hidden'
+                    className='rounded-xl overflow-hidden'
                     onMouseDown={(e) => onTouchStart(e, tile)}
                     onMouseMove={onTouchMove}
                     onMouseUp={handleMove}

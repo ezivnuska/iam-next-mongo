@@ -18,7 +18,7 @@ interface ImagesClientProps {
 export default function ImagesClient({ userId }: ImagesClientProps) {
     const [images, setImages] = useState<Image[]>([]);
     const [loading, setLoading] = useState(false);
-    const [isModalOpen, setModalOpen] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     async function initImages() {
         setLoading(true)
@@ -33,7 +33,7 @@ export default function ImagesClient({ userId }: ImagesClientProps) {
 
     const handleUploadSuccess = (uploadedImage: Image) => {
         setImages((prev) => [uploadedImage, ...prev]);
-        setModalOpen(false);
+        setIsModalOpen(false);
     };
 
     const handleImageUpdate = (imageId: string, updates: Partial<Image>) => {
@@ -46,7 +46,7 @@ export default function ImagesClient({ userId }: ImagesClientProps) {
         <div className='flex flex-col w-full gap-4'>
             {!userId && (
                 <Button
-                    onClick={() => setModalOpen(true)}
+                    onClick={() => setIsModalOpen(true)}
                     // className='mb-4'
                 >
                     Upload File
@@ -65,11 +65,11 @@ export default function ImagesClient({ userId }: ImagesClientProps) {
                 : <p>Loading images...</p>
             }
 
-            <Modal isOpen={isModalOpen} onClose={() => setModalOpen(false)}>
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
                 <h1 className='mb-4 text-2xl font-semibold'>Upload a File</h1>
                 <UploadForm
                     onUploadSuccess={handleUploadSuccess}
-                    onClose={() => setModalOpen(false)}
+                    onClose={() => setIsModalOpen(false)}
                 />
             </Modal>
         </div>

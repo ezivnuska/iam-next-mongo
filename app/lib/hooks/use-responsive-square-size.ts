@@ -32,8 +32,15 @@ export function useResponsiveSquareSize<T extends HTMLElement = HTMLElement>(
             const parentWidth = parent.clientWidth;
             const parentHeight = parent.clientHeight;
 
-            // Use the smaller of width or height to maintain square aspect ratio
-            const squareSize = Math.min(parentWidth, parentHeight);
+            // Get the element's position relative to viewport
+            const rect = containerRef.current.getBoundingClientRect();
+
+            // Calculate available vertical space from current position to bottom of viewport
+            const availableVerticalSpace = window.innerHeight - rect.top;
+
+            // Use the smaller of width, parent height, and available viewport space
+            // This prevents the board from expanding beyond visible screen area
+            const squareSize = Math.min(parentWidth, parentHeight, availableVerticalSpace);
 
             // Always update, even if the value seems the same
             setSize(prevSize => {

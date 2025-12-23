@@ -42,7 +42,7 @@ export default function SimpleScreen({
                     <AuthRedirectHandler />
                 </Suspense>
 
-                <div className={clsx('flex max-w-[600px] mx-auto items-center py-3 gap-4 px-2', {
+                <div className={clsx('flex shrink-0 max-w-[600px] mx-auto items-center py-2 gap-4 px-2', {
                     'flex-row w-full justify-between': !horizontalLayout,
                     'flex-col py-4 px-4': horizontalLayout,
                 })}>
@@ -51,7 +51,9 @@ export default function SimpleScreen({
                 </div>
 
                 {/* Main Content Container */}
-                <main className='flex flex-col flex-1 w-full min-h-0 min-w-0 overflow-auto text-white'>
+                <main className={clsx('flex flex-col flex-1 w-full min-h-0 min-w-0 overflow-auto text-white', {
+                    'py-6': horizontalLayout,
+                })}>
                     {showLoading && !isContentLoaded
                         ? <LoadingSpinner />
                         : <Suspense fallback={<LoadingSpinner />}>{children}</Suspense>

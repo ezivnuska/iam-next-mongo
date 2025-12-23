@@ -5,7 +5,7 @@
 import { useUser } from '@/app/lib/providers/user-provider';
 import type { Post } from '@/app/lib/definitions/post';
 import EditContentButton from '../edit-content-button';
-import UserContentCard from '../user-content-card';
+import ContentCard from '../content-card';
 import { getBestVariant, IMAGE_SIZES } from '@/app/lib/utils/images';
 
 interface UserPostProps {
@@ -30,18 +30,23 @@ export default function UserPost({ post, onDeleted, onEdit, onFlag }: UserPostPr
     };
 
     return (
-        <UserContentCard
+        <ContentCard
             author={post.author}
+            avatar={post.author.avatar}
             createdAt={post.createdAt}
             itemId={post.id}
             itemType='Post'
-            initialLiked={post.likedByCurrentUser}
-            initialLikeCount={post.likes?.length || 0}
-            initialCommentCount={post.commentCount || 0}
-            onDelete={handleDelete}
-            onFlag={() => onFlag(post)}
-            canEdit={canEdit}
-            canDelete={canDelete}
+            actions={{
+                onDelete: handleDelete,
+                onFlag: () => onFlag(post),
+                canEdit,
+                canDelete,
+            }}
+            interactions={{
+                initialLiked: post.likedByCurrentUser,
+                initialLikeCount: post.likes?.length || 0,
+                initialCommentCount: post.commentCount || 0,
+            }}
         >
             {imageVariant && (
                 <img
@@ -63,6 +68,6 @@ export default function UserPost({ post, onDeleted, onEdit, onFlag }: UserPostPr
                     {canEdit && <EditContentButton onEdit={() => onEdit(post)} />}
                 </div>
             )}
-        </UserContentCard>
+        </ContentCard>
     );
 }

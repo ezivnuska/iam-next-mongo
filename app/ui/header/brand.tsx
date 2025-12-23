@@ -13,8 +13,8 @@ export default function Brand() {
         <Link href='/' className={clsx('flex flex-col justify-center', {
             'flex-row justify-start': !horizontalLayout,
         })}>
-            <span className='text-[30px] leading-none md:text-[36px] font-bold text-white'>iam</span>
-            <span className='text-[30px] leading-none md:text-[36px] font-bold text-white'>eric</span>
+            <span className='text-[30px] leading-none md:text-[32px] lg:text-[40px] font-bold text-white'>iam</span>
+            <span className='text-[30px] leading-none md:text-[32px] lg:text-[40px] font-bold text-white'>eric</span>
         </Link>
     );
 }

@@ -5,7 +5,7 @@
 import { useUser } from '@/app/lib/providers/user-provider';
 import type { Memory } from '@/app/lib/definitions/memory';
 import EditContentButton from '../edit-content-button';
-import UserContentCard from '../user-content-card';
+import ContentCard from '../content-card';
 import { getBestVariant, IMAGE_SIZES } from '@/app/lib/utils/images';
 
 interface UserMemoryProps {
@@ -36,18 +36,23 @@ export default function UserMemory({ memory, onDeleted, onEdit, onFlag }: UserMe
   };
 
   return (
-    <UserContentCard
+    <ContentCard
       author={memory.author}
+      avatar={memory.author.avatar}
       createdAt={memory.createdAt}
       itemId={memory.id}
       itemType='Memory'
-      initialLiked={memory.likedByCurrentUser}
-      initialLikeCount={memory.likes?.length || 0}
-      initialCommentCount={memory.commentCount || 0}
-      onDelete={handleDelete}
-      onFlag={() => onFlag(memory)}
-      canEdit={canEdit}
-      canDelete={canDelete}
+      actions={{
+        onDelete: handleDelete,
+        onFlag: () => onFlag(memory),
+        canEdit,
+        canDelete,
+      }}
+      interactions={{
+        initialLiked: memory.likedByCurrentUser,
+        initialLikeCount: memory.likes?.length || 0,
+        initialCommentCount: memory.commentCount || 0,
+      }}
     >
       <div>
         <p className='text-lg font-bold text-white'>{memoryDate}</p>
@@ -66,6 +71,6 @@ export default function UserMemory({ memory, onDeleted, onEdit, onFlag }: UserMe
           {canEdit && <EditContentButton onEdit={() => onEdit(memory)} />}
         </div>
       )}
-    </UserContentCard>
+    </ContentCard>
   );
 }
