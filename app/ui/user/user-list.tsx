@@ -34,11 +34,14 @@ export default function UserList({ users }: UserListProps) {
                     isCurrentUser,
                 };
 				return (
-                    <div className='flex w-full items-stretch justify-stretch p-2'>
+                    <div
+                        key={`user-${user.id}`}
+                        className='flex items-stretch justify-stretch p-2'
+                    >
                         <UnifiedUserHeader
+                            className='flex flex-row items-center w-full'
                             user={{ id: user.id, username: user.username }}
                             avatar={user.avatar}
-                            // bio={user.bio}
                             showOnlineStatus
                             isOnline={isOnline}
                             variant='card'

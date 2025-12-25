@@ -11,6 +11,7 @@ import type { Friend, Friendship } from '@/app/lib/definitions/friendship'
 import type { FriendRequestPayload, FriendshipStatusPayload } from '@/app/lib/socket/events'
 import { Button } from '../button'
 import FriendCard from './friend-card'
+import UnifiedUserHeader from '../user/unified-user-header'
 
 type Tab = 'friends' | 'requests'
 
@@ -95,11 +96,11 @@ export default function FriendsMenu({ onUpdate }: FriendsMenuProps) {
 	}
 
 	return (
-		<div className="bg-white rounded-lg shadow-lg p-4 max-w-md w-full">
-			<h2 className="text-xl font-bold mb-4">Friends & Bonds</h2>
+		<div className='bg-white rounded-lg shadow-lg p-4 max-w-md w-full'>
+			<h2 className='text-xl font-bold mb-4'>Friends & Bonds</h2>
 
 			{/* Tabs */}
-			<div className="flex gap-2 mb-4 border-b">
+			<div className='flex gap-2 mb-4 border-b'>
 				<Button
 					className={`px-4 py-2 font-medium transition-colors ${
 						activeTab === 'friends'
@@ -120,7 +121,7 @@ export default function FriendsMenu({ onUpdate }: FriendsMenuProps) {
 				>
 					Requests ({pendingRequests.length})
 					{pendingRequests.length > 0 && (
-						<span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+						<span className='absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center'>
 							{pendingRequests.length}
 						</span>
 					)}
@@ -128,9 +129,9 @@ export default function FriendsMenu({ onUpdate }: FriendsMenuProps) {
 			</div>
 
 			{/* Content */}
-			<div className="max-h-96 overflow-y-auto">
+			<div className='max-h-96 overflow-y-auto'>
 				{loading ? (
-					<div className="text-center py-8 text-gray-500">Loading...</div>
+					<div className='text-center py-8 text-gray-500'>Loading...</div>
 				) : activeTab === 'friends' ? (
 					<FriendsList friends={friends} onRemove={handleRemove} loading={!!actionLoading} />
 				) : (
@@ -149,34 +150,35 @@ export default function FriendsMenu({ onUpdate }: FriendsMenuProps) {
 function FriendsList({ friends, onRemove, loading }: { friends: Friend[]; onRemove: (id: string) => void; loading: boolean }) {
 	if (friends.length === 0) {
 		return (
-			<div className="text-center py-8 text-gray-500">
+			<div className='text-center py-8 text-gray-500'>
 				No friends yet. Start connecting with others!
 			</div>
 		)
 	}
 
 	return (
-		<div className="space-y-3">
+		<div className='space-y-3'>
 			{friends.map((friend) => {
 				const avatarUrl = friend.avatar?.variants.find(v => v.size === 'small')?.url
 				return (
-					<FriendCard
-						key={friend.id}
-						id={friend.id}
-						username={friend.username}
-						avatarUrl={avatarUrl}
-						subtitle={`Friends since ${new Date(friend.friendsSince).toLocaleDateString()}`}
-						actions={
+                    <UnifiedUserHeader
+                        key={friend.id}
+                        user={{ id: friend.id, username: friend.username }}
+                        avatar={avatarUrl}
+                        subtitle={`Friends since ${new Date(friend.friendsSince).toLocaleDateString()}`}
+                        actions={
 							<Button
-								size="sm"
-								variant="warn"
+								size='sm'
+								variant='warn'
 								onClick={() => onRemove(friend.friendshipId)}
 								disabled={loading}
 							>
 								Remove
 							</Button>
 						}
-					/>
+                        avatarSize={40}
+                        variant='card'
+                    />
 				)
 			})}
 		</div>
@@ -196,36 +198,35 @@ function RequestsList({
 }) {
 	if (requests.length === 0) {
 		return (
-			<div className="text-center py-8 text-gray-500">
+			<div className='text-center py-8 text-gray-500'>
 				No pending friend requests
 			</div>
 		)
 	}
 
 	return (
-		<div className="space-y-3">
+		<div className='space-y-3'>
 			{requests.map((request) => {
 				const avatarUrl = request.requester.avatar?.variants.find(v => v.size === 'small')?.url
 				return (
-					<FriendCard
-						key={request.id}
-						id={request.id}
-						username={request.requester.username}
-						avatarUrl={avatarUrl}
-						subtitle={new Date(request.createdAt).toLocaleDateString()}
-						actions={
+                    <UnifiedUserHeader
+                        key={request.id}
+                        user={{ id: request.id, username: request.requester.username }}
+                        avatar={avatarUrl}
+                        subtitle={new Date(request.createdAt).toLocaleDateString()}
+                        actions={
 							<>
 								<Button
-									size="sm"
-									variant="default"
+									size='sm'
+									variant='default'
 									onClick={() => onAccept(request.id)}
 									disabled={loading}
 								>
 									Accept
 								</Button>
 								<Button
-									size="sm"
-									variant="secondary"
+									size='sm'
+									variant='secondary'
 									onClick={() => onReject(request.id)}
 									disabled={loading}
 								>
@@ -233,6 +234,8 @@ function RequestsList({
 								</Button>
 							</>
 						}
+                        avatarSize={40}
+                        variant='card'
 					/>
 				)
 			})}

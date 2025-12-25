@@ -107,7 +107,7 @@ export default function UnifiedUserHeader({
   const textContainerClasses = {
     compact: 'flex flex-1 flex-col min-w-0',
     default: 'flex-1 min-w-0',
-    card: 'flex flex-col',
+    card: 'flex flex-1 flex-col',
   };
 
   const getCompactTextColor = (isDark: boolean) => ({
