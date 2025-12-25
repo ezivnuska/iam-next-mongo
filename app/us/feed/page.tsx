@@ -18,7 +18,11 @@ export default async function FeedPage() {
     return (
         <PageContent>
             <PageHeader
-                title='Feed'
+                useBreadcrumbs={true}
+                breadcrumbs={[
+                    { label: 'Us', href: '/?section=us' },
+                    { label: 'Feed', href: '/us/feed', active: true }
+                ]}
                 subtitle='Public Posts'
             />
 

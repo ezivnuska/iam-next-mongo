@@ -31,7 +31,10 @@ export default function GamesPage() {
     return (
         <PageContent>
             <PageHeader
-                title='Games'
+                useBreadcrumbs={true}
+                breadcrumbs={[
+                    { label: 'Games', href: '/?section=games', active: true }
+                ]}
                 subtitle='Interactive games and projects'
             />
 

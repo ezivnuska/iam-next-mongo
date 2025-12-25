@@ -15,7 +15,11 @@ export default function WorkPage() {
     return (
         <PageContent>
             <PageHeader
-                title='Work'
+                useBreadcrumbs={true}
+                breadcrumbs={[
+                    { label: 'Eric', href: '/?section=eric' },
+                    { label: 'Work', href: '/eric/work', active: true }
+                ]}
                 subtitle='Professional Experience'
             />
 

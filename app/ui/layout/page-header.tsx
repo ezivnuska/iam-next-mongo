@@ -4,36 +4,58 @@
 
 import { clsx } from 'clsx';
 import { useTheme } from '@/app/lib/hooks/use-theme';
+import Breadcrumbs from '@/app/ui/layout/breadcrumbs';
+
+interface Breadcrumb {
+    label: string;
+    href: string;
+    active?: boolean;
+}
 
 interface PageHeaderProps {
-    title: string;
+    title?: string;
     subtitle?: string;
     className?: string;
+    breadcrumbs?: Breadcrumb[];
+    useBreadcrumbs?: boolean;
 }
 
 /**
  * Page Header Component
  *
- * Displays a page title with optional subtitle using the same text styles as breadcrumbs.
+ * Displays a page title with optional subtitle OR breadcrumbs navigation.
  *
- * @param title - The main page heading
+ * @param title - The main page heading (not shown if useBreadcrumbs is true)
  * @param subtitle - Optional subtitle or description text
  * @param className - Optional additional CSS classes
+ * @param breadcrumbs - Array of breadcrumb items { label, href, active? }
+ * @param useBreadcrumbs - If true, shows breadcrumbs instead of title
  *
  */
 
-export default function PageHeader({ title, subtitle, className }: PageHeaderProps) {
+export default function PageHeader({
+    title,
+    subtitle,
+    className,
+    breadcrumbs,
+    useBreadcrumbs = false
+}: PageHeaderProps) {
     const { resolvedTheme } = useTheme();
     const isDark = resolvedTheme === 'dark';
 
     return (
         <header className={clsx('px-2', className)}>
-            <h1
-                className='leading-none text-xl font-bold md:text-xl'
-                style={{ color: isDark ? '#ffffff' : '#111827' }}
-            >
-                {title}
-            </h1>
+            {useBreadcrumbs && breadcrumbs ? (
+                <Breadcrumbs breadcrumbs={breadcrumbs} />
+            ) : title ? (
+                <h1
+                    className='leading-none text-xl font-bold md:text-xl'
+                    style={{ color: isDark ? '#ffffff' : '#111827' }}
+                >
+                    {title}
+                </h1>
+            ) : null}
+
             {subtitle && (
                 <p
                     className='mt-0.5 text-lg md:text-lg'

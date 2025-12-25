@@ -31,7 +31,10 @@ export default function EricPage() {
     return (
         <PageContent>
             <PageHeader
-                title='Eric'
+                useBreadcrumbs={true}
+                breadcrumbs={[
+                    { label: 'Eric', href: '/eric', active: true }
+                ]}
                 subtitle='About Me'
             />
 

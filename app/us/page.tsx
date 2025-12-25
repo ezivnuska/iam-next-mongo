@@ -33,7 +33,10 @@ export default function UsPage() {
     return (
         <PageContent>
             <PageHeader
-                title='Us'
+                useBreadcrumbs={true}
+                breadcrumbs={[
+                    { label: 'Us', href: '/us', active: true }
+                ]}
                 subtitle='User Activity'
             />
 

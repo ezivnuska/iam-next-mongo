@@ -13,7 +13,7 @@ import {
     PhotoIcon,
 } from '@heroicons/react/24/solid';
 import { useUser } from '@/app/lib/providers/user-provider';
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import PokerChipIcon from '@/app/ui/icons/poker-chip-icon';
 import NavLinkCardAnimated from '@/app/ui/header/nav-link-card-animated';
 import clsx from 'clsx';
@@ -31,6 +31,7 @@ export interface NavLink {
 interface NavLinkListAnimatedProps {
     className?: string;
     links?: NavLink[];
+    initialSection?: string | null;
 }
 
 // Default links (identical to nav-link-list-sliding)
@@ -124,12 +125,35 @@ const defaultLinks: NavLink[] = [
 export default function NavLinkListAnimated({
     className = '',
     links = defaultLinks,
+    initialSection = null,
 }: NavLinkListAnimatedProps) {
     const { status, user } = useUser();
     const [activeSubMenu, setActiveSubMenu] = useState<NavLink | null>(null);
 
     // Show private links when authenticated or signing out
     const isAuthenticated = user && (status === 'authenticated' || status === 'signing-out');
+
+    // Handle initialSection query parameter to auto-open submenu
+    useEffect(() => {
+        if (initialSection) {
+            // Map section names to hrefs
+            const sectionMap: { [key: string]: string } = {
+                'eric': '/eric',
+                'us': '/us',
+                'games': '/games',
+                'profile': '/profile',
+                'you': '/profile',
+            };
+
+            const targetHref = sectionMap[initialSection.toLowerCase()];
+            if (targetHref) {
+                const matchingLink = links.find(link => link.href === targetHref);
+                if (matchingLink && matchingLink.subLinks && matchingLink.subLinks.length > 0) {
+                    setActiveSubMenu(matchingLink);
+                }
+            }
+        }
+    }, [initialSection, links]);
 
     // Filter links based on auth
     const filteredLinks = links.filter(link => {

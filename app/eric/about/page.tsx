@@ -15,7 +15,11 @@ export default function AboutPage() {
     return (
         <PageContent>
             <PageHeader
-                title='About'
+                useBreadcrumbs={true}
+                breadcrumbs={[
+                    { label: 'Eric', href: '/?section=eric' },
+                    { label: 'About', href: '/eric/about', active: true }
+                ]}
                 subtitle='Professional Background'
             />
 

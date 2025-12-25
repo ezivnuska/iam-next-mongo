@@ -20,7 +20,13 @@ export default async function Page() {
 
     return (
         <PageContent>
-            <PageHeader title='Users' />
+            <PageHeader
+                useBreadcrumbs={true}
+                breadcrumbs={[
+                    { label: 'Us', href: '/?section=us' },
+                    { label: 'Users', href: '/us/users', active: true }
+                ]}
+            />
             <UserList users={users || []} />
         </PageContent>
     );
