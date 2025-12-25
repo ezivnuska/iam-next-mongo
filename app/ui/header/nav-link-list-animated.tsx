@@ -12,10 +12,11 @@ import {
     Squares2X2Icon,
     PhotoIcon,
 } from '@heroicons/react/24/solid';
-import Link from 'next/link';
 import { useUser } from '@/app/lib/providers/user-provider';
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import PokerChipIcon from '@/app/ui/icons/poker-chip-icon';
+import NavLinkCardAnimated from '@/app/ui/header/nav-link-card-animated';
+import clsx from 'clsx';
 
 export interface NavLink {
     href: string;
@@ -125,6 +126,7 @@ export default function NavLinkListAnimated({
     links = defaultLinks,
 }: NavLinkListAnimatedProps) {
     const { status, user } = useUser();
+    const [activeSubMenu, setActiveSubMenu] = useState<NavLink | null>(null);
 
     // Show private links when authenticated or signing out
     const isAuthenticated = user && (status === 'authenticated' || status === 'signing-out');
@@ -137,51 +139,89 @@ export default function NavLinkListAnimated({
         return true;
     });
 
+    // Filter sublinks based on auth
+    const getFilteredSubLinks = (subLinks?: NavLink[]) => {
+        if (!subLinks) return [];
+        return subLinks.filter(subLink => {
+            if (subLink.requiresAuth && !isAuthenticated) {
+                return false;
+            }
+            return true;
+        });
+    };
+
+    const activeSubLinks = activeSubMenu ? getFilteredSubLinks(activeSubMenu.subLinks) : [];
+
+    // Handle link click - open submenu or navigate
+    const handleLinkClick = (link: NavLink) => {
+        if (link.subLinks && link.subLinks.length > 0) {
+            setActiveSubMenu(link);
+        }
+    };
+
+    // Handle closing submenu
+    const handleCloseSubMenu = () => {
+        setActiveSubMenu(null);
+    };
+
     return (
-        <div className={`flex flex-col items-center justify-center w-full px-4 ${className}`}>
-            <nav className='flex flex-col items-center gap-4 w-full max-w-md'>
-                {filteredLinks.map((link, index) => (
-                    <Link
-                        key={link.href}
-                        href={link.href}
-                        className='w-full'
-                        style={{
-                            animation: `fade-in 0.6s ease-out ${index * 150}ms both`,
-                        }}
-                    >
-                        <div className='flex items-center gap-4 p-6 rounded-2xl border-2 border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 hover:border-blue-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 group'>
-                            {/* Icon */}
-                            <div className='shrink-0 text-gray-600 dark:text-gray-400 group-hover:text-blue-500 transition-colors'>
-                                {link.icon}
-                            </div>
+        <div className={`flex flex-col items-center justify-center w-full px-4 py-8 ${className}`}>
+            <div className='flex flex-1 w-full max-w-md'>
+                {!activeSubMenu ? (
+                    /* Main nav links container */
+                    <nav className='flex flex-col items-center justify-between gap-4 w-full'>
+                        {filteredLinks.map((link, index) => (
+                            <NavLinkCardAnimated
+                                key={link.href}
+                                href={link.href}
+                                title={link.title}
+                                subtitle={link.subtitle}
+                                icon={link.icon}
+                                badge={link.badge}
+                                variant='default'
+                                onClick={link.subLinks && link.subLinks.length > 0 ? () => handleLinkClick(link) : undefined}
+                                style={{
+                                    animation: `fade-in 0.6s ease-out ${index * 150}ms both`,
+                                }}
+                            />
+                        ))}
+                    </nav>
+                ) : (
+                    /* Submenu */
+                    <div className='flex flex-1 flex-col justify-start gap-4'>
+                        {/* Parent link (clickable to close submenu) */}
+                        <NavLinkCardAnimated
+                            href={activeSubMenu.href}
+                            title={activeSubMenu.title}
+                            subtitle={activeSubMenu.subtitle}
+                            icon={activeSubMenu.icon}
+                            badge={activeSubMenu.badge}
+                            variant='default'
+                            onClick={handleCloseSubMenu}
+                            chevronDirection='up'
+                            forceActive={true}
+                        />
 
-                            {/* Text content */}
-                            <div className='flex-1'>
-                                <h2 className='text-xl font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors'>
-                                    {link.title}
-                                </h2>
-                                <p className='text-gray-600 dark:text-gray-400 mt-1'>
-                                    {link.subtitle}
-                                </p>
-                            </div>
-
-                            {/* Arrow icon */}
-                            <div className='shrink-0 text-gray-400 dark:text-gray-600 group-hover:text-blue-500 transition-colors'>
-                                <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M9 5l7 7-7 7' />
-                                </svg>
-                            </div>
-
-                            {/* Badge */}
-                            {link.badge !== null && link.badge !== undefined && link.badge > 0 && (
-                                <span className='absolute -top-2 -right-2 flex items-center justify-center min-w-[24px] h-[24px] px-2 text-sm font-bold text-white bg-red-500 rounded-full'>
-                                    {link.badge}
-                                </span>
-                            )}
+                        {/* Submenu items */}
+                        <div className='flex flex-col gap-3'>
+                            {activeSubLinks.map((subLink, index) => (
+                                <NavLinkCardAnimated
+                                    key={subLink.href}
+                                    href={subLink.href}
+                                    title={subLink.title}
+                                    subtitle={subLink.subtitle}
+                                    icon={subLink.icon}
+                                    badge={subLink.badge}
+                                    variant='compact'
+                                    style={{
+                                        animation: `fade-in 0.6s ease-out ${index * 150}ms both`,
+                                    }}
+                                />
+                            ))}
                         </div>
-                    </Link>
-                ))}
-            </nav>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

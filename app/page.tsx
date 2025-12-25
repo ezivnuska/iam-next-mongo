@@ -10,7 +10,7 @@ export default async function Page() {
     // const content = await getPublicContent();
     return (
         <PageContent>
-            <div className='flex flex-1 text-gray-900 dark:text-white'>
+            <div className='flex flex-1'>
                 <NavLinkListAnimated className='py-4' />
             </div>
         </PageContent>
