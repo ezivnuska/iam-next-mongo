@@ -46,6 +46,13 @@ export function useCarousel<T>({
   const canGoPrevious = currentIndex > 0;
   const currentItem = items[currentIndex];
 
+  // Sync currentIndex with initialIndex when it changes
+  useEffect(() => {
+    if (enabled && initialIndex >= 0 && initialIndex < items.length) {
+      setCurrentIndex(initialIndex);
+    }
+  }, [initialIndex, enabled, items.length]);
+
   const goToNext = useCallback(() => {
     if (canGoNext) {
       setCurrentIndex(prev => {

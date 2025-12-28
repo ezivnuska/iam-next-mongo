@@ -15,9 +15,10 @@ type UserContentItemCardProps = {
     onDeleted: (id: string) => void;
     onEdit: (item: ContentItem) => void;
     onFlag: (item: Memory | Post) => void;
+    onImageClick?: (image: Image) => void;
 }
 
-export default function UserContentItemCard({ item, onDeleted, onEdit, onFlag }: UserContentItemCardProps) {
+export default function UserContentItemCard({ item, onDeleted, onEdit, onFlag, onImageClick }: UserContentItemCardProps) {
     if (item.contentType === 'memory') {
         return (
             <UserMemory
@@ -25,6 +26,7 @@ export default function UserContentItemCard({ item, onDeleted, onEdit, onFlag }:
                 onDeleted={onDeleted}
                 onEdit={() => onEdit(item)}
                 onFlag={onFlag as (memory: Memory) => void}
+                onImageClick={onImageClick}
             />
         );
     }
@@ -36,6 +38,7 @@ export default function UserContentItemCard({ item, onDeleted, onEdit, onFlag }:
                 onDeleted={onDeleted}
                 onEdit={() => onEdit(item)}
                 onFlag={onFlag as (post: Post) => void}
+                onImageClick={onImageClick}
             />
         );
     }
@@ -45,6 +48,7 @@ export default function UserContentItemCard({ item, onDeleted, onEdit, onFlag }:
             <UserImage
                 image={item as Image}
                 onDeleted={onDeleted}
+                onImageClick={onImageClick}
             />
         );
     }

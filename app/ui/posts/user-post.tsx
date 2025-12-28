@@ -3,6 +3,7 @@
 'use client';
 
 import type { Post } from '@/app/lib/definitions/post';
+import type { Image } from '@/app/lib/definitions/image';
 import EditContentButton from '../edit-content-button';
 import ContentCard from '../content-card';
 import ContentImage from '../content-image';
@@ -15,9 +16,10 @@ interface UserPostProps {
     onDeleted: (postId: string) => void;
     onEdit: (post: Post) => void;
     onFlag: (post: Post) => void;
+    onImageClick?: (image: Image) => void;
 }
 
-export default function UserPost({ post, onDeleted, onEdit, onFlag }: UserPostProps) {
+export default function UserPost({ post, onDeleted, onEdit, onFlag, onImageClick }: UserPostProps) {
     const { canEdit, canDelete } = useContentPermissions(post.author.id);
     const handleDelete = useContentDelete('posts', onDeleted);
     const { resolvedTheme } = useTheme();
@@ -41,7 +43,12 @@ export default function UserPost({ post, onDeleted, onEdit, onFlag }: UserPostPr
                 initialCommentCount: post.commentCount || 0,
             }}
         >
-            <ContentImage image={post.image} alt='Post image' className='rounded mt-2 object-cover' />
+            <ContentImage
+                image={post.image}
+                alt='Post image'
+                className='rounded mt-2 object-cover'
+                onClick={post.image && onImageClick ? () => onImageClick(post.image!) : undefined}
+            />
             {post.content && (
                 <div className='flex flex-row gap-2'>
                     <div className='flex flex-1 py-1'>

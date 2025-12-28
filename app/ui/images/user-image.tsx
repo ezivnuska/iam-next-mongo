@@ -17,9 +17,10 @@ import { useContentDelete } from "@/app/lib/hooks/use-content-delete";
 interface UserImageProps {
     image: Image;
     onDeleted: (imageId: string) => void;
+    onImageClick?: (image: Image) => void;
 }
 
-export default function UserImage({ image, onDeleted }: UserImageProps) {
+export default function UserImage({ image, onDeleted, onImageClick }: UserImageProps) {
     const { user } = useUser();
     const { navigateToUser } = useUserNavigation();
     const { canDelete } = useContentPermissions(image.userId || '');
@@ -60,7 +61,8 @@ export default function UserImage({ image, onDeleted }: UserImageProps) {
                             <img
                                 src={bestVariant.url}
                                 alt={image.alt || "Image"}
-                                className="rounded mt-2 object-cover"
+                                className={`rounded mt-2 object-cover ${onImageClick ? 'cursor-pointer' : ''}`}
+                                onClick={onImageClick ? () => onImageClick(image) : undefined}
                             />
                         )}
                         <ContentInteractions

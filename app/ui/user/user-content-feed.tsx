@@ -165,6 +165,7 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                                 onDeleted={handleDeleted}
                                 onEdit={handleEdit}
                                 onFlag={handleFlag}
+                                onImageClick={handleImageClick}
                             />
                         ) : (
                             <ContentItemCard

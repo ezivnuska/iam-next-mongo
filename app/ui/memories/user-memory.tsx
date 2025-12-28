@@ -3,6 +3,7 @@
 'use client';
 
 import type { Memory } from '@/app/lib/definitions/memory';
+import type { Image } from '@/app/lib/definitions/image';
 import EditContentButton from '../edit-content-button';
 import ContentCard from '../content-card';
 import ContentImage from '../content-image';
@@ -15,9 +16,10 @@ interface UserMemoryProps {
   onDeleted: (memoryId: string) => void;
   onEdit: (memory: Memory) => void;
   onFlag: (memory: Memory) => void;
+  onImageClick?: (image: Image) => void;
 }
 
-export default function UserMemory({ memory, onDeleted, onEdit, onFlag }: UserMemoryProps) {
+export default function UserMemory({ memory, onDeleted, onEdit, onFlag, onImageClick }: UserMemoryProps) {
   const { canEdit, canDelete } = useContentPermissions(memory.author.id);
   const handleDelete = useContentDelete('memories', onDeleted);
   const { resolvedTheme } = useTheme();
@@ -51,7 +53,12 @@ export default function UserMemory({ memory, onDeleted, onEdit, onFlag }: UserMe
         <p className='text-lg font-bold' style={{ color: isDark ? '#ffffff' : '#111827' }}>{memoryDate}</p>
         {memory.title && <p className='text-lg font-light' style={{ color: isDark ? '#9ca3af' : '#4b5563' }}>{memory.title}</p>}
       </div>
-      <ContentImage image={memory.image} alt='Memory image' className='max-w-full max-h-96 rounded my-2 object-cover' />
+      <ContentImage
+        image={memory.image}
+        alt='Memory image'
+        className='max-w-full max-h-96 rounded my-2 object-cover'
+        onClick={memory.image && onImageClick ? () => onImageClick(memory.image!) : undefined}
+      />
       {memory.content && (
         <div className='flex flex-row gap-2'>
           <p className='flex-1 whitespace-pre-wrap' style={{ color: isDark ? '#ffffff' : '#111827' }}>{memory.content}</p>
