@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { ContentItem } from '@/app/lib/definitions/content';
 import type { Memory } from '@/app/lib/definitions/memory';
 import type { Post } from '@/app/lib/definitions/post';
@@ -17,6 +17,9 @@ import CreatePostForm from '@/app/ui/posts/create-post-form';
 import UploadForm from '@/app/ui/images/upload-form';
 import { useUser } from '@/app/lib/providers/user-provider';
 import { useTheme } from '@/app/lib/hooks/use-theme';
+import { useCarousel } from '@/app/lib/hooks/use-carousel';
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
+import NextImage from 'next/image';
 
 interface UserContentFeedProps {
     initialContent: ContentItem[];
@@ -32,6 +35,7 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
     const [selectedFilters, setSelectedFilters] = useState<Set<string>>(new Set());
     const [modalType, setModalType] = useState<ModalType>(null);
     const [editingItem, setEditingItem] = useState<Memory | Post | undefined>(undefined);
+    const [selectedImage, setSelectedImage] = useState<Image | null>(null);
 
     // Check if current user is the author of an item
     const isCurrentUserAuthor = (item: ContentItem): boolean => {
@@ -91,6 +95,37 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
         ? content
         : content.filter(item => selectedFilters.has(item.contentType));
 
+    // Extract all images from content (memories with images, posts with images, and standalone images)
+    const images = useMemo(() => {
+        const imageList: Image[] = [];
+        filteredContent.forEach(item => {
+            if (item.contentType === 'memory' && item.image) {
+                imageList.push(item.image);
+            } else if (item.contentType === 'post' && item.image) {
+                imageList.push(item.image);
+            } else if (item.contentType === 'image') {
+                imageList.push(item);
+            }
+        });
+        return imageList;
+    }, [filteredContent]);
+
+    // Find initial index when image is selected
+    const initialImageIndex = selectedImage ? images.findIndex(img => img.id === selectedImage.id) : 0;
+
+    // Carousel hook
+    const carousel = useCarousel({
+        items: images,
+        initialIndex: initialImageIndex >= 0 ? initialImageIndex : 0,
+        enabled: !!selectedImage,
+        onClose: () => setSelectedImage(null),
+    });
+
+    // Handle image click
+    const handleImageClick = (image: Image) => {
+        setSelectedImage(image);
+    };
+
     return (
         <div className='w-full max-w-[600px] pb-4'>
             {/* Add Buttons - only show when editable */}
@@ -132,7 +167,11 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                                 onFlag={handleFlag}
                             />
                         ) : (
-                            <ContentItemCard key={`${item.contentType}-${item.id}`} item={item} />
+                            <ContentItemCard
+                                key={`${item.contentType}-${item.id}`}
+                                item={item}
+                                onImageClick={handleImageClick}
+                            />
                         )
                     ))
                 )}
@@ -182,6 +221,69 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                         editItem={editingItem as Post | undefined}
                     />
                 </Modal>
+            )}
+
+            {/* Image Carousel Modal */}
+            {selectedImage && carousel.currentItem && (
+                <div
+                    className='fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50'
+                    onClick={() => setSelectedImage(null)}
+                    {...carousel.touchHandlers}
+                >
+                    <div className='relative max-w-5xl w-full h-full flex items-center justify-center p-4' onClick={(e) => e.stopPropagation()}>
+                        <NextImage
+                            src={
+                                carousel.currentItem.variants.find((v) => v.size === 'original')?.url ||
+                                carousel.currentItem.variants[0].url
+                            }
+                            alt={carousel.currentItem.alt || 'Full image'}
+                            fill
+                            style={{ objectFit: 'contain' }}
+                            sizes='100vw'
+                        />
+
+                        {/* Close button */}
+                        <button
+                            className='absolute top-4 right-4 bg-white rounded-full px-3 py-1 shadow text-black z-10'
+                            onClick={() => setSelectedImage(null)}
+                        >
+                            ✕
+                        </button>
+
+                        {/* Position indicator */}
+                        <div className='absolute top-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-60 text-white rounded-full px-4 py-2 text-sm z-10'>
+                            {carousel.positionText}
+                        </div>
+
+                        {/* Previous button */}
+                        {carousel.canGoPrevious && (
+                            <button
+                                className='absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-40 rounded-full p-3 shadow text-white z-10 transition-all'
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    carousel.goToPrevious();
+                                }}
+                                aria-label='Previous image'
+                            >
+                                <ChevronLeftIcon className='w-8 h-8' />
+                            </button>
+                        )}
+
+                        {/* Next button */}
+                        {carousel.canGoNext && (
+                            <button
+                                className='absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-40 rounded-full p-3 shadow text-white z-10 transition-all'
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    carousel.goToNext();
+                                }}
+                                aria-label='Next image'
+                            >
+                                <ChevronRightIcon className='w-8 h-8' />
+                            </button>
+                        )}
+                    </div>
+                </div>
             )}
         </div>
     );

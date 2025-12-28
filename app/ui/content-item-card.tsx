@@ -3,15 +3,17 @@
 'use client';
 
 import type { ContentItem } from '@/app/lib/definitions/content';
+import type { Image as ImageType } from '@/app/lib/definitions/image';
 import ContentCard from '@/app/ui/content-card';
 import ContentImage from '@/app/ui/content-image';
 import { useTheme } from '@/app/lib/hooks/use-theme';
 
 type ContentItemCardProps = {
   item: ContentItem;
+  onImageClick?: (image: ImageType) => void;
 }
 
-export default function ContentItemCard({ item }: ContentItemCardProps) {
+export default function ContentItemCard({ item, onImageClick }: ContentItemCardProps) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
   if (item.contentType === 'memory') {
@@ -39,7 +41,12 @@ export default function ContentItemCard({ item }: ContentItemCardProps) {
           <p className='text-lg font-bold' style={{ color: isDark ? '#ffffff' : '#111827' }}>{memoryDate}</p>
           {memory.title && <p className='text-lg font-light' style={{ color: isDark ? '#9ca3af' : '#4b5563' }}>{memory.title}</p>}
         </div>
-        <ContentImage image={memory.image} alt='Memory image' className='max-w-full max-h-96 rounded my-2 object-cover' />
+        <ContentImage
+          image={memory.image}
+          alt='Memory image'
+          className='max-w-full max-h-96 rounded my-2 object-cover'
+          onClick={memory.image && onImageClick ? () => onImageClick(memory.image!) : undefined}
+        />
         {memory.content && (
           <p className='whitespace-pre-wrap' style={{ color: isDark ? '#ffffff' : '#111827' }}>{memory.content}</p>
         )}
@@ -63,7 +70,12 @@ export default function ContentItemCard({ item }: ContentItemCardProps) {
           initialCommentCount: post.commentCount || 0,
         }}
       >
-        <ContentImage image={post.image} alt='Post image' className='rounded mt-2 object-cover' />
+        <ContentImage
+          image={post.image}
+          alt='Post image'
+          className='rounded mt-2 object-cover'
+          onClick={post.image && onImageClick ? () => onImageClick(post.image!) : undefined}
+        />
         {post.content && (
           <div className='py-1' style={{ color: isDark ? '#ffffff' : '#111827' }}>
             <p>{post.content}</p>
@@ -94,7 +106,12 @@ export default function ContentItemCard({ item }: ContentItemCardProps) {
           initialCommentCount: image.commentCount || 0,
         }}
       >
-        <ContentImage image={image} alt={image.alt || 'Image'} className='rounded my-2 object-cover' />
+        <ContentImage
+          image={image}
+          alt={image.alt || 'Image'}
+          className='rounded my-2 object-cover'
+          onClick={onImageClick ? () => onImageClick(image) : undefined}
+        />
       </ContentCard>
     );
   }
