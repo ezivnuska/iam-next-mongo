@@ -10,7 +10,6 @@ import Modal from '@/app/ui/modal';
 import ImageModalMenu from '@/app/ui/images/image-modal-menu';
 import { createComment } from '@/app/lib/actions/comments';
 import { handleError } from '@/app/lib/utils/error-handler';
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 import type { Image as ImageType } from '@/app/lib/definitions/image';
 import type { Comment } from '@/app/lib/definitions/comment';
 
@@ -260,34 +259,6 @@ export default function ImageGallery({ authorized, images, onDeleted, onImageUpd
                     <div className='absolute top-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-60 text-white rounded-full px-4 py-2 text-sm z-10'>
                         {currentIndex + 1} / {images.length}
                     </div>
-
-                    {/* Previous button */}
-                    {currentIndex > 0 && (
-                        <button
-                            className='absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-40 rounded-full p-3 shadow text-white z-10 transition-all'
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                goToPrevious();
-                            }}
-                            aria-label='Previous image'
-                        >
-                            <ChevronLeftIcon className='w-8 h-8' />
-                        </button>
-                    )}
-
-                    {/* Next button */}
-                    {currentIndex < images.length - 1 && (
-                        <button
-                            className='absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-40 rounded-full p-3 shadow text-white z-10 transition-all'
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                goToNext();
-                            }}
-                            aria-label='Next image'
-                        >
-                            <ChevronRightIcon className='w-8 h-8' />
-                        </button>
-                    )}
 
                     <ImageModalMenu
                         ref={menuRef}

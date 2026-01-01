@@ -3,7 +3,8 @@
 'use client';
 
 import { clsx } from 'clsx';
-import { useTheme } from '@/app/lib/hooks/use-theme';
+import { useIsDark } from '@/app/lib/hooks/use-is-dark';
+import { getTextColor, getTertiaryTextColor } from '@/app/lib/utils/theme-colors';
 import Breadcrumbs from '@/app/ui/layout/breadcrumbs';
 
 interface Breadcrumb {
@@ -40,17 +41,16 @@ export default function PageHeader({
     breadcrumbs,
     useBreadcrumbs = false
 }: PageHeaderProps) {
-    const { resolvedTheme } = useTheme();
-    const isDark = resolvedTheme === 'dark';
+    const isDark = useIsDark();
 
     return (
-        <header className={clsx('px-2', className)}>
+        <header className={clsx('', className)}>
             {useBreadcrumbs && breadcrumbs ? (
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             ) : title ? (
                 <h1
                     className='leading-none text-xl font-bold md:text-xl'
-                    style={{ color: isDark ? '#ffffff' : '#111827' }}
+                    style={{ color: getTextColor(isDark) }}
                 >
                     {title}
                 </h1>
@@ -59,7 +59,7 @@ export default function PageHeader({
             {subtitle && (
                 <p
                     className='mt-0.5 text-lg md:text-lg'
-                    style={{ color: isDark ? '#d1d5db' : '#4b5563' }}
+                    style={{ color: getTertiaryTextColor(isDark) }}
                 >
                     {subtitle}
                 </p>

@@ -36,7 +36,7 @@ export default function SimpleScreen({
                     <AuthRedirectHandler />
                 </Suspense>
 
-                <div className={clsx('flex shrink-0 max-w-[600px] mx-auto items-center py-2 gap-4 px-2', {
+                <div className={clsx('flex shrink-0 max-w-[600px] mx-auto items-center py-2 gap-4 px-4', {
                     'flex-row w-full justify-between': !horizontalLayout,
                     'flex-col py-4 px-4': horizontalLayout,
                 })}>

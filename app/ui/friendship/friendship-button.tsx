@@ -140,11 +140,11 @@ export default function FriendshipButton({ userId, username, isCurrentUser }: Fr
 				<Button
                     variant='secondary'
 					onClick={() => setShowFriendsMenu(true)}
-					// className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors relative"
+					// className='px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors relative'
 				>
 					My Friends
 					{pendingRequestsCount > 0 && (
-						<span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+						<span className='absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center'>
 							{pendingRequestsCount}
 						</span>
 					)}
@@ -153,7 +153,7 @@ export default function FriendshipButton({ userId, username, isCurrentUser }: Fr
 				{showFriendsMenu && (
 					<Modal
 						onClose={handleMenuClose}
-						contentClassName="bg-white rounded-lg p-0 max-w-md w-full"
+						contentClassName='bg-white rounded-lg p-0 max-w-md w-full'
 					>
 						<FriendsMenu onUpdate={handleMenuClose} />
 					</Modal>
@@ -164,11 +164,7 @@ export default function FriendshipButton({ userId, username, isCurrentUser }: Fr
 
 	// Otherwise, show the add friend button with different states
 	if (loading) {
-		return (
-			<Button variant="secondary" disabled>
-				Loading...
-			</Button>
-		)
+		return <span className='text-gray-400 lading-none px-2'>. . .</span>
 	}
 
 	if (status === 'none') {
@@ -176,7 +172,7 @@ export default function FriendshipButton({ userId, username, isCurrentUser }: Fr
 			<Button
 				onClick={handleSend}
 				disabled={!!actionLoading}
-				variant="default"
+				variant='default'
 			>
 				{actionLoading === 'send' ? 'Sending...' : 'Add Friend'}
 			</Button>
@@ -188,7 +184,7 @@ export default function FriendshipButton({ userId, username, isCurrentUser }: Fr
 			<Button
 				onClick={handleCancel}
 				disabled={!!actionLoading}
-				variant="secondary"
+				variant='secondary'
 			>
 				{actionLoading === 'remove' ? 'Canceling...' : 'Cancel Request'}
 			</Button>
@@ -197,12 +193,12 @@ export default function FriendshipButton({ userId, username, isCurrentUser }: Fr
 
 	if (status === 'pending_received') {
 		return (
-			<div className="flex gap-2">
+			<div className='flex gap-2'>
 				{actionLoading !== 'reject' && (
                     <Button
                         onClick={handleAccept}
                         disabled={!!actionLoading}
-                        variant="confirm"
+                        variant='confirm'
                     >
                         {actionLoading === 'accept' ? 'Accepting...' : 'Accept'}
                     </Button>
@@ -211,7 +207,7 @@ export default function FriendshipButton({ userId, username, isCurrentUser }: Fr
                     <Button
                         onClick={handleReject}
                         disabled={!!actionLoading}
-                        variant="secondary"
+                        variant='secondary'
                     >
                         {actionLoading === 'reject' ? 'Declining...' : 'Decline'}
                     </Button>
@@ -223,18 +219,18 @@ export default function FriendshipButton({ userId, username, isCurrentUser }: Fr
 	if (status === 'accepted') {
 		if (showRemoveConfirm) {
 			return (
-				<div className="flex gap-2">
+				<div className='flex gap-2'>
 					<Button
 						onClick={handleRemove}
 						disabled={!!actionLoading}
-						variant="warn"
+						variant='warn'
 					>
 						{actionLoading === 'remove' ? 'Removing...' : 'Remove'}
 					</Button>
 					{!actionLoading && (
 						<Button
 							onClick={() => setShowRemoveConfirm(false)}
-							variant="secondary"
+							variant='secondary'
 						>
 							Cancel
 						</Button>
@@ -246,7 +242,7 @@ export default function FriendshipButton({ userId, username, isCurrentUser }: Fr
 		return (
 			<Button
 				onClick={() => setShowRemoveConfirm(true)}
-				variant="ghost"
+				variant='ghost'
 			>
 				✓ Friends
 			</Button>

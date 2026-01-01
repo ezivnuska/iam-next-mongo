@@ -2,29 +2,16 @@
 
 export const dynamic = 'force-dynamic';
 
-import Breadcrumbs from '@/app/ui/layout/breadcrumbs';
 import { auth } from '@/app/lib/auth';
 import { redirect } from 'next/navigation';
-import ImagesClient from '@/app/ui/images/images-client';
-import PageContent from '@/app/ui/layout/page/page-content';
 
-export default async function Page() {
+export default async function ProfileImagesRedirect() {
     const session = await auth();
-    if (!session) {
+
+    if (!session?.user?.username) {
         redirect('/?auth=required&callbackUrl=/profile/images');
     }
 
-    return (
-        <PageContent>
-            <Breadcrumbs
-                breadcrumbs={[
-                    { label: 'Profile', href: '/profile' },
-                    { label: 'Images', href: '/profile/images', active: true },
-                ]}
-            />
-            <div className='flex flex-1'>
-                <ImagesClient authorized={true} />
-            </div>
-        </PageContent>
-    );
+    // Redirect to the user's images page
+    redirect(`/users/${session.user.username}/images`);
 }

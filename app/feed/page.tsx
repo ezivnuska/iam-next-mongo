@@ -1,4 +1,4 @@
-// app/us/feed/page.tsx
+// app/feed/page.tsx
 
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +10,7 @@ import PageContent from '@/app/ui/layout/page/page-content';
 
 export const metadata: Metadata = {
     title: 'Feed',
-    description: ' Public Posts',
+    description: 'Public Posts',
 };
 
 export default async function FeedPage() {
@@ -20,13 +20,12 @@ export default async function FeedPage() {
             <PageHeader
                 useBreadcrumbs={true}
                 breadcrumbs={[
-                    { label: 'Us', href: '/?section=us' },
-                    { label: 'Feed', href: '/us/feed', active: true }
+                    { label: 'Feed', href: '/feed', active: true }
                 ]}
                 subtitle='Public Posts'
             />
 
-            <div className='space-y-8 px-2 pb-8'>
+            <div className='space-y-8 pb-8'>
                 <UserContentFeed initialContent={content} />
             </div>
         </PageContent>

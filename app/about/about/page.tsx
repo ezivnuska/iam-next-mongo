@@ -1,4 +1,4 @@
-// app/eric/about/page.tsx
+// app/about/about/page.tsx
 
 import { Metadata } from 'next';
 import PageHeader from '@/app/ui/layout/page-header';
@@ -11,14 +11,14 @@ export const metadata: Metadata = {
     description: 'About Me',
 };
 
-export default function AboutPage() {
+export default function AboutDetailPage() {
     return (
         <PageContent>
             <PageHeader
                 useBreadcrumbs={true}
                 breadcrumbs={[
-                    { label: 'Eric', href: '/?section=eric' },
-                    { label: 'About', href: '/eric/about', active: true }
+                    { label: 'About', href: '/about' },
+                    { label: 'About', href: '/about/about', active: true }
                 ]}
                 subtitle='Professional Background'
             />

@@ -2,7 +2,6 @@
 
 'use client';
 
-import ContentCardHeader from './content-card-header';
 import ContentInteractions from './content-interactions';
 import type { Image as ImageType } from '@/app/lib/definitions/image';
 import UnifiedUserHeader from './user/unified-user-header';
@@ -22,6 +21,7 @@ interface ContentCardProps {
         initialLiked?: boolean;
         initialLikeCount?: number;
         initialCommentCount?: number;
+        autoExpandComments?: boolean;
     };
     children: React.ReactNode;
 }
@@ -44,13 +44,13 @@ export default function ContentCard({
               onFlag={actions?.onFlag}
               onDelete={actions?.onDelete}
               canDelete={actions?.canDelete}
-              avatarSize={40}
-              variant='compact'
+              avatarSize={36}
+            //   variant='compact'
               clickable
             />
 
             {/* Content */}
-            <div className='flex flex-col flex-1 pt-2'>
+            <div className='flex flex-col flex-1'>
                 {children}
 
                 {/* Footer Interactions */}
@@ -61,6 +61,7 @@ export default function ContentCard({
                         initialLiked={interactions.initialLiked}
                         initialLikeCount={interactions.initialLikeCount || 0}
                         initialCommentCount={interactions.initialCommentCount || 0}
+                        autoExpandComments={interactions.autoExpandComments}
                     />
                 )}
             </div>

@@ -15,7 +15,9 @@ export default function DeleteButtonWithConfirm({ onDelete }: DeleteButtonWithCo
   const [loading, setLoading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
     setLoading(true);
     try {
       await onDelete();
@@ -23,6 +25,18 @@ export default function DeleteButtonWithConfirm({ onDelete }: DeleteButtonWithCo
       setLoading(false);
       setShowConfirm(false);
     }
+  };
+
+  const handleShowConfirm = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setShowConfirm(true);
+  };
+
+  const handleCancel = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setShowConfirm(false);
   };
 
   if (showConfirm) {
@@ -39,7 +53,7 @@ export default function DeleteButtonWithConfirm({ onDelete }: DeleteButtonWithCo
         {!loading && (
           <Button
             size='sm'
-            onClick={() => setShowConfirm(false)}
+            onClick={handleCancel}
             disabled={loading}
             variant='secondary'
           >
@@ -56,7 +70,7 @@ export default function DeleteButtonWithConfirm({ onDelete }: DeleteButtonWithCo
   return (
     <Button
       size='sm'
-      onClick={() => setShowConfirm(true)}
+      onClick={handleShowConfirm}
       variant='warn'
     >
       <TrashIcon

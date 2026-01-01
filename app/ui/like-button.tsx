@@ -90,10 +90,10 @@ export default function LikeButton({
 		)
 	}
 
-	const baseClasses = "my-1 flex items-center gap-1 cursor-pointer hover:bg-gray-200 rounded transition-all"
+	const baseClasses = 'my-1 flex items-center gap-1 cursor-pointer rounded transition-all'
 	const variantClasses = variant === 'overlay'
-		? "bg-white bg-opacity-90 rounded-full px-3 py-2 shadow-lg hover:bg-opacity-100"
-		: "px-1 py-2 rounded-lg hover:bg-gray-100"
+		? 'bg-white bg-opacity-90 rounded-full px-3 py-2 shadow-lg hover:bg-opacity-100'
+		: 'px-1 py-2 hover:text-blue-300'
 
 	return (
 		<button
@@ -104,7 +104,7 @@ export default function LikeButton({
 		>
 			<HeartIcon
 				className={`w-5 h-5 transition-colors ${
-					data.liked ? 'fill-red-500 text-red-500' : 'fill-none text-gray-600'
+					data.liked ? 'fill-red-500 text-red-500' : 'fill-none'
 				}`}
 				strokeWidth={2}
 			/>

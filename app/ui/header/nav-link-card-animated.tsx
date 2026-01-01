@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ReactNode, useState } from 'react';
 import clsx from 'clsx';
-import { useTheme } from '@/app/lib/hooks/use-theme';
+import { useIsDark } from '@/app/lib/hooks/use-is-dark';
 
 interface NavLinkCardAnimatedProps {
   href: string;
@@ -34,8 +34,7 @@ export default function NavLinkCardAnimated({
   forceActive = false,
 }: NavLinkCardAnimatedProps) {
   const pathname = usePathname();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
+  const isDark = useIsDark();
   const isActive = forceActive || pathname === href || pathname.startsWith(href + '/');
   const isDefault = variant === 'default';
   const isCompact = variant === 'compact';

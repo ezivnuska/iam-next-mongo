@@ -10,10 +10,16 @@ interface EditContentButtonProps {
 }
 
 export default function EditContentButton({ onEdit }: EditContentButtonProps) {
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onEdit();
+  };
+
   return (
     <Button
       size='sm'
-      onClick={onEdit}
+      onClick={handleClick}
       variant='ghost'
       className='text-blue-300 hover:bg-blue-50'
     >

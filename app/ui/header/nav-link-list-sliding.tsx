@@ -41,20 +41,20 @@ interface NavLinkListSlidingProps {
 // Default links
 const defaultLinks: NavLink[] = [
     {
-        href: '/eric',
-        title: 'Eric',
+        href: '/about',
+        title: 'About',
         subtitle: 'About Eric',
         icon: <AcademicCapIcon className='w-10 h-10' />,
         requiresAuth: false,
         subLinks: [{
-            href: '/eric/about',
+            href: '/about/about',
             title: 'About',
             subtitle: 'About Me',
             icon: <AcademicCapIcon className='w-10 h-10' />,
             requiresAuth: false,
         },
         {
-            href: '/eric/work',
+            href: '/about/work',
             title: 'Work',
             subtitle: `Work History`,
             icon: <PhotoIcon className='w-10 h-10' />,
@@ -104,25 +104,18 @@ const defaultLinks: NavLink[] = [
         }],
     },
     {
-        href: '/us',
-        title: 'Us',
-        subtitle: 'User Feed',
-        icon: <UserGroupIcon className='w-10 h-10' />,
+        href: '/feed',
+        title: 'Feed',
+        subtitle: 'Public Posts',
+        icon: <NewspaperIcon className='w-10 h-10' />,
         requiresAuth: true,
-        subLinks: [{
-            href: '/us/feed',
-            title: 'Feed',
-            subtitle: 'Public Posts',
-            icon: <NewspaperIcon className='w-10 h-10' />,
-            requiresAuth: true,
-        },
-        {
-            href: '/us/users',
-            title: 'Users',
-            subtitle: 'All Users',
-            icon: <UsersIcon className='w-10 h-10' />,
-            requiresAuth: true,
-        },]
+    },
+    {
+        href: '/users',
+        title: 'Users',
+        subtitle: 'All Users',
+        icon: <UsersIcon className='w-10 h-10' />,
+        requiresAuth: true,
     },
 ];
 

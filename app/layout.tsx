@@ -11,7 +11,6 @@ import { AuthModalProvider } from '@/app/lib/providers/auth-modal-provider';
 import { SocketProvider } from '@/app/lib/providers/socket-provider';
 import { TileProvider } from '@/app/lib/providers/tile-provider';
 import type { Viewport } from 'next';
-import DefaultScreen from '@/app/ui/layout/screen/default-screen';
 import SimpleScreen from './ui/layout/screen/simple-screen';
 
 export const viewport: Viewport = {

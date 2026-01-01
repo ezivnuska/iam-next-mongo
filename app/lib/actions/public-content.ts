@@ -15,6 +15,7 @@ import {
   sortContentByDate
 } from '@/app/lib/utils/transformers/content';
 import type { ContentItem } from '@/app/lib/definitions/content';
+import { CONTENT_POPULATE_CONFIG } from '@/app/lib/utils/db-query-config';
 
 export type PublicContentItem = ContentItem;
 
@@ -25,19 +26,13 @@ export async function getPublicContent(): Promise<PublicContentItem[]> {
 
   // Fetch shared memories only
   const memories = await Memory.find({ shared: true })
-    .populate([
-      { path: 'author', populate: { path: 'avatar' } },
-      { path: 'image' }
-    ])
+    .populate(CONTENT_POPULATE_CONFIG)
     .sort({ createdAt: -1 })
     .lean();
 
   // Fetch all posts
   const posts = await Post.find({})
-    .populate([
-      { path: 'author', populate: { path: 'avatar' } },
-      { path: 'image' }
-    ])
+    .populate(CONTENT_POPULATE_CONFIG)
     .sort({ createdAt: -1 })
     .lean();
 

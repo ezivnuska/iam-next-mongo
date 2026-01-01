@@ -188,6 +188,14 @@ export function useComments({
     onCommentCountChangeRef.current?.(commentCount);
   }, [commentCount]);
 
+  // Sync comment count when initialCommentCount prop changes
+  // This ensures the count updates when parent component fetches fresh data
+  useEffect(() => {
+    if (!commentsLoaded) {
+      setCommentCount(initialCommentCount);
+    }
+  }, [initialCommentCount, commentsLoaded]);
+
   // Auto-load on mount if requested
   useEffect(() => {
     if (autoLoad) {

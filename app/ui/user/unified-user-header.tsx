@@ -4,7 +4,8 @@
 
 import { formatRelativeTime } from '@/app/lib/utils/format-date';
 import { useUserNavigation } from '@/app/lib/hooks/use-user-navigation';
-import { useTheme } from '@/app/lib/hooks/use-theme';
+import { useIsDark } from '@/app/lib/hooks/use-is-dark';
+import { getTextColor, getSecondaryTextColor } from '@/app/lib/utils/theme-colors';
 import FlagContentButton from '../flag-content-button';
 import UserAvatar from './user-avatar';
 import DeleteButtonWithConfirm from '../delete-button-with-confirm';
@@ -60,8 +61,7 @@ export default function UnifiedUserHeader({
   className = '',
 }: UnifiedUserHeaderProps) {
   const { navigateToUser } = useUserNavigation();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
+  const isDark = useIsDark();
 
   const handleUsernameClick = () => {
     if (clickable) {
@@ -88,7 +88,7 @@ export default function UnifiedUserHeader({
 
   const secondaryText = getSecondaryText();
 
-  const usernameClasses = `font-semibold ${
+  const usernameClasses = `font-semibold text-md ${
     clickable ? 'cursor-pointer hover:underline' : ''
   } ${variant === 'compact' ? 'text-sm leading-tight' : ''}`;
 
@@ -100,7 +100,7 @@ export default function UnifiedUserHeader({
 
   const containerClasses = {
     compact: 'flex flex-row items-center gap-3 shrink-0',
-    default: 'flex flex-1 items-start gap-3',
+    default: 'flex flex-1 items-center gap-3',
     card: 'flex items-center gap-3',
   };
 
@@ -109,14 +109,6 @@ export default function UnifiedUserHeader({
     default: 'flex-1 min-w-0',
     card: 'flex flex-1 flex-col',
   };
-
-  const getCompactTextColor = (isDark: boolean) => ({
-    color: isDark ? '#ffffff' : '#111827'
-  });
-
-  const getCompactSecondaryColor = (isDark: boolean) => ({
-    color: isDark ? '#9ca3af' : '#6b7280'
-  });
 
   const renderAvatar = () => {
     const avatarProps = typeof avatar === 'string'
@@ -167,16 +159,20 @@ export default function UnifiedUserHeader({
 
       <div className={textContainerClasses[variant]}>
         {variant === 'default' ? (
-          <div className='flex flex-row items-center justify-between mb-2'>
-            <div className='flex flex-col flex-1'>
+          <div className='flex flex-row items-center justify-between'>
+            <div className='flex flex-col flex-1 gap-1'>
               <p
                 className={usernameClasses}
                 onClick={handleUsernameClick}
+                style={{ color: getTextColor(isDark) }}
               >
                 {user.username}
               </p>
               {secondaryText && (
-                <span className={secondaryClasses}>
+                <span
+                  className={secondaryClasses}
+                  style={{ color: getSecondaryTextColor(isDark) }}
+                >
                   {secondaryText}
                 </span>
               )}
@@ -184,23 +180,23 @@ export default function UnifiedUserHeader({
             {renderActions()}
           </div>
         ) : (
-          <>
+          <div className='flex flex-col flex-1 gap-1'>
             <p
               className={usernameClasses}
               onClick={handleUsernameClick}
-              style={variant === 'compact' ? getCompactTextColor(isDark) : undefined}
+              style={{ color: getTextColor(isDark) }}
             >
               {user.username}
             </p>
             {secondaryText && (
               <span
                 className={secondaryClasses}
-                style={variant === 'compact' ? getCompactSecondaryColor(isDark) : undefined}
+                style={{ color: getSecondaryTextColor(isDark) }}
               >
                 {secondaryText}
               </span>
             )}
-          </>
+          </div>
         )}
       </div>
 

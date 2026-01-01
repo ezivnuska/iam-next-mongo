@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import type { ContentItem } from '@/app/lib/definitions/content';
 import type { Memory } from '@/app/lib/definitions/memory';
 import type { Post } from '@/app/lib/definitions/post';
@@ -10,16 +10,16 @@ import type { Image } from '@/app/lib/definitions/image';
 import { Button } from '@/app/ui/button';
 import ContentItemCard from '@/app/ui/content-item-card';
 import UserContentItemCard from '@/app/ui/user-content-item-card';
-import ContentFilterTabs from '@/app/ui/content-filter-tabs';
 import Modal from '@/app/ui/modal';
 import CreateMemoryForm from '@/app/ui/memories/create-memory-form';
 import CreatePostForm from '@/app/ui/posts/create-post-form';
-import UploadForm from '@/app/ui/images/upload-form';
 import { useUser } from '@/app/lib/providers/user-provider';
 import { useTheme } from '@/app/lib/hooks/use-theme';
-import { useCarousel } from '@/app/lib/hooks/use-carousel';
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
-import NextImage from 'next/image';
+import { useSocket } from '@/app/lib/providers/socket-provider';
+import { SOCKET_EVENTS } from '@/app/lib/socket/events';
+import type { CommentPayload } from '@/app/lib/socket/events';
+import { getCommentCountsForItems } from '@/app/lib/actions/comments';
+import { filterCommentableContent, isImage } from '@/app/lib/utils/content-helpers';
 
 interface UserContentFeedProps {
     initialContent: ContentItem[];
@@ -31,17 +31,16 @@ type ModalType = 'memory' | 'post' | 'image' | null;
 export default function UserContentFeed({ initialContent, editable = false }: UserContentFeedProps) {
     const { user } = useUser();
     const { resolvedTheme } = useTheme();
+    const { socket } = useSocket();
     const [content, setContent] = useState<ContentItem[]>(initialContent);
-    const [selectedFilters, setSelectedFilters] = useState<Set<string>>(new Set());
     const [modalType, setModalType] = useState<ModalType>(null);
     const [editingItem, setEditingItem] = useState<Memory | Post | undefined>(undefined);
-    const [selectedImage, setSelectedImage] = useState<Image | null>(null);
 
     // Check if current user is the author of an item
     const isCurrentUserAuthor = (item: ContentItem): boolean => {
         if (!user?.id) return false;
 
-        if (item.contentType === 'image') {
+        if (isImage(item)) {
             return item.userId === user.id;
         }
         return item.author.id === user.id;
@@ -52,7 +51,7 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
     };
 
     const handleEdit = (item: ContentItem) => {
-        if (item.contentType === 'image') return; // Images don't support editing yet
+        if (isImage(item)) return; // Images don't support editing yet
         setEditingItem(item);
         setModalType(item.contentType);
     };
@@ -89,42 +88,69 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
         handleCloseModal();
     };
 
-    // If no filters are selected, show all content
-    // Otherwise, show only content that matches the selected filters
-    const filteredContent = selectedFilters.size === 0
-        ? content
-        : content.filter(item => selectedFilters.has(item.contentType));
+    // Fetch fresh comment counts on mount to ensure accuracy
+    useEffect(() => {
+        const fetchCommentCounts = async () => {
+            const itemIds = filterCommentableContent(initialContent)
+                .map(item => item.id);
 
-    // Extract all images from content (memories with images, posts with images, and standalone images)
-    const images = useMemo(() => {
-        const imageList: Image[] = [];
-        filteredContent.forEach(item => {
-            if (item.contentType === 'memory' && item.image) {
-                imageList.push(item.image);
-            } else if (item.contentType === 'post' && item.image) {
-                imageList.push(item.image);
-            } else if (item.contentType === 'image') {
-                imageList.push(item);
+            if (itemIds.length === 0) return;
+
+            try {
+                const counts = await getCommentCountsForItems(itemIds);
+                setContent(prev => prev.map(item => ({
+                    ...item,
+                    commentCount: counts[item.id] || 0
+                })));
+            } catch (error) {
+                console.error('Failed to fetch comment counts:', error);
             }
-        });
-        return imageList;
-    }, [filteredContent]);
+        };
 
-    // Find initial index when image is selected
-    const initialImageIndex = selectedImage ? images.findIndex(img => img.id === selectedImage.id) : 0;
+        fetchCommentCounts();
+    }, []); // Only run on mount
 
-    // Carousel hook
-    const carousel = useCarousel({
-        items: images,
-        initialIndex: initialImageIndex >= 0 ? initialImageIndex : 0,
-        enabled: !!selectedImage,
-        onClose: () => setSelectedImage(null),
-    });
+    // Listen for socket events to update comment counts
+    useEffect(() => {
+        if (!socket) return;
 
-    // Handle image click
-    const handleImageClick = (image: Image) => {
-        setSelectedImage(image);
-    };
+        const handleCommentAdded = (payload: CommentPayload) => {
+            setContent(prev => prev.map(item => {
+                // Check if this item matches the commented content
+                if (item.id === payload.refId) {
+                    return {
+                        ...item,
+                        commentCount: (item.commentCount || 0) + 1
+                    };
+                }
+                return item;
+            }));
+        };
+
+        const handleCommentDeleted = (payload: CommentPayload) => {
+            setContent(prev => prev.map(item => {
+                // Check if this item matches the commented content
+                if (item.id === payload.refId) {
+                    return {
+                        ...item,
+                        commentCount: Math.max(0, (item.commentCount || 0) - 1)
+                    };
+                }
+                return item;
+            }));
+        };
+
+        socket.on(SOCKET_EVENTS.COMMENT_ADDED, handleCommentAdded);
+        socket.on(SOCKET_EVENTS.COMMENT_DELETED, handleCommentDeleted);
+
+        return () => {
+            socket.off(SOCKET_EVENTS.COMMENT_ADDED, handleCommentAdded);
+            socket.off(SOCKET_EVENTS.COMMENT_DELETED, handleCommentDeleted);
+        };
+    }, [socket]);
+
+    // Show only memories and posts (exclude standalone images)
+    const filteredContent = filterCommentableContent(content);
 
     return (
         <div className='w-full max-w-[600px] pb-4'>
@@ -146,18 +172,12 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                 </div>
             )}
 
-            {/* Filter Tabs */}
-            <ContentFilterTabs
-                selectedFilters={selectedFilters}
-                onFilterChange={setSelectedFilters}
-            />
-
             {/* Content List */}
             <div className='w-full max-w-[600px] mt-4 space-y-4'>
                 {filteredContent.length === 0 ? (
                     <p className='text-gray-500 dark:text-gray-400'>No content to display</p>
                 ) : (
-                    filteredContent.map((item) => (
+                    filteredContent.map((item) =>
                         isCurrentUserAuthor(item) ? (
                             <UserContentItemCard
                                 key={`${item.contentType}-${item.id}`}
@@ -165,16 +185,14 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                                 onDeleted={handleDeleted}
                                 onEdit={handleEdit}
                                 onFlag={handleFlag}
-                                onImageClick={handleImageClick}
                             />
                         ) : (
                             <ContentItemCard
                                 key={`${item.contentType}-${item.id}`}
                                 item={item}
-                                onImageClick={handleImageClick}
                             />
                         )
-                    ))
+                    )
                 )}
             </div>
 
@@ -222,69 +240,6 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                         editItem={editingItem as Post | undefined}
                     />
                 </Modal>
-            )}
-
-            {/* Image Carousel Modal */}
-            {selectedImage && carousel.currentItem && (
-                <div
-                    className='fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50'
-                    onClick={() => setSelectedImage(null)}
-                    {...carousel.touchHandlers}
-                >
-                    <div className='relative max-w-5xl w-full h-full flex items-center justify-center p-4' onClick={(e) => e.stopPropagation()}>
-                        <NextImage
-                            src={
-                                carousel.currentItem.variants.find((v) => v.size === 'original')?.url ||
-                                carousel.currentItem.variants[0].url
-                            }
-                            alt={carousel.currentItem.alt || 'Full image'}
-                            fill
-                            style={{ objectFit: 'contain' }}
-                            sizes='100vw'
-                        />
-
-                        {/* Close button */}
-                        <button
-                            className='absolute top-4 right-4 bg-white rounded-full px-3 py-1 shadow text-black z-10'
-                            onClick={() => setSelectedImage(null)}
-                        >
-                            ✕
-                        </button>
-
-                        {/* Position indicator */}
-                        <div className='absolute top-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-60 text-white rounded-full px-4 py-2 text-sm z-10'>
-                            {carousel.positionText}
-                        </div>
-
-                        {/* Previous button */}
-                        {carousel.canGoPrevious && (
-                            <button
-                                className='absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-40 rounded-full p-3 shadow text-white z-10 transition-all'
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    carousel.goToPrevious();
-                                }}
-                                aria-label='Previous image'
-                            >
-                                <ChevronLeftIcon className='w-8 h-8' />
-                            </button>
-                        )}
-
-                        {/* Next button */}
-                        {carousel.canGoNext && (
-                            <button
-                                className='absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 hover:bg-opacity-40 rounded-full p-3 shadow text-white z-10 transition-all'
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    carousel.goToNext();
-                                }}
-                                aria-label='Next image'
-                            >
-                                <ChevronRightIcon className='w-8 h-8' />
-                            </button>
-                        )}
-                    </div>
-                </div>
             )}
         </div>
     );

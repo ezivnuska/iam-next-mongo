@@ -2,8 +2,6 @@
 
 "use client";
 
-import clsx from "clsx";
-
 interface OnlineStatusIndicatorProps {
   isOnline: boolean;
   size?: number;

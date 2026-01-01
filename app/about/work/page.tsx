@@ -1,4 +1,4 @@
-// app/eric/work/page.tsx
+// app/about/work/page.tsx
 
 import { Metadata } from 'next';
 import PageHeader from '@/app/ui/layout/page-header';
@@ -17,8 +17,8 @@ export default function WorkPage() {
             <PageHeader
                 useBreadcrumbs={true}
                 breadcrumbs={[
-                    { label: 'Eric', href: '/?section=eric' },
-                    { label: 'Work', href: '/eric/work', active: true }
+                    { label: 'About', href: '/about' },
+                    { label: 'Work', href: '/about/work', active: true }
                 ]}
                 subtitle='Professional Experience'
             />

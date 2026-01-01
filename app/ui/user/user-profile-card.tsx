@@ -7,7 +7,8 @@ import { useUser } from '@/app/lib/providers/user-provider';
 import UserAvatar from '@/app/ui/user/user-avatar';
 import BioForm from '@/app/profile/bio-form';
 import type { User } from '@/app/lib/definitions';
-import { useTheme } from '@/app/lib/hooks/use-theme';
+import { useIsDark } from '@/app/lib/hooks/use-is-dark';
+import { getTextColor, getTertiaryTextColor } from '@/app/lib/utils/theme-colors';
 
 interface UserProfileCardProps {
   username?: string;
@@ -15,8 +16,7 @@ interface UserProfileCardProps {
 
 export default function UserProfileCard({ username }: UserProfileCardProps) {
     const { user: currentUser, fetchUserByUsername } = useUser();
-    const { resolvedTheme } = useTheme();
-    const isDark = resolvedTheme === 'dark';
+    const isDark = useIsDark();
     const [profileUser, setProfileUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -62,12 +62,12 @@ export default function UserProfileCard({ username }: UserProfileCardProps) {
                 />
             </div>
             <div className='flex flex-1 flex-col gap-2'>
-                <h1 className='text-2xl font-bold' style={{ color: isDark ? '#ffffff' : '#111827' }}>
+                <h1 className='text-2xl font-bold' style={{ color: getTextColor(isDark) }}>
                     {displayUser.username}
                 </h1>
 
                 <div className='flex flex-1 flex-row items-start gap-4 pr-1'>
-                    <p className='flex flex-1' style={{ color: isDark ? '#d1d5db' : '#4b5563' }}>
+                    <p className='flex flex-1' style={{ color: getTertiaryTextColor(isDark) }}>
                         {displayUser.bio || ''}
                     </p>
                     {isCurrentUser && <BioForm />}

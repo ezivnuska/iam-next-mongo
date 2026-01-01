@@ -1,52 +1,50 @@
-// app/us/page.tsx
+// app/about/page.tsx
 
 import PageHeader from '@/app/ui/layout/page-header';
 import Link from 'next/link';
-import {
-    NewspaperIcon,
-    UsersIcon,
-} from '@heroicons/react/24/solid';
+import { PuzzlePieceIcon } from '@heroicons/react/24/solid';
 import { Metadata } from 'next';
 import PageContent from '@/app/ui/layout/page/page-content';
+import PokerChipIcon from '@/app/ui/icons/poker-chip-icon';
 
 export const metadata: Metadata = {
-    title: 'Us',
-    description: 'User Activity',
+    title: 'About',
+    description: 'About Eric',
 };
 
-const links = [
+const pages = [
     {
-        title: 'Feed',
-        description: 'Public Posts',
-        href: '/us/feed',
-        icon: NewspaperIcon,
+        title: 'About',
+        description: 'About Me',
+        href: '/about/about',
+        icon: PuzzlePieceIcon,
     },
     {
-        title: 'Users',
-        description: 'All Users',
-        href: '/us/users',
-        icon: UsersIcon,
+        title: 'Work',
+        description: 'Work Experience',
+        href: '/about/work',
+        icon: PokerChipIcon,
     },
 ];
 
-export default function UsPage() {
+export default function AboutPage() {
     return (
         <PageContent>
             <PageHeader
                 useBreadcrumbs={true}
                 breadcrumbs={[
-                    { label: 'Us', href: '/us', active: true }
+                    { label: 'About', href: '/about', active: true }
                 ]}
-                subtitle='User Activity'
+                subtitle='About Me'
             />
 
             <div className='grid gap-4 px-2 pb-8'>
-                {links.map((link) => {
-                    const IconComponent = link.icon;
+                {pages.map((page) => {
+                    const IconComponent = page.icon;
                     return (
                         <Link
-                            key={link.href}
-                            href={link.href}
+                            key={page.href}
+                            href={page.href}
                             className='flex items-center gap-4 p-6 rounded-2xl border-2 border-gray-700 bg-gray-800 hover:border-blue-500 hover:bg-gray-700 transition-all duration-200 group'
                         >
                             <div className='shrink-0'>
@@ -54,10 +52,10 @@ export default function UsPage() {
                             </div>
                             <div className='flex-1'>
                                 <h2 className='text-xl font-bold text-white group-hover:text-blue-400 transition-colors'>
-                                    {link.title}
+                                    {page.title}
                                 </h2>
                                 <p className='text-gray-400 mt-1'>
-                                    {link.description}
+                                    {page.description}
                                 </p>
                             </div>
                             <div className='shrink-0 text-gray-600 group-hover:text-blue-500 transition-colors'>

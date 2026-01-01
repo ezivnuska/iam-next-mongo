@@ -36,47 +36,40 @@ interface NavLinkListAnimatedProps {
 
 // Default links (identical to nav-link-list-sliding)
 const defaultLinks: NavLink[] = [
+    // {
+    //     href: '/profile',
+    //     title: 'You',
+    //     subtitle: 'Your Profile',
+    //     icon: <UserCircleIcon className='w-10 h-10' />,
+    //     requiresAuth: true,
+    //     subLinks: [{
+    //         href: '/profile',
+    //         title: 'Profile',
+    //         subtitle: 'Account Profile',
+    //         icon: <UserCircleIcon className='w-10 h-10' />,
+    //         requiresAuth: true,
+    //     },
+    //     {
+    //         href: '/profile/images',
+    //         title: 'Images',
+    //         subtitle: `User Images`,
+    //         icon: <PhotoIcon className='w-10 h-10' />,
+    //         requiresAuth: true,
+    //     }],
+    // },
     {
-        href: '/profile',
-        title: 'You',
-        subtitle: 'Your Profile',
-        icon: <UserCircleIcon className='w-10 h-10' />,
+        href: '/feed',
+        title: 'Feed',
+        subtitle: 'Public Posts',
+        icon: <NewspaperIcon className='w-10 h-10' />,
         requiresAuth: true,
-        subLinks: [{
-            href: '/profile',
-            title: 'Profile',
-            subtitle: 'Account Profile',
-            icon: <UserCircleIcon className='w-10 h-10' />,
-            requiresAuth: true,
-        },
-        {
-            href: '/profile/images',
-            title: 'Images',
-            subtitle: `User Images`,
-            icon: <PhotoIcon className='w-10 h-10' />,
-            requiresAuth: true,
-        }],
     },
     {
-        href: '/us',
-        title: 'Us',
-        subtitle: 'User Posts',
-        icon: <UserGroupIcon className='w-10 h-10' />,
+        href: '/users',
+        title: 'Users',
+        subtitle: 'All Users',
+        icon: <UsersIcon className='w-10 h-10' />,
         requiresAuth: true,
-        subLinks: [{
-            href: '/us/feed',
-            title: 'Feed',
-            subtitle: 'Public Posts',
-            icon: <NewspaperIcon className='w-10 h-10' />,
-            requiresAuth: true,
-        },
-        {
-            href: '/us/users',
-            title: 'Users',
-            subtitle: 'All Users',
-            icon: <UsersIcon className='w-10 h-10' />,
-            requiresAuth: true,
-        }],
     },
     {
         href: '/games',
@@ -100,20 +93,20 @@ const defaultLinks: NavLink[] = [
         }],
     },
     {
-        href: '/eric',
-        title: 'Me',
-        subtitle: 'I am Eric',
+        href: '/about',
+        title: 'About',
+        subtitle: 'About Eric',
         icon: <AcademicCapIcon className='w-10 h-10' />,
         requiresAuth: false,
         subLinks: [{
-            href: '/eric/about',
+            href: '/about/about',
             title: 'About',
             subtitle: 'About Me',
             icon: <AcademicCapIcon className='w-10 h-10' />,
             requiresAuth: false,
         },
         {
-            href: '/eric/work',
+            href: '/about/work',
             title: 'Work',
             subtitle: `Work History`,
             icon: <PhotoIcon className='w-10 h-10' />,
@@ -138,7 +131,8 @@ export default function NavLinkListAnimated({
         if (initialSection) {
             // Map section names to hrefs
             const sectionMap: { [key: string]: string } = {
-                'eric': '/eric',
+                'about': '/about',
+                'eric': '/about',
                 'us': '/us',
                 'games': '/games',
                 'profile': '/profile',

@@ -9,6 +9,7 @@ import type { ImageVariant } from "@/app/lib/definitions/image";
 import { transformPopulatedImage, transformPopulatedAuthor } from "@/app/lib/utils/transformers";
 import { logActivity, getRequestMetadata } from "@/app/lib/utils/activity-logger";
 import { requireAuth } from "@/app/lib/utils/auth";
+import { CONTENT_POPULATE_CONFIG } from "@/app/lib/utils/db-query-config";
 
 interface PopulatedMemoryObj {
   _id: Types.ObjectId;
@@ -80,13 +81,7 @@ export async function POST(req: Request) {
     });
 
     // Populate author and image for response
-    await newMemory.populate([
-      {
-        path: "author",
-        populate: { path: "avatar" }
-      },
-      { path: "image" }
-    ]);
+    await newMemory.populate(CONTENT_POPULATE_CONFIG);
 
     const populatedMemory = newMemory.toObject() as unknown as PopulatedMemoryObj;
 

@@ -5,7 +5,7 @@ import { clsx } from 'clsx';
 import Link from 'next/link';
 import { ubuntu } from '@/app/ui/fonts';
 import { useHorizontalLayout } from '@/app/lib/hooks/use-horizontal-layout';
-import { useTheme } from '@/app/lib/hooks/use-theme';
+import { useIsDark } from '@/app/lib/hooks/use-is-dark';
 
 interface Breadcrumb {
   label: string;
@@ -19,8 +19,7 @@ export default function Breadcrumbs({
   breadcrumbs: Breadcrumb[];
 }) {
   const horizontalLayout = useHorizontalLayout();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
+  const isDark = useIsDark();
 
   return (
     <nav aria-label='Breadcrumb' className={clsx('block', {

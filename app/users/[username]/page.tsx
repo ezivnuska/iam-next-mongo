@@ -1,4 +1,4 @@
-// app/us/users/[username]/page.tsx
+// app/users/[username]/page.tsx
 
 export const dynamic = 'force-dynamic';
 
@@ -18,22 +18,25 @@ export default async function UserProfilePage({ params }: Props) {
     const { username } = await params;
     const session = await auth();
     if (!session) {
-        redirect(`/?auth=required&callbackUrl=/us/users/${username}`);
+        redirect(`/?auth=required&callbackUrl=/users/${username}`);
     }
 
     const content = await getUserContent(username);
+
+    // Check if viewing own profile
+    const isOwnProfile = session.user?.username === username;
 
     return (
         <PageContent>
             <Breadcrumbs
                 breadcrumbs={[
-                    { label: 'Users', href: '/us/users' },
-                    { label: username, href: `/us/users/${username}`, active: true },
-                    { label: 'Images', href: `/us/users/${username}/images` },
+                    { label: 'Users', href: '/users' },
+                    { label: username, href: `/users/${username}`, active: true },
+                    { label: 'Images', href: `/users/${username}/images` },
                 ]}
             />
             <UserProfileCard username={username} />
-            <UserContentFeed initialContent={content} />
+            <UserContentFeed initialContent={content} editable={isOwnProfile} />
         </PageContent>
     );
 }

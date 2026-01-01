@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import LikeButton from '@/app/ui/like-button'
 import CommentControls from '@/app/ui/comments/comment-controls'
 import CommentFormModal from '@/app/ui/comments/comment-form-modal'
@@ -17,6 +17,7 @@ type ContentInteractionsProps = {
   initialLiked?: boolean
   initialLikeCount?: number
   initialCommentCount?: number
+  autoExpandComments?: boolean
 }
 
 export default function ContentInteractions({
@@ -25,10 +26,11 @@ export default function ContentInteractions({
   initialLiked = false,
   initialLikeCount = 0,
   initialCommentCount = 0,
+  autoExpandComments = false,
 }: ContentInteractionsProps) {
   const { user } = useUser()
   const [showCommentForm, setShowCommentForm] = useState(false)
-  const [commentsExpanded, setCommentsExpanded] = useState(false)
+  const [commentsExpanded, setCommentsExpanded] = useState(autoExpandComments)
   const previousCountRef = useRef(initialCommentCount)
 
   const handleCommentCountChange = useCallback((count: number) => {
@@ -61,6 +63,13 @@ export default function ContentInteractions({
     currentUserId: user?.id,
     onCommentCountChange: handleCommentCountChange,
   })
+
+  // Auto-load comments if autoExpandComments is true
+  useEffect(() => {
+    if (autoExpandComments && !commentsLoaded) {
+      loadComments()
+    }
+  }, [autoExpandComments, commentsLoaded, loadComments])
 
   const handleToggleComments = async (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -106,15 +115,13 @@ export default function ContentInteractions({
       />
 
       {commentsExpanded && (
-        <div className='border-t border-gray-200'>
-          <CommentSection
-            comments={comments}
-            loading={loadingComments}
-            currentUserId={user?.id}
-            currentUserRole={user?.role}
-            onDelete={deleteComment}
-          />
-        </div>
+        <CommentSection
+          comments={comments}
+          loading={loadingComments}
+          currentUserId={user?.id}
+          currentUserRole={user?.role}
+          onDelete={deleteComment}
+        />
       )}
     </>
   )

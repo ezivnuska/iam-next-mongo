@@ -10,10 +10,16 @@ interface FlagContentButtonProps {
 }
 
 export default function FlagContentButton({ onFlag }: FlagContentButtonProps) {
+    const handleClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+        onFlag();
+    };
+
     return (
         <Button
             size='sm'
-            onClick={onFlag}
+            onClick={handleClick}
             variant="warn"
         >
             <FlagIcon className="w-5 h-5" />

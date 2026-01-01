@@ -7,7 +7,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { useUser } from '@/app/lib/providers/user-provider';
-import NotificationsButton from '@/app/ui/header/notifications-button';
 
 const links = [
     {
@@ -45,7 +44,6 @@ export default function NavPrivate() {
                     </Link>
                 );
             })}
-            <NotificationsButton />
         </div>
     );
 }

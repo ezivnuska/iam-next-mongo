@@ -2,9 +2,6 @@
 
 'use client'
 
-import Link from 'next/link'
-import UserAvatar from '@/app/ui/user/user-avatar'
-import OnlineStatusIndicator from '@/app/ui/user/online-status-indicator'
 import FriendshipButton from '@/app/ui/friendship/friendship-button'
 import { useUser } from '@/app/lib/providers/user-provider'
 import { useSocket } from '@/app/lib/providers/socket-provider'
@@ -36,7 +33,7 @@ export default function UserList({ users }: UserListProps) {
 				return (
                     <div
                         key={`user-${user.id}`}
-                        className='flex items-stretch justify-stretch p-2'
+                        className='flex items-stretch justify-stretch py-2'
                     >
                         <UnifiedUserHeader
                             className='flex flex-row items-center w-full'

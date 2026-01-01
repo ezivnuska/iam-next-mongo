@@ -3,7 +3,8 @@
 
 'use client';
 
-import { useTheme } from '@/app/lib/hooks/use-theme';
+import { useIsDark } from '@/app/lib/hooks/use-is-dark';
+import { getTextColor } from '@/app/lib/utils/theme-colors';
 
 export interface Job {
     company: string;
@@ -20,8 +21,7 @@ interface WorkTimelineProps {
 }
 
 export function WorkTimeline({ jobs }: WorkTimelineProps) {
-    const { resolvedTheme } = useTheme();
-    const isDark = resolvedTheme === 'dark';
+    const isDark = useIsDark();
     return (
         <div className='space-y-8'>
             {jobs.map((job: Job, index: number) => (
@@ -41,7 +41,7 @@ export function WorkTimeline({ jobs }: WorkTimelineProps) {
                         <div className='flex flex-wrap items-baseline justify-between gap-2 mb-1'>
                             <h2
                                 className='text-2xl font-bold'
-                                style={{ color: isDark ? '#ffffff' : '#111827' }}
+                                style={{ color: getTextColor(isDark) }}
                             >
                                 {job.company}
                             </h2>

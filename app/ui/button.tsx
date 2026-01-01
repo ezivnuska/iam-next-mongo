@@ -4,7 +4,7 @@
 
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { useTheme } from '@/app/lib/hooks/use-theme';
+import { useIsDark } from '@/app/lib/hooks/use-is-dark';
 
 type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
 type ButtonVariant = 'default' | 'outline' | 'ghost' | 'secondary' | 'active' | 'warn' | 'confirm' | 'link';
@@ -24,8 +24,7 @@ export function Button({
     disabled,
     ...rest
 }: ButtonProps) {
-    const { resolvedTheme } = useTheme();
-    const isDark = resolvedTheme === 'dark';
+    const isDark = useIsDark();
 
     const sizeClasses = {
         xs: 'h-8 px-2 text-xs',

@@ -1,4 +1,4 @@
-// app/us/users/page.tsx
+// app/users/page.tsx
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +13,7 @@ export default async function Page() {
     // Server-side authentication check
     const session = await auth();
     if (!session) {
-        redirect('/?auth=required&callbackUrl=/us/users');
+        redirect('/?auth=required&callbackUrl=/users');
     }
 
     const users = await getUsers();
@@ -23,8 +23,7 @@ export default async function Page() {
             <PageHeader
                 useBreadcrumbs={true}
                 breadcrumbs={[
-                    { label: 'Us', href: '/?section=us' },
-                    { label: 'Users', href: '/us/users', active: true }
+                    { label: 'Users', href: '/users', active: true }
                 ]}
             />
             <UserList users={users || []} />

@@ -1,4 +1,4 @@
-// app/us/users/[username]/images/page.tsx
+// app/users/[username]/images/page.tsx
 
 export const dynamic = 'force-dynamic';
 
@@ -19,23 +19,26 @@ export default async function Page({ params }: Props) {
     const { username } = await params;
 
     if (!session) {
-        redirect(`/?auth=required&callbackUrl=/us/users/${username}/images`);
+        redirect(`/?auth=required&callbackUrl=/users/${username}/images`);
     }
 
     const user = await fetchUserByUsername(username);
     if (!user) return null;
     const { id } = user;
 
+    // Check if viewing own images
+    const isOwnImages = session.user?.username === username;
+
     return (
         <PageContent>
             <Breadcrumbs
                 breadcrumbs={[
-                    { label: 'Users', href: `/us/users` },
-                    { label: username, href: `/us/users/${username}` },
-                    { label: 'Images', href: `/us/users/${username}/images`, active: true },
+                    { label: 'Users', href: `/users` },
+                    { label: username, href: `/users/${username}` },
+                    { label: 'Images', href: `/users/${username}/images`, active: true },
                 ]}
             />
-            <ImagesClient userId={id} />
+            <ImagesClient userId={id} authorized={isOwnImages} />
         </PageContent>
     );
 }

@@ -7,7 +7,6 @@ import { Button } from '@/app/ui/button'
 import { setAvatar } from "@/app/lib/actions/profile";
 import { useUser } from "@/app/lib/providers/user-provider";
 import { UserCircleIcon } from "@heroicons/react/20/solid";
-import clsx from "clsx";
 
 interface AvatarButtonProps {
     imageId: string;

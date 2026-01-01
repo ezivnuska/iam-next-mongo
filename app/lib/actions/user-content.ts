@@ -16,6 +16,7 @@ import {
 } from "@/app/lib/utils/transformers/content";
 import type { ContentItem } from "@/app/lib/definitions/content";
 import { requireAuth } from "@/app/lib/utils/auth";
+import { CONTENT_POPULATE_CONFIG } from "@/app/lib/utils/db-query-config";
 
 export type { ContentItem };
 
@@ -36,25 +37,23 @@ export async function getUserContent(username?: string): Promise<ContentItem[]> 
     targetUserId = userId;
   }
 
+  // Check if viewing own profile
+  const isOwnProfile = targetUserId === userId;
+
   // Fetch memories
-  const memoriesQuery = username
-    ? { author: targetUserId, shared: true }
-    : { author: targetUserId };
+  // Only filter to shared:true if viewing another user's profile
+  const memoriesQuery = isOwnProfile
+    ? { author: targetUserId }
+    : { author: targetUserId, shared: true };
 
   const memories = await Memory.find(memoriesQuery)
-    .populate([
-      { path: "author", populate: { path: "avatar" } },
-      { path: "image" }
-    ])
+    .populate(CONTENT_POPULATE_CONFIG)
     .sort({ createdAt: -1 })
     .lean();
 
   // Fetch posts
   const posts = await Post.find({ author: targetUserId })
-    .populate([
-      { path: "author", populate: { path: "avatar" } },
-      { path: "image" }
-    ])
+    .populate(CONTENT_POPULATE_CONFIG)
     .sort({ createdAt: -1 })
     .lean();
 
