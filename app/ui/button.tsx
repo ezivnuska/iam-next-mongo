@@ -42,10 +42,10 @@ export function Button({
             ? 'border border-blue-500 text-blue-500 hover:bg-blue-900/20'
             : 'border border-blue-500 text-blue-500 hover:bg-blue-50',
         ghost: isDark
-            ? 'bg-transparent text-blue-500 hover:bg-blue-900/20'
-            : 'bg-transparent text-blue-500 hover:bg-blue-50',
+            ? 'bg-transparent text-blue-500'
+            : 'bg-transparent text-blue-500',
         link: 'bg-transparent text-blue-500 hover:underline px-0',
-        active: 'bg-blue-500 text-white hover:bg-blue-600',
+        active: 'bg-blue-500 text-white',
         warn: isDark
             ? 'hover:bg-red-500 hover:text-white bg-red-900/30 text-red-500'
             : 'hover:bg-red-500 hover:text-white bg-red-200 text-red-500',

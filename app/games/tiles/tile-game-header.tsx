@@ -77,8 +77,8 @@ export default function TileGameHeader() {
 
     const renderResumeButton = () => status === GameStatus.PAUSED ? (
         <Button onClick={unpause} variant='link' className='gap-2'>
-            <PlayCircleIcon className='w-8 h-8' />
             <span className='text-lg'>Resume</span>
+            <PlayCircleIcon className='w-8 h-8' />
         </Button>
     ) : null
 
@@ -118,17 +118,19 @@ export default function TileGameHeader() {
     ) : null
 
     return (
-        <div className='flex flex-row items-stretch justify-between'>
-            <div className='flex flex-1 flex-row items-center justify-start'>
-                {renderNavButton()}
-            </div>
-            <div className='flex flex-2 flex-row items-center justify-center'>
+        <div className='flex flex-1 flex-row items-stretch justify-between'>
+            <div className='flex flex-2 flex-row items-center justify-between'>
                 {time && ticks > 0 && (
                     <span className='font-bold text-xl'>{time}</span>
                 )}
             </div>
-            <div className='flex flex-1 flex-row items-center justify-end'>
-                {renderKillButton()}
+            <div className='flex flex-row items-stretch justify-between gap-4'>
+                <div className='flex flex-1 flex-row items-center justify-start gap-2'>
+                    {renderNavButton()}
+                </div>
+                <div className='flex flex-1 flex-row items-center justify-end'>
+                    {renderKillButton()}
+                </div>
             </div>
             {renderTopScore()}
             {/* Leaderboard Modal */}

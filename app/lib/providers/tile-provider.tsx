@@ -254,24 +254,43 @@ export const TileProvider: React.FC<TileProviderProps> = ({ children }) => {
         if (state.status === GameStatus.START) setStatus(GameStatus.PLAYING)
     }
 
+    /**
+     * Shuffle by performing random valid moves from the solved state.
+     * This guarantees a solvable puzzle (no impossible configurations).
+     * More moves = harder puzzle
+     */
     const shuffle = () => {
-        const pile = [...state.tiles]
-        let col = 0
-        let row = 0
-        const shuffled: TileType[] = []
-        while (pile.length > 0) {
-            const index = Math.floor(Math.random() * pile.length)
-            const tile = pile.splice(index, 1)[0]
-            const newTile = { ...tile, col, row }
-            shuffled.push(newTile)
-            col++
-            if (col >= state.level) {
-                col = 0
-                row++
+        let tiles = [...state.tiles]
+        const moves = state.level * state.level * 10 // Number of random moves (adjustable for difficulty)
+
+        for (let i = 0; i < moves; i++) {
+            const emptySpace = getEmptySpace(tiles)
+            const { col, row } = emptySpace
+
+            // Get all valid tiles that can move into the empty space
+            const movableTiles = tiles.filter(tile => {
+                // Tile in same column (can move up/down)
+                if (tile.col === col && Math.abs(tile.row - row) === 1) return true
+                // Tile in same row (can move left/right)
+                if (tile.row === row && Math.abs(tile.col - col) === 1) return true
+                return false
+            })
+
+            if (movableTiles.length > 0) {
+                // Randomly pick one movable tile
+                const randomTile = movableTiles[Math.floor(Math.random() * movableTiles.length)]
+
+                // Swap the tile with the empty space
+                tiles = tiles.map(tile => {
+                    if (tile.id === randomTile.id) {
+                        return { ...tile, col, row }
+                    }
+                    return tile
+                })
             }
         }
-        
-        setTiles(shuffled)
+
+        setTiles(tiles)
     }
 
     const setStatus = (payload: GameStatus) => {
