@@ -14,9 +14,9 @@ export const metadata: Metadata = {
 
 const pages = [
     {
-        title: 'About',
+        title: 'Who is Eric?',
         description: 'About Me',
-        href: '/about/about',
+        href: '/about/eric',
         icon: PuzzlePieceIcon,
     },
     {

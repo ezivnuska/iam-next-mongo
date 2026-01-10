@@ -60,7 +60,7 @@ const defaultLinks: NavLink[] = [
     {
         href: '/feed',
         title: 'Feed',
-        subtitle: 'Public Posts',
+        subtitle: 'User Posts',
         icon: <NewspaperIcon className='w-10 h-10' />,
         requiresAuth: true,
     },
@@ -94,12 +94,12 @@ const defaultLinks: NavLink[] = [
     },
     {
         href: '/about',
-        title: 'About',
-        subtitle: 'About Eric',
+        title: 'Who is Eric?',
+        subtitle: 'About Me',
         icon: <AcademicCapIcon className='w-10 h-10' />,
         requiresAuth: false,
         subLinks: [{
-            href: '/about/about',
+            href: '/about/eric',
             title: 'About',
             subtitle: 'About Me',
             icon: <AcademicCapIcon className='w-10 h-10' />,

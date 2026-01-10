@@ -1,4 +1,4 @@
-// app/eric/content-sections.ts
+// app/about/content-sections.ts
 // Shared content sections for professional profile
 
 export interface ContentSection {
@@ -8,7 +8,7 @@ export interface ContentSection {
 
 export const contentSections: ContentSection[] = [
     {
-        title: 'About Me',
+        title: 'Who is Eric?',
         paragraphs: [
             `I'm a frontend developer with 14 years of professional experience building digital solutions across San Francisco's creative agency landscape. From 2001 to 2015, I worked with leading studios including Illuminotion, Creative Lift, Graphic Language, Pixelette Studios, Eveo, and others, delivering everything from enterprise applications to native mobile apps and rich-media advertising campaigns.`
         ]
@@ -44,7 +44,7 @@ export const contentSections: ContentSection[] = [
         ]
     },
     {
-        title: "What I'm Looking For",
+        title: `What I'm Looking For`,
         paragraphs: [
             `I'm seeking smaller contract opportunities—either remote or local to the San Francisco Bay Area—where I can contribute meaningfully to projects that matter. I'm specifically interested in individual contributor roles rather than senior or lead positions. This allows me to focus on what I do best: hands-on development work, solving technical challenges, and creating quality user experiences.`,
             `I'm drawn to projects where craftsmanship matters, where there's attention to detail, and where I can continue growing my expertise in modern web technologies while applying the foundational skills I've built over 14 years.`,

@@ -10,7 +10,7 @@ import PageContent from '@/app/ui/layout/page/page-content';
 
 export const metadata: Metadata = {
     title: 'Feed',
-    description: 'Public Posts',
+    description: 'User Posts',
 };
 
 export default async function FeedPage() {
@@ -22,7 +22,7 @@ export default async function FeedPage() {
                 breadcrumbs={[
                     { label: 'Feed', href: '/feed', active: true }
                 ]}
-                subtitle='Public Posts'
+                // subtitle='User Posts'
             />
 
             <div className='space-y-8 pb-8'>

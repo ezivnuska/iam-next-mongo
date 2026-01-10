@@ -1,4 +1,4 @@
-// app/about/about/page.tsx
+// app/about/eric/page.tsx
 
 import { Metadata } from 'next';
 import PageHeader from '@/app/ui/layout/page-header';
@@ -7,18 +7,18 @@ import { Accordion, AccordionItem } from '@/app/ui/accordion';
 import { contentSections } from '../content-sections';
 
 export const metadata: Metadata = {
-    title: 'About',
+    title: 'Who is Eric?',
     description: 'About Me',
 };
 
-export default function AboutDetailPage() {
+export default function EricDetailPage() {
     return (
         <PageContent>
             <PageHeader
                 useBreadcrumbs={true}
                 breadcrumbs={[
-                    { label: 'About', href: '/about' },
-                    { label: 'About', href: '/about/about', active: true }
+                    { label: 'About Eric', href: '/about' },
+                    { label: 'About Me', href: '/about/eric', active: true }
                 ]}
                 subtitle='Professional Background'
             />
@@ -32,7 +32,7 @@ export default function AboutDetailPage() {
                             defaultOpen={index === 0}
                         >
                             {section.paragraphs.map((paragraph, pIndex) => (
-                                <span key={pIndex} className='block text-md text-gray-300'>
+                                <span key={pIndex} className='block text-md'>
                                     {paragraph}
                                 </span>
                             ))}

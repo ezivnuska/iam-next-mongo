@@ -18,14 +18,6 @@ type CommentListProps = {
 export default function CommentList({ comments, currentUserId, currentUserRole, onDelete }: CommentListProps) {
 	const isDark = useIsDark();
 
-	if (comments.length === 0) {
-		return (
-			<div className='text-center py-8' style={{ color: getSecondaryTextColor(isDark) }}>
-				No comments yet. Be the first to comment!
-			</div>
-		)
-	}
-
 	return (
 		<div className='space-y-4 py-2'>
 			{comments.map((comment) => {

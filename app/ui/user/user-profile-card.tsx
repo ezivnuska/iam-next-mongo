@@ -9,6 +9,7 @@ import BioForm from '@/app/profile/bio-form';
 import type { User } from '@/app/lib/definitions';
 import { useIsDark } from '@/app/lib/hooks/use-is-dark';
 import { getTextColor, getTertiaryTextColor } from '@/app/lib/utils/theme-colors';
+import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 
 interface UserProfileCardProps {
   username?: string;
@@ -62,10 +63,12 @@ export default function UserProfileCard({ username }: UserProfileCardProps) {
                 />
             </div>
             <div className='flex flex-1 flex-col gap-2'>
-                <h1 className='text-2xl font-bold' style={{ color: getTextColor(isDark) }}>
-                    {displayUser.username}
-                </h1>
-
+                <div className='flex flex-1 flex-row items-center gap-4 pr-1'>
+                    <h1 className='flex-1 text-2xl font-bold' style={{ color: getTextColor(isDark) }}>
+                        {displayUser.username}
+                    </h1>
+                    {/* <Cog6ToothIcon className='w-7 h-7' style={{ color: getTextColor(isDark) }} /> */}
+                </div>
                 <div className='flex flex-1 flex-row items-start gap-4 pr-1'>
                     <p className='flex flex-1' style={{ color: getTertiaryTextColor(isDark) }}>
                         {displayUser.bio || ''}
