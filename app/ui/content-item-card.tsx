@@ -9,6 +9,7 @@ import type { Post } from '@/app/lib/definitions/post';
 import ContentCard from '@/app/ui/content-card';
 import ContentImage from '@/app/ui/content-image';
 import EditContentButton from '@/app/ui/edit-content-button';
+import MemoryPolaroid from '@/app/ui/memories/memory-polaroid';
 import { useIsDark } from '@/app/lib/hooks/use-is-dark';
 import { getTextColor, getMutedTextColor } from '@/app/lib/utils/theme-colors';
 import { isMemory, isPost } from '@/app/lib/utils/content-helpers';
@@ -52,19 +53,11 @@ export default function ContentItemCard({
 
   if (isMemory(item)) {
     const memory = item;
-    const memoryDate = new Date(memory.date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
 
     content = (
-      <ContentCard
-        author={memory.author}
-        avatar={memory.author.avatar}
-        createdAt={memory.createdAt}
-        itemId={memory.id}
-        itemType='Memory'
+      <MemoryPolaroid
+        memory={memory}
+        onImageClick={memory.image && onImageClick ? () => onImageClick(memory.image!) : undefined}
         actions={editable ? {
           onDelete: () => handleDelete(memory.id),
           onFlag: onFlag ? () => onFlag(memory) : undefined,
@@ -76,24 +69,10 @@ export default function ContentItemCard({
           initialCommentCount: memory.commentCount || 0,
           autoExpandComments,
         }}
-      >
-        <div>
-          <p className='text-lg font-bold' style={{ color: getTextColor(isDark) }}>{memoryDate}</p>
-          {memory.title && <p className='text-lg font-light' style={{ color: getMutedTextColor(isDark) }}>{memory.title}</p>}
-        </div>
-        <ContentImage
-          image={memory.image}
-          alt='Memory image'
-          className='max-w-full max-h-96 rounded my-2 object-cover'
-          onClick={memory.image && onImageClick ? () => onImageClick(memory.image!) : undefined}
-        />
-        {memory.content && (
-          <div className='flex flex-row gap-2'>
-            <p className='flex-1 whitespace-pre-wrap' style={{ color: getTextColor(isDark) }}>{memory.content}</p>
-            {editable && canEdit && onEdit && <EditContentButton onEdit={() => onEdit(memory)} />}
-          </div>
-        )}
-      </ContentCard>
+        editable={editable}
+        canEdit={canEdit}
+        onEdit={onEdit ? () => onEdit(memory) : undefined}
+      />
     );
   }
 
