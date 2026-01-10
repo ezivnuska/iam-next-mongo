@@ -11,12 +11,15 @@ import {
     NewspaperIcon,
     Squares2X2Icon,
     PhotoIcon,
+    XCircleIcon,
+    XMarkIcon,
 } from '@heroicons/react/24/solid';
 import { useUser } from '@/app/lib/providers/user-provider';
 import { ReactNode, useState, useEffect } from 'react';
 import PokerChipIcon from '@/app/ui/icons/poker-chip-icon';
 import NavLinkCardAnimated from '@/app/ui/header/nav-link-card-animated';
 import clsx from 'clsx';
+import T3Icon from '../icons/t3-icon';
 
 export interface NavLink {
     href: string;
@@ -89,6 +92,13 @@ const defaultLinks: NavLink[] = [
             title: 'Poker',
             subtitle: `Texas Hold'em`,
             icon: <PokerChipIcon className='w-10 h-10' />,
+            requiresAuth: false,
+        },
+        {
+            href: '/games/t3',
+            title: 'T3',
+            subtitle: `Tic Tac Toe`,
+            icon: <T3Icon className='w-10 h-10' />,
             requiresAuth: false,
         }],
     },
