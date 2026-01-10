@@ -12,7 +12,7 @@ export default function Page() {
 
     return (
         <PageContent>
-            <div className='flex flex-1'>
+            <div className='flex flex-1 mb-4'>
                 <NavLinkListAnimated className='py-4' initialSection={section} />
             </div>
         </PageContent>

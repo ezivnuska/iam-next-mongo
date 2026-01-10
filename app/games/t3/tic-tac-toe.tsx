@@ -10,6 +10,7 @@ import { Button } from '@/app/ui/button';
 type Player = 'X' | 'O' | null;
 type Board = Player[];
 type GameMode = 'pvp' | 'ai';
+type ShiftDirection = 'up' | 'down' | 'left' | 'right' | null;
 
 const WINNING_COMBINATIONS = [
     [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
@@ -82,6 +83,44 @@ const getBestMove = (board: Board): number => {
     return bestMove;
 };
 
+const getRandomDirection = (): ShiftDirection => {
+    const directions: ShiftDirection[] = ['up', 'down', 'left', 'right'];
+    return directions[Math.floor(Math.random() * directions.length)];
+};
+
+const shiftBoard = (board: Board, direction: ShiftDirection): Board => {
+    if (!direction) return board;
+
+    switch (direction) {
+        case 'up':
+            return [
+                board[3], board[4], board[5], // Middle row moves to top
+                board[6], board[7], board[8], // Bottom row moves to middle
+                null, null, null               // New empty bottom row
+            ];
+        case 'down':
+            return [
+                null, null, null,              // New empty top row
+                board[0], board[1], board[2],  // Top row moves to middle
+                board[3], board[4], board[5]   // Middle row moves to bottom
+            ];
+        case 'left':
+            return [
+                board[1], board[2], null,      // Row 1: shift left, add empty right
+                board[4], board[5], null,      // Row 2: shift left, add empty right
+                board[7], board[8], null       // Row 3: shift left, add empty right
+            ];
+        case 'right':
+            return [
+                null, board[0], board[1],      // Row 1: add empty left, shift right
+                null, board[3], board[4],      // Row 2: add empty left, shift right
+                null, board[6], board[7]       // Row 3: add empty left, shift right
+            ];
+        default:
+            return board;
+    }
+};
+
 export default function TicTacToe() {
     const [board, setBoard] = useState<Board>(Array(9).fill(null));
     const [currentPlayer, setCurrentPlayer] = useState<Player>('X');
@@ -91,6 +130,7 @@ export default function TicTacToe() {
     const [scores, setScores] = useState({ X: 0, O: 0, draws: 0 });
     const [isAnimating, setIsAnimating] = useState(false);
     const [disableTransition, setDisableTransition] = useState(false);
+    const [shiftDirection, setShiftDirection] = useState<ShiftDirection>(null);
 
     useEffect(() => {
         if (gameMode === 'ai' && currentPlayer === 'O' && !winner && !isDraw && !isAnimating) {
@@ -107,7 +147,9 @@ export default function TicTacToe() {
                             setWinner(gameWinner);
                             setScores(prev => ({ ...prev, [gameWinner]: prev[gameWinner] + 1 }));
                         } else if (isBoardFull(newBoard)) {
-                            // Trigger animation
+                            // Trigger animation with random direction
+                            const direction = getRandomDirection();
+                            setShiftDirection(direction);
                             setIsAnimating(true);
 
                             // After slide animation completes, update board
@@ -115,16 +157,13 @@ export default function TicTacToe() {
                                 setDisableTransition(true);
                                 setIsAnimating(false);
 
-                                const shiftedBoard: Board = [
-                                    newBoard[6], newBoard[7], newBoard[8],
-                                    null, null, null,
-                                    null, null, null
-                                ];
+                                const shiftedBoard = shiftBoard(newBoard, direction);
                                 setBoard(shiftedBoard);
 
                                 // Re-enable transitions after board updates
                                 setTimeout(() => {
                                     setDisableTransition(false);
+                                    setShiftDirection(null);
                                     setCurrentPlayer('X');
                                 }, 50);
                             }, 600);
@@ -154,7 +193,9 @@ export default function TicTacToe() {
             setWinner(gameWinner);
             setScores(prev => ({ ...prev, [gameWinner]: prev[gameWinner] + 1 }));
         } else if (isBoardFull(newBoard)) {
-            // Trigger animation instead of immediately setting draw
+            // Trigger animation with random direction
+            const direction = getRandomDirection();
+            setShiftDirection(direction);
             setIsAnimating(true);
 
             // After animation completes, shift the board
@@ -162,16 +203,13 @@ export default function TicTacToe() {
                 setDisableTransition(true);
                 setIsAnimating(false);
 
-                const shiftedBoard: Board = [
-                    newBoard[6], newBoard[7], newBoard[8], // Bottom row moves to top
-                    null, null, null,                       // Middle row becomes empty
-                    null, null, null                        // Bottom row becomes empty
-                ];
+                const shiftedBoard = shiftBoard(newBoard, direction);
                 setBoard(shiftedBoard);
 
                 // Re-enable transitions after board updates
                 setTimeout(() => {
                     setDisableTransition(false);
+                    setShiftDirection(null);
                     setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
                 }, 50);
             }, 600); // Match animation duration
@@ -187,6 +225,7 @@ export default function TicTacToe() {
         setIsDraw(false);
         setIsAnimating(false);
         setDisableTransition(false);
+        setShiftDirection(null);
     };
 
     const resetAll = () => {
@@ -204,7 +243,7 @@ export default function TicTacToe() {
                         { label: 'Games', href: '/games' },
                         { label: 'Tic-Tac-Toe', href: '/games/t3', active: true }
                     ]}
-                    subtitle='Classic Tic-Tac-Toe game'
+                    // subtitle='Classic Tic-Tac-Toe game'
                 />
 
                 <div className='flex flex-col items-center justify-center min-h-[60vh] gap-8 px-4'>
@@ -244,7 +283,7 @@ export default function TicTacToe() {
 
             <div className='flex flex-col items-center gap-8 px-4 pb-8'>
                 {/* Score Board */}
-                <div className='flex gap-4 text-center'>
+                {/* <div className='flex gap-4 text-center'>
                     <div className='bg-blue-100 dark:bg-blue-900 px-6 py-3 rounded-lg'>
                         <div className='text-2xl font-bold text-blue-600 dark:text-blue-300'>
                             {scores.X}
@@ -269,7 +308,7 @@ export default function TicTacToe() {
                             {gameMode === 'ai' ? 'AI (O)' : 'Player O'}
                         </div>
                     </div>
-                </div>
+                </div> */}
 
                 {/* Status */}
                 <div className='text-center'>
@@ -294,9 +333,15 @@ export default function TicTacToe() {
                 <div className='w-full max-w-md aspect-square overflow-hidden'>
                     <div
                         className={`grid grid-cols-3 gap-2 w-full h-full ${
-                            disableTransition ? '' : 'transition-transform duration-[600ms] ease-in-out'
+                            disableTransition ? '' : 'transition-transform duration-600 ease-in-out'
                         } ${
-                            isAnimating ? '-translate-y-[66.67%]' : ''
+                            isAnimating && shiftDirection === 'up' ? '-translate-y-[33.33%]' : ''
+                        } ${
+                            isAnimating && shiftDirection === 'down' ? 'translate-y-[33.33%]' : ''
+                        } ${
+                            isAnimating && shiftDirection === 'left' ? '-translate-x-[33.33%]' : ''
+                        } ${
+                            isAnimating && shiftDirection === 'right' ? 'translate-x-[33.33%]' : ''
                         }`}
                     >
                         {board.map((cell, index) => (
