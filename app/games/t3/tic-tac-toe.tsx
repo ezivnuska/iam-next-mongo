@@ -89,22 +89,60 @@ export default function TicTacToe() {
     const [isDraw, setIsDraw] = useState(false);
     const [gameMode, setGameMode] = useState<GameMode | null>(null);
     const [scores, setScores] = useState({ X: 0, O: 0, draws: 0 });
+    const [isAnimating, setIsAnimating] = useState(false);
+    const [disableTransition, setDisableTransition] = useState(false);
 
     useEffect(() => {
-        if (gameMode === 'ai' && currentPlayer === 'O' && !winner && !isDraw) {
+        if (gameMode === 'ai' && currentPlayer === 'O' && !winner && !isDraw && !isAnimating) {
             // AI makes a move after a short delay
             const timer = setTimeout(() => {
-                const aiMove = getBestMove([...board]);
-                if (aiMove !== -1) {
-                    handleCellClick(aiMove);
-                }
+                setBoard(prevBoard => {
+                    const aiMove = getBestMove([...prevBoard]);
+                    if (aiMove !== -1 && !prevBoard[aiMove]) {
+                        const newBoard = [...prevBoard];
+                        newBoard[aiMove] = 'O';
+
+                        const gameWinner = checkWinner(newBoard);
+                        if (gameWinner) {
+                            setWinner(gameWinner);
+                            setScores(prev => ({ ...prev, [gameWinner]: prev[gameWinner] + 1 }));
+                        } else if (isBoardFull(newBoard)) {
+                            // Trigger animation
+                            setIsAnimating(true);
+
+                            // After slide animation completes, update board
+                            setTimeout(() => {
+                                setDisableTransition(true);
+                                setIsAnimating(false);
+
+                                const shiftedBoard: Board = [
+                                    newBoard[6], newBoard[7], newBoard[8],
+                                    null, null, null,
+                                    null, null, null
+                                ];
+                                setBoard(shiftedBoard);
+
+                                // Re-enable transitions after board updates
+                                setTimeout(() => {
+                                    setDisableTransition(false);
+                                    setCurrentPlayer('X');
+                                }, 50);
+                            }, 600);
+                        } else {
+                            setCurrentPlayer('X');
+                        }
+
+                        return newBoard;
+                    }
+                    return prevBoard;
+                });
             }, 500);
             return () => clearTimeout(timer);
         }
-    }, [currentPlayer, gameMode, winner, isDraw, board]);
+    }, [currentPlayer, gameMode, winner, isDraw, isAnimating]);
 
     const handleCellClick = (index: number) => {
-        if (board[index] || winner || isDraw || !gameMode) return;
+        if (board[index] || winner || isDraw || !gameMode || isAnimating) return;
         if (gameMode === 'ai' && currentPlayer === 'O') return; // Prevent clicking during AI turn
 
         const newBoard = [...board];
@@ -116,8 +154,27 @@ export default function TicTacToe() {
             setWinner(gameWinner);
             setScores(prev => ({ ...prev, [gameWinner]: prev[gameWinner] + 1 }));
         } else if (isBoardFull(newBoard)) {
-            setIsDraw(true);
-            setScores(prev => ({ ...prev, draws: prev.draws + 1 }));
+            // Trigger animation instead of immediately setting draw
+            setIsAnimating(true);
+
+            // After animation completes, shift the board
+            setTimeout(() => {
+                setDisableTransition(true);
+                setIsAnimating(false);
+
+                const shiftedBoard: Board = [
+                    newBoard[6], newBoard[7], newBoard[8], // Bottom row moves to top
+                    null, null, null,                       // Middle row becomes empty
+                    null, null, null                        // Bottom row becomes empty
+                ];
+                setBoard(shiftedBoard);
+
+                // Re-enable transitions after board updates
+                setTimeout(() => {
+                    setDisableTransition(false);
+                    setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
+                }, 50);
+            }, 600); // Match animation duration
         } else {
             setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
         }
@@ -128,6 +185,8 @@ export default function TicTacToe() {
         setCurrentPlayer('X');
         setWinner(null);
         setIsDraw(false);
+        setIsAnimating(false);
+        setDisableTransition(false);
     };
 
     const resetAll = () => {
@@ -232,28 +291,36 @@ export default function TicTacToe() {
                 </div>
 
                 {/* Game Board */}
-                <div className='grid grid-cols-3 gap-2 w-full max-w-md aspect-square'>
-                    {board.map((cell, index) => (
-                        <button
-                            key={index}
-                            onClick={() => handleCellClick(index)}
-                            disabled={!!cell || !!winner || isDraw || (gameMode === 'ai' && currentPlayer === 'O')}
-                            className={`
-                                aspect-square
-                                bg-white dark:bg-gray-800
-                                border-4 border-gray-300 dark:border-gray-600
-                                rounded-lg
-                                text-6xl font-bold
-                                transition-all
-                                hover:bg-gray-50 dark:hover:bg-gray-700
-                                disabled:cursor-not-allowed
-                                ${cell === 'X' ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}
-                                ${!cell && !winner && !isDraw && !(gameMode === 'ai' && currentPlayer === 'O') ? 'hover:border-blue-400 dark:hover:border-blue-500' : ''}
-                            `}
-                        >
-                            {cell}
-                        </button>
-                    ))}
+                <div className='w-full max-w-md aspect-square overflow-hidden'>
+                    <div
+                        className={`grid grid-cols-3 gap-2 w-full h-full ${
+                            disableTransition ? '' : 'transition-transform duration-[600ms] ease-in-out'
+                        } ${
+                            isAnimating ? '-translate-y-[66.67%]' : ''
+                        }`}
+                    >
+                        {board.map((cell, index) => (
+                            <button
+                                key={index}
+                                onClick={() => handleCellClick(index)}
+                                disabled={!!cell || !!winner || isDraw || isAnimating || (gameMode === 'ai' && currentPlayer === 'O')}
+                                className={`
+                                    aspect-square
+                                    bg-white dark:bg-gray-800
+                                    border-4 border-gray-300 dark:border-gray-600
+                                    rounded-lg
+                                    text-6xl font-bold
+                                    transition-all
+                                    hover:bg-gray-50 dark:hover:bg-gray-700
+                                    disabled:cursor-not-allowed
+                                    ${cell === 'X' ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}
+                                    ${!cell && !winner && !isDraw && !isAnimating && !(gameMode === 'ai' && currentPlayer === 'O') ? 'hover:border-blue-400 dark:hover:border-blue-500' : ''}
+                                `}
+                            >
+                                {cell}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Controls */}
