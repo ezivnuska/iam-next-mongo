@@ -203,8 +203,8 @@ export default function TicTacToe() {
                     setTimeout(() => {
                         setDisableTransition(false);
                         setShiftDirection(null);
-                        // Continue game with same player
-                        setCurrentPlayer(currentPlayer);
+                        // Continue game with next player (no winning combinations possible after board shift)
+                        setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
                     }, 50);
                 }, 600);
             } else {
@@ -253,28 +253,9 @@ export default function TicTacToe() {
                                     }, 50);
                                 }, 600);
                             }, 600);
-                        } else if (isBoardFull(newBoard)) {
-                            // Board full - shift up
-                            setShiftDirection('up');
-                            setIsAnimating(true);
-
-                            // After slide animation completes, update board
-                            setTimeout(() => {
-                                setDisableTransition(true);
-                                setIsAnimating(false);
-
-                                const shiftedBoard = shiftBoardUp(newBoard);
-                                setBoard(shiftedBoard);
-
-                                // Re-enable transitions after board updates
-                                setTimeout(() => {
-                                    setDisableTransition(false);
-                                    setShiftDirection(null);
-                                    setCurrentPlayer('X');
-                                }, 50);
-                            }, 600);
                         } else {
-                            setCurrentPlayer('X');
+                            // No winner - let cascade check handle board-full or player switch
+                            setShouldCheckForWins(true);
                         }
 
                         return newBoard;
@@ -323,28 +304,9 @@ export default function TicTacToe() {
                     }, 50);
                 }, 600);
             }, 600);
-        } else if (isBoardFull(newBoard)) {
-            // Board full - shift up
-            setShiftDirection('up');
-            setIsAnimating(true);
-
-            // After animation completes, shift the board
-            setTimeout(() => {
-                setDisableTransition(true);
-                setIsAnimating(false);
-
-                const shiftedBoard = shiftBoardUp(newBoard);
-                setBoard(shiftedBoard);
-
-                // Re-enable transitions after board updates
-                setTimeout(() => {
-                    setDisableTransition(false);
-                    setShiftDirection(null);
-                    setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
-                }, 50);
-            }, 600); // Match animation duration
         } else {
-            setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
+            // No winner - let cascade check handle board-full or player switch
+            setShouldCheckForWins(true);
         }
     };
 
@@ -504,7 +466,8 @@ export default function TicTacToe() {
                                     let cellTransform = 'none';
                                     if (shouldAnimate) {
                                         if (isDrawScenario) {
-                                            cellTransform = 'translateY(-33.33%)';
+                                            // Move up by one full cell height + one gap (0.5rem for gap-2)
+                                            cellTransform = 'translateY(calc(-100% - 0.5rem))';
                                         } else if (isWinScenario && isSliding) {
                                             // Count how many winning cells are above this cell in the same column
                                             let winningCellsAbove = 0;
@@ -562,10 +525,6 @@ export default function TicTacToe() {
                                 {isDrawScenario && (
                                     <div
                                         className='aspect-square bg-white dark:bg-gray-800 border-4 border-gray-300 dark:border-gray-600 rounded-lg'
-                                        style={{
-                                            transform: 'translateY(-33.33%)',
-                                            transition: disableTransition ? 'none' : 'transform 600ms ease-in-out',
-                                        }}
                                     />
                                 )}
 
