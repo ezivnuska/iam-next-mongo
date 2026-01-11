@@ -18,7 +18,7 @@ const WINNING_COMBINATIONS = [
     [0, 4, 8], [2, 4, 6]             // diagonals
 ];
 
-const checkWinner = (board: Board): { winner: Player; combination: number[] | null } => {
+const checkWinner = (board: Board): { winner: Player; combination: number[] | null; count: number } => {
     const allWinningCombinations: number[][] = [];
     let winner: Player = null;
 
@@ -34,10 +34,10 @@ const checkWinner = (board: Board): { winner: Player; combination: number[] | nu
     if (allWinningCombinations.length > 0) {
         // Flatten all winning combinations into a single array of unique cell indices
         const allWinningCells = [...new Set(allWinningCombinations.flat())];
-        return { winner, combination: allWinningCells };
+        return { winner, combination: allWinningCells, count: allWinningCombinations.length };
     }
 
-    return { winner: null, combination: null };
+    return { winner: null, combination: null, count: 0 };
 };
 
 const isBoardFull = (board: Board): boolean => {
@@ -159,14 +159,14 @@ export default function TicTacToe() {
         if (shouldCheckForWins && fadingCells.length === 0 && !isSliding) {
             setShouldCheckForWins(false);
 
-            const { winner: gameWinner, combination } = checkWinner(board);
+            const { winner: gameWinner, combination, count } = checkWinner(board);
             if (gameWinner && combination) {
                 // Found another winning combination - animate it
                 setIsAnimating(false);
                 setShiftDirection(null);
                 setWinningCells(combination);
                 setFadingCells(combination);
-                setScores(prev => ({ ...prev, [gameWinner]: prev[gameWinner] + 1 }));
+                setScores(prev => ({ ...prev, [gameWinner]: prev[gameWinner] + count }));
 
                 // After fade completes, start slide animation
                 setTimeout(() => {
@@ -224,39 +224,8 @@ export default function TicTacToe() {
                         const newBoard = [...prevBoard];
                         newBoard[aiMove] = 'O';
 
-                        const { winner: gameWinner, combination } = checkWinner(newBoard);
-                        if (gameWinner && combination) {
-                            // Winner found - fade out winning cells
-                            setIsAnimating(false);
-                            setShiftDirection(null);
-                            setWinningCells(combination);
-                            setFadingCells(combination);
-                            setScores(prev => ({ ...prev, [gameWinner]: prev[gameWinner] + 1 }));
-
-                            // After fade completes, start slide animation
-                            setTimeout(() => {
-                                setFadingCells([]);
-                                setIsSliding(true);
-
-                                // After slide animation, update board
-                                setTimeout(() => {
-                                    setDisableTransition(true);
-                                    const shiftedBoard = slideUpWinningCells(newBoard, combination);
-                                    setBoard(shiftedBoard);
-                                    setWinningCells([]);
-                                    setIsSliding(false);
-
-                                    // Re-enable transitions and check for cascade wins
-                                    setTimeout(() => {
-                                        setDisableTransition(false);
-                                        setShouldCheckForWins(true); // Check for new winning combinations
-                                    }, 50);
-                                }, 600);
-                            }, 600);
-                        } else {
-                            // No winner - let cascade check handle board-full or player switch
-                            setShouldCheckForWins(true);
-                        }
+                        // Don't check for winner here - just update board and let cascade check handle it
+                        setShouldCheckForWins(true);
 
                         return newBoard;
                     }
@@ -275,39 +244,8 @@ export default function TicTacToe() {
         newBoard[index] = currentPlayer;
         setBoard(newBoard);
 
-        const { winner: gameWinner, combination } = checkWinner(newBoard);
-        if (gameWinner && combination) {
-            // Winner found - fade out winning cells
-            setIsAnimating(false);
-            setShiftDirection(null);
-            setWinningCells(combination);
-            setFadingCells(combination);
-            setScores(prev => ({ ...prev, [gameWinner]: prev[gameWinner] + 1 }));
-
-            // After fade completes, start slide animation
-            setTimeout(() => {
-                setFadingCells([]);
-                setIsSliding(true);
-
-                // After slide animation, update board
-                setTimeout(() => {
-                    setDisableTransition(true);
-                    const shiftedBoard = slideUpWinningCells(newBoard, combination);
-                    setBoard(shiftedBoard);
-                    setWinningCells([]);
-                    setIsSliding(false);
-
-                    // Re-enable transitions and check for cascade wins
-                    setTimeout(() => {
-                        setDisableTransition(false);
-                        setShouldCheckForWins(true); // Check for new winning combinations
-                    }, 50);
-                }, 600);
-            }, 600);
-        } else {
-            // No winner - let cascade check handle board-full or player switch
-            setShouldCheckForWins(true);
-        }
+        // Let cascade check handle winner detection
+        setShouldCheckForWins(true);
     };
 
     const resetGame = () => {
