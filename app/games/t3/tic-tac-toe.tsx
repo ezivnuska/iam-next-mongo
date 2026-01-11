@@ -443,7 +443,7 @@ export default function TicTacToe() {
                                                 rounded-lg
                                                 text-6xl font-bold
                                                 hover:bg-gray-50 dark:hover:bg-gray-700
-                                                disabled:cursor-not-allowed
+                                                cursor-pointer disabled:cursor-not-allowed
                                                 ${cell === 'X' ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}
                                                 ${!cell && !isAnimating && fadingCells.length === 0 && !(gameMode === 'ai' && currentPlayer === 'O') ? 'hover:border-blue-400 dark:hover:border-blue-500' : ''}
                                                 ${shouldBeInvisible ? 'opacity-0' : 'opacity-100'}
