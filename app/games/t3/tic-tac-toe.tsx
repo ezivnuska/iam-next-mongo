@@ -18,13 +18,13 @@ const WINNING_COMBINATIONS = [
     [0, 4, 8], [2, 4, 6]             // diagonals
 ];
 
-const checkWinner = (board: Board): Player => {
+const checkWinner = (board: Board): { winner: Player; combination: number[] | null } => {
     for (const [a, b, c] of WINNING_COMBINATIONS) {
         if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-            return board[a];
+            return { winner: board[a], combination: [a, b, c] };
         }
     }
-    return null;
+    return { winner: null, combination: null };
 };
 
 const isBoardFull = (board: Board): boolean => {
@@ -34,7 +34,7 @@ const isBoardFull = (board: Board): boolean => {
 const getBestMove = (board: Board): number => {
     // Simple AI using minimax algorithm
     const minimax = (currentBoard: Board, isMaximizing: boolean): number => {
-        const winner = checkWinner(currentBoard);
+        const { winner } = checkWinner(currentBoard);
 
         if (winner === 'O') return 10;
         if (winner === 'X') return -10;
@@ -83,58 +83,58 @@ const getBestMove = (board: Board): number => {
     return bestMove;
 };
 
-const getRandomDirection = (): ShiftDirection => {
-    const directions: ShiftDirection[] = ['up', 'down', 'left', 'right'];
-    return directions[Math.floor(Math.random() * directions.length)];
+const shiftBoardUp = (board: Board): Board => {
+    return [
+        board[3], board[4], board[5], // Middle row moves to top
+        board[6], board[7], board[8], // Bottom row moves to middle
+        null, null, null               // New empty bottom row
+    ];
 };
 
-const shiftBoard = (board: Board, direction: ShiftDirection): Board => {
-    if (!direction) return board;
+const slideUpWinningCells = (board: Board, winningCombination: number[]): Board => {
+    const newBoard = [...board];
 
-    switch (direction) {
-        case 'up':
-            return [
-                board[3], board[4], board[5], // Middle row moves to top
-                board[6], board[7], board[8], // Bottom row moves to middle
-                null, null, null               // New empty bottom row
-            ];
-        case 'down':
-            return [
-                null, null, null,              // New empty top row
-                board[0], board[1], board[2],  // Top row moves to middle
-                board[3], board[4], board[5]   // Middle row moves to bottom
-            ];
-        case 'left':
-            return [
-                board[1], board[2], null,      // Row 1: shift left, add empty right
-                board[4], board[5], null,      // Row 2: shift left, add empty right
-                board[7], board[8], null       // Row 3: shift left, add empty right
-            ];
-        case 'right':
-            return [
-                null, board[0], board[1],      // Row 1: add empty left, shift right
-                null, board[3], board[4],      // Row 2: add empty left, shift right
-                null, board[6], board[7]       // Row 3: add empty left, shift right
-            ];
-        default:
-            return board;
-    }
+    // First, clear all winning cells
+    winningCombination.forEach(position => {
+        newBoard[position] = null;
+    });
+
+    // Process each winning cell's column
+    winningCombination.forEach(position => {
+        const column = position % 3;
+        const winningRow = Math.floor(position / 3);
+
+        // Slide all cells below the winning position up by one row
+        for (let row = winningRow; row < 2; row++) {
+            const currentIndex = row * 3 + column;
+            const belowIndex = (row + 1) * 3 + column;
+            newBoard[currentIndex] = newBoard[belowIndex];
+        }
+
+        // Add empty cell at bottom of this column
+        newBoard[6 + column] = null;
+    });
+
+    return newBoard;
 };
 
 export default function TicTacToe() {
     const [board, setBoard] = useState<Board>(Array(9).fill(null));
     const [currentPlayer, setCurrentPlayer] = useState<Player>('X');
-    const [winner, setWinner] = useState<Player>(null);
-    const [isDraw, setIsDraw] = useState(false);
     const [gameMode, setGameMode] = useState<GameMode | null>(null);
-    const [scores, setScores] = useState({ X: 0, O: 0, draws: 0 });
+    const [scores, setScores] = useState({ X: 0, O: 0 });
     const [isAnimating, setIsAnimating] = useState(false);
     const [disableTransition, setDisableTransition] = useState(false);
     const [shiftDirection, setShiftDirection] = useState<ShiftDirection>(null);
+    const [winningCells, setWinningCells] = useState<number[]>([]);
+    const [fadingCells, setFadingCells] = useState<number[]>([]);
+    const [slidingCells, setSlidingCells] = useState<Set<number>>(new Set());
+    const [isSliding, setIsSliding] = useState(false);
+    const [showPhantomCells, setShowPhantomCells] = useState(false);
 
     useEffect(() => {
-        if (gameMode === 'ai' && currentPlayer === 'O' && !winner && !isDraw && !isAnimating) {
-            // AI makes a move after a short delay
+        if (gameMode === 'ai' && currentPlayer === 'O' && !isAnimating && fadingCells.length === 0) {
+            // AI makes a move after a delay (1 second)
             const timer = setTimeout(() => {
                 setBoard(prevBoard => {
                     const aiMove = getBestMove([...prevBoard]);
@@ -142,14 +142,38 @@ export default function TicTacToe() {
                         const newBoard = [...prevBoard];
                         newBoard[aiMove] = 'O';
 
-                        const gameWinner = checkWinner(newBoard);
-                        if (gameWinner) {
-                            setWinner(gameWinner);
+                        const { winner: gameWinner, combination } = checkWinner(newBoard);
+                        if (gameWinner && combination) {
+                            // Winner found - fade out winning cells
+                            setIsAnimating(false);
+                            setShiftDirection(null);
+                            setWinningCells(combination);
+                            setFadingCells(combination);
                             setScores(prev => ({ ...prev, [gameWinner]: prev[gameWinner] + 1 }));
+
+                            // After fade completes, start slide animation
+                            setTimeout(() => {
+                                setFadingCells([]);
+                                setIsSliding(true);
+
+                                // After slide animation, update board
+                                setTimeout(() => {
+                                    setDisableTransition(true);
+                                    const shiftedBoard = slideUpWinningCells(newBoard, combination);
+                                    setBoard(shiftedBoard);
+                                    setWinningCells([]);
+                                    setIsSliding(false);
+
+                                    // Re-enable transitions and continue game
+                                    setTimeout(() => {
+                                        setDisableTransition(false);
+                                        setCurrentPlayer('X');
+                                    }, 50);
+                                }, 600);
+                            }, 600);
                         } else if (isBoardFull(newBoard)) {
-                            // Trigger animation with random direction
-                            const direction = getRandomDirection();
-                            setShiftDirection(direction);
+                            // Board full - shift up
+                            setShiftDirection('up');
                             setIsAnimating(true);
 
                             // After slide animation completes, update board
@@ -157,7 +181,7 @@ export default function TicTacToe() {
                                 setDisableTransition(true);
                                 setIsAnimating(false);
 
-                                const shiftedBoard = shiftBoard(newBoard, direction);
+                                const shiftedBoard = shiftBoardUp(newBoard);
                                 setBoard(shiftedBoard);
 
                                 // Re-enable transitions after board updates
@@ -175,27 +199,51 @@ export default function TicTacToe() {
                     }
                     return prevBoard;
                 });
-            }, 500);
+            }, 1000);
             return () => clearTimeout(timer);
         }
-    }, [currentPlayer, gameMode, winner, isDraw, isAnimating]);
+    }, [currentPlayer, gameMode, isAnimating, fadingCells]);
 
     const handleCellClick = (index: number) => {
-        if (board[index] || winner || isDraw || !gameMode || isAnimating) return;
+        if (board[index] || !gameMode || isAnimating || fadingCells.length > 0) return;
         if (gameMode === 'ai' && currentPlayer === 'O') return; // Prevent clicking during AI turn
 
         const newBoard = [...board];
         newBoard[index] = currentPlayer;
         setBoard(newBoard);
 
-        const gameWinner = checkWinner(newBoard);
-        if (gameWinner) {
-            setWinner(gameWinner);
+        const { winner: gameWinner, combination } = checkWinner(newBoard);
+        if (gameWinner && combination) {
+            // Winner found - fade out winning cells
+            setIsAnimating(false);
+            setShiftDirection(null);
+            setWinningCells(combination);
+            setFadingCells(combination);
             setScores(prev => ({ ...prev, [gameWinner]: prev[gameWinner] + 1 }));
+
+            // After fade completes, start slide animation
+            setTimeout(() => {
+                setFadingCells([]);
+                setIsSliding(true);
+
+                // After slide animation, update board
+                setTimeout(() => {
+                    setDisableTransition(true);
+                    const shiftedBoard = slideUpWinningCells(newBoard, combination);
+                    setBoard(shiftedBoard);
+                    setWinningCells([]);
+                    setIsSliding(false);
+
+                    // Re-enable transitions and continue game
+                    setTimeout(() => {
+                        setDisableTransition(false);
+                        setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
+                    }, 50);
+                }, 600);
+            }, 600);
         } else if (isBoardFull(newBoard)) {
-            // Trigger animation with random direction
-            const direction = getRandomDirection();
-            setShiftDirection(direction);
+            // Board full - shift up
+            setShiftDirection('up');
             setIsAnimating(true);
 
             // After animation completes, shift the board
@@ -203,7 +251,7 @@ export default function TicTacToe() {
                 setDisableTransition(true);
                 setIsAnimating(false);
 
-                const shiftedBoard = shiftBoard(newBoard, direction);
+                const shiftedBoard = shiftBoardUp(newBoard);
                 setBoard(shiftedBoard);
 
                 // Re-enable transitions after board updates
@@ -221,17 +269,19 @@ export default function TicTacToe() {
     const resetGame = () => {
         setBoard(Array(9).fill(null));
         setCurrentPlayer('X');
-        setWinner(null);
-        setIsDraw(false);
         setIsAnimating(false);
         setDisableTransition(false);
         setShiftDirection(null);
+        setWinningCells([]);
+        setFadingCells([]);
+        setSlidingCells(new Set());
+        setIsSliding(false);
     };
 
     const resetAll = () => {
         resetGame();
         setGameMode(null);
-        setScores({ X: 0, O: 0, draws: 0 });
+        setScores({ X: 0, O: 0 });
     };
 
     if (!gameMode) {
@@ -283,21 +333,13 @@ export default function TicTacToe() {
 
             <div className='flex flex-col items-center gap-8 px-4 pb-8'>
                 {/* Score Board */}
-                {/* <div className='flex gap-4 text-center'>
+                <div className='flex gap-4 text-center'>
                     <div className='bg-blue-100 dark:bg-blue-900 px-6 py-3 rounded-lg'>
                         <div className='text-2xl font-bold text-blue-600 dark:text-blue-300'>
                             {scores.X}
                         </div>
                         <div className='text-sm text-gray-600 dark:text-gray-400'>
                             Player X
-                        </div>
-                    </div>
-                    <div className='bg-gray-100 dark:bg-gray-700 px-6 py-3 rounded-lg'>
-                        <div className='text-2xl font-bold text-gray-600 dark:text-gray-300'>
-                            {scores.draws}
-                        </div>
-                        <div className='text-sm text-gray-600 dark:text-gray-400'>
-                            Draws
                         </div>
                     </div>
                     <div className='bg-red-100 dark:bg-red-900 px-6 py-3 rounded-lg'>
@@ -308,64 +350,164 @@ export default function TicTacToe() {
                             {gameMode === 'ai' ? 'AI (O)' : 'Player O'}
                         </div>
                     </div>
-                </div> */}
+                </div>
 
                 {/* Status */}
                 <div className='text-center'>
-                    {winner ? (
-                        <h2 className='text-3xl font-bold text-green-600 dark:text-green-400'>
-                            {winner} Wins!
-                        </h2>
-                    ) : isDraw ? (
-                        <h2 className='text-3xl font-bold text-gray-600 dark:text-gray-400'>
-                            It&apos;s a Draw!
-                        </h2>
-                    ) : (
-                        <h2 className='text-2xl font-semibold text-gray-700 dark:text-gray-300'>
-                            Current Turn: <span className={currentPlayer === 'X' ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}>
-                                {currentPlayer}
-                            </span>
-                        </h2>
-                    )}
+                    <h2 className='text-2xl font-semibold text-gray-700 dark:text-gray-300'>
+                        Current Turn: <span className={currentPlayer === 'X' ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}>
+                            {currentPlayer}
+                        </span>
+                    </h2>
                 </div>
 
-                {/* Game Board */}
-                <div className='w-full max-w-md aspect-square overflow-hidden'>
-                    <div
-                        className={`grid grid-cols-3 gap-2 w-full h-full ${
-                            disableTransition ? '' : 'transition-transform duration-600 ease-in-out'
-                        } ${
-                            isAnimating && shiftDirection === 'up' ? '-translate-y-[33.33%]' : ''
-                        } ${
-                            isAnimating && shiftDirection === 'down' ? 'translate-y-[33.33%]' : ''
-                        } ${
-                            isAnimating && shiftDirection === 'left' ? '-translate-x-[33.33%]' : ''
-                        } ${
-                            isAnimating && shiftDirection === 'right' ? 'translate-x-[33.33%]' : ''
-                        }`}
-                    >
-                        {board.map((cell, index) => (
-                            <button
-                                key={index}
-                                onClick={() => handleCellClick(index)}
-                                disabled={!!cell || !!winner || isDraw || isAnimating || (gameMode === 'ai' && currentPlayer === 'O')}
-                                className={`
-                                    aspect-square
-                                    bg-white dark:bg-gray-800
-                                    border-4 border-gray-300 dark:border-gray-600
-                                    rounded-lg
-                                    text-6xl font-bold
-                                    transition-all
-                                    hover:bg-gray-50 dark:hover:bg-gray-700
-                                    disabled:cursor-not-allowed
-                                    ${cell === 'X' ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}
-                                    ${!cell && !winner && !isDraw && !isAnimating && !(gameMode === 'ai' && currentPlayer === 'O') ? 'hover:border-blue-400 dark:hover:border-blue-500' : ''}
-                                `}
-                            >
-                                {cell}
-                            </button>
-                        ))}
-                    </div>
+                {/* Game Board - 3 Independent Columns */}
+                <div className='w-full max-w-md aspect-square flex gap-2'>
+                    {[0, 1, 2].map((colIndex) => {
+                        // Get indices for this column: col 0 = [0,3,6], col 1 = [1,4,7], col 2 = [2,5,8]
+                        const columnIndices = [colIndex, colIndex + 3, colIndex + 6];
+
+                        // Check if any cells in this column are in the winning combination
+                        const columnHasWinner = columnIndices.some(idx => winningCells.includes(idx));
+
+                        // Count how many winning cells are in this column (from winningCells or fadingCells)
+                        const winningCellsInColumn = columnIndices.filter(idx =>
+                            winningCells.includes(idx) || fadingCells.includes(idx)
+                        ).length;
+
+                        // Calculate total height needed for phantom cells
+                        const phantomCellCount = (fadingCells.length > 0 || isSliding) ? winningCellsInColumn : 0;
+                        const totalCells = 3 + phantomCellCount;
+
+                        // Calculate what percentage of the expanded column to shift up
+                        // If we have 4 total cells and need to shift 1 up, that's 25% of the column
+                        const shiftPercentage = totalCells > 3 ? (winningCellsInColumn / totalCells) * 100 : 0;
+
+                        // Determine if this is a win scenario (any winning cells exist globally)
+                        const isWinScenario = winningCells.length > 0 || fadingCells.length > 0 || isSliding;
+
+                        // Determine if this is a draw scenario (full board shift, no winners)
+                        const isDrawScenario = !isWinScenario && isAnimating && shiftDirection === 'up';
+
+                        // Find the topmost winning cell row in this column (for win scenario)
+                        let topmostWinningRow = 3; // Default to beyond bottom (no winning cells)
+                        if (isWinScenario && winningCellsInColumn > 0) {
+                            columnIndices.forEach(idx => {
+                                if (winningCells.includes(idx) || fadingCells.includes(idx)) {
+                                    const row = Math.floor(idx / 3);
+                                    topmostWinningRow = Math.min(topmostWinningRow, row);
+                                }
+                            });
+                        }
+
+                        return (
+                            <div key={colIndex} className='flex-1 flex flex-col gap-2 overflow-hidden'>
+                                {/* Main column cells */}
+                                {columnIndices.map((cellIndex) => {
+                                    const cell = board[cellIndex];
+                                    const cellRow = Math.floor(cellIndex / 3);
+
+                                    // Determine if this cell should animate
+                                    // In win scenario: only cells below topmost winning cell should animate
+                                    // In draw scenario: all cells should animate
+                                    let shouldAnimate = false;
+                                    if (isDrawScenario) {
+                                        shouldAnimate = true;
+                                    } else if (isWinScenario && cellRow > topmostWinningRow) {
+                                        shouldAnimate = true;
+                                    }
+
+                                    // Calculate transform for this specific cell
+                                    let cellTransform = 'none';
+                                    if (shouldAnimate) {
+                                        if (isDrawScenario) {
+                                            cellTransform = 'translateY(-33.33%)';
+                                        } else if (isWinScenario && isSliding) {
+                                            // Count how many winning cells are above this cell in the same column
+                                            let winningCellsAbove = 0;
+                                            columnIndices.forEach(idx => {
+                                                const idxRow = Math.floor(idx / 3);
+                                                if ((winningCells.includes(idx) || fadingCells.includes(idx)) && idxRow < cellRow) {
+                                                    winningCellsAbove++;
+                                                }
+                                            });
+
+                                            // Move up by (number of winning cells above) * (100% cell height + 0.5rem gap)
+                                            // gap-2 in Tailwind is 0.5rem
+                                            if (winningCellsAbove > 0) {
+                                                const gapSize = winningCellsAbove * 0.5;
+                                                cellTransform = `translateY(calc(-${winningCellsAbove * 100}% - ${gapSize}rem))`;
+                                            }
+                                        }
+                                    }
+
+                                    // Determine if cell should be invisible
+                                    // During fading: fadingCells contains it
+                                    // During sliding: winningCells contains it (keep invisible until board updates)
+                                    const shouldBeInvisible = fadingCells.includes(cellIndex) ||
+                                                             (winningCells.includes(cellIndex) && isSliding);
+
+                                    return (
+                                        <button
+                                            key={cellIndex}
+                                            onClick={() => handleCellClick(cellIndex)}
+                                            disabled={!!cell || isAnimating || fadingCells.length > 0 || (gameMode === 'ai' && currentPlayer === 'O')}
+                                            className={`
+                                                aspect-square
+                                                bg-white dark:bg-gray-800
+                                                border-4 border-gray-300 dark:border-gray-600
+                                                rounded-lg
+                                                text-6xl font-bold
+                                                hover:bg-gray-50 dark:hover:bg-gray-700
+                                                disabled:cursor-not-allowed
+                                                ${cell === 'X' ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}
+                                                ${!cell && !isAnimating && fadingCells.length === 0 && !(gameMode === 'ai' && currentPlayer === 'O') ? 'hover:border-blue-400 dark:hover:border-blue-500' : ''}
+                                                ${shouldBeInvisible ? 'opacity-0' : 'opacity-100'}
+                                                ${winningCells.includes(cellIndex) && !isSliding ? 'border-green-500 dark:border-green-400' : ''}
+                                            `}
+                                            style={{
+                                                transform: cellTransform,
+                                                transition: disableTransition ? 'none' : 'opacity 600ms, transform 600ms ease-in-out',
+                                            }}
+                                        >
+                                            {cell}
+                                        </button>
+                                    );
+                                })}
+
+                                {/* Phantom cells for board shift (all columns) - only in draw scenario */}
+                                {isDrawScenario && (
+                                    <div
+                                        className='aspect-square bg-white dark:bg-gray-800 border-4 border-gray-300 dark:border-gray-600 rounded-lg'
+                                        style={{
+                                            transform: 'translateY(-33.33%)',
+                                            transition: disableTransition ? 'none' : 'transform 600ms ease-in-out',
+                                        }}
+                                    />
+                                )}
+
+                                {/* Phantom cells for winner animation (only affected columns) */}
+                                {isWinScenario && winningCellsInColumn > 0 && Array(winningCellsInColumn).fill(null).map((_, idx) => {
+                                    // Phantom cells are at the bottom, so they need to move up by the number of winning cells
+                                    const gapSize = winningCellsInColumn * 0.5;
+                                    const phantomTransform = isSliding
+                                        ? `translateY(calc(-${winningCellsInColumn * 100}% - ${gapSize}rem))`
+                                        : 'none';
+
+                                    return (
+                                        <div
+                                            key={`phantom-winner-${idx}`}
+                                            className='aspect-square bg-white dark:bg-gray-800 border-4 border-gray-300 dark:border-gray-600 rounded-lg'
+                                            style={{
+                                                transform: phantomTransform,
+                                                transition: disableTransition ? 'none' : 'transform 600ms ease-in-out',
+                                            }}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        );
+                    })}
                 </div>
 
                 {/* Controls */}
