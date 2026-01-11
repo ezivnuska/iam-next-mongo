@@ -19,11 +19,24 @@ const WINNING_COMBINATIONS = [
 ];
 
 const checkWinner = (board: Board): { winner: Player; combination: number[] | null } => {
+    const allWinningCombinations: number[][] = [];
+    let winner: Player = null;
+
     for (const [a, b, c] of WINNING_COMBINATIONS) {
         if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-            return { winner: board[a], combination: [a, b, c] };
+            if (!winner) {
+                winner = board[a];
+            }
+            allWinningCombinations.push([a, b, c]);
         }
     }
+
+    if (allWinningCombinations.length > 0) {
+        // Flatten all winning combinations into a single array of unique cell indices
+        const allWinningCells = [...new Set(allWinningCombinations.flat())];
+        return { winner, combination: allWinningCells };
+    }
+
     return { winner: null, combination: null };
 };
 
@@ -93,27 +106,35 @@ const shiftBoardUp = (board: Board): Board => {
 
 const slideUpWinningCells = (board: Board, winningCombination: number[]): Board => {
     const newBoard = [...board];
+    const winningSet = new Set(winningCombination);
 
-    // First, clear all winning cells
-    winningCombination.forEach(position => {
-        newBoard[position] = null;
-    });
+    // Process each column independently
+    for (let col = 0; col < 3; col++) {
+        const columnIndices = [col, col + 3, col + 6];
 
-    // Process each winning cell's column
-    winningCombination.forEach(position => {
-        const column = position % 3;
-        const winningRow = Math.floor(position / 3);
+        // Count winning cells in this column
+        const winningCellsInColumn = columnIndices.filter(idx => winningSet.has(idx)).length;
 
-        // Slide all cells below the winning position up by one row
-        for (let row = winningRow; row < 2; row++) {
-            const currentIndex = row * 3 + column;
-            const belowIndex = (row + 1) * 3 + column;
-            newBoard[currentIndex] = newBoard[belowIndex];
+        if (winningCellsInColumn > 0) {
+            // Collect non-winning cells from this column
+            const nonWinningCells: Player[] = [];
+            for (const idx of columnIndices) {
+                if (!winningSet.has(idx)) {
+                    nonWinningCells.push(newBoard[idx]);
+                }
+            }
+
+            // Fill column: non-winning cells at top, then nulls at bottom
+            for (let row = 0; row < 3; row++) {
+                const idx = row * 3 + col;
+                if (row < nonWinningCells.length) {
+                    newBoard[idx] = nonWinningCells[row];
+                } else {
+                    newBoard[idx] = null;
+                }
+            }
         }
-
-        // Add empty cell at bottom of this column
-        newBoard[6 + column] = null;
-    });
+    }
 
     return newBoard;
 };
@@ -131,6 +152,67 @@ export default function TicTacToe() {
     const [slidingCells, setSlidingCells] = useState<Set<number>>(new Set());
     const [isSliding, setIsSliding] = useState(false);
     const [showPhantomCells, setShowPhantomCells] = useState(false);
+    const [shouldCheckForWins, setShouldCheckForWins] = useState(false);
+
+    // Check for winning combinations after board updates (cascade effect)
+    useEffect(() => {
+        if (shouldCheckForWins && fadingCells.length === 0 && !isSliding) {
+            setShouldCheckForWins(false);
+
+            const { winner: gameWinner, combination } = checkWinner(board);
+            if (gameWinner && combination) {
+                // Found another winning combination - animate it
+                setIsAnimating(false);
+                setShiftDirection(null);
+                setWinningCells(combination);
+                setFadingCells(combination);
+                setScores(prev => ({ ...prev, [gameWinner]: prev[gameWinner] + 1 }));
+
+                // After fade completes, start slide animation
+                setTimeout(() => {
+                    setFadingCells([]);
+                    setIsSliding(true);
+
+                    // After slide animation, update board
+                    setTimeout(() => {
+                        setDisableTransition(true);
+                        const shiftedBoard = slideUpWinningCells(board, combination);
+                        setBoard(shiftedBoard);
+                        setWinningCells([]);
+                        setIsSliding(false);
+
+                        // Re-enable transitions and check again
+                        setTimeout(() => {
+                            setDisableTransition(false);
+                            setShouldCheckForWins(true); // Check again for cascade wins
+                        }, 50);
+                    }, 600);
+                }, 600);
+            } else if (isBoardFull(board)) {
+                // Board full with no winners - shift up
+                setShiftDirection('up');
+                setIsAnimating(true);
+
+                setTimeout(() => {
+                    setDisableTransition(true);
+                    setIsAnimating(false);
+
+                    const shiftedBoard = shiftBoardUp(board);
+                    setBoard(shiftedBoard);
+
+                    setTimeout(() => {
+                        setDisableTransition(false);
+                        setShiftDirection(null);
+                        // Continue game with same player
+                        setCurrentPlayer(currentPlayer);
+                    }, 50);
+                }, 600);
+            } else {
+                // No more winning combinations - switch to next player
+                setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
+            }
+        }
+    }, [board, shouldCheckForWins, fadingCells, isSliding, currentPlayer]);
 
     useEffect(() => {
         if (gameMode === 'ai' && currentPlayer === 'O' && !isAnimating && fadingCells.length === 0) {
@@ -164,10 +246,10 @@ export default function TicTacToe() {
                                     setWinningCells([]);
                                     setIsSliding(false);
 
-                                    // Re-enable transitions and continue game
+                                    // Re-enable transitions and check for cascade wins
                                     setTimeout(() => {
                                         setDisableTransition(false);
-                                        setCurrentPlayer('X');
+                                        setShouldCheckForWins(true); // Check for new winning combinations
                                     }, 50);
                                 }, 600);
                             }, 600);
@@ -234,10 +316,10 @@ export default function TicTacToe() {
                     setWinningCells([]);
                     setIsSliding(false);
 
-                    // Re-enable transitions and continue game
+                    // Re-enable transitions and check for cascade wins
                     setTimeout(() => {
                         setDisableTransition(false);
-                        setCurrentPlayer(currentPlayer === 'X' ? 'O' : 'X');
+                        setShouldCheckForWins(true); // Check for new winning combinations
                     }, 50);
                 }, 600);
             }, 600);
@@ -276,6 +358,7 @@ export default function TicTacToe() {
         setFadingCells([]);
         setSlidingCells(new Set());
         setIsSliding(false);
+        setShouldCheckForWins(false);
     };
 
     const resetAll = () => {
