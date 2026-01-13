@@ -58,7 +58,7 @@ export default function PageHeader({
 
             {subtitle && (
                 <p
-                    className='mt-0.5 text-lg md:text-lg'
+                    className='mt-0.5 text-lg md:text-lg px-2'
                     style={{ color: getTertiaryTextColor(isDark) }}
                 >
                     {subtitle}
