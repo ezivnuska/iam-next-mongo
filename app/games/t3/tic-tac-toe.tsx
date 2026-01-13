@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import PageContent from '@/app/ui/layout/page/page-content';
 import PageHeader from '@/app/ui/layout/page-header';
 import { Button } from '@/app/ui/button';
+import clsx from 'clsx';
 
 type Player = 'X' | 'O' | null;
 type Board = Player[];
@@ -334,6 +335,32 @@ export default function TicTacToe() {
                         </div>
                     </div>
                 </div>
+            
+                {/* Score Chart */}
+                <div className='flex flex-col w-full gap-1 h-20 text-center'>
+                    <div
+                        className={clsx(
+                            'flex flex-1 bg-blue-900/50 dark:bg-blue-900/50 rounded-lg border-2 border-blue-900/50 dark:border-blue-900/50 overflow-hidden', {
+                            'border-white/50 dark:border-white/50': currentPlayer === 'X',
+                        })}
+                    >
+                        <div
+                            className={`bg-blue-100 dark:bg-blue-900 transition-all duration-200`}
+                            style={{ width: `${Math.floor((scores.X / 10) * 100)}%` }}
+                        />
+                    </div>
+                    <div
+                        className={clsx(
+                            'flex flex-1 bg-red-900/50 dark:gb-red-900/50 rounded-lg border-2 border-red-100/50 dark:border-red-900/50 overflow-hidden', {
+                            'border-white/50 dark:border-white/50': currentPlayer === 'O',
+                        })}
+                    >
+                        <div
+                            className='bg-red-100 dark:bg-red-900 transition-all duration-200'
+                            style={{ width: `${Math.floor((scores.O / 10) * 100)}%` }}
+                        />
+                    </div>
+                </div>
 
                 {/* Status */}
                 <div className='text-center'>
@@ -431,21 +458,22 @@ export default function TicTacToe() {
                                     const shouldBeInvisible = fadingCells.includes(cellIndex) ||
                                                              (winningCells.includes(cellIndex) && isSliding);
 
+                                    const isDisabled = !!cell || isAnimating || fadingCells.length > 0 || (gameMode === 'ai' && currentPlayer === 'O')
+
                                     return (
                                         <button
                                             key={cellIndex}
                                             onClick={() => handleCellClick(cellIndex)}
-                                            disabled={!!cell || isAnimating || fadingCells.length > 0 || (gameMode === 'ai' && currentPlayer === 'O')}
+                                            disabled={isDisabled}
                                             className={`
                                                 aspect-square
-                                                bg-white dark:bg-gray-800
+                                                bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:hover:bg-gray-white dark:disabled:hover:bg-gray-800
                                                 border-4 border-gray-300 dark:border-gray-600
                                                 rounded-lg
                                                 text-6xl font-bold
-                                                hover:bg-gray-50 dark:hover:bg-gray-700
                                                 cursor-pointer disabled:cursor-not-allowed
                                                 ${cell === 'X' ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}
-                                                ${!cell && !isAnimating && fadingCells.length === 0 && !(gameMode === 'ai' && currentPlayer === 'O') ? 'hover:border-blue-400 dark:hover:border-blue-500' : ''}
+                                                ${!cell && !isAnimating && fadingCells.length === 0 && !(gameMode === 'ai' && currentPlayer === 'O') ? currentPlayer === 'X' ? 'hover:border-blue-400 dark:hover:border-blue-500' : 'hover:border-red-400 dark:hover:border-red-500' : ''}
                                                 ${shouldBeInvisible ? 'opacity-0' : 'opacity-100'}
                                                 ${winningCells.includes(cellIndex) && !isSliding ? 'border-green-500 dark:border-green-400' : ''}
                                             `}
