@@ -76,6 +76,7 @@ const SPLIT_OFFSET_MULTIPLIER = 1.5; // Distance between split cells
 const SPLIT_CELL_COUNT = 2; // Number of new cells created when a cell splits
 const ABSORBER_SHRINK_RATE = 0.03; // Radius decrease per frame for absorber cells (0 = no shrinking)
 const ABSORBER_MIN_RADIUS = 2; // Minimum radius before absorber is removed
+const NEUTRAL_DAMAGE = 1.5; // Radius decrease when neutral cell hits absorber
 
 // Standard colors for each cell type
 const CELL_COLORS = {
@@ -114,7 +115,7 @@ const INITIAL_CELL_COUNTS: Record<CellType, number> = {
     [CellType.SPLITTER]: 0,
     [CellType.ABSORBER]: 1,
     [CellType.HYBRID]: 30,
-    [CellType.NEUTRAL]: 0,
+    [CellType.NEUTRAL]: 2,
 };
 
 // Helper to get total initial cell count
@@ -621,6 +622,28 @@ export default function PetriDish({ className = '' }: PetriDishProps) {
                                 vx: vx2,
                                 vy: vy2,
                             });
+                        }
+                    }
+
+                    // Special case: Neutral cell touching Absorber - shrink the absorber
+                    if (areTouching) {
+                        const neutralCell = isNeutralCell(cell1) ? cell1 : isNeutralCell(cell2) ? cell2 : null;
+                        const absorberCell = isAbsorberCell(cell1) ? cell1 : isAbsorberCell(cell2) ? cell2 : null;
+
+                        if (neutralCell && absorberCell) {
+                            // Check cooldown to prevent rapid shrinking
+                            if (currentTime - absorberCell.lastCollision >= COLLISION_COOLDOWN) {
+                                const existingUpdate = cellsToUpdate.get(absorberCell.id);
+                                const currentAbsorber = existingUpdate || absorberCell;
+                                const newRadius = Math.max(currentAbsorber.radius - NEUTRAL_DAMAGE, ABSORBER_MIN_RADIUS);
+
+                                cellsToUpdate.set(absorberCell.id, {
+                                    ...currentAbsorber,
+                                    radius: newRadius,
+                                    mass: newRadius,
+                                    lastCollision: currentTime,
+                                } as AbsorberCell);
+                            }
                         }
                     }
                 }
