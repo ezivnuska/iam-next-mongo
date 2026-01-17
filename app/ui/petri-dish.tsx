@@ -74,7 +74,7 @@ const SPLIT_VELOCITY_OFFSET = 0.5; // Velocity change when cells split
 const SPLIT_RADIUS_DIVISOR = 2; // New cell radius = parent radius / this value
 const SPLIT_OFFSET_MULTIPLIER = 1.5; // Distance between split cells
 const SPLIT_CELL_COUNT = 2; // Number of new cells created when a cell splits
-const ABSORBER_SHRINK_RATE = 0.03; // Radius decrease per frame for absorber cells (0 = no shrinking)
+const ABSORBER_SHRINK_RATE = 0.02; // Radius decrease per frame for absorber cells (0 = no shrinking)
 const ABSORBER_MIN_RADIUS = 2; // Minimum radius before absorber is removed
 const NEUTRAL_DAMAGE = 1.5; // Radius decrease when neutral cell hits absorber
 
@@ -112,9 +112,9 @@ const CELL_SPEED_MULTIPLIERS = {
 
 // Initial cell counts per type - define how many of each cell type to spawn
 const INITIAL_CELL_COUNTS: Record<CellType, number> = {
-    [CellType.SPLITTER]: 0,
+    [CellType.SPLITTER]: 5,
     [CellType.ABSORBER]: 1,
-    [CellType.HYBRID]: 30,
+    [CellType.HYBRID]: 5,
     [CellType.NEUTRAL]: 2,
 };
 
@@ -706,57 +706,61 @@ export default function PetriDish({ className = '' }: PetriDishProps) {
     return (
         <div className={clsx('flex w-full flex-col', { [className]: className })}>
             {/* Control Panel */}
-            <div className="flex items-center gap-3 px-3 py-2 bg-gray-800 border border-gray-700 rounded-t">
-                <button
-                    onClick={() => setIsPaused(!isPaused)}
-                    className={clsx(
-                        'px-3 py-1 text-sm font-medium rounded transition-colors',
-                        isPaused
-                            ? 'bg-green-600 hover:bg-green-500 text-white'
-                            : 'bg-yellow-600 hover:bg-yellow-500 text-white'
-                    )}
-                >
-                    {isPaused ? '▶ Resume' : '⏸ Pause'}
-                </button>
-                <button
-                    onClick={restart}
-                    className="px-3 py-1 text-sm font-medium rounded bg-gray-600 hover:bg-gray-500 text-white transition-colors"
-                    title="Restart simulation"
-                >
-                    ↻ Restart
-                </button>
+            <div className="flex flex-col bg-gray-800 border border-gray-700 rounded-t">
+                {/* Row 1: Playback controls */}
+                <div className="flex items-center gap-3 px-3 py-2 border-b border-gray-700">
+                    <button
+                        onClick={() => setIsPaused(!isPaused)}
+                        className={clsx(
+                            'px-3 py-1 text-sm font-medium rounded transition-colors',
+                            isPaused
+                                ? 'bg-green-600 hover:bg-green-500 text-white'
+                                : 'bg-yellow-600 hover:bg-yellow-500 text-white'
+                        )}
+                    >
+                        {isPaused ? '▶ Resume' : '⏸ Pause'}
+                    </button>
+                    <button
+                        onClick={restart}
+                        className="px-3 py-1 text-sm font-medium rounded bg-gray-600 hover:bg-gray-500 text-white transition-colors"
+                        title="Restart simulation"
+                    >
+                        ↻ Restart
+                    </button>
+                </div>
 
-                <div className="w-px h-5 bg-gray-600" />
-
-                <span className="text-xs text-gray-400">Add:</span>
-                <button
-                    onClick={() => spawnCell(CellType.SPLITTER)}
-                    className="px-2 py-1 text-xs font-medium rounded bg-green-700 hover:bg-green-600 text-white transition-colors"
-                    title="Splitter - splits on equal collision"
-                >
-                    + Splitter
-                </button>
-                <button
-                    onClick={() => spawnCell(CellType.ABSORBER)}
-                    className="px-2 py-1 text-xs font-medium rounded bg-red-700 hover:bg-red-600 text-white transition-colors"
-                    title="Absorber - absorbs smaller cells"
-                >
-                    + Absorber
-                </button>
-                <button
-                    onClick={() => spawnCell(CellType.HYBRID)}
-                    className="px-2 py-1 text-xs font-medium rounded bg-yellow-600 hover:bg-yellow-500 text-white transition-colors"
-                    title="Hybrid - can split and absorb"
-                >
-                    + Hybrid
-                </button>
-                <button
-                    onClick={() => spawnCell(CellType.NEUTRAL)}
-                    className="px-2 py-1 text-xs font-medium rounded bg-blue-600 hover:bg-blue-500 text-white transition-colors"
-                    title="Neutral - passes through all cells"
-                >
-                    + Neutral
-                </button>
+                {/* Row 2: Spawn controls */}
+                <div className="flex items-center gap-3 px-3 py-2">
+                    <span className="text-xs text-gray-400">Add:</span>
+                    <button
+                        onClick={() => spawnCell(CellType.SPLITTER)}
+                        className="px-2 py-1 text-xs font-medium rounded bg-green-700 hover:bg-green-600 text-white transition-colors"
+                        title="Splitter - splits on equal collision"
+                    >
+                        + Splitter
+                    </button>
+                    <button
+                        onClick={() => spawnCell(CellType.ABSORBER)}
+                        className="px-2 py-1 text-xs font-medium rounded bg-red-700 hover:bg-red-600 text-white transition-colors"
+                        title="Absorber - absorbs smaller cells"
+                    >
+                        + Absorber
+                    </button>
+                    <button
+                        onClick={() => spawnCell(CellType.HYBRID)}
+                        className="px-2 py-1 text-xs font-medium rounded bg-yellow-600 hover:bg-yellow-500 text-white transition-colors"
+                        title="Hybrid - can split and absorb"
+                    >
+                        + Hybrid
+                    </button>
+                    <button
+                        onClick={() => spawnCell(CellType.NEUTRAL)}
+                        className="px-2 py-1 text-xs font-medium rounded bg-blue-600 hover:bg-blue-500 text-white transition-colors"
+                        title="Neutral - passes through all cells"
+                    >
+                        + Neutral
+                    </button>
+                </div>
             </div>
 
             {/* Canvas Container */}
