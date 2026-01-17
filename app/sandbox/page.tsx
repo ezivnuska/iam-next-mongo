@@ -4,7 +4,9 @@
 
 import PageHeader from '../ui/layout/page-header';
 import PageContent from '../ui/layout/page/page-content';
+import PetriDish from '../ui/petri-dish';
 import ChartSection from './sections/chart-section';
+import PetriDishSection from './sections/petri-dish-section';
 
 export default function SandboxPage() {
 
@@ -18,7 +20,12 @@ export default function SandboxPage() {
                 subtitle='Custom Component Playground'
             />
 
-            <ChartSection />
+            <div className='flex flex-1 w-full border border-white'>
+                <div className='flex flex-col w-full border border-white'>
+                    <PetriDishSection />
+                    {/* <ChartSection /> */}
+                </div>
+            </div>
         </PageContent>
     );
 }
