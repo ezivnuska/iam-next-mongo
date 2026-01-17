@@ -65,33 +65,17 @@ const isAbsorberCell = (cell: Cell): cell is AbsorberCell => cell.type === CellT
 const isHybridCell = (cell: Cell): cell is HybridCell => cell.type === CellType.HYBRID;
 const isNeutralCell = (cell: Cell): cell is NeutralCell => cell.type === CellType.NEUTRAL;
 
-// Cell configuration types for initialization
-type SplitterCellConfig = {
-    type: CellType.SPLITTER;
-};
-
-type AbsorberCellConfig = {
-    type: CellType.ABSORBER;
-};
-
-type HybridCellConfig = {
-    type: CellType.HYBRID;
-};
-
-type NeutralCellConfig = {
-    type: CellType.NEUTRAL;
-};
-
-type CellConfig = SplitterCellConfig | AbsorberCellConfig | HybridCellConfig | NeutralCellConfig;
-
 // Constants
 const RADIUS_TOLERANCE = 0.5; // Cells within this radius difference are considered equal
 const COLLISION_COOLDOWN = 500; // ms cooldown after splitting/absorbing
 const MAX_CELLS = 200; // Maximum number of cells before preventing further splits
-const MIN_CELL_RADIUS = 5; // Minimum radius before cell is removed
+const MIN_CELL_RADIUS = 5; // Minimum radius - cells at or below this cannot split
 const SPLIT_VELOCITY_OFFSET = 0.5; // Velocity change when cells split
 const SPLIT_RADIUS_DIVISOR = 2; // New cell radius = parent radius / this value
 const SPLIT_OFFSET_MULTIPLIER = 1.5; // Distance between split cells
+const SPLIT_CELL_COUNT = 2; // Number of new cells created when a cell splits
+const ABSORBER_SHRINK_RATE = 0.03; // Radius decrease per frame for absorber cells (0 = no shrinking)
+const ABSORBER_MIN_RADIUS = 2; // Minimum radius before absorber is removed
 
 // Standard colors for each cell type
 const CELL_COLORS = {
@@ -104,7 +88,7 @@ const CELL_COLORS = {
 // Standard radii for each cell type
 const CELL_RADII = {
     [CellType.SPLITTER]: 12,   // Medium size
-    [CellType.ABSORBER]: 15,   // Larger for absorbing
+    [CellType.ABSORBER]: 30,   // Larger for absorbing
     [CellType.HYBRID]: 10,     // Smaller, more agile
     [CellType.NEUTRAL]: 8,     // Smallest, fastest
 } as const;
@@ -125,27 +109,32 @@ const CELL_SPEED_MULTIPLIERS = {
     [CellType.NEUTRAL]: 1.0,     // Standard speed
 } as const;
 
-// Initial cell configuration - define cell types and properties here
-const INITIAL_CELLS_CONFIG: CellConfig[] = [
-    {
-        type: CellType.SPLITTER,
-    },
-    {
-        type: CellType.ABSORBER,
-    },
-    {
-        type: CellType.HYBRID,
-    },
-    {
-        type: CellType.HYBRID,
-    },
-    {
-        type: CellType.HYBRID,
-    },
-    {
-        type: CellType.NEUTRAL,
-    },
-];
+// Initial cell counts per type - define how many of each cell type to spawn
+const INITIAL_CELL_COUNTS: Record<CellType, number> = {
+    [CellType.SPLITTER]: 0,
+    [CellType.ABSORBER]: 1,
+    [CellType.HYBRID]: 30,
+    [CellType.NEUTRAL]: 0,
+};
+
+// Helper to get total initial cell count
+const getInitialCellCount = () =>
+    Object.values(INITIAL_CELL_COUNTS).reduce((sum, count) => sum + count, 0);
+
+// Helper to generate initial cells from counts config
+const generateInitialCells = (width: number, height: number): Cell[] => {
+    const cells: Cell[] = [];
+    let id = 0;
+
+    for (const type of Object.values(CellType)) {
+        const count = INITIAL_CELL_COUNTS[type];
+        for (let i = 0; i < count; i++) {
+            cells.push(createCell(type, id++, width, height));
+        }
+    }
+
+    return cells;
+};
 
 // Helper function to check collision between two cells
 const checkCollision = (cell1: Cell, cell2: Cell, currentTime: number): boolean => {
@@ -285,18 +274,21 @@ const createCell = (type: CellType, id: number, width: number, height: number): 
     }
 };
 
-// Helper function to create 4 smaller cells from one cell
+// Helper function to create smaller cells from one cell (count based on SPLIT_CELL_COUNT)
 const splitCell = (cell: Cell, nextId: number, currentTime: number): Cell[] => {
     const newRadius = cell.radius / SPLIT_RADIUS_DIVISOR;
     const offset = newRadius * SPLIT_OFFSET_MULTIPLIER;
 
-    // Base properties for all split cells
-    const baseProps = [
-        { x: cell.x - offset, y: cell.y - offset, vx: cell.vx - SPLIT_VELOCITY_OFFSET, vy: cell.vy - SPLIT_VELOCITY_OFFSET },
-        { x: cell.x + offset, y: cell.y - offset, vx: cell.vx + SPLIT_VELOCITY_OFFSET, vy: cell.vy - SPLIT_VELOCITY_OFFSET },
-        { x: cell.x - offset, y: cell.y + offset, vx: cell.vx - SPLIT_VELOCITY_OFFSET, vy: cell.vy + SPLIT_VELOCITY_OFFSET },
-        { x: cell.x + offset, y: cell.y + offset, vx: cell.vx + SPLIT_VELOCITY_OFFSET, vy: cell.vy + SPLIT_VELOCITY_OFFSET },
-    ];
+    // Generate positions in a circle around the parent cell
+    const baseProps = Array.from({ length: SPLIT_CELL_COUNT }, (_, i) => {
+        const angle = (2 * Math.PI * i) / SPLIT_CELL_COUNT;
+        return {
+            x: cell.x + Math.cos(angle) * offset,
+            y: cell.y + Math.sin(angle) * offset,
+            vx: cell.vx + Math.cos(angle) * SPLIT_VELOCITY_OFFSET,
+            vy: cell.vy + Math.sin(angle) * SPLIT_VELOCITY_OFFSET,
+        };
+    });
 
     // Create cells based on parent type
     if (isSplitterCell(cell)) {
@@ -317,7 +309,7 @@ const splitCell = (cell: Cell, nextId: number, currentTime: number): Cell[] => {
             radius: newRadius,
             color: cell.color,
             lastCollision: currentTime,
-            mass: cell.mass / 4, // Distribute mass evenly
+            mass: cell.mass / SPLIT_CELL_COUNT, // Distribute mass evenly
             ...props,
         }));
     }
@@ -330,7 +322,7 @@ export default function PetriDish({ className = '' }: PetriDishProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const cellsRef = useRef<Cell[]>([]);
-    const nextIdRef = useRef(INITIAL_CELLS_CONFIG.length); // Start ID after initial cells
+    const nextIdRef = useRef(getInitialCellCount()); // Start ID after initial cells
 
     // Pause state
     const [isPaused, setIsPaused] = useState(false);
@@ -365,10 +357,8 @@ export default function PetriDish({ className = '' }: PetriDishProps) {
         const height = rect.height || 500;
 
         // Reset ID counter and recreate initial cells
-        nextIdRef.current = INITIAL_CELLS_CONFIG.length;
-        cellsRef.current = INITIAL_CELLS_CONFIG.map((config, index) =>
-            createCell(config.type, index, width, height)
-        );
+        nextIdRef.current = getInitialCellCount();
+        cellsRef.current = generateInitialCells(width, height);
     };
 
     // Initialize and draw cells on canvas
@@ -395,10 +385,8 @@ export default function PetriDish({ className = '' }: PetriDishProps) {
         const width = rect.width || 800;
         const height = rect.height || 500;
 
-        // Initialize cells from configuration using the helper function
-        cellsRef.current = INITIAL_CELLS_CONFIG.map((config, index) =>
-            createCell(config.type, index, width, height)
-        );
+        // Initialize cells from counts configuration
+        cellsRef.current = generateInitialCells(width, height);
 
         // Animation loop
         let animationFrameId: number;
@@ -443,22 +431,41 @@ export default function PetriDish({ className = '' }: PetriDishProps) {
             // Get current time for collision cooldown
             const currentTime = Date.now();
 
-            // Update positions
+            // Update positions and apply absorber shrinking
             const updatedCells = cellsRef.current.map(cell => {
                 // Update position
                 let newX = cell.x + cell.vx;
                 let newY = cell.y + cell.vy;
                 let newVx = cell.vx;
                 let newVy = cell.vy;
+                let newRadius = cell.radius;
 
-                // Bounce off walls
-                if (newX - cell.radius < 0 || newX + cell.radius > canvas.width) {
+                // Shrink absorber cells over time
+                if (isAbsorberCell(cell) && ABSORBER_SHRINK_RATE > 0) {
+                    newRadius = Math.max(cell.radius - ABSORBER_SHRINK_RATE, 0);
+                }
+
+                // Bounce off walls (use current radius for wall detection)
+                if (newX - newRadius < 0 || newX + newRadius > canvas.width) {
                     newVx = -newVx;
                     newX = cell.x + newVx;
                 }
-                if (newY - cell.radius < 0 || newY + cell.radius > canvas.height) {
+                if (newY - newRadius < 0 || newY + newRadius > canvas.height) {
                     newVy = -newVy;
                     newY = cell.y + newVy;
+                }
+
+                // Return updated cell with new radius for absorbers
+                if (isAbsorberCell(cell)) {
+                    return {
+                        ...cell,
+                        x: newX,
+                        y: newY,
+                        vx: newVx,
+                        vy: newVy,
+                        radius: newRadius,
+                        mass: newRadius, // Update mass to match radius
+                    };
                 }
 
                 return {
@@ -468,6 +475,12 @@ export default function PetriDish({ className = '' }: PetriDishProps) {
                     vx: newVx,
                     vy: newVy,
                 };
+            }).filter(cell => {
+                // Remove absorber cells that are too small
+                if (isAbsorberCell(cell) && cell.radius < ABSORBER_MIN_RADIUS) {
+                    return false;
+                }
+                return true;
             });
 
             // Check for collisions
@@ -495,55 +508,82 @@ export default function PetriDish({ className = '' }: PetriDishProps) {
                         const radiiEqual = Math.abs(cell1.radius - cell2.radius) < RADIUS_TOLERANCE;
 
                         if (radiiEqual) {
-                            // Check if we've reached the cell limit
-                            if (updatedCells.length + 6 <= MAX_CELLS) {
-                                // Equal radii: split both cells (2 cells become 8 cells = +6 net)
+                            // Check if cells can split (must be above MIN_CELL_RADIUS)
+                            const canSplit = cell1.radius > MIN_CELL_RADIUS && cell2.radius > MIN_CELL_RADIUS;
+
+                            // Check if we've reached the cell limit (2 cells become 2*SPLIT_CELL_COUNT)
+                            const netCellIncrease = 2 * SPLIT_CELL_COUNT - 2;
+                            if (canSplit && updatedCells.length + netCellIncrease <= MAX_CELLS) {
+                                // Equal radii: split both cells
                                 cellsToRemove.add(cell1.id);
                                 cellsToRemove.add(cell2.id);
 
                                 const splitCells1 = splitCell(cell1, nextIdRef.current, currentTime);
-                                nextIdRef.current += 4;
+                                nextIdRef.current += SPLIT_CELL_COUNT;
 
                                 const splitCells2 = splitCell(cell2, nextIdRef.current, currentTime);
-                                nextIdRef.current += 4;
+                                nextIdRef.current += SPLIT_CELL_COUNT;
 
                                 newCells.push(...splitCells1, ...splitCells2);
                             }
-                            // If at limit, cells just pass through each other
+                            // If at limit or too small, cells just pass through each other
                         } else {
-                            // Different radii: larger absorbs smaller
+                            // Different radii: larger absorbs smaller (with special case for hybrid vs absorber)
                             const largerCell = cell1.radius > cell2.radius ? cell1 : cell2;
                             const smallerCell = cell1.radius > cell2.radius ? cell2 : cell1;
 
-                            // Remove smaller cell
-                            cellsToRemove.add(smallerCell.id);
+                            // Special case: Hybrid cell contacting smaller Absorber → Hybrid splits, Absorber remains
+                            if (isHybridCell(largerCell) && isAbsorberCell(smallerCell)) {
+                                const canSplit = largerCell.radius > MIN_CELL_RADIUS;
+                                const netIncrease = SPLIT_CELL_COUNT - 1; // 1 cell becomes SPLIT_CELL_COUNT
 
-                            // Update larger cell based on its type
-                            let updatedCell: Cell;
+                                if (canSplit && updatedCells.length + netIncrease <= MAX_CELLS) {
+                                    // Remove only the hybrid cell (it splits)
+                                    cellsToRemove.add(largerCell.id);
 
-                            if (isAbsorberCell(largerCell)) {
-                                updatedCell = {
-                                    ...largerCell,
-                                    radius: largerCell.radius + smallerCell.radius * 0.5,
-                                    mass: largerCell.mass + smallerCell.radius,
-                                    lastCollision: currentTime,
-                                };
-                            } else if (isHybridCell(largerCell)) {
-                                updatedCell = {
-                                    ...largerCell,
-                                    radius: largerCell.radius + smallerCell.radius * 0.5,
-                                    mass: largerCell.mass + smallerCell.radius,
-                                    lastCollision: currentTime,
-                                };
+                                    // Hybrid splits, absorber remains unchanged
+                                    const splitCells = splitCell(largerCell, nextIdRef.current, currentTime);
+                                    nextIdRef.current += SPLIT_CELL_COUNT;
+                                    newCells.push(...splitCells);
+
+                                    // Update absorber's lastCollision to trigger cooldown
+                                    cellsToUpdate.set(smallerCell.id, {
+                                        ...smallerCell,
+                                        lastCollision: currentTime,
+                                    });
+                                }
+                                // If can't split, just bounce (handled by elastic collision below)
                             } else {
-                                // Shouldn't happen as SPLITTER and NEUTRAL don't absorb, but handle gracefully
-                                updatedCell = {
-                                    ...largerCell,
-                                    lastCollision: currentTime,
-                                };
-                            }
+                                // Normal absorption: larger absorbs smaller
+                                cellsToRemove.add(smallerCell.id);
 
-                            cellsToUpdate.set(largerCell.id, updatedCell);
+                                // Update larger cell based on its type
+                                let updatedCell: Cell;
+
+                                if (isAbsorberCell(largerCell)) {
+                                    updatedCell = {
+                                        ...largerCell,
+                                        radius: largerCell.radius + smallerCell.radius * 0.5,
+                                        mass: largerCell.mass + smallerCell.radius,
+                                        lastCollision: currentTime,
+                                    };
+                                } else if (isHybridCell(largerCell)) {
+                                    updatedCell = {
+                                        ...largerCell,
+                                        radius: largerCell.radius + smallerCell.radius * 0.5,
+                                        mass: largerCell.mass + smallerCell.radius,
+                                        lastCollision: currentTime,
+                                    };
+                                } else {
+                                    // Shouldn't happen as SPLITTER and NEUTRAL don't absorb, but handle gracefully
+                                    updatedCell = {
+                                        ...largerCell,
+                                        lastCollision: currentTime,
+                                    };
+                                }
+
+                                cellsToUpdate.set(largerCell.id, updatedCell);
+                            }
                         }
                     } else if (areTouching && !cellsToRemove.has(cell1.id) && !cellsToRemove.has(cell2.id)) {
                         // Cells are touching but not splitting/absorbing - apply elastic collision
@@ -597,12 +637,10 @@ export default function PetriDish({ className = '' }: PetriDishProps) {
                     return update ? update : cell;
                 });
 
-                // Add any new cells from splitting and filter out cells that are too small
-                const allCells = [...finalCells, ...newCells];
-                cellsRef.current = allCells.filter(cell => cell.radius >= MIN_CELL_RADIUS);
+                // Add any new cells from splitting
+                cellsRef.current = [...finalCells, ...newCells];
             } else {
-                // Filter out cells that are too small
-                cellsRef.current = updatedCells.filter(cell => cell.radius >= MIN_CELL_RADIUS);
+                cellsRef.current = updatedCells;
             }
 
             // Draw all cells with type-specific stroke styles
