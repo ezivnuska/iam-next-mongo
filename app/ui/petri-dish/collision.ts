@@ -3,6 +3,7 @@ import {
     CELL_TYPE,
     getCellConfig,
     MIN_SPLIT_RADIUS,
+    MAX_ABSORB_RADIUS,
     SPLIT_RADIUS_DIVISOR,
     SPLIT_OFFSET_MULTIPLIER,
     SPLIT_VELOCITY_OFFSET,
@@ -195,8 +196,13 @@ const doSpawnFood = (ctx: CollisionContext): CollisionResult => {
     return { handled: true, removeIds: [], updates: bounceResult.updates, newCells };
 };
 
-// Absorb: first cell absorbs second cell
-const doAbsorb = (absorber: Cell, absorbed: Cell, currentTime: number): CollisionResult => {
+// Absorb: first cell absorbs second cell (bounces if absorbed cell is too large)
+const doAbsorb = (absorber: Cell, absorbed: Cell, currentTime: number, ctx: CollisionContext): CollisionResult => {
+    // Cell too large to be absorbed - bounce instead
+    if (absorbed.radius > MAX_ABSORB_RADIUS) {
+        return doBounce(ctx);
+    }
+
     const updates = new Map<number, Partial<Cell>>();
     updates.set(absorber.id, {
         radius: absorber.radius + absorbed.radius * 0.5,
@@ -320,7 +326,7 @@ const doAbsorbLarger = (cell1: Cell, cell2: Cell, currentTime: number, ctx: Coll
     }
     const larger = cell1.radius > cell2.radius ? cell1 : cell2;
     const smaller = cell1.radius > cell2.radius ? cell2 : cell1;
-    return doAbsorb(larger, smaller, currentTime);
+    return doAbsorb(larger, smaller, currentTime, ctx);
 };
 
 // Shrink: cell shrinks relative to other cell's size
@@ -558,7 +564,7 @@ export const resolveCollision = (ctx: CollisionContext): CollisionResult => {
             // Absorber (type 0) always absorbs the other cell
             const absorber = cell1.type === CELL_TYPE.ABSORBER ? cell1 : cell2;
             const absorbed = cell1.type === CELL_TYPE.ABSORBER ? cell2 : cell1;
-            return doAbsorb(absorber, absorbed, currentTime);
+            return doAbsorb(absorber, absorbed, currentTime, ctx);
         }
 
         case 'shrink': {
@@ -575,7 +581,7 @@ export const resolveCollision = (ctx: CollisionContext): CollisionResult => {
             }
             const larger = cell1.radius > cell2.radius ? cell1 : cell2;
             const smaller = cell1.radius > cell2.radius ? cell2 : cell1;
-            return doAbsorb(larger, smaller, currentTime);
+            return doAbsorb(larger, smaller, currentTime, ctx);
         }
 
         case 'shrink_split': {
