@@ -11,7 +11,7 @@ import {
 } from './constants';
 
 // Collision action types
-type CollisionAction = 'bounce' | 'absorb' | 'shrink' | 'split' | 'absorb_larger';
+type CollisionAction = 'bounce' | 'absorb' | 'shrink' | 'shrink_both' | 'shrink_split' | 'split' | 'absorb_larger';
 
 // Matrix defining collision actions: COLLISION_ACTIONS[typeA][typeB] = action for A
 // Symmetric pairs handled by normalizing order (lower type first)
@@ -24,12 +24,12 @@ const COLLISION_ACTIONS: Record<number, Record<number, CollisionAction>> = {
     },
     [CELL_TYPE.FOOD]: {
         [CELL_TYPE.FOOD]: 'absorb_larger',
-        [CELL_TYPE.POISON]: 'split',
+        [CELL_TYPE.POISON]: 'shrink_split',
         [CELL_TYPE.NEUTRAL]: 'bounce',
     },
     [CELL_TYPE.POISON]: {
-        [CELL_TYPE.FOOD]: 'split',
-        [CELL_TYPE.POISON]: 'split',
+        [CELL_TYPE.ABSORBER]: 'shrink',
+        [CELL_TYPE.POISON]: 'shrink_both',
         [CELL_TYPE.NEUTRAL]: 'bounce',
     },
     [CELL_TYPE.NEUTRAL]: {
@@ -50,6 +50,42 @@ const getAction = (type1: number, type2: number): CollisionAction => {
     const low = Math.min(type1, type2);
     const high = Math.max(type1, type2);
     return COLLISION_ACTIONS[low]?.[high] ?? 'bounce';
+};
+
+// Attract: pull cells toward each other (for small same-type cells)
+const doAttract = (ctx: CollisionContext): CollisionResult => {
+    const { cell1, cell2, distance, dx, dy, currentTime } = ctx;
+
+    const ndx = distance > 0 ? dx / distance : 1;
+    const ndy = distance > 0 ? dy / distance : 0;
+
+    // Attraction strength proportional to each cell's radius
+    const baseStrength = 0.09;
+    const attract1 = baseStrength * cell1.radius;
+    const attract2 = baseStrength * cell2.radius;
+
+    const updates = new Map<number, Partial<Cell>>();
+
+    // Apply velocity toward each other, scaled by radius
+    updates.set(cell1.id, {
+        vx: cell1.vx - ndx * attract1,
+        vy: cell1.vy - ndy * attract1,
+        lastCollision: currentTime,
+    });
+    updates.set(cell2.id, {
+        vx: cell2.vx + ndx * attract2,
+        vy: cell2.vy + ndy * attract2,
+        lastCollision: currentTime,
+    });
+
+    return { handled: true, removeIds: [], updates, newCells: [] };
+};
+
+// Check if both cells are same type and small enough to attract
+const shouldAttract = (cell1: Cell, cell2: Cell): boolean => {
+    return cell1.type === cell2.type &&
+           cell1.radius <= MIN_SPLIT_RADIUS &&
+           cell2.radius <= MIN_SPLIT_RADIUS;
 };
 
 // Bounce: elastic collision with separation
@@ -150,6 +186,104 @@ const doShrink = (cell: Cell, other: Cell, currentTime: number, ctx: CollisionCo
     return { handled: true, removeIds: [], updates, newCells: [] };
 };
 
+// Shrink both: both cells shrink relative to each other and bounce
+const doShrinkBoth = (ctx: CollisionContext): CollisionResult => {
+    const { cell1, cell2, currentTime } = ctx;
+
+    const shrink1 = cell2.radius * 0.3;
+    const shrink2 = cell1.radius * 0.3;
+    const newRadius1 = Math.max(cell1.radius - shrink1, ABSORBER_MIN_RADIUS);
+    const newRadius2 = Math.max(cell2.radius - shrink2, ABSORBER_MIN_RADIUS);
+
+    const updates = new Map<number, Partial<Cell>>();
+    updates.set(cell1.id, {
+        radius: newRadius1,
+        mass: newRadius1,
+    });
+    updates.set(cell2.id, {
+        radius: newRadius2,
+        mass: newRadius2,
+    });
+
+    const bounceResult = doBounce(ctx);
+    for (const [id, update] of bounceResult.updates) {
+        const existing = updates.get(id);
+        updates.set(id, existing ? { ...existing, ...update } : update);
+    }
+
+    return { handled: true, removeIds: [], updates, newCells: [] };
+};
+
+// Shrink and split: poison shrinks, food splits
+const doShrinkSplit = (food: Cell, poison: Cell, ctx: CollisionContext): CollisionResult => {
+    const { distance, dx, dy, currentTime } = ctx;
+
+    // Shrink poison
+    const shrinkAmount = food.radius * 0.3;
+    const newPoisonRadius = Math.max(poison.radius - shrinkAmount, ABSORBER_MIN_RADIUS);
+
+    const updates = new Map<number, Partial<Cell>>();
+    updates.set(poison.id, {
+        radius: newPoisonRadius,
+        mass: newPoisonRadius,
+        lastCollision: currentTime,
+    });
+
+    // If food can't split, just bounce
+    if (food.radius < MIN_SPLIT_RADIUS || ctx.totalCells >= MAX_CELLS - 1) {
+        const bounceResult = doBounce(ctx);
+        for (const [id, update] of bounceResult.updates) {
+            const existing = updates.get(id);
+            updates.set(id, existing ? { ...existing, ...update } : update);
+        }
+        return { handled: true, removeIds: [], updates, newCells: [] };
+    }
+
+    // Split food
+    const newRadius = food.radius / SPLIT_RADIUS_DIVISOR;
+    const config = getCellConfig(food.type);
+    const offset = newRadius * SPLIT_OFFSET_MULTIPLIER;
+
+    updates.set(food.id, {
+        radius: newRadius,
+        mass: newRadius,
+        x: food.x - offset,
+        vx: food.vx - SPLIT_VELOCITY_OFFSET,
+        lastCollision: currentTime,
+    });
+
+    // Bounce poison away
+    const ndx = distance > 0 ? dx / distance : 1;
+    const ndy = distance > 0 ? dy / distance : 0;
+    const isCell1 = ctx.cell1.id === poison.id;
+    const bounceDir = isCell1 ? 1 : -1;
+    const separation = food.radius + poison.radius - distance;
+
+    const poisonUpdate = updates.get(poison.id) ?? {};
+    updates.set(poison.id, {
+        ...poisonUpdate,
+        x: poison.x + bounceDir * ndx * (separation > 0 ? separation : 0),
+        y: poison.y + bounceDir * ndy * (separation > 0 ? separation : 0),
+        vx: poison.vx + bounceDir * ndx * 0.5,
+        vy: poison.vy + bounceDir * ndy * 0.5,
+    });
+
+    const newCell: Cell = {
+        id: ctx.nextId,
+        type: food.type,
+        x: food.x + offset,
+        y: food.y,
+        radius: newRadius,
+        color: config.color,
+        vx: food.vx + SPLIT_VELOCITY_OFFSET,
+        vy: food.vy,
+        mass: newRadius,
+        lastCollision: currentTime,
+    };
+
+    return { handled: true, removeIds: [], updates, newCells: [newCell] };
+};
+
 // Split: cell splits into two, other cell bounces away
 const doSplit = (cell: Cell, other: Cell, ctx: CollisionContext): CollisionResult => {
     if (cell.radius < MIN_SPLIT_RADIUS || ctx.totalCells >= MAX_CELLS - 1) {
@@ -203,6 +337,12 @@ const doSplit = (cell: Cell, other: Cell, ctx: CollisionContext): CollisionResul
 // Main collision resolver
 export const resolveCollision = (ctx: CollisionContext): CollisionResult => {
     const { cell1, cell2, currentTime } = ctx;
+
+    // Small same-type cells attract each other
+    if (shouldAttract(cell1, cell2)) {
+        return doAttract(ctx);
+    }
+
     const action = getAction(cell1.type, cell2.type);
 
     switch (action) {
@@ -221,6 +361,23 @@ export const resolveCollision = (ctx: CollisionContext): CollisionResult => {
             const absorber = cell1.type === CELL_TYPE.ABSORBER ? cell1 : cell2;
             const poison = cell1.type === CELL_TYPE.ABSORBER ? cell2 : cell1;
             return doShrink(absorber, poison, currentTime, ctx);
+        }
+
+        case 'shrink_both': {
+            // Equal size: both shrink and bounce; different sizes: larger absorbs smaller
+            if (cell1.radius === cell2.radius) {
+                return doShrinkBoth(ctx);
+            }
+            const larger = cell1.radius > cell2.radius ? cell1 : cell2;
+            const smaller = cell1.radius > cell2.radius ? cell2 : cell1;
+            return doAbsorb(larger, smaller, currentTime);
+        }
+
+        case 'shrink_split': {
+            // Poison shrinks, food splits
+            const food = cell1.type === CELL_TYPE.FOOD ? cell1 : cell2;
+            const poison = cell1.type === CELL_TYPE.FOOD ? cell2 : cell1;
+            return doShrinkSplit(food, poison, ctx);
         }
 
         case 'split': {
