@@ -67,9 +67,9 @@ export const CELL_CONFIG: Record<number, CellTypeConfig> = {
 // Initial cell counts by type
 export const INITIAL_CELL_COUNTS: Record<number, number> = {
     0: 1, // ABSORBER
-    1: 30, // FOOD type 1
+    1: 20, // FOOD type 1
     2: 20, // POISON type 2
-    3: 10, // NEUTRAL type 3
+    3: 0, // NEUTRAL type 3
 };
 
 // Helper to get config for a type (with fallback to default)

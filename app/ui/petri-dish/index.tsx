@@ -20,6 +20,7 @@ interface PetriDishProps {
 
 export default function PetriDish({ className = '' }: PetriDishProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const statsCanvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const cellsRef = useRef<Cell[]>([]);
     const nextIdRef = useRef(getInitialCellCount());
@@ -218,6 +219,61 @@ export default function PetriDish({ className = '' }: PetriDishProps) {
             }
 
             cellsRef.current.forEach(drawCell);
+
+            // Draw stats bar chart on stats canvas
+            const statsCanvas = statsCanvasRef.current;
+            if (statsCanvas) {
+                const statsCtx = statsCanvas.getContext('2d');
+                if (statsCtx) {
+                    statsCtx.clearRect(0, 0, statsCanvas.width, statsCanvas.height);
+
+                    // Count cells by type
+                    const counts: Record<number, number> = {};
+                    cellsRef.current.forEach(cell => {
+                        counts[cell.type] = (counts[cell.type] || 0) + 1;
+                    });
+
+                    const cellTypes = [
+                        { type: CELL_TYPE.FOOD, label: 'F' },
+                        { type: CELL_TYPE.POISON, label: 'P' },
+                    ];
+
+                    const padding = 10;
+                    const barWidth = (statsCanvas.width - padding * 2) / cellTypes.length - 10;
+                    const maxBarHeight = statsCanvas.height - 30;
+                    const maxCount = Math.max(...Object.values(counts), 1);
+
+                    cellTypes.forEach(({ type, label }, index) => {
+                        const config = getCellConfig(type);
+                        const count = counts[type] || 0;
+                        const barHeight = (count / maxCount) * maxBarHeight;
+                        const x = padding + index * (barWidth + 10);
+                        const y = statsCanvas.height - barHeight - 20;
+
+                        // Draw bar
+                        statsCtx.fillStyle = config.color;
+                        statsCtx.fillRect(x, y, barWidth, barHeight);
+
+                        // Draw bar border
+                        statsCtx.strokeStyle = config.stroke.color;
+                        statsCtx.lineWidth = 2;
+                        statsCtx.strokeRect(x, y, barWidth, barHeight);
+
+                        // Draw label below bar
+                        statsCtx.font = '12px monospace';
+                        statsCtx.fillStyle = '#ffffff';
+                        statsCtx.textAlign = 'center';
+                        statsCtx.fillText(label, x + barWidth / 2, statsCanvas.height - 5);
+
+                        // Draw count above bar
+                        statsCtx.fillStyle = '#cccccc';
+                        statsCtx.fillText(count.toString(), x + barWidth / 2, y - 5);
+                    });
+
+                    statsCtx.textAlign = 'left';
+                }
+            }
+
             animationFrameId = requestAnimationFrame(draw);
         };
 
@@ -270,6 +326,15 @@ export default function PetriDish({ className = '' }: PetriDishProps) {
                         + Prey
                     </button>
                 </div> */}
+            </div>
+
+            <div className="bg-gray-800 border-x border-gray-700 px-2 py-2">
+                <canvas
+                    ref={statsCanvasRef}
+                    width={600}
+                    height={100}
+                    className="w-full"
+                />
             </div>
 
             <div
