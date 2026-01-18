@@ -8,7 +8,7 @@ export const CELL_TYPE = {
 
 // Physics constants
 export const COLLISION_COOLDOWN = 250;
-export const ABSORBER_SHRINK_RATE = 0.0;
+export const ABSORBER_SHRINK_RATE = 0.03;
 export const ABSORBER_MIN_RADIUS = 2;
 
 // Split constants
@@ -39,7 +39,7 @@ export const DEFAULT_CELL_CONFIG: CellTypeConfig = {
 export const CELL_CONFIG: Record<number, CellTypeConfig> = {
     0: {
         color: '#ffffff',
-        radius: 20,
+        radius: 30,
         velocity: { min: 0.2, max: 0.6 },
         stroke: { color: 'rgba(239, 68, 68, 0.8)', width: 3, dash: [] },
     },
@@ -67,8 +67,8 @@ export const CELL_CONFIG: Record<number, CellTypeConfig> = {
 export const INITIAL_CELL_COUNTS: Record<number, number> = {
     0: 1, // absorber
     1: 20, // prey type 1
-    2: 20, // prey type 2
-    3: 1, // prey type 3
+    2: 4, // prey type 2
+    3: 20, // prey type 3
 };
 
 // Helper to get config for a type (with fallback to default)

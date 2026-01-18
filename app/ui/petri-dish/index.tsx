@@ -253,7 +253,7 @@ export default function PetriDish({ className = '' }: PetriDishProps) {
                     </button>
                 </div>
 
-                <div className="flex items-center gap-3 px-3 py-2">
+                {/* <div className="flex items-center gap-3 px-3 py-2">
                     <span className="text-xs text-gray-400">Add:</span>
                     <button
                         onClick={() => spawnCell(CELL_TYPE.ABSORBER)}
@@ -269,7 +269,7 @@ export default function PetriDish({ className = '' }: PetriDishProps) {
                     >
                         + Prey
                     </button>
-                </div>
+                </div> */}
             </div>
 
             <div
