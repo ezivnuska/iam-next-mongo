@@ -12,7 +12,7 @@ export const ABSORBER_SHRINK_RATE = 0.01;
 export const ABSORBER_MIN_RADIUS = 2;
 
 // Split constants
-export const MIN_SPLIT_RADIUS = 5;
+export const MIN_SPLIT_RADIUS = 10;
 export const MAX_ABSORB_RADIUS = 100;
 export const SPLIT_CELL_COUNT = 2;
 export const SPLIT_RADIUS_DIVISOR = 2;
@@ -67,9 +67,9 @@ export const CELL_CONFIG: Record<number, CellTypeConfig> = {
 // Initial cell counts by type
 export const INITIAL_CELL_COUNTS: Record<number, number> = {
     0: 1, // ABSORBER
-    1: 20, // FOOD type 1
-    2: 20, // POISON type 2
-    3: 0, // NEUTRAL type 3
+    1: 30, // FOOD type 1
+    2: 4, // POISON type 2
+    3: 4, // NEUTRAL type 3
 };
 
 // Helper to get config for a type (with fallback to default)

@@ -6,9 +6,10 @@ import { useEffect, useRef, useState } from 'react';
 import type { Cell, CollisionContext } from './types';
 import {
     CELL_TYPE,
+    CELL_CONFIG,
     COLLISION_COOLDOWN,
     ABSORBER_SHRINK_RATE,
-    ABSORBER_MIN_RADIUS,
+    MIN_SPLIT_RADIUS,
     getCellConfig,
 } from './constants';
 import { resolveCollision } from './collision';
@@ -27,6 +28,7 @@ export default function PetriDish({ className = '' }: PetriDishProps) {
 
     const [isPaused, setIsPaused] = useState(false);
     const isPausedRef = useRef(isPaused);
+    const [absorberRadius, setAbsorberRadius] = useState(CELL_CONFIG[CELL_TYPE.ABSORBER].radius);
 
     useEffect(() => {
         isPausedRef.current = isPaused;
@@ -43,6 +45,13 @@ export default function PetriDish({ className = '' }: PetriDishProps) {
         const newCell = createCell(type, nextIdRef.current, width, height);
         nextIdRef.current++;
         cellsRef.current.push(newCell);
+    };
+
+    const removeCell = (type: number) => {
+        const index = cellsRef.current.findIndex(cell => cell.type === type);
+        if (index !== -1) {
+            cellsRef.current.splice(index, 1);
+        }
     };
 
     const restart = () => {
@@ -141,10 +150,8 @@ export default function PetriDish({ className = '' }: PetriDishProps) {
                     mass: newMass,
                 };
             }).filter(cell => {
-                if (cell.type === CELL_TYPE.ABSORBER && cell.radius < ABSORBER_MIN_RADIUS) {
-                    return false;
-                }
-                return true;
+                // Remove any cell with radius below MIN_SPLIT_RADIUS
+                return cell.radius >= MIN_SPLIT_RADIUS;
             });
 
             const cellsToRemove = new Set<number>();
@@ -274,6 +281,10 @@ export default function PetriDish({ className = '' }: PetriDishProps) {
                 }
             }
 
+            // Update absorber radius state
+            const absorber = cellsRef.current.find(cell => cell.type === CELL_TYPE.ABSORBER);
+            setAbsorberRadius(absorber ? absorber.radius : 0);
+
             animationFrameId = requestAnimationFrame(draw);
         };
 
@@ -288,44 +299,80 @@ export default function PetriDish({ className = '' }: PetriDishProps) {
     return (
         <div className={clsx('flex w-full flex-col', { [className]: className })}>
             <div className="flex flex-col bg-gray-800 border border-gray-700 rounded-t">
-                <div className="flex items-center gap-3 px-3 py-2 border-b border-gray-700">
-                    <button
-                        onClick={() => setIsPaused(!isPaused)}
-                        className={clsx(
-                            'px-3 py-1 text-sm font-medium rounded transition-colors',
-                            isPaused
-                                ? 'bg-green-600 hover:bg-green-500 text-white'
-                                : 'bg-yellow-600 hover:bg-yellow-500 text-white'
-                        )}
-                    >
-                        {isPaused ? '▶ Resume' : '⏸ Pause'}
-                    </button>
-                    <button
-                        onClick={restart}
-                        className="px-3 py-1 text-sm font-medium rounded bg-gray-600 hover:bg-gray-500 text-white transition-colors"
-                        title="Restart simulation"
-                    >
-                        ↻ Restart
-                    </button>
+                <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700">
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setIsPaused(!isPaused)}
+                            className={clsx(
+                                'px-3 py-1 text-sm font-medium rounded transition-colors',
+                                isPaused
+                                    ? 'bg-green-600 hover:bg-green-500 text-white'
+                                    : 'bg-yellow-600 hover:bg-yellow-500 text-white'
+                            )}
+                        >
+                            {isPaused ? '▶ Resume' : '⏸ Pause'}
+                        </button>
+                        <button
+                            onClick={restart}
+                            className="px-3 py-1 text-sm font-medium rounded bg-gray-600 hover:bg-gray-500 text-white transition-colors"
+                            title="Restart simulation"
+                        >
+                            ↻ Restart
+                        </button>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-400">Food:</span>
+                            <button
+                                onClick={() => removeCell(CELL_TYPE.FOOD)}
+                                className="w-6 h-6 text-sm font-medium rounded bg-green-800 hover:bg-green-700 text-white transition-colors"
+                                title="Remove a Food cell"
+                            >
+                                -
+                            </button>
+                            <button
+                                onClick={() => spawnCell(CELL_TYPE.FOOD)}
+                                className="w-6 h-6 text-sm font-medium rounded bg-green-600 hover:bg-green-500 text-white transition-colors"
+                                title="Add a Food cell"
+                            >
+                                +
+                            </button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-400">Poison:</span>
+                            <button
+                                onClick={() => removeCell(CELL_TYPE.POISON)}
+                                className="w-6 h-6 text-sm font-medium rounded bg-purple-800 hover:bg-purple-700 text-white transition-colors"
+                                title="Remove a Poison cell"
+                            >
+                                -
+                            </button>
+                            <button
+                                onClick={() => spawnCell(CELL_TYPE.POISON)}
+                                className="w-6 h-6 text-sm font-medium rounded bg-purple-600 hover:bg-purple-500 text-white transition-colors"
+                                title="Add a Poison cell"
+                            >
+                                +
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
-                {/* <div className="flex items-center gap-3 px-3 py-2">
-                    <span className="text-xs text-gray-400">Add:</span>
-                    <button
-                        onClick={() => spawnCell(CELL_TYPE.ABSORBER)}
-                        className="px-2 py-1 text-xs font-medium rounded bg-red-700 hover:bg-red-600 text-white transition-colors"
-                        title="Absorber - absorbs smaller prey"
-                    >
-                        + Absorber
-                    </button>
-                    <button
-                        onClick={() => spawnCell(1)}
-                        className="px-2 py-1 text-xs font-medium rounded bg-green-600 hover:bg-green-500 text-white transition-colors"
-                        title="Spawn prey cell"
-                    >
-                        + Prey
-                    </button>
-                </div> */}
+                <div className="flex items-center gap-3 px-3 py-2">
+                    <span className="text-xs text-gray-400 w-20">Absorber:</span>
+                    <div className="flex-1 h-4 bg-gray-900 rounded overflow-hidden border border-gray-600">
+                        <div
+                            className="h-full bg-gradient-to-r from-red-600 to-red-400 transition-all duration-100"
+                            style={{
+                                width: `${Math.max(0, (absorberRadius / CELL_CONFIG[CELL_TYPE.ABSORBER].radius) * 100)}%`,
+                            }}
+                        />
+                    </div>
+                    <span className="text-xs text-gray-300 w-12 text-right">
+                        {absorberRadius > 0 ? absorberRadius.toFixed(1) : 'Dead'}
+                    </span>
+                </div>
             </div>
 
             <div className="bg-gray-800 border-x border-gray-700 px-2 py-2">

@@ -27,14 +27,14 @@ const COLLISION_ACTIONS: Record<number, Record<number, CollisionAction>> = {
         [CELL_TYPE.NEUTRAL]: 'bounce',
     },
     [CELL_TYPE.FOOD]: {
-        [CELL_TYPE.FOOD]: 'absorb_larger',
+        [CELL_TYPE.FOOD]: 'split',
         [CELL_TYPE.POISON]: 'shrink_split',
         [CELL_TYPE.NEUTRAL]: 'bounce',
     },
     [CELL_TYPE.POISON]: {
         [CELL_TYPE.ABSORBER]: 'shrink',
         [CELL_TYPE.POISON]: 'shrink_both',
-        [CELL_TYPE.NEUTRAL]: 'bounce',
+        [CELL_TYPE.NEUTRAL]: 'shrink',
     },
     [CELL_TYPE.NEUTRAL]: {
         [CELL_TYPE.NEUTRAL]: 'spawn_food',
@@ -56,41 +56,35 @@ const getAction = (type1: number, type2: number): CollisionAction => {
     return COLLISION_ACTIONS[low]?.[high] ?? 'bounce';
 };
 
-// Attract: pull cells toward each other (for small same-type cells)
+// Attract: pull cells toward each other (all same-type cells)
 const doAttract = (ctx: CollisionContext): CollisionResult => {
     const { cell1, cell2, distance, dx, dy } = ctx;
 
     const ndx = distance > 0 ? dx / distance : 1;
     const ndy = distance > 0 ? dy / distance : 0;
 
-    // Dampen existing velocity so attraction can take effect
-    const damping = 0.92;
-
-    // Attraction strength - higher value for more noticeable pull
-    const baseStrength = 0.05;
-    const attract1 = baseStrength * cell1.radius;
-    const attract2 = baseStrength * cell2.radius;
+    // Gentle attraction force - just nudge cells toward each other
+    const baseStrength = 0.02;
 
     const updates = new Map<number, Partial<Cell>>();
 
-    // Dampen velocity, then apply attraction toward each other
+    // Apply attraction toward each other (no damping)
     updates.set(cell1.id, {
-        vx: cell1.vx * damping - ndx * attract1,
-        vy: cell1.vy * damping - ndy * attract1,
+        vx: cell1.vx - ndx * baseStrength,
+        vy: cell1.vy - ndy * baseStrength,
     });
     updates.set(cell2.id, {
-        vx: cell2.vx * damping + ndx * attract2,
-        vy: cell2.vy * damping + ndy * attract2,
+        vx: cell2.vx + ndx * baseStrength,
+        vy: cell2.vy + ndy * baseStrength,
     });
 
     return { handled: true, removeIds: [], updates, newCells: [] };
 };
 
-// Check if both cells are same type and small enough to attract
+// Check if cells should attract (same-type cells attract, except poison and neutral)
 const shouldAttract = (cell1: Cell, cell2: Cell): boolean => {
-    return cell1.type === cell2.type &&
-           cell1.radius <= MIN_SPLIT_RADIUS &&
-           cell2.radius <= MIN_SPLIT_RADIUS;
+    if (cell1.type === CELL_TYPE.POISON || cell1.type === CELL_TYPE.NEUTRAL) return false;
+    return cell1.type === cell2.type;
 };
 
 // Bounce: elastic collision with separation
@@ -194,6 +188,44 @@ const doSpawnFood = (ctx: CollisionContext): CollisionResult => {
     const bounceResult = doBounce(ctx);
 
     return { handled: true, removeIds: [], updates: bounceResult.updates, newCells };
+};
+
+// Spawn same type: spawn a new cell of the same type at collision point
+const doSpawnSameType = (ctx: CollisionContext): CollisionResult => {
+    const { cell1, cell2, currentTime } = ctx;
+
+    // Check if we can spawn
+    if (ctx.totalCells + 1 > MAX_CELLS) {
+        return doBounce(ctx);
+    }
+
+    // Collision midpoint
+    const midX = (cell1.x + cell2.x) / 2;
+    const midY = (cell1.y + cell2.y) / 2;
+
+    const config = getCellConfig(cell1.type);
+
+    // Random angle for the new cell's velocity
+    const angle = Math.random() * 2 * Math.PI;
+    const speed = (config.velocity.min + config.velocity.max) / 2;
+
+    const newCell: Cell = {
+        id: ctx.nextId,
+        type: cell1.type,
+        x: midX,
+        y: midY,
+        radius: config.radius,
+        color: config.color,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        mass: config.radius,
+        lastCollision: currentTime,
+    };
+
+    // Bounce both cells apart
+    const bounceResult = doBounce(ctx);
+
+    return { handled: true, removeIds: [], updates: bounceResult.updates, newCells: [newCell] };
 };
 
 // Absorb: first cell absorbs second cell (bounces if absorbed cell is too large)
@@ -496,13 +528,20 @@ const doSplit = (cell: Cell, other: Cell, ctx: CollisionContext): CollisionResul
     if (cell.radius < MIN_SPLIT_RADIUS) {
         return { handled: true, removeIds: [cell.id], updates: new Map(), newCells: [] };
     }
+
+    const newRadius = cell.radius / SPLIT_RADIUS_DIVISOR;
+
+    // Result would be too small - just bounce instead
+    if (newRadius < MIN_SPLIT_RADIUS) {
+        return doBounce(ctx);
+    }
+
     // Max cells reached - just bounce
     if (ctx.totalCells >= MAX_CELLS - 1) {
         return doBounce(ctx);
     }
 
     const { distance, dx, dy, currentTime } = ctx;
-    const newRadius = cell.radius / SPLIT_RADIUS_DIVISOR;
     const config = getCellConfig(cell.type);
     const offset = newRadius * SPLIT_OFFSET_MULTIPLIER;
 
@@ -549,7 +588,12 @@ const doSplit = (cell: Cell, other: Cell, ctx: CollisionContext): CollisionResul
 export const resolveCollision = (ctx: CollisionContext): CollisionResult => {
     const { cell1, cell2, currentTime } = ctx;
 
-    // Small same-type cells attract each other
+    // Same-type, same-size cells spawn a new cell of that type (except food and neutral)
+    if (cell1.type === cell2.type && cell1.radius === cell2.radius && cell1.type !== CELL_TYPE.FOOD && cell1.type !== CELL_TYPE.NEUTRAL) {
+        return doSpawnSameType(ctx);
+    }
+
+    // Same-type cells attract each other (except poison and neutral)
     if (shouldAttract(cell1, cell2)) {
         return doAttract(ctx);
     }
@@ -575,9 +619,9 @@ export const resolveCollision = (ctx: CollisionContext): CollisionResult => {
         }
 
         case 'shrink_both': {
-            // Equal size: both shrink and bounce; different sizes: larger absorbs smaller
+            // Equal size: remove both; different sizes: larger absorbs smaller
             if (cell1.radius === cell2.radius) {
-                return doShrinkBoth(ctx);
+                return doRemove(ctx);
             }
             const larger = cell1.radius > cell2.radius ? cell1 : cell2;
             const smaller = cell1.radius > cell2.radius ? cell2 : cell1;
