@@ -197,7 +197,7 @@ export default function NavLinkListAnimated({
             <div className='flex flex-1 w-full max-w-md'>
                 {!activeSubMenu ? (
                     /* Main nav links container */
-                    <nav className='flex flex-col items-center justify-between gap-4 w-full'>
+                    <nav className='flex flex-col items-center justify-start gap-4 w-full'>
                         {filteredLinks.map((link, index) => (
                             <NavLinkCardAnimated
                                 key={link.href}
