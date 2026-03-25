@@ -22,10 +22,18 @@ export async function GET(req: NextRequest) {
 
     await connectToDatabase();
 
-    const userDoc = await UserModel.findById(payload.id as string);
+    await import("@/app/lib/models/image"); // ensure Image model is registered for populate
+    const userDoc = await UserModel.findById(payload.id as string).populate("avatar", "_id variants");
     if (!userDoc) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+
+    const avatar = userDoc.avatar
+      ? {
+          id: (userDoc.avatar as any)._id.toString(),
+          variants: (userDoc.avatar as any).variants ?? [],
+        }
+      : null;
 
     return NextResponse.json({
       id: userDoc._id.toString(),
@@ -33,6 +41,7 @@ export async function GET(req: NextRequest) {
       email: userDoc.email,
       role: userDoc.role,
       bio: userDoc.bio,
+      avatar,
     });
   } catch (err) {
     return NextResponse.json(
