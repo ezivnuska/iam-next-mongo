@@ -20,7 +20,7 @@
 
   echo "🔄 Restarting application..."
   pm2 delete iam-app 2>/dev/null || true
-  pm2 start ecosystem.config.js
+  pm2 start ecosystem.config.js --env production
 
   echo "✅ Deployment complete!"
   pm2 logs iam-app --lines 20
