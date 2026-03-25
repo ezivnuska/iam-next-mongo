@@ -19,7 +19,8 @@
   pm2 flush
 
   echo "🔄 Restarting application..."
-  pm2 startOrRestart ecosystem.config.js --env production
+  pm2 delete iam-app 2>/dev/null || true
+  pm2 start ecosystem.config.js
 
   echo "✅ Deployment complete!"
   pm2 logs iam-app --lines 20
