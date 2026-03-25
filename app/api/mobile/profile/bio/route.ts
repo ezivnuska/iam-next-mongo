@@ -1,5 +1,4 @@
-// app/api/auth/mobile/me/route.ts
-// Mobile-friendly current-user endpoint that accepts a JWT bearer token
+// app/api/mobile/profile/bio/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
@@ -10,7 +9,7 @@ const secret = new TextEncoder().encode(
   process.env.NEXTAUTH_SECRET || "change-this-secret"
 );
 
-export async function GET(req: NextRequest) {
+export async function PATCH(req: NextRequest) {
   try {
     const authHeader = req.headers.get("authorization");
     if (!authHeader?.startsWith("Bearer ")) {
@@ -20,21 +19,45 @@ export async function GET(req: NextRequest) {
     const token = authHeader.slice(7);
     const { payload } = await jwtVerify(token, secret);
 
+    const { bio } = await req.json();
+
+    if (typeof bio !== "string") {
+      return NextResponse.json({ error: "Bio must be a string" }, { status: 400 });
+    }
+
+    const trimmedBio = bio.trim();
+
+    if (trimmedBio.length > 500) {
+      return NextResponse.json(
+        { error: "Bio must be 500 characters or less" },
+        { status: 400 }
+      );
+    }
+
+    const sanitizedBio = trimmedBio.replace(/[<>]/g, "");
+
     await connectToDatabase();
 
-    const userDoc = await UserModel.findById(payload.id as string);
+    const userDoc = await UserModel.findByIdAndUpdate(
+      payload.id as string,
+      { bio: sanitizedBio },
+      { new: true }
+    );
+
     if (!userDoc) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     return NextResponse.json({
-      id: userDoc._id.toString(),
-      username: userDoc.username,
-      email: userDoc.email,
-      role: userDoc.role,
-      bio: userDoc.bio,
+      user: {
+        id: userDoc._id.toString(),
+        username: userDoc.username,
+        email: userDoc.email,
+        role: userDoc.role,
+        bio: userDoc.bio,
+      },
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: "Invalid or expired token" },
       { status: 401 }
