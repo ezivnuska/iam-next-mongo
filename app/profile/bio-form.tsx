@@ -5,6 +5,8 @@
 import { useState } from 'react';
 import { updateBio } from '@/app/lib/actions/profile';
 import { useUser } from '@/app/lib/providers/user-provider';
+import { getTextColor } from '@/app/lib/utils/theme-colors';
+import { useIsDark } from '@/app/lib/hooks/use-is-dark';
 import { PencilSquareIcon } from '@heroicons/react/24/solid';
 
 export default function BioForm() {
@@ -13,6 +15,7 @@ export default function BioForm() {
     const [isEditing, setIsEditing] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const isDark = useIsDark();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -60,7 +63,8 @@ export default function BioForm() {
                 <textarea
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-white'
+                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                    style={{ color: getTextColor(isDark) }}
                     rows={4}
                     maxLength={500}
                     placeholder='Tell us about yourself...'
