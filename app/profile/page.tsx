@@ -12,6 +12,5 @@ export default async function ProfileRedirect() {
         redirect('/?auth=required&callbackUrl=/profile');
     }
 
-    // Redirect to the user's profile page
     redirect(`/users/${session.user.username}`);
 }
