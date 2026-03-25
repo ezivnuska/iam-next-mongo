@@ -19,7 +19,7 @@
   pm2 flush
 
   echo "🔄 Restarting application..."
-  pm2 restart iam-app
+  pm2 restart iam-app --env production
 
   echo "✅ Deployment complete!"
   pm2 logs iam-app --lines 20
