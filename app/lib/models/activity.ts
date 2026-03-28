@@ -19,7 +19,7 @@ const activitySchema = new Schema<IActivity>(
     },
     entityType: {
       type: String,
-      enum: ['memory', 'post', 'image', 'comment', 'like', 'friendship'],
+      enum: ['memory', 'need', 'post', 'image', 'comment', 'like', 'friendship'],
       required: true,
       index: true
     },
