@@ -24,12 +24,14 @@ async function verifyToken(req: NextRequest) {
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const tokenPayload = await verifyToken(req);
   if (!tokenPayload) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const { id } = await params;
 
   try {
     const { action } = await req.json();
@@ -39,7 +41,7 @@ export async function PATCH(
 
     await connectToDatabase();
 
-    const friendship = await FriendshipModel.findById(params.id);
+    const friendship = await FriendshipModel.findById(id);
     if (!friendship) {
       return NextResponse.json({ error: "Friendship not found" }, { status: 404 });
     }
@@ -65,17 +67,19 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const tokenPayload = await verifyToken(req);
   if (!tokenPayload) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { id } = await params;
+
   try {
     await connectToDatabase();
 
-    const friendship = await FriendshipModel.findById(params.id);
+    const friendship = await FriendshipModel.findById(id);
     if (!friendship) {
       return NextResponse.json({ error: "Friendship not found" }, { status: 404 });
     }
@@ -87,7 +91,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Not authorized" }, { status: 403 });
     }
 
-    await FriendshipModel.deleteOne({ _id: params.id });
+    await FriendshipModel.deleteOne({ _id: id });
 
     return NextResponse.json({ ok: true });
   } catch (err) {
