@@ -26,7 +26,8 @@ interface PopulatedNeedObj {
   };
   title?: string;
   content: string;
-  shared: boolean;
+  minPay?: number;
+  maxPay?: number;
   image?: {
     _id: Types.ObjectId;
     userId: Types.ObjectId;
@@ -54,7 +55,7 @@ export async function PUT(
       return NextResponse.json({ error: "Invalid need ID format" }, { status: 400 });
     }
 
-    const { title, content, shared, imageId } = await req.json();
+    const { title, content, minPay, maxPay, imageId } = await req.json();
 
     if (content && content.length > 5000) {
       return NextResponse.json({ error: "Content must be 5000 characters or less" }, { status: 400 });
@@ -85,7 +86,8 @@ export async function PUT(
 
     need.title = title?.trim() || "Untitled";
     need.content = content.trim();
-    need.shared = shared ?? false;
+    need.minPay = minPay ?? undefined;
+    need.maxPay = maxPay ?? undefined;
     if (imageId !== undefined) {
       need.image = imageId || undefined;
     }
@@ -103,7 +105,8 @@ export async function PUT(
       entityData: {
         title: populated.title,
         content: populated.content,
-        shared: populated.shared,
+        minPay: populated.minPay,
+        maxPay: populated.maxPay,
         hasImage: !!populated.image,
       },
       metadata: getRequestMetadata(req),
@@ -113,7 +116,8 @@ export async function PUT(
       id: populated._id.toString(),
       title: populated.title,
       content: populated.content,
-      shared: populated.shared,
+      minPay: populated.minPay,
+      maxPay: populated.maxPay,
       createdAt: populated.createdAt.toISOString(),
       updatedAt: populated.updatedAt.toISOString(),
       author: transformPopulatedAuthor(populated.author),
@@ -161,7 +165,8 @@ export async function DELETE(
     const needData = {
       title: need.title,
       content: need.content,
-      shared: need.shared,
+      minPay: need.minPay,
+      maxPay: need.maxPay,
       authorId: need.author.toString(),
     };
 

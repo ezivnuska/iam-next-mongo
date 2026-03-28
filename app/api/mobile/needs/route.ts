@@ -27,7 +27,8 @@ function serializeNeed(n: any) {
     id: n._id.toString(),
     title: n.title ?? "",
     content: n.content,
-    shared: n.shared,
+    minPay: n.minPay ?? null,
+    maxPay: n.maxPay ?? null,
     createdAt: n.createdAt?.toISOString() ?? new Date().toISOString(),
     updatedAt: n.updatedAt?.toISOString() ?? new Date().toISOString(),
   };
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { title, content, shared } = await req.json();
+    const { title, content, minPay, maxPay } = await req.json();
 
     if (!content?.trim()) {
       return NextResponse.json({ error: "Need must have content" }, { status: 400 });
@@ -80,7 +81,8 @@ export async function POST(req: NextRequest) {
       author: tokenPayload.id,
       title: title?.trim() || "Untitled",
       content: content.trim(),
-      shared: shared ?? false,
+      ...(minPay != null && { minPay }),
+      ...(maxPay != null && { maxPay }),
     });
 
     return NextResponse.json({ need: serializeNeed(need) }, { status: 201 });

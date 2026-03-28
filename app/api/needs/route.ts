@@ -26,7 +26,8 @@ interface PopulatedNeedObj {
   };
   title?: string;
   content: string;
-  shared: boolean;
+  minPay?: number;
+  maxPay?: number;
   image?: {
     _id: Types.ObjectId;
     userId: Types.ObjectId;
@@ -42,7 +43,7 @@ export async function POST(req: Request) {
   try {
     const { id: userId } = await requireAuth();
 
-    const { title, content, shared, imageId } = await req.json();
+    const { title, content, minPay, maxPay, imageId } = await req.json();
 
     if (content && content.length > 5000) {
       return NextResponse.json({ error: "Content must be 5000 characters or less" }, { status: 400 });
@@ -66,7 +67,8 @@ export async function POST(req: Request) {
       author: userId,
       title: title?.trim() || "Untitled",
       content: content.trim(),
-      shared: shared ?? false,
+      ...(minPay != null && { minPay }),
+      ...(maxPay != null && { maxPay }),
       ...(imageId && { image: imageId }),
     });
 
@@ -82,7 +84,8 @@ export async function POST(req: Request) {
       entityData: {
         title: populated.title,
         content: populated.content,
-        shared: populated.shared,
+        minPay: populated.minPay,
+        maxPay: populated.maxPay,
         hasImage: !!populated.image,
       },
       metadata: getRequestMetadata(req),
@@ -92,7 +95,8 @@ export async function POST(req: Request) {
       id: populated._id.toString(),
       title: populated.title,
       content: populated.content,
-      shared: populated.shared,
+      minPay: populated.minPay,
+      maxPay: populated.maxPay,
       createdAt: populated.createdAt.toISOString(),
       updatedAt: populated.updatedAt.toISOString(),
       author: transformPopulatedAuthor(populated.author),

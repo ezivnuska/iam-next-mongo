@@ -8,7 +8,8 @@ export interface INeed extends Document {
   author: Types.ObjectId
   title?: string
   content: string
-  shared: boolean
+  minPay?: number
+  maxPay?: number
   image?: Types.ObjectId
   likes?: Types.ObjectId[]
 }
@@ -17,7 +18,8 @@ export interface Need {
   id: string
   title?: string
   content: string
-  shared: boolean
+  minPay?: number
+  maxPay?: number
   createdAt: string
   updatedAt: string
   author: PartialUser
