@@ -3,8 +3,8 @@
 // DELETE — remove an accepted friendship or cancel a sent request (either party)
 
 import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
 import { connectToDatabase } from "@/app/lib/mongoose";
+import { verifyToken } from "@/app/lib/mobile/verifyToken";
 import FriendshipModel from "@/app/lib/models/friendship";
 import UserModel from "@/app/lib/models/user";
 import {
@@ -12,21 +12,6 @@ import {
   emitFriendRequestRejected,
   emitFriendshipRemoved,
 } from "@/app/lib/socket/emit";
-
-const secret = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || "change-this-secret"
-);
-
-async function verifyToken(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (!authHeader?.startsWith("Bearer ")) return null;
-  try {
-    const { payload } = await jwtVerify(authHeader.slice(7), secret);
-    return payload as { id: string };
-  } catch {
-    return null;
-  }
-}
 
 export async function PATCH(
   req: NextRequest,
@@ -62,15 +47,14 @@ export async function PATCH(
     (friendship as any).status = action === "accept" ? "accepted" : "rejected";
     await (friendship as any).save();
 
-    // Emit to requester: their request was accepted/rejected by the current user (recipient)
     try {
       const recipient = await UserModel.findById(recipientId).lean();
       const username = (recipient as any)?.username ?? "";
       const emitPayload = {
         friendshipId: id,
-        userId: requesterId,       // notify the requester
-        username,                  // the recipient's username
-        otherUserId: recipientId,  // the other user in the friendship
+        userId: requesterId,
+        username,
+        otherUserId: recipientId,
       };
       if (action === "accept") {
         await emitFriendRequestAccepted(emitPayload);
@@ -121,15 +105,14 @@ export async function DELETE(
 
     await FriendshipModel.deleteOne({ _id: id });
 
-    // Emit to the other party
     try {
       const otherUserId = requesterId === tokenPayload.id ? recipientId : requesterId;
       const currentUser = await UserModel.findById(tokenPayload.id).lean();
       const username = (currentUser as any)?.username ?? "";
       await emitFriendshipRemoved({
         friendshipId: id,
-        userId: otherUserId,       // notify the other user
-        username,                  // the current user's username (who removed)
+        userId: otherUserId,
+        username,
         otherUserId: tokenPayload.id,
       });
     } catch (err) {

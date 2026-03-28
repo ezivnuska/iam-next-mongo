@@ -2,26 +2,11 @@
 // POST — send a friend request
 
 import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
 import { connectToDatabase } from "@/app/lib/mongoose";
+import { verifyToken } from "@/app/lib/mobile/verifyToken";
 import FriendshipModel from "@/app/lib/models/friendship";
 import UserModel from "@/app/lib/models/user";
 import { emitFriendRequest } from "@/app/lib/socket/emit";
-
-const secret = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || "change-this-secret"
-);
-
-async function verifyToken(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (!authHeader?.startsWith("Bearer ")) return null;
-  try {
-    const { payload } = await jwtVerify(authHeader.slice(7), secret);
-    return payload as { id: string };
-  } catch {
-    return null;
-  }
-}
 
 export async function POST(req: NextRequest) {
   const tokenPayload = await verifyToken(req);
@@ -34,6 +19,10 @@ export async function POST(req: NextRequest) {
 
     if (!recipientId || typeof recipientId !== "string") {
       return NextResponse.json({ error: "recipientId is required" }, { status: 400 });
+    }
+
+    if (!/^[a-f\d]{24}$/i.test(recipientId)) {
+      return NextResponse.json({ error: "Invalid recipientId" }, { status: 400 });
     }
 
     if (recipientId === tokenPayload.id) {
@@ -68,10 +57,7 @@ export async function POST(req: NextRequest) {
         await emitFriendRequestSent((existing as any)._id.toString(), tokenPayload.id, recipientId);
 
         return NextResponse.json({
-          friendship: {
-            id: (existing as any)._id.toString(),
-            status: "pending_sent",
-          },
+          friendship: { id: (existing as any)._id.toString(), status: "pending_sent" },
         });
       }
     }
@@ -85,10 +71,7 @@ export async function POST(req: NextRequest) {
     await emitFriendRequestSent((friendship as any)._id.toString(), tokenPayload.id, recipientId);
 
     return NextResponse.json({
-      friendship: {
-        id: (friendship as any)._id.toString(),
-        status: "pending_sent",
-      },
+      friendship: { id: (friendship as any)._id.toString(), status: "pending_sent" },
     }, { status: 201 });
   } catch (err) {
     console.error("[mobile/friendships POST]", err);

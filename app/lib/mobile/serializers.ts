@@ -1,0 +1,58 @@
+// app/lib/mobile/serializers.ts
+
+export function serializeResource(obj: any): { id: string; variants: any[] } | null {
+  if (!obj || typeof obj !== "object" || !obj._id) return null;
+  return { id: obj._id.toString(), variants: obj.variants ?? [] };
+}
+
+export function serializeAuthor(author: any): { id: string; username: string; avatar: { id: string; variants: any[] } | null } | null {
+  if (!author || typeof author !== "object" || !author._id) return null;
+  return {
+    id: author._id.toString(),
+    username: author.username,
+    avatar: serializeResource(author.avatar),
+  };
+}
+
+export function serializeNeed(n: any) {
+  const result: Record<string, any> = {
+    id: n._id.toString(),
+    title: n.title ?? "",
+    content: n.content,
+    minPay: n.minPay ?? null,
+    maxPay: n.maxPay ?? null,
+    createdAt: n.createdAt?.toISOString() ?? new Date().toISOString(),
+  };
+  const image = serializeResource(n.image);
+  if (image) result.image = image;
+  const author = serializeAuthor(n.author);
+  if (author) result.author = author;
+  return result;
+}
+
+// For routes that build a friendship map keyed by the other user's ID
+export function serializeFriendshipEntry(
+  entry: { id: string; status: string; role: "requester" | "recipient" } | undefined
+): { id: string; status: string } | null {
+  if (!entry) return null;
+  if (entry.status === "accepted") return { id: entry.id, status: "accepted" };
+  if (entry.status === "pending") {
+    return { id: entry.id, status: entry.role === "requester" ? "pending_sent" : "pending_received" };
+  }
+  return null; // rejected
+}
+
+// For routes that fetch a single friendship document
+export function serializeFriendship(
+  friendship: any,
+  currentUserId: string
+): { id: string; status: string } | null {
+  if (!friendship) return null;
+  const requesterId = friendship.requester.toString();
+  const role = requesterId === currentUserId ? "requester" : "recipient";
+  return serializeFriendshipEntry({
+    id: friendship._id.toString(),
+    status: friendship.status,
+    role,
+  });
+}

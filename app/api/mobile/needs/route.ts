@@ -3,40 +3,11 @@
 // POST — create a new need
 
 import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
 import { connectToDatabase } from "@/app/lib/mongoose";
+import { verifyToken } from "@/app/lib/mobile/verifyToken";
+import { serializeNeed } from "@/app/lib/mobile/serializers";
 import Need from "@/app/lib/models/need";
 import "@/app/lib/models/image";
-
-const secret = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || "change-this-secret"
-);
-
-async function verifyToken(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (!authHeader?.startsWith("Bearer ")) return null;
-  try {
-    const { payload } = await jwtVerify(authHeader.slice(7), secret);
-    return payload as { id: string };
-  } catch {
-    return null;
-  }
-}
-
-function serializeNeed(n: any) {
-  return {
-    id: n._id.toString(),
-    title: n.title ?? "",
-    content: n.content,
-    minPay: n.minPay ?? null,
-    maxPay: n.maxPay ?? null,
-    createdAt: n.createdAt?.toISOString() ?? new Date().toISOString(),
-    updatedAt: n.updatedAt?.toISOString() ?? new Date().toISOString(),
-    ...(n.image && typeof n.image === "object" && n.image._id
-      ? { image: { id: n.image._id.toString(), variants: n.image.variants ?? [] } }
-      : {}),
-  };
-}
 
 export async function GET(req: NextRequest) {
   const tokenPayload = await verifyToken(req);
@@ -80,11 +51,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Title must be 200 characters or less" }, { status: 400 });
     }
 
-    await connectToDatabase();
-
     if (imageId && !/^[a-f\d]{24}$/i.test(imageId)) {
       return NextResponse.json({ error: "Invalid image ID" }, { status: 400 });
     }
+
+    await connectToDatabase();
 
     const need = await Need.create({
       author: tokenPayload.id,
