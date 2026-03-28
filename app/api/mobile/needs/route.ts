@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import Need from "@/app/lib/models/need";
+import "@/app/lib/models/image";
 
 const secret = new TextEncoder().encode(
   process.env.NEXTAUTH_SECRET || "change-this-secret"
@@ -31,6 +32,9 @@ function serializeNeed(n: any) {
     maxPay: n.maxPay ?? null,
     createdAt: n.createdAt?.toISOString() ?? new Date().toISOString(),
     updatedAt: n.updatedAt?.toISOString() ?? new Date().toISOString(),
+    ...(n.image && typeof n.image === "object" && n.image._id
+      ? { image: { id: n.image._id.toString(), variants: n.image.variants ?? [] } }
+      : {}),
   };
 }
 
@@ -45,6 +49,7 @@ export async function GET(req: NextRequest) {
 
     const needs = await Need.find({ author: tokenPayload.id })
       .sort({ createdAt: -1 })
+      .populate("image")
       .lean();
 
     return NextResponse.json({ needs: (needs as any[]).map(serializeNeed) });
@@ -61,7 +66,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { title, content, minPay, maxPay } = await req.json();
+    const { title, content, minPay, maxPay, imageId } = await req.json();
 
     if (!content?.trim()) {
       return NextResponse.json({ error: "Need must have content" }, { status: 400 });
@@ -77,15 +82,22 @@ export async function POST(req: NextRequest) {
 
     await connectToDatabase();
 
+    if (imageId && !/^[a-f\d]{24}$/i.test(imageId)) {
+      return NextResponse.json({ error: "Invalid image ID" }, { status: 400 });
+    }
+
     const need = await Need.create({
       author: tokenPayload.id,
       title: title?.trim() || "Untitled",
       content: content.trim(),
       ...(minPay != null && { minPay }),
       ...(maxPay != null && { maxPay }),
+      ...(imageId ? { image: imageId } : {}),
     });
 
-    return NextResponse.json({ need: serializeNeed(need) }, { status: 201 });
+    await need.populate("image");
+
+    return NextResponse.json({ need: serializeNeed(need.toObject()) }, { status: 201 });
   } catch (err) {
     console.error("[mobile/needs POST]", err);
     return NextResponse.json({ error: "Failed to create need" }, { status: 500 });
