@@ -6,6 +6,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import FriendshipModel from "@/app/lib/models/friendship";
+import UserModel from "@/app/lib/models/user";
+import {
+  emitFriendRequestAccepted,
+  emitFriendRequestRejected,
+  emitFriendshipRemoved,
+} from "@/app/lib/socket/emit";
 
 const secret = new TextEncoder().encode(
   process.env.NEXTAUTH_SECRET || "change-this-secret"
@@ -46,12 +52,34 @@ export async function PATCH(
       return NextResponse.json({ error: "Friendship not found" }, { status: 404 });
     }
 
-    if ((friendship as any).recipient.toString() !== tokenPayload.id) {
+    const requesterId = (friendship as any).requester.toString();
+    const recipientId = (friendship as any).recipient.toString();
+
+    if (recipientId !== tokenPayload.id) {
       return NextResponse.json({ error: "Only the recipient can accept or reject" }, { status: 403 });
     }
 
     (friendship as any).status = action === "accept" ? "accepted" : "rejected";
     await (friendship as any).save();
+
+    // Emit to requester: their request was accepted/rejected by the current user (recipient)
+    try {
+      const recipient = await UserModel.findById(recipientId).lean();
+      const username = (recipient as any)?.username ?? "";
+      const emitPayload = {
+        friendshipId: id,
+        userId: requesterId,       // notify the requester
+        username,                  // the recipient's username
+        otherUserId: recipientId,  // the other user in the friendship
+      };
+      if (action === "accept") {
+        await emitFriendRequestAccepted(emitPayload);
+      } else {
+        await emitFriendRequestRejected(emitPayload);
+      }
+    } catch (err) {
+      console.error("[mobile/friendships PATCH] socket emit failed:", err);
+    }
 
     return NextResponse.json({
       friendship: {
@@ -92,6 +120,21 @@ export async function DELETE(
     }
 
     await FriendshipModel.deleteOne({ _id: id });
+
+    // Emit to the other party
+    try {
+      const otherUserId = requesterId === tokenPayload.id ? recipientId : requesterId;
+      const currentUser = await UserModel.findById(tokenPayload.id).lean();
+      const username = (currentUser as any)?.username ?? "";
+      await emitFriendshipRemoved({
+        friendshipId: id,
+        userId: otherUserId,       // notify the other user
+        username,                  // the current user's username (who removed)
+        otherUserId: tokenPayload.id,
+      });
+    } catch (err) {
+      console.error("[mobile/friendships DELETE] socket emit failed:", err);
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {

@@ -5,6 +5,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import FriendshipModel from "@/app/lib/models/friendship";
+import UserModel from "@/app/lib/models/user";
+import { emitFriendRequest } from "@/app/lib/socket/emit";
 
 const secret = new TextEncoder().encode(
   process.env.NEXTAUTH_SECRET || "change-this-secret"
@@ -62,6 +64,9 @@ export async function POST(req: NextRequest) {
         (existing as any).requester = tokenPayload.id;
         (existing as any).recipient = recipientId;
         await (existing as any).save();
+
+        await emitFriendRequestSent((existing as any)._id.toString(), tokenPayload.id, recipientId);
+
         return NextResponse.json({
           friendship: {
             id: (existing as any)._id.toString(),
@@ -77,6 +82,8 @@ export async function POST(req: NextRequest) {
       status: "pending",
     });
 
+    await emitFriendRequestSent((friendship as any)._id.toString(), tokenPayload.id, recipientId);
+
     return NextResponse.json({
       friendship: {
         id: (friendship as any)._id.toString(),
@@ -86,5 +93,22 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("[mobile/friendships POST]", err);
     return NextResponse.json({ error: "Failed to send friend request" }, { status: 500 });
+  }
+}
+
+async function emitFriendRequestSent(friendshipId: string, requesterId: string, recipientId: string) {
+  try {
+    const [requester, recipient] = await Promise.all([
+      UserModel.findById(requesterId).lean(),
+      UserModel.findById(recipientId).lean(),
+    ]);
+    if (!requester || !recipient) return;
+    await emitFriendRequest({
+      friendshipId,
+      requester: { id: requesterId, username: (requester as any).username },
+      recipient: { id: recipientId, username: (recipient as any).username },
+    });
+  } catch (err) {
+    console.error("[mobile/friendships] emitFriendRequestSent failed:", err);
   }
 }
