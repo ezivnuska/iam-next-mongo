@@ -24,7 +24,6 @@ interface PopulatedNeedObj {
       variants: ImageVariant[];
     };
   };
-  date: Date;
   title?: string;
   content: string;
   shared: boolean;
@@ -55,7 +54,7 @@ export async function PUT(
       return NextResponse.json({ error: "Invalid need ID format" }, { status: 400 });
     }
 
-    const { date, title, content, shared, imageId } = await req.json();
+    const { title, content, shared, imageId } = await req.json();
 
     if (content && content.length > 5000) {
       return NextResponse.json({ error: "Content must be 5000 characters or less" }, { status: 400 });
@@ -67,10 +66,6 @@ export async function PUT(
 
     if (title && title.length > 200) {
       return NextResponse.json({ error: "Title must be 200 characters or less" }, { status: 400 });
-    }
-
-    if (!date) {
-      return NextResponse.json({ error: "Need must have a date" }, { status: 400 });
     }
 
     if (imageId && imageId !== null && !/^[a-f\d]{24}$/i.test(imageId)) {
@@ -88,7 +83,6 @@ export async function PUT(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    need.date = new Date(date);
     need.title = title?.trim() || "Untitled";
     need.content = content.trim();
     need.shared = shared ?? false;
@@ -117,7 +111,6 @@ export async function PUT(
 
     return NextResponse.json({
       id: populated._id.toString(),
-      date: populated.date.toISOString(),
       title: populated.title,
       content: populated.content,
       shared: populated.shared,

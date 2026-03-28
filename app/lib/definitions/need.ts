@@ -6,7 +6,6 @@ import type { Types, Document } from 'mongoose'
 
 export interface INeed extends Document {
   author: Types.ObjectId
-  date: Date
   title?: string
   content: string
   shared: boolean
@@ -16,7 +15,6 @@ export interface INeed extends Document {
 
 export interface Need {
   id: string
-  date: string
   title?: string
   content: string
   shared: boolean

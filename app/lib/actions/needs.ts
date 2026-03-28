@@ -21,7 +21,6 @@ export async function getNeeds(): Promise<NeedType[]> {
 
   return needsFromDb.map((n: any) => ({
     id: n._id.toString(),
-    date: n.date.toISOString(),
     title: n.title,
     content: n.content,
     shared: n.shared,

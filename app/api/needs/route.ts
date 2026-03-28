@@ -24,7 +24,6 @@ interface PopulatedNeedObj {
       variants: ImageVariant[];
     };
   };
-  date: Date;
   title?: string;
   content: string;
   shared: boolean;
@@ -43,7 +42,7 @@ export async function POST(req: Request) {
   try {
     const { id: userId } = await requireAuth();
 
-    const { date, title, content, shared, imageId } = await req.json();
+    const { title, content, shared, imageId } = await req.json();
 
     if (content && content.length > 5000) {
       return NextResponse.json({ error: "Content must be 5000 characters or less" }, { status: 400 });
@@ -57,10 +56,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Title must be 200 characters or less" }, { status: 400 });
     }
 
-    if (!date) {
-      return NextResponse.json({ error: "Need must have a date" }, { status: 400 });
-    }
-
     if (imageId && !/^[a-f\d]{24}$/i.test(imageId)) {
       return NextResponse.json({ error: "Invalid image ID" }, { status: 400 });
     }
@@ -69,7 +64,6 @@ export async function POST(req: Request) {
 
     const newNeed = await Need.create({
       author: userId,
-      date: new Date(date),
       title: title?.trim() || "Untitled",
       content: content.trim(),
       shared: shared ?? false,
@@ -96,7 +90,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       id: populated._id.toString(),
-      date: populated.date.toISOString(),
       title: populated.title,
       content: populated.content,
       shared: populated.shared,

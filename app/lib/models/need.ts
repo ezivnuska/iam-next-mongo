@@ -11,7 +11,6 @@ import { INeed } from '@/app/lib/definitions/need'
 const needSchema = new Schema<INeed>(
   {
     author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    date: { type: Date, required: true },
     title: { type: String },
     content: { type: String, required: true },
     shared: { type: Boolean, default: false },
