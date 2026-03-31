@@ -65,7 +65,7 @@ export async function PATCH(
   }
 
   try {
-    const { title, content, minPay, maxPay } = await req.json();
+    const { title, content, minPay, maxPay, imageId } = await req.json();
 
     if (content !== undefined && content.length > 5000) {
       return NextResponse.json({ error: "Content must be 5000 characters or less" }, { status: 400 });
@@ -73,6 +73,10 @@ export async function PATCH(
 
     if (title !== undefined && title.length > 200) {
       return NextResponse.json({ error: "Title must be 200 characters or less" }, { status: 400 });
+    }
+
+    if (imageId !== undefined && imageId !== null && !/^[a-f\d]{24}$/i.test(imageId)) {
+      return NextResponse.json({ error: "Invalid image ID" }, { status: 400 });
     }
 
     await connectToDatabase();
@@ -90,6 +94,7 @@ export async function PATCH(
     if (content !== undefined) need.content = content.trim();
     if (minPay !== undefined) need.minPay = minPay;
     if (maxPay !== undefined) need.maxPay = maxPay;
+    if (imageId !== undefined) need.image = imageId ?? undefined;
 
     await need.save();
     await need.populate([
