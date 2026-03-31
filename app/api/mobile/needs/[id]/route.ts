@@ -65,7 +65,7 @@ export async function PATCH(
   }
 
   try {
-    const { title, content, minPay, maxPay, imageId } = await req.json();
+    const { title, content, minPay, maxPay, imageId, location } = await req.json();
 
     if (content !== undefined && content.length > 5000) {
       return NextResponse.json({ error: "Content must be 5000 characters or less" }, { status: 400 });
@@ -95,6 +95,14 @@ export async function PATCH(
     if (minPay !== undefined) need.minPay = minPay;
     if (maxPay !== undefined) need.maxPay = maxPay;
     if (imageId !== undefined) need.image = imageId ?? undefined;
+    if (location !== undefined) {
+      need.location = location !== null &&
+        typeof location.latitude === 'number' &&
+        typeof location.longitude === 'number'
+          ? { latitude: location.latitude, longitude: location.longitude }
+          : undefined;
+      need.markModified('location');
+    }
 
     await need.save();
     await need.populate([
