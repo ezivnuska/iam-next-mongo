@@ -12,9 +12,10 @@ const needSchema = new Schema<INeed>(
   {
     author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     title: { type: String },
-    content: { type: String, required: true },
+    content: { type: String },
     minPay: { type: Number },
     maxPay: { type: Number },
+    location: { type: { latitude: Number, longitude: Number }, _id: false },
     image: { type: Schema.Types.ObjectId, ref: 'Image' },
     likes: [{ type: Schema.Types.ObjectId, ref: 'User', default: [] }],
   },

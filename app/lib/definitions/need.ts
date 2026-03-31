@@ -7,9 +7,10 @@ import type { Types, Document } from 'mongoose'
 export interface INeed extends Document {
   author: Types.ObjectId
   title?: string
-  content: string
+  content?: string
   minPay?: number
   maxPay?: number
+  location?: { latitude: number; longitude: number }
   image?: Types.ObjectId
   likes?: Types.ObjectId[]
 }
@@ -17,9 +18,10 @@ export interface INeed extends Document {
 export interface Need {
   id: string
   title?: string
-  content: string
+  content?: string
   minPay?: number
   maxPay?: number
+  location?: { latitude: number; longitude: number }
   createdAt: string
   updatedAt: string
   author: PartialUser

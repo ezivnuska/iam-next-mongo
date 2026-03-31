@@ -37,13 +37,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { title, content, minPay, maxPay, imageId } = await req.json();
+    const { title, content, minPay, maxPay, imageId, location } = await req.json();
 
-    if (!content?.trim()) {
-      return NextResponse.json({ error: "Need must have content" }, { status: 400 });
-    }
-
-    if (content.length > 5000) {
+    if (content && content.length > 5000) {
       return NextResponse.json({ error: "Content must be 5000 characters or less" }, { status: 400 });
     }
 
@@ -55,14 +51,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid image ID" }, { status: 400 });
     }
 
+    const validLocation =
+      location &&
+      typeof location.latitude === 'number' &&
+      typeof location.longitude === 'number'
+        ? { latitude: location.latitude, longitude: location.longitude }
+        : undefined;
+
     await connectToDatabase();
 
     const need = await Need.create({
       author: tokenPayload.id,
       title: title?.trim() || "Untitled",
-      content: content.trim(),
+      ...(content?.trim() ? { content: content.trim() } : {}),
       ...(minPay != null && { minPay }),
       ...(maxPay != null && { maxPay }),
+      ...(validLocation ? { location: validLocation } : {}),
       ...(imageId ? { image: imageId } : {}),
     });
 

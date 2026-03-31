@@ -18,11 +18,14 @@ export function serializeNeed(n: any) {
   const result: Record<string, any> = {
     id: n._id.toString(),
     title: n.title ?? "",
-    content: n.content,
+    content: n.content ?? "",
     minPay: n.minPay ?? null,
     maxPay: n.maxPay ?? null,
     createdAt: n.createdAt?.toISOString() ?? new Date().toISOString(),
   };
+  if (n.location?.latitude != null && n.location?.longitude != null) {
+    result.location = { latitude: n.location.latitude, longitude: n.location.longitude };
+  }
   const image = serializeResource(n.image);
   if (image) result.image = image;
   const author = serializeAuthor(n.author);
