@@ -11,6 +11,7 @@ export interface INeed extends Document {
   minPay?: number
   maxPay?: number
   location?: { latitude: number; longitude: number }
+  locationVisible?: boolean
   image?: Types.ObjectId
   likes?: Types.ObjectId[]
 }
@@ -22,6 +23,7 @@ export interface Need {
   minPay?: number
   maxPay?: number
   location?: { latitude: number; longitude: number }
+  locationVisible: boolean
   createdAt: string
   updatedAt: string
   author: PartialUser

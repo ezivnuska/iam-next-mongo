@@ -65,7 +65,7 @@ export async function PATCH(
   }
 
   try {
-    const { title, content, minPay, maxPay, imageId, location } = await req.json();
+    const { title, content, minPay, maxPay, imageId, location, locationVisible } = await req.json();
 
     if (content !== undefined && content.length > 5000) {
       return NextResponse.json({ error: "Content must be 5000 characters or less" }, { status: 400 });
@@ -103,6 +103,7 @@ export async function PATCH(
           : undefined;
       need.markModified('location');
     }
+    if (typeof locationVisible === 'boolean') need.locationVisible = locationVisible;
 
     await need.save();
     await need.populate([

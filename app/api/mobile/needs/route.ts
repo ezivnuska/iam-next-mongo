@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { title, content, minPay, maxPay, imageId, location } = await req.json();
+    const { title, content, minPay, maxPay, imageId, location, locationVisible } = await req.json();
 
     if (content && content.length > 5000) {
       return NextResponse.json({ error: "Content must be 5000 characters or less" }, { status: 400 });
@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
       ...(minPay != null && { minPay }),
       ...(maxPay != null && { maxPay }),
       ...(validLocation ? { location: validLocation } : {}),
+      locationVisible: locationVisible === true,
       ...(imageId ? { image: imageId } : {}),
     });
 
