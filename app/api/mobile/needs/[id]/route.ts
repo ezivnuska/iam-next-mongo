@@ -141,7 +141,9 @@ export async function DELETE(
       return NextResponse.json({ error: "Need not found" }, { status: 404 });
     }
 
-    if (need.author.toString() !== tokenPayload.id) {
+    const isAuthor = need.author.toString() === tokenPayload.id;
+    const isAdmin = tokenPayload.role === 'admin';
+    if (!isAuthor && !isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
