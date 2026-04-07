@@ -20,7 +20,7 @@ async function verifyToken(req: NextRequest) {
   if (!authHeader?.startsWith("Bearer ")) return null;
   try {
     const { payload } = await jwtVerify(authHeader.slice(7), secret);
-    return payload as { id: string };
+    return payload as { id: string; role?: string };
   } catch {
     return null;
   }
@@ -49,7 +49,9 @@ export async function DELETE(
       return NextResponse.json({ error: "Image not found" }, { status: 404 });
     }
 
-    if (image.userId.toString() !== payload.id) {
+    const isOwner = image.userId.toString() === payload.id;
+    const isAdmin = payload.role === 'admin';
+    if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
