@@ -4,8 +4,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
+import { serializePledge } from '@/app/lib/mobile/serializers'
 import Pledge from '@/app/lib/models/pledge'
 import Need from '@/app/lib/models/need'
+import '@/app/lib/models/image'
+import '@/app/lib/models/user'
 
 export async function POST(
   req: NextRequest,
@@ -42,15 +45,9 @@ export async function POST(
       amount,
     })
 
-    return NextResponse.json({
-      pledge: {
-        id: pledge._id.toString(),
-        userId: pledge.userId.toString(),
-        needId: pledge.needId.toString(),
-        amount: pledge.amount,
-        createdAt: pledge.createdAt.toISOString(),
-      },
-    }, { status: 201 })
+    await pledge.populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
+
+    return NextResponse.json({ pledge: serializePledge(pledge.toObject()) }, { status: 201 })
   } catch (err) {
     console.error('[mobile/needs/pledges POST]', err)
     return NextResponse.json({ error: 'Failed to create pledge' }, { status: 500 })
