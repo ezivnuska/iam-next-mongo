@@ -148,7 +148,10 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    await Need.findByIdAndDelete(id);
+    await Promise.all([
+      Need.findByIdAndDelete(id),
+      Pledge.deleteMany({ needId: id }),
+    ]);
 
     return NextResponse.json({ ok: true });
   } catch (err) {
