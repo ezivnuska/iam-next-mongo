@@ -45,7 +45,7 @@ export async function GET(
     }
 
     const [pledges, applicants] = await Promise.all([
-      Pledge.find({ needId: id }).lean(),
+      Pledge.find({ needId: id }).populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } }).lean(),
       Applicant.find({ needId: id }).lean(),
     ])
     return NextResponse.json({ need: serializeNeed({ ...need, pledged: pledges, applicants }) });
@@ -116,7 +116,7 @@ export async function PATCH(
     ]);
 
     const [pledges, applicants] = await Promise.all([
-      Pledge.find({ needId: id }).lean(),
+      Pledge.find({ needId: id }).populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } }).lean(),
       Applicant.find({ needId: id }).lean(),
     ])
     return NextResponse.json({ need: serializeNeed({ ...need.toObject(), pledged: pledges, applicants }) });

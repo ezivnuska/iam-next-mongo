@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
 
     const needIds = (needs as any[]).map((n) => n._id)
     const [pledges, applicants] = await Promise.all([
-      Pledge.find({ needId: { $in: needIds } }).lean(),
+      Pledge.find({ needId: { $in: needIds } }).populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } }).lean(),
       Applicant.find({ needId: { $in: needIds } }).lean(),
     ])
     const pledgesByNeed: Record<string, any[]> = {}

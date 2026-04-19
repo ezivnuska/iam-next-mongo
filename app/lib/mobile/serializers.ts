@@ -15,12 +15,15 @@ export function serializeAuthor(author: any): { id: string; username: string; av
 }
 
 export function serializePledge(p: any) {
+  const user = p.userId && typeof p.userId === 'object' ? p.userId : null
   return {
     id: p._id.toString(),
-    userId: p.userId.toString(),
+    userId: user ? user._id.toString() : p.userId.toString(),
     needId: p.needId.toString(),
     amount: p.amount,
     createdAt: p.createdAt?.toISOString() ?? new Date().toISOString(),
+    username: user?.username ?? '',
+    avatar: serializeResource(user?.avatar) ?? null,
   }
 }
 
