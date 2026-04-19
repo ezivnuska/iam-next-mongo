@@ -9,6 +9,7 @@ import { verifyToken } from "@/app/lib/mobile/verifyToken";
 import { serializeNeed } from "@/app/lib/mobile/serializers";
 import Need from "@/app/lib/models/need";
 import Pledge from "@/app/lib/models/pledge";
+import Applicant from "@/app/lib/models/applicant";
 import "@/app/lib/models/image";
 import "@/app/lib/models/user";
 
@@ -43,8 +44,11 @@ export async function GET(
       return NextResponse.json({ error: "Need not found" }, { status: 404 });
     }
 
-    const pledges = await Pledge.find({ needId: id }).lean()
-    return NextResponse.json({ need: serializeNeed({ ...need, pledged: pledges }) });
+    const [pledges, applicants] = await Promise.all([
+      Pledge.find({ needId: id }).lean(),
+      Applicant.find({ needId: id }).lean(),
+    ])
+    return NextResponse.json({ need: serializeNeed({ ...need, pledged: pledges, applicants }) });
   } catch (err) {
     console.error("[mobile/needs GET by id]", err);
     return NextResponse.json({ error: "Failed to fetch need" }, { status: 500 });
@@ -111,8 +115,11 @@ export async function PATCH(
       { path: "image" },
     ]);
 
-    const pledges = await Pledge.find({ needId: id }).lean()
-    return NextResponse.json({ need: serializeNeed({ ...need.toObject(), pledged: pledges }) });
+    const [pledges, applicants] = await Promise.all([
+      Pledge.find({ needId: id }).lean(),
+      Applicant.find({ needId: id }).lean(),
+    ])
+    return NextResponse.json({ need: serializeNeed({ ...need.toObject(), pledged: pledges, applicants }) });
   } catch (err) {
     console.error("[mobile/needs PATCH]", err);
     return NextResponse.json({ error: "Failed to update need" }, { status: 500 });
@@ -151,6 +158,7 @@ export async function DELETE(
     await Promise.all([
       Need.findByIdAndDelete(id),
       Pledge.deleteMany({ needId: id }),
+      Applicant.deleteMany({ needId: id }),
     ]);
 
     return NextResponse.json({ ok: true });

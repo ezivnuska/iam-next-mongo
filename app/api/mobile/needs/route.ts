@@ -8,6 +8,7 @@ import { verifyToken } from "@/app/lib/mobile/verifyToken";
 import { serializeNeed } from "@/app/lib/mobile/serializers";
 import Need from "@/app/lib/models/need";
 import Pledge from "@/app/lib/models/pledge";
+import Applicant from "@/app/lib/models/applicant";
 import "@/app/lib/models/image";
 
 export async function GET(req: NextRequest) {
@@ -25,16 +26,29 @@ export async function GET(req: NextRequest) {
       .lean();
 
     const needIds = (needs as any[]).map((n) => n._id)
-    const pledges = await Pledge.find({ needId: { $in: needIds } }).lean()
+    const [pledges, applicants] = await Promise.all([
+      Pledge.find({ needId: { $in: needIds } }).lean(),
+      Applicant.find({ needId: { $in: needIds } }).lean(),
+    ])
     const pledgesByNeed: Record<string, any[]> = {}
     for (const p of pledges) {
       const key = p.needId.toString()
       if (!pledgesByNeed[key]) pledgesByNeed[key] = []
       pledgesByNeed[key].push(p)
     }
-    const needsWithPledges = (needs as any[]).map((n) => ({ ...n, pledged: pledgesByNeed[n._id.toString()] ?? [] }))
+    const applicantsByNeed: Record<string, any[]> = {}
+    for (const a of applicants) {
+      const key = a.needId.toString()
+      if (!applicantsByNeed[key]) applicantsByNeed[key] = []
+      applicantsByNeed[key].push(a)
+    }
+    const needsWithData = (needs as any[]).map((n) => ({
+      ...n,
+      pledged: pledgesByNeed[n._id.toString()] ?? [],
+      applicants: applicantsByNeed[n._id.toString()] ?? [],
+    }))
 
-    return NextResponse.json({ needs: needsWithPledges.map(serializeNeed) });
+    return NextResponse.json({ needs: needsWithData.map(serializeNeed) });
   } catch (err) {
     console.error("[mobile/needs GET]", err);
     return NextResponse.json({ error: "Failed to fetch needs" }, { status: 500 });
@@ -82,7 +96,7 @@ export async function POST(req: NextRequest) {
 
     await need.populate("image");
 
-    return NextResponse.json({ need: serializeNeed({ ...need.toObject(), pledged: [] }) }, { status: 201 });
+    return NextResponse.json({ need: serializeNeed({ ...need.toObject(), pledged: [], applicants: [] }) }, { status: 201 });
   } catch (err) {
     console.error("[mobile/needs POST]", err);
     return NextResponse.json({ error: "Failed to create need" }, { status: 500 });

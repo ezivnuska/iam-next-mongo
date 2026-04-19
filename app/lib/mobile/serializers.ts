@@ -24,12 +24,22 @@ export function serializePledge(p: any) {
   }
 }
 
+export function serializeApplicant(a: any) {
+  return {
+    id: a._id.toString(),
+    userId: a.userId.toString(),
+    needId: a.needId.toString(),
+    createdAt: a.createdAt?.toISOString() ?? new Date().toISOString(),
+  }
+}
+
 export function serializeNeed(n: any) {
   const result: Record<string, any> = {
     id: n._id.toString(),
     title: n.title ?? "",
     content: n.content ?? "",
     pledged: Array.isArray(n.pledged) ? n.pledged.map(serializePledge) : [],
+    applicants: Array.isArray(n.applicants) ? n.applicants.map(serializeApplicant) : [],
     createdAt: n.createdAt?.toISOString() ?? new Date().toISOString(),
   };
   if (n.location?.latitude != null && n.location?.longitude != null) {
