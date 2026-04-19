@@ -14,13 +14,22 @@ export function serializeAuthor(author: any): { id: string; username: string; av
   };
 }
 
+export function serializePledge(p: any) {
+  return {
+    id: p._id.toString(),
+    userId: p.userId.toString(),
+    needId: p.needId.toString(),
+    amount: p.amount,
+    createdAt: p.createdAt?.toISOString() ?? new Date().toISOString(),
+  }
+}
+
 export function serializeNeed(n: any) {
   const result: Record<string, any> = {
     id: n._id.toString(),
     title: n.title ?? "",
     content: n.content ?? "",
-    minPay: n.minPay ?? null,
-    maxPay: n.maxPay ?? null,
+    pledged: Array.isArray(n.pledged) ? n.pledged.map(serializePledge) : [],
     createdAt: n.createdAt?.toISOString() ?? new Date().toISOString(),
   };
   if (n.location?.latitude != null && n.location?.longitude != null) {

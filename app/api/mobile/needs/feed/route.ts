@@ -6,6 +6,7 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import { verifyToken } from "@/app/lib/mobile/verifyToken";
 import { serializeNeed } from "@/app/lib/mobile/serializers";
 import Need from "@/app/lib/models/need";
+import Pledge from "@/app/lib/models/pledge";
 import "@/app/lib/models/image";
 import "@/app/lib/models/user";
 
@@ -28,7 +29,17 @@ export async function GET(req: NextRequest) {
       .populate("image")
       .lean();
 
-    return NextResponse.json({ needs: (needs as any[]).map(serializeNeed) });
+    const needIds = (needs as any[]).map((n) => n._id)
+    const pledges = await Pledge.find({ needId: { $in: needIds } }).lean()
+    const pledgesByNeed: Record<string, any[]> = {}
+    for (const p of pledges) {
+      const key = p.needId.toString()
+      if (!pledgesByNeed[key]) pledgesByNeed[key] = []
+      pledgesByNeed[key].push(p)
+    }
+    const needsWithPledges = (needs as any[]).map((n) => ({ ...n, pledged: pledgesByNeed[n._id.toString()] ?? [] }))
+
+    return NextResponse.json({ needs: needsWithPledges.map(serializeNeed) });
   } catch (err) {
     console.error("[mobile/needs/feed GET]", err);
     return NextResponse.json({ error: "Failed to fetch needs" }, { status: 500 });

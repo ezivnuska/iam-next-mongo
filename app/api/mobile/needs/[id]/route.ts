@@ -8,6 +8,7 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import { verifyToken } from "@/app/lib/mobile/verifyToken";
 import { serializeNeed } from "@/app/lib/mobile/serializers";
 import Need from "@/app/lib/models/need";
+import Pledge from "@/app/lib/models/pledge";
 import "@/app/lib/models/image";
 import "@/app/lib/models/user";
 
@@ -42,7 +43,8 @@ export async function GET(
       return NextResponse.json({ error: "Need not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ need: serializeNeed(need) });
+    const pledges = await Pledge.find({ needId: id }).lean()
+    return NextResponse.json({ need: serializeNeed({ ...need, pledged: pledges }) });
   } catch (err) {
     console.error("[mobile/needs GET by id]", err);
     return NextResponse.json({ error: "Failed to fetch need" }, { status: 500 });
@@ -65,7 +67,7 @@ export async function PATCH(
   }
 
   try {
-    const { title, content, minPay, maxPay, imageId, location, locationVisible } = await req.json();
+    const { title, content, imageId, location, locationVisible } = await req.json();
 
     if (content !== undefined && content.length > 5000) {
       return NextResponse.json({ error: "Content must be 5000 characters or less" }, { status: 400 });
@@ -92,8 +94,6 @@ export async function PATCH(
 
     if (title !== undefined) need.title = title.trim() || "Untitled";
     if (content !== undefined) need.content = content.trim();
-    if (minPay !== undefined) need.minPay = minPay;
-    if (maxPay !== undefined) need.maxPay = maxPay;
     if (imageId !== undefined) need.image = imageId ?? undefined;
     if (location !== undefined) {
       need.location = location !== null &&
@@ -111,7 +111,8 @@ export async function PATCH(
       { path: "image" },
     ]);
 
-    return NextResponse.json({ need: serializeNeed(need.toObject()) });
+    const pledges = await Pledge.find({ needId: id }).lean()
+    return NextResponse.json({ need: serializeNeed({ ...need.toObject(), pledged: pledges }) });
   } catch (err) {
     console.error("[mobile/needs PATCH]", err);
     return NextResponse.json({ error: "Failed to update need" }, { status: 500 });

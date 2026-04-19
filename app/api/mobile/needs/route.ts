@@ -7,6 +7,7 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import { verifyToken } from "@/app/lib/mobile/verifyToken";
 import { serializeNeed } from "@/app/lib/mobile/serializers";
 import Need from "@/app/lib/models/need";
+import Pledge from "@/app/lib/models/pledge";
 import "@/app/lib/models/image";
 
 export async function GET(req: NextRequest) {
@@ -23,7 +24,17 @@ export async function GET(req: NextRequest) {
       .populate("image")
       .lean();
 
-    return NextResponse.json({ needs: (needs as any[]).map(serializeNeed) });
+    const needIds = (needs as any[]).map((n) => n._id)
+    const pledges = await Pledge.find({ needId: { $in: needIds } }).lean()
+    const pledgesByNeed: Record<string, any[]> = {}
+    for (const p of pledges) {
+      const key = p.needId.toString()
+      if (!pledgesByNeed[key]) pledgesByNeed[key] = []
+      pledgesByNeed[key].push(p)
+    }
+    const needsWithPledges = (needs as any[]).map((n) => ({ ...n, pledged: pledgesByNeed[n._id.toString()] ?? [] }))
+
+    return NextResponse.json({ needs: needsWithPledges.map(serializeNeed) });
   } catch (err) {
     console.error("[mobile/needs GET]", err);
     return NextResponse.json({ error: "Failed to fetch needs" }, { status: 500 });
@@ -37,7 +48,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { title, content, minPay, maxPay, imageId, location, locationVisible } = await req.json();
+    const { title, content, imageId, location, locationVisible } = await req.json();
 
     if (content && content.length > 5000) {
       return NextResponse.json({ error: "Content must be 5000 characters or less" }, { status: 400 });
@@ -64,8 +75,6 @@ export async function POST(req: NextRequest) {
       author: tokenPayload.id,
       title: title?.trim() || "Untitled",
       ...(content?.trim() ? { content: content.trim() } : {}),
-      ...(minPay != null && { minPay }),
-      ...(maxPay != null && { maxPay }),
       ...(validLocation ? { location: validLocation } : {}),
       locationVisible: locationVisible === true,
       ...(imageId ? { image: imageId } : {}),
@@ -73,7 +82,7 @@ export async function POST(req: NextRequest) {
 
     await need.populate("image");
 
-    return NextResponse.json({ need: serializeNeed(need.toObject()) }, { status: 201 });
+    return NextResponse.json({ need: serializeNeed({ ...need.toObject(), pledged: [] }) }, { status: 201 });
   } catch (err) {
     console.error("[mobile/needs POST]", err);
     return NextResponse.json({ error: "Failed to create need" }, { status: 500 });
