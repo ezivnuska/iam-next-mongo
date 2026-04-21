@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { title, content, imageId, location, locationVisible } = await req.json();
+    const { title, content, imageId, location, locationVisible, initialPledge } = await req.json();
 
     if (content && content.length > 5000) {
       return NextResponse.json({ error: "Content must be 5000 characters or less" }, { status: 400 });
@@ -74,6 +74,10 @@ export async function POST(req: NextRequest) {
 
     if (imageId && !/^[a-f\d]{24}$/i.test(imageId)) {
       return NextResponse.json({ error: "Invalid image ID" }, { status: 400 });
+    }
+
+    if (initialPledge !== undefined && (typeof initialPledge !== 'number' || initialPledge <= 0)) {
+      return NextResponse.json({ error: "Initial pledge must be a positive number" }, { status: 400 });
     }
 
     const validLocation =
@@ -96,7 +100,14 @@ export async function POST(req: NextRequest) {
 
     await need.populate("image");
 
-    return NextResponse.json({ need: serializeNeed({ ...need.toObject(), pledged: [], applicants: [] }) }, { status: 201 });
+    let pledged: any[] = [];
+    if (initialPledge > 0) {
+      const pledge = await Pledge.create({ userId: tokenPayload.id, needId: need._id, amount: initialPledge });
+      await pledge.populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } });
+      pledged = [pledge.toObject()];
+    }
+
+    return NextResponse.json({ need: serializeNeed({ ...need.toObject(), pledged, applicants: [] }) }, { status: 201 });
   } catch (err) {
     console.error("[mobile/needs POST]", err);
     return NextResponse.json({ error: "Failed to create need" }, { status: 500 });

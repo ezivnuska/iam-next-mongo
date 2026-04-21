@@ -6,41 +6,9 @@ import Pledge from '@/app/lib/models/pledge'
 import Need from '@/app/lib/models/need'
 import '@/app/lib/models/user'
 import '@/app/lib/models/image'
-import type { Types } from 'mongoose'
-import type { ImageVariant } from '@/app/lib/definitions/image'
-import { transformPopulatedAuthor } from '@/app/lib/utils/transformers'
+import { serializePledge } from '@/app/lib/mobile/serializers'
 import { logActivity, getRequestMetadata } from '@/app/lib/utils/activity-logger'
-import { requireAuth } from '@/app/lib/utils/auth'
-
-interface PopulatedPledgeObj {
-  _id: Types.ObjectId
-  userId: {
-    _id: Types.ObjectId
-    username: string
-    avatar?: {
-      _id: Types.ObjectId
-      userId: Types.ObjectId
-      username: string
-      alt?: string
-      variants: ImageVariant[]
-    }
-  }
-  needId: Types.ObjectId
-  amount: number
-  createdAt: Date
-  updatedAt: Date
-}
-
-function transformPledge(p: PopulatedPledgeObj) {
-  return {
-    id: p._id.toString(),
-    needId: p.needId.toString(),
-    amount: p.amount,
-    createdAt: p.createdAt.toISOString(),
-    updatedAt: p.updatedAt.toISOString(),
-    user: transformPopulatedAuthor(p.userId),
-  }
-}
+import { requireAuthFlexible } from '@/app/lib/utils/auth/flexible'
 
 const POPULATE_CONFIG = {
   path: 'userId',
@@ -49,11 +17,11 @@ const POPULATE_CONFIG = {
 }
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth()
+    await requireAuthFlexible(req)
 
     const { id } = await params
 
@@ -64,12 +32,11 @@ export async function GET(
     await connectToDatabase()
 
     const pledge = await Pledge.findById(id).populate(POPULATE_CONFIG).lean()
-
     if (!pledge) {
       return NextResponse.json({ error: 'Pledge not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ pledge: transformPledge(pledge as unknown as PopulatedPledgeObj) })
+    return NextResponse.json({ pledge: serializePledge(pledge) })
   } catch (err: any) {
     if (err.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -84,7 +51,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await requireAuth()
+    const user = await requireAuthFlexible(req)
     const { id } = await params
 
     if (!/^[a-f\d]{24}$/i.test(id)) {
@@ -115,18 +82,18 @@ export async function PATCH(
     await pledge.save()
     await pledge.populate(POPULATE_CONFIG)
 
-    const populated = pledge.toObject() as unknown as PopulatedPledgeObj
+    const serialized = serializePledge(pledge.toObject())
 
     await logActivity({
       userId: user.id,
       action: 'update',
       entityType: 'pledge',
-      entityId: populated._id,
+      entityId: pledge._id,
       entityData: { amount },
       metadata: getRequestMetadata(req),
     })
 
-    return NextResponse.json({ pledge: transformPledge(populated) })
+    return NextResponse.json({ pledge: serialized })
   } catch (err: any) {
     if (err.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -141,7 +108,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await requireAuth()
+    const user = await requireAuthFlexible(req)
     const { id } = await params
 
     if (!/^[a-f\d]{24}$/i.test(id)) {
@@ -159,7 +126,6 @@ export async function DELETE(
     const isAdmin = user.role === 'admin'
 
     if (!isOwner && !isAdmin) {
-      // Need author can also delete pledges on their need
       const need = await Need.findById((pledge as any).needId).lean()
       if (!need || (need as any).author.toString() !== user.id) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -177,7 +143,7 @@ export async function DELETE(
       metadata: getRequestMetadata(req),
     })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ ok: true })
   } catch (err: any) {
     if (err.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
