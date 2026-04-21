@@ -24,7 +24,8 @@ export const entityTypeLabels: Record<ActivityEntityType, string> = {
   image: "Image",
   comment: "Comment",
   like: "Like",
-  friendship: "Friendship"
+  friendship: "Friendship",
+  pledge: "Pledge",
 };
 
 // Filter configurations for activity feed

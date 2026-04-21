@@ -4,7 +4,7 @@ import { PartialUser } from "./user";
 import type { Types, Document } from 'mongoose';
 
 export type ActivityAction = 'create' | 'update' | 'delete';
-export type ActivityEntityType = 'memory' | 'need' | 'post' | 'image' | 'comment' | 'like' | 'friendship';
+export type ActivityEntityType = 'memory' | 'need' | 'post' | 'image' | 'comment' | 'like' | 'friendship' | 'pledge';
 
 export interface IActivity extends Document {
   user: Types.ObjectId;

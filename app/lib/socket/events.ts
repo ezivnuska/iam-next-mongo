@@ -137,7 +137,7 @@ export interface ActivityPayload {
 	activityId: string
 	userId: string
 	action: 'create' | 'update' | 'delete'
-	entityType: 'post' | 'memory' | 'need' | 'image' | 'comment' | 'like' | 'friendship'
+	entityType: 'post' | 'memory' | 'need' | 'image' | 'comment' | 'like' | 'friendship' | 'pledge'
 	entityId: string
 	createdAt: string
 }
