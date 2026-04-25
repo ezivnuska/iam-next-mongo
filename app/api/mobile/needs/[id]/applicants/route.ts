@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
+import { serializeApplicant } from '@/app/lib/mobile/serializers'
 import Applicant from '@/app/lib/models/applicant'
 import Need from '@/app/lib/models/need'
 
@@ -36,14 +37,7 @@ export async function POST(
       needId: id,
     })
 
-    return NextResponse.json({
-      applicant: {
-        id: applicant._id.toString(),
-        userId: applicant.userId.toString(),
-        needId: applicant.needId.toString(),
-        createdAt: applicant.createdAt.toISOString(),
-      },
-    }, { status: 201 })
+    return NextResponse.json({ applicant: serializeApplicant(applicant.toObject()) }, { status: 201 })
   } catch (err: any) {
     if (err.code === 11000) {
       return NextResponse.json({ error: 'Already applied to this need' }, { status: 409 })

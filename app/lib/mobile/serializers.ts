@@ -33,6 +33,10 @@ export function serializeApplicant(a: any) {
     userId: a.userId.toString(),
     needId: a.needId.toString(),
     createdAt: a.createdAt?.toISOString() ?? new Date().toISOString(),
+    status: a.status ?? 'pending',
+    votes: Array.isArray(a.votes)
+      ? a.votes.map((v: any) => ({ userId: v.userId.toString(), vote: v.vote }))
+      : [],
   }
 }
 
