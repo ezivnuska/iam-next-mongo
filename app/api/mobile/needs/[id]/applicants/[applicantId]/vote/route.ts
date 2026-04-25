@@ -59,12 +59,11 @@ export async function POST(
     const pledges = await Pledge.find({ needId }).lean()
     const contributorIds = [...new Set(pledges.map((p) => p.userId.toString()))]
 
-    const hasDeny = applicant.votes.some((v) => v.vote === 'deny')
     const allConfirmed = contributorIds.every((cId) =>
       applicant.votes.some((v) => v.userId.toString() === cId && v.vote === 'confirm')
     )
 
-    applicant.status = hasDeny ? 'denied' : allConfirmed ? 'confirmed' : 'pending'
+    applicant.status = allConfirmed ? 'confirmed' : 'pending'
 
     await applicant.save()
 
