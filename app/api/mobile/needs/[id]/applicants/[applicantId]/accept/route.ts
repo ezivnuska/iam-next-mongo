@@ -42,6 +42,7 @@ export async function PATCH(
     }
 
     applicant.status = 'accepted'
+    applicant.acceptedAt = new Date()
     await applicant.save()
 
     return NextResponse.json({ applicant: serializeApplicant(applicant.toObject()) })
