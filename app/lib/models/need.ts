@@ -13,6 +13,7 @@ const needSchema = new Schema<INeed>(
     author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     title: { type: String },
     content: { type: String },
+    status: { type: String, enum: ['open', 'completed'], default: 'open' },
     minPay: { type: Number },
     maxPay: { type: Number },
     location: { type: { latitude: Number, longitude: Number }, _id: false },

@@ -4,10 +4,13 @@ import { PartialUser } from './user'
 import type { Image } from './image'
 import type { Types, Document } from 'mongoose'
 
+export type NeedStatus = 'open' | 'completed'
+
 export interface INeed extends Document {
   author: Types.ObjectId
   title?: string
   content?: string
+  status: NeedStatus
   minPay?: number
   maxPay?: number
   location?: { latitude: number; longitude: number }

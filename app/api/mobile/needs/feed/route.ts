@@ -20,7 +20,8 @@ export async function GET(req: NextRequest) {
   try {
     await connectToDatabase();
 
-    const needs = await Need.find({})
+    const status = req.nextUrl.searchParams.get('status') ?? 'open'
+    const needs = await Need.find({ status })
       .sort({ createdAt: -1 })
       .populate({
         path: "author",

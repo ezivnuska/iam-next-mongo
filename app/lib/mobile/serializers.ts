@@ -45,6 +45,7 @@ export function serializeNeed(n: any) {
     id: n._id.toString(),
     title: n.title ?? "",
     content: n.content ?? "",
+    status: n.status ?? 'open',
     pledged: Array.isArray(n.pledged) ? n.pledged.map(serializePledge) : [],
     applicants: Array.isArray(n.applicants) ? n.applicants.map(serializeApplicant) : [],
     createdAt: n.createdAt?.toISOString() ?? new Date().toISOString(),

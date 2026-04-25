@@ -55,15 +55,16 @@ export async function POST(
       applicant.votes.push({ userId: tokenPayload.id as any, vote })
     }
 
-    // Recalculate status from all current votes
+    // Recalculate status: all contributors must have voted, at least one confirmed
     const pledges = await Pledge.find({ needId }).lean()
     const contributorIds = [...new Set(pledges.map((p) => p.userId.toString()))]
 
-    const allConfirmed = contributorIds.every((cId) =>
-      applicant.votes.some((v) => v.userId.toString() === cId && v.vote === 'confirm')
+    const allVoted = contributorIds.every((cId) =>
+      applicant.votes.some((v) => v.userId.toString() === cId)
     )
+    const anyConfirmed = applicant.votes.some((v) => v.vote === 'confirm')
 
-    applicant.status = allConfirmed ? 'confirmed' : 'pending'
+    applicant.status = allVoted && anyConfirmed ? 'confirmed' : 'pending'
 
     await applicant.save()
 
