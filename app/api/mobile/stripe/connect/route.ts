@@ -49,7 +49,12 @@ export async function POST(req: NextRequest) {
     let accountId = user?.stripeAccountId
     if (!accountId) {
       const account = await stripe.accounts.create({
-        type: 'express',
+        controller: {
+          stripe_dashboard: { type: 'express' },
+          fees: { payer: 'application' },
+          losses: { payments: 'application' },
+          requirement_collection: 'stripe',
+        },
         email: user.email,
         metadata: { userId: tokenPayload.id },
       })
@@ -65,8 +70,8 @@ export async function POST(req: NextRequest) {
     })
 
     return NextResponse.json({ url: accountLink.url })
-  } catch (err) {
+  } catch (err: any) {
     console.error('[stripe/connect POST]', err)
-    return NextResponse.json({ error: 'Failed to create Connect onboarding' }, { status: 500 })
+    return NextResponse.json({ error: err?.message ?? 'Failed to create Connect onboarding' }, { status: 500 })
   }
 }
