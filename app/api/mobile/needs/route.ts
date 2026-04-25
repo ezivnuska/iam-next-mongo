@@ -7,6 +7,7 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import { verifyToken } from "@/app/lib/mobile/verifyToken";
 import { serializeNeed } from "@/app/lib/mobile/serializers";
 import Need from "@/app/lib/models/need";
+import Pledge from "@/app/lib/models/pledge";
 import Applicant from "@/app/lib/models/applicant";
 import { createPledgeWithPaymentIntent } from "@/app/lib/mobile/createPledge";
 import "@/app/lib/models/image";
