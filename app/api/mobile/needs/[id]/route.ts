@@ -10,6 +10,7 @@ import { serializeNeed } from "@/app/lib/mobile/serializers";
 import Need from "@/app/lib/models/need";
 import Pledge from "@/app/lib/models/pledge";
 import Applicant from "@/app/lib/models/applicant";
+import Completion from "@/app/lib/models/completion";
 import "@/app/lib/models/image";
 import "@/app/lib/models/user";
 
@@ -159,6 +160,7 @@ export async function DELETE(
       Need.findByIdAndDelete(id),
       Pledge.deleteMany({ needId: id }),
       Applicant.deleteMany({ needId: id }),
+      Completion.deleteMany({ needId: id }),
     ]);
 
     return NextResponse.json({ ok: true });

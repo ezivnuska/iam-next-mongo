@@ -41,6 +41,22 @@ export function serializeApplicant(a: any) {
   }
 }
 
+export function serializeCompletion(c: any) {
+  return {
+    id: c._id.toString(),
+    needId: c.needId.toString(),
+    applicantId: c.applicantId.toString(),
+    images: Array.isArray(c.images)
+      ? c.images.map((img: any) => serializeResource(img)).filter(Boolean)
+      : [],
+    reviews: Array.isArray(c.reviews)
+      ? c.reviews.map((r: any) => ({ userId: r.userId.toString(), vote: r.vote }))
+      : [],
+    status: c.status ?? 'pending',
+    createdAt: c.createdAt?.toISOString() ?? new Date().toISOString(),
+  }
+}
+
 export function serializeNeed(n: any) {
   const result: Record<string, any> = {
     id: n._id.toString(),
