@@ -1,10 +1,11 @@
 // app/api/mobile/needs/[id]/pledges/[pledgeId]/route.ts
-// DELETE — remove a pledge (owner only)
+// DELETE — remove a pledge and cancel the associated PaymentIntent (owner only)
 
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import Pledge from '@/app/lib/models/pledge'
+import stripe from '@/app/lib/stripe'
 
 export async function DELETE(
   req: NextRequest,
@@ -31,6 +32,17 @@ export async function DELETE(
 
     if (pledge.userId.toString() !== tokenPayload.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    if (pledge.stripePaymentIntentId) {
+      try {
+        await stripe.paymentIntents.cancel(pledge.stripePaymentIntentId)
+      } catch (stripeErr: any) {
+        // Already cancelled or captured — proceed with deletion
+        if (!['already_canceled', 'already_captured'].includes(stripeErr?.code)) {
+          console.error('[pledge DELETE] Stripe cancel error', stripeErr)
+        }
+      }
     }
 
     await pledge.deleteOne()

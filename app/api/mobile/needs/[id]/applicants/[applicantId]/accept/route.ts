@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
+import UserModel from '@/app/lib/models/user'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import { serializeApplicant } from '@/app/lib/mobile/serializers'
 import Applicant from '@/app/lib/models/applicant'
@@ -39,6 +40,14 @@ export async function PATCH(
 
     if (applicant.status !== 'confirmed') {
       return NextResponse.json({ error: 'Can only accept a confirmed offer' }, { status: 400 })
+    }
+
+    const user = await UserModel.findById(tokenPayload.id).lean() as any
+    if (!user?.stripeAccountId || !user?.stripeAccountEnabled) {
+      return NextResponse.json(
+        { error: 'A payout account is required to accept work', code: 'NO_STRIPE_ACCOUNT' },
+        { status: 402 }
+      )
     }
 
     applicant.status = 'accepted'

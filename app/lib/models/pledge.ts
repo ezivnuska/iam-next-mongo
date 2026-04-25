@@ -12,6 +12,7 @@ const pledgeSchema = new Schema<IPledge>(
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     needId: { type: Schema.Types.ObjectId, ref: 'Need', required: true },
     amount: { type: Number, required: true },
+    stripePaymentIntentId: { type: String },
   },
   { timestamps: true }
 )

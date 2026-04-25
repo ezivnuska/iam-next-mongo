@@ -11,6 +11,7 @@ import Need from "@/app/lib/models/need";
 import Pledge from "@/app/lib/models/pledge";
 import Applicant from "@/app/lib/models/applicant";
 import Completion from "@/app/lib/models/completion";
+import stripe from "@/app/lib/stripe";
 import "@/app/lib/models/image";
 import "@/app/lib/models/user";
 
@@ -155,6 +156,14 @@ export async function DELETE(
     if (!isAuthor && !isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+
+    // Cancel all open PaymentIntents before deleting pledges
+    const pledges = await Pledge.find({ needId: id, stripePaymentIntentId: { $exists: true } }).lean()
+    await Promise.allSettled(
+      pledges
+        .filter((p: any) => p.stripePaymentIntentId)
+        .map((p: any) => stripe.paymentIntents.cancel(p.stripePaymentIntentId).catch(() => {}))
+    )
 
     await Promise.all([
       Need.findByIdAndDelete(id),

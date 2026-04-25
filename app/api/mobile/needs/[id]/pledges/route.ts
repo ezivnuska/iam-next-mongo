@@ -1,12 +1,12 @@
 // app/api/mobile/needs/[id]/pledges/route.ts
-// POST — create a pledge for a need
+// POST — create a pledge for a need (requires saved payment method)
 
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import { serializePledge } from '@/app/lib/mobile/serializers'
-import Pledge from '@/app/lib/models/pledge'
 import Need from '@/app/lib/models/need'
+import { createPledgeWithPaymentIntent } from '@/app/lib/mobile/createPledge'
 import '@/app/lib/models/image'
 import '@/app/lib/models/user'
 
@@ -39,16 +39,14 @@ export async function POST(
       return NextResponse.json({ error: 'Need not found' }, { status: 404 })
     }
 
-    const pledge = await Pledge.create({
-      userId: tokenPayload.id,
-      needId: id,
-      amount,
-    })
-
+    const pledge = await createPledgeWithPaymentIntent(tokenPayload.id, id, amount)
     await pledge.populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
 
     return NextResponse.json({ pledge: serializePledge(pledge.toObject()) }, { status: 201 })
-  } catch (err) {
+  } catch (err: any) {
+    if (err.code === 'NO_PAYMENT_METHOD') {
+      return NextResponse.json({ error: err.message, code: 'NO_PAYMENT_METHOD' }, { status: 402 })
+    }
     console.error('[mobile/needs/pledges POST]', err)
     return NextResponse.json({ error: 'Failed to create pledge' }, { status: 500 })
   }

@@ -28,6 +28,10 @@ export interface UserDocument extends Document {
   verifyTokenExpires?: Date;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
+  stripeCustomerId?: string;
+  stripeDefaultPaymentMethodId?: string;
+  stripeAccountId?: string;
+  stripeAccountEnabled?: boolean;
   createdAt: Date;
   updatedAt: Date;
   emailVerified?: Date | null;

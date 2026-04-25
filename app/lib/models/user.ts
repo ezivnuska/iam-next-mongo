@@ -21,6 +21,10 @@ const UserSchema = new Schema<UserDocument>(
     verifyTokenExpires: Date,
     resetPasswordToken: String,
     resetPasswordExpires: Date,
+    stripeCustomerId: { type: String },
+    stripeDefaultPaymentMethodId: { type: String },
+    stripeAccountId: { type: String },
+    stripeAccountEnabled: { type: Boolean, default: false },
   },
   {
     timestamps: true,

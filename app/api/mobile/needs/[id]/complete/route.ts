@@ -3,6 +3,9 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
+import stripe from '@/app/lib/stripe'
+import Pledge from '@/app/lib/models/pledge'
+import UserModel from '@/app/lib/models/user'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import { serializeNeed } from '@/app/lib/mobile/serializers'
 import Need from '@/app/lib/models/need'
@@ -41,6 +44,43 @@ export async function PATCH(
     const acceptedApplicant = await Applicant.findOne({ needId: id, status: 'accepted' }).lean()
     if (!acceptedApplicant) {
       return NextResponse.json({ error: 'No accepted applicant yet' }, { status: 400 })
+    }
+
+    // Identify confirming contributors
+    const confirmingUserIds = new Set(
+      acceptedApplicant.votes
+        .filter((v: any) => v.vote === 'confirm')
+        .map((v: any) => v.userId.toString())
+    )
+
+    const allPledges = await Pledge.find({ needId: id, stripePaymentIntentId: { $exists: true } }).lean() as any[]
+    const confirmingPledges = allPledges.filter((p) => confirmingUserIds.has(p.userId.toString()))
+
+    // Capture each confirming contributor's PaymentIntent
+    const captureResults = await Promise.allSettled(
+      confirmingPledges.map((p) =>
+        stripe.paymentIntents.capture(p.stripePaymentIntentId)
+      )
+    )
+
+    const totalCapturedCents = captureResults.reduce((sum, result, i) => {
+      if (result.status === 'fulfilled') return sum + confirmingPledges[i].amount * 100
+      console.error('[complete] capture failed for pledge', confirmingPledges[i]._id, (result as any).reason)
+      return sum
+    }, 0)
+
+    // Transfer captured funds to the applicant's Connect account
+    if (totalCapturedCents > 0) {
+      const applicantUser = await UserModel.findById(acceptedApplicant.userId).lean() as any
+      if (!applicantUser?.stripeAccountId) {
+        return NextResponse.json({ error: 'Applicant has no payout account' }, { status: 400 })
+      }
+      await stripe.transfers.create({
+        amount: totalCapturedCents,
+        currency: 'usd',
+        destination: applicantUser.stripeAccountId,
+        description: `Payment for need ${id}`,
+      })
     }
 
     need.status = 'completed'

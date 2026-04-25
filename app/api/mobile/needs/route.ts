@@ -7,8 +7,8 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import { verifyToken } from "@/app/lib/mobile/verifyToken";
 import { serializeNeed } from "@/app/lib/mobile/serializers";
 import Need from "@/app/lib/models/need";
-import Pledge from "@/app/lib/models/pledge";
 import Applicant from "@/app/lib/models/applicant";
+import { createPledgeWithPaymentIntent } from "@/app/lib/mobile/createPledge";
 import "@/app/lib/models/image";
 
 export async function GET(req: NextRequest) {
@@ -102,13 +102,16 @@ export async function POST(req: NextRequest) {
 
     let pledged: any[] = [];
     if (initialPledge > 0) {
-      const pledge = await Pledge.create({ userId: tokenPayload.id, needId: need._id, amount: initialPledge });
+      const pledge = await createPledgeWithPaymentIntent(tokenPayload.id, need._id.toString(), initialPledge);
       await pledge.populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } });
       pledged = [pledge.toObject()];
     }
 
     return NextResponse.json({ need: serializeNeed({ ...need.toObject(), pledged, applicants: [] }) }, { status: 201 });
-  } catch (err) {
+  } catch (err: any) {
+    if (err.code === 'NO_PAYMENT_METHOD') {
+      return NextResponse.json({ error: err.message, code: 'NO_PAYMENT_METHOD' }, { status: 402 });
+    }
     console.error("[mobile/needs POST]", err);
     return NextResponse.json({ error: "Failed to create need" }, { status: 500 });
   }

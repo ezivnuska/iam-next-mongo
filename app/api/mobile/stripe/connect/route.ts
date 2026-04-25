@@ -1,0 +1,72 @@
+// app/api/mobile/stripe/connect/route.ts
+// GET  — return Connect account status
+// POST — create/get Connect account and return onboarding URL
+
+import { NextRequest, NextResponse } from 'next/server'
+import { connectToDatabase } from '@/app/lib/mongoose'
+import { verifyToken } from '@/app/lib/mobile/verifyToken'
+import stripe from '@/app/lib/stripe'
+import UserModel from '@/app/lib/models/user'
+
+export async function GET(req: NextRequest) {
+  const tokenPayload = await verifyToken(req)
+  if (!tokenPayload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  try {
+    await connectToDatabase()
+    const user = await UserModel.findById(tokenPayload.id).lean() as any
+
+    if (!user?.stripeAccountId) {
+      return NextResponse.json({ connected: false, payoutsEnabled: false })
+    }
+
+    // Refresh status from Stripe in case it changed
+    const account = await stripe.accounts.retrieve(user.stripeAccountId)
+    const payoutsEnabled = account.payouts_enabled ?? false
+
+    if (payoutsEnabled !== user.stripeAccountEnabled) {
+      await UserModel.findByIdAndUpdate(tokenPayload.id, { stripeAccountEnabled: payoutsEnabled })
+    }
+
+    return NextResponse.json({ connected: true, payoutsEnabled })
+  } catch (err) {
+    console.error('[stripe/connect GET]', err)
+    return NextResponse.json({ error: 'Failed to fetch Connect status' }, { status: 500 })
+  }
+}
+
+export async function POST(req: NextRequest) {
+  const tokenPayload = await verifyToken(req)
+  if (!tokenPayload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { returnUrl } = await req.json()
+  if (!returnUrl) return NextResponse.json({ error: 'returnUrl required' }, { status: 400 })
+
+  try {
+    await connectToDatabase()
+    const user = await UserModel.findById(tokenPayload.id).lean() as any
+
+    let accountId = user?.stripeAccountId
+    if (!accountId) {
+      const account = await stripe.accounts.create({
+        type: 'express',
+        email: user.email,
+        metadata: { userId: tokenPayload.id },
+      })
+      accountId = account.id
+      await UserModel.findByIdAndUpdate(tokenPayload.id, { stripeAccountId: accountId })
+    }
+
+    const accountLink = await stripe.accountLinks.create({
+      account: accountId,
+      return_url: returnUrl,
+      refresh_url: returnUrl,
+      type: 'account_onboarding',
+    })
+
+    return NextResponse.json({ url: accountLink.url })
+  } catch (err) {
+    console.error('[stripe/connect POST]', err)
+    return NextResponse.json({ error: 'Failed to create Connect onboarding' }, { status: 500 })
+  }
+}
