@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
 
     if (user?.stripeAccountId) {
       const [balance, transfers] = await Promise.all([
-        stripe.balance.retrieve({ stripeAccount: user.stripeAccountId }),
+        stripe.balance.retrieve({}, { stripeAccount: user.stripeAccountId }),
         stripe.transfers.list({ destination: user.stripeAccountId, limit: 20 }),
       ])
       connect = {
