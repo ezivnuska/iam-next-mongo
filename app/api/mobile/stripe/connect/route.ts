@@ -46,12 +46,7 @@ export async function POST(req: NextRequest) {
     let accountId = user?.stripeAccountId
     if (!accountId) {
       const account = await stripe.accounts.create({
-        controller: {
-          stripe_dashboard: { type: 'express' },
-          fees: { payer: 'application' },
-          losses: { payments: 'application' },
-          requirement_collection: 'stripe',
-        },
+        type: 'express',
         email: user.email,
         metadata: { userId: tokenPayload.id },
       })
