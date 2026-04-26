@@ -18,29 +18,20 @@ export async function settleNeed(needId: string): Promise<void> {
   const applicantUser = await UserModel.findById(acceptedApplicant.userId).lean() as any
   if (!applicantUser?.stripeAccountId) throw new Error('Applicant has no payout account')
 
-  const confirmingUserIds = new Set(
-    acceptedApplicant.votes
-      .filter((v: any) => v.vote === 'confirm')
-      .map((v: any) => v.userId.toString())
-  )
-
-  const allPledges = await Pledge.find({
+  // Deny voters' PIs were already cancelled at acceptance time — capture everything remaining
+  const pledges = await Pledge.find({
     needId,
     stripePaymentIntentId: { $exists: true, $ne: null },
   }).lean() as any[]
 
-  const confirmingPledges = allPledges.filter((p) =>
-    confirmingUserIds.has(p.userId.toString())
-  )
-
   const captureResults = await Promise.allSettled(
-    confirmingPledges.map((p) => stripe.paymentIntents.capture(p.stripePaymentIntentId))
+    pledges.map((p) => stripe.paymentIntents.capture(p.stripePaymentIntentId))
   )
 
   // Transfer per captured PI using source_transaction — no platform balance required
   await Promise.allSettled(
     captureResults.map(async (result, i) => {
-      const pledge = confirmingPledges[i]
+      const pledge = pledges[i]
 
       if (result.status !== 'fulfilled') {
         console.error('[settleNeed] capture failed for pledge', pledge._id, (result as PromiseRejectedResult).reason)
