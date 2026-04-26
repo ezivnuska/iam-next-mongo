@@ -37,35 +37,40 @@ export async function settleNeed(needId: string): Promise<void> {
     confirmingPledges.map((p) => stripe.paymentIntents.capture(p.stripePaymentIntentId))
   )
 
-  const failedPledges: typeof confirmingPledges = []
-  const totalCapturedCents = captureResults.reduce((sum, result, i) => {
-    if (result.status === 'fulfilled') return sum + confirmingPledges[i].amount * 100
-    console.error('[settleNeed] capture failed for pledge', confirmingPledges[i]._id, (result as PromiseRejectedResult).reason)
-    failedPledges.push(confirmingPledges[i])
-    return sum
-  }, 0)
+  // Transfer per captured PI using source_transaction — no platform balance required
+  await Promise.allSettled(
+    captureResults.map(async (result, i) => {
+      const pledge = confirmingPledges[i]
 
-  // Cancel any PIs that failed to capture so funds are released immediately
-  if (failedPledges.length > 0) {
-    await Promise.allSettled(
-      failedPledges.map(async (p) => {
+      if (result.status !== 'fulfilled') {
+        console.error('[settleNeed] capture failed for pledge', pledge._id, (result as PromiseRejectedResult).reason)
         try {
-          await stripe.paymentIntents.cancel(p.stripePaymentIntentId)
+          await stripe.paymentIntents.cancel(pledge.stripePaymentIntentId)
         } catch (err: any) {
-          console.error('[settleNeed] failed to cancel uncaptured PI', p.stripePaymentIntentId, err?.message)
+          console.error('[settleNeed] failed to cancel uncaptured PI', pledge.stripePaymentIntentId, err?.message)
         }
-      })
-    )
-  }
+        return
+      }
 
-  if (totalCapturedCents > 0) {
-    await stripe.transfers.create({
-      amount: totalCapturedCents,
-      currency: 'usd',
-      destination: applicantUser.stripeAccountId,
-      description: `Payment for need ${needId}`,
+      const chargeId = result.value.latest_charge as string
+      if (!chargeId) {
+        console.error('[settleNeed] captured PI has no charge', pledge.stripePaymentIntentId)
+        return
+      }
+
+      try {
+        await stripe.transfers.create({
+          amount: pledge.amount * 100,
+          currency: 'usd',
+          destination: applicantUser.stripeAccountId,
+          source_transaction: chargeId,
+          description: `Payment for need ${needId}`,
+        })
+      } catch (err: any) {
+        console.error('[settleNeed] transfer failed for pledge', pledge._id, err?.message)
+      }
     })
-  }
+  )
 
   need.status = 'completed'
   await need.save()
