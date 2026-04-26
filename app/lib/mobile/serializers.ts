@@ -71,6 +71,7 @@ export function serializeNeed(n: any) {
     result.location = { latitude: n.location.latitude, longitude: n.location.longitude };
   }
   result.locationVisible = n.locationVisible === true;
+  if (n.completionStatus != null) result.completionStatus = n.completionStatus;
   const image = serializeResource(n.image);
   if (image) result.image = image;
   const author = serializeAuthor(n.author);

@@ -9,6 +9,7 @@ import { serializeNeed } from "@/app/lib/mobile/serializers";
 import Need from "@/app/lib/models/need";
 import Pledge from "@/app/lib/models/pledge";
 import Applicant from "@/app/lib/models/applicant";
+import Completion from "@/app/lib/models/completion";
 import { createPledgeWithPaymentIntent } from "@/app/lib/mobile/createPledge";
 import "@/app/lib/models/image";
 
@@ -27,9 +28,10 @@ export async function GET(req: NextRequest) {
       .lean();
 
     const needIds = (needs as any[]).map((n) => n._id)
-    const [pledges, applicants] = await Promise.all([
+    const [pledges, applicants, completions] = await Promise.all([
       Pledge.find({ needId: { $in: needIds } }).populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } }).lean(),
       Applicant.find({ needId: { $in: needIds } }).lean(),
+      Completion.find({ needId: { $in: needIds } }, { needId: 1, status: 1 }).lean(),
     ])
     const pledgesByNeed: Record<string, any[]> = {}
     for (const p of pledges) {
@@ -43,10 +45,15 @@ export async function GET(req: NextRequest) {
       if (!applicantsByNeed[key]) applicantsByNeed[key] = []
       applicantsByNeed[key].push(a)
     }
+    const completionStatusByNeed: Record<string, string> = {}
+    for (const c of completions as any[]) {
+      completionStatusByNeed[c.needId.toString()] = c.status
+    }
     const needsWithData = (needs as any[]).map((n) => ({
       ...n,
       pledged: pledgesByNeed[n._id.toString()] ?? [],
       applicants: applicantsByNeed[n._id.toString()] ?? [],
+      completionStatus: completionStatusByNeed[n._id.toString()] ?? null,
     }))
 
     return NextResponse.json({ needs: needsWithData.map(serializeNeed) });
