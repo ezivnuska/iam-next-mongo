@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     await connectToDatabase()
 
     if (event.type === 'v2.core.account.updated') {
-      const accountId = (event.data as any).id as string
+      const accountId = event.related_object.id
       if (accountId) {
         const account = await stripe.accounts.retrieve(accountId)
         const userId = account.metadata?.userId
