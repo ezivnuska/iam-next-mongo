@@ -39,8 +39,8 @@ export async function POST(req: NextRequest) {
   const tokenPayload = await verifyToken(req)
   if (!tokenPayload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { returnUrl } = await req.json()
-  if (!returnUrl) return NextResponse.json({ error: 'returnUrl required' }, { status: 400 })
+  const BASE = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://iameric.me'
+  const returnUrl = `${BASE}/stripe/connect/return`
 
   try {
     await connectToDatabase()
