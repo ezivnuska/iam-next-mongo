@@ -56,11 +56,15 @@ export async function POST(req: NextRequest) {
     if (!token) return NextResponse.json({ error: 'Card token required' }, { status: 400 })
 
     let accountId = user?.stripeAccountId
+    let card: any
 
     if (!accountId) {
+      // Create account with external_account in one call — avoids the separate
+      // createExternalAccount permission requirement on Custom accounts
       const account = await stripe.accounts.create({
         type: 'custom',
         email: user.email,
+        external_account: token,
         metadata: { userId: tokenPayload.id },
         capabilities: { transfers: { requested: true } },
         tos_acceptance: {
@@ -69,21 +73,22 @@ export async function POST(req: NextRequest) {
         },
       })
       accountId = account.id
+      card = account.external_accounts?.data[0]
       await UserModel.findByIdAndUpdate(tokenPayload.id, { stripeAccountId: accountId })
+    } else {
+      // Account exists — remove old cards then add new one
+      const existing = await stripe.accounts.listExternalAccounts(accountId, { object: 'card' })
+      await Promise.allSettled(
+        existing.data.map((ea) => stripe.accounts.deleteExternalAccount(accountId, ea.id))
+      )
+      card = await stripe.accounts.createExternalAccount(accountId, {
+        external_account: token,
+      })
     }
-
-    // Remove any existing cards
-    const existing = await stripe.accounts.listExternalAccounts(accountId, { object: 'card' })
-    await Promise.allSettled(
-      existing.data.map((ea) => stripe.accounts.deleteExternalAccount(accountId, ea.id))
-    )
-
-    const card = await stripe.accounts.createExternalAccount(accountId, {
-      external_account: token,
-    })
 
     await UserModel.findByIdAndUpdate(tokenPayload.id, { stripeAccountEnabled: true })
 
+    if (!card) return NextResponse.json({ error: 'Card not attached' }, { status: 500 })
     return NextResponse.json({ payoutCard: serializeCard(card) })
   } catch (err: any) {
     console.error('[stripe/payout-card POST]', err)
