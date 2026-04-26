@@ -4,11 +4,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
-import { serializeCompletion } from '@/app/lib/mobile/serializers'
+import { serializeCompletion, serializeNeed } from '@/app/lib/mobile/serializers'
+import { settleNeed } from '@/app/lib/mobile/settleNeed'
 import Completion from '@/app/lib/models/completion'
 import Applicant from '@/app/lib/models/applicant'
 import Pledge from '@/app/lib/models/pledge'
+import Need from '@/app/lib/models/need'
 import '@/app/lib/models/image'
+import '@/app/lib/models/user'
 
 export async function POST(
   req: NextRequest,
@@ -82,12 +85,37 @@ export async function POST(
       completion.reviews.some((r) => r.userId.toString() === rId && r.vote === 'approve')
     )
 
-    completion.status = anyDenied ? 'denied' : allApproved ? 'approved' : 'pending'
-
+    const newStatus = anyDenied ? 'denied' : allApproved ? 'approved' : 'pending'
+    completion.status = newStatus
     await completion.save()
     await completion.populate('images')
 
-    return NextResponse.json({ completion: serializeCompletion(completion.toObject()) })
+    let serializedNeed = null
+    if (newStatus === 'approved') {
+      try {
+        await settleNeed(needId)
+      } catch (err) {
+        console.error('[completion/review] settleNeed failed:', err)
+      }
+
+      const need = await Need.findById(needId)
+        .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
+        .populate('image')
+        .lean()
+
+      if (need) {
+        const [pledges, applicants] = await Promise.all([
+          Pledge.find({ needId }).populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } }).lean(),
+          Applicant.find({ needId }).lean(),
+        ])
+        serializedNeed = serializeNeed({ ...need, pledged: pledges, applicants })
+      }
+    }
+
+    return NextResponse.json({
+      completion: serializeCompletion(completion.toObject()),
+      ...(serializedNeed ? { need: serializedNeed } : {}),
+    })
   } catch (err) {
     console.error('[mobile/needs/completion/review POST]', err)
     return NextResponse.json({ error: 'Failed to submit review' }, { status: 500 })
