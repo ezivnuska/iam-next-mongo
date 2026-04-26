@@ -10,6 +10,10 @@ import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import stripe from '@/app/lib/stripe'
 import UserModel from '@/app/lib/models/user'
 
+function isStaleAccountError(err: any) {
+  return err?.code === 'resource_missing' || err?.code === 'account_invalid'
+}
+
 export async function GET(req: NextRequest) {
   const tokenPayload = await verifyToken(req)
   if (!tokenPayload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -26,7 +30,7 @@ export async function GET(req: NextRequest) {
     try {
       account = await stripe.accounts.retrieve(user.stripeAccountId)
     } catch (err: any) {
-      if (err?.code === 'resource_missing') {
+      if (isStaleAccountError(err)) {
         await UserModel.findByIdAndUpdate(tokenPayload.id, {
           $unset: { stripeAccountId: '', stripeAccountEnabled: '' },
         })
@@ -63,7 +67,7 @@ export async function POST(req: NextRequest) {
       try {
         await stripe.accounts.retrieve(accountId)
       } catch (err: any) {
-        if (err?.code === 'resource_missing') {
+        if (isStaleAccountError(err)) {
           await UserModel.findByIdAndUpdate(tokenPayload.id, {
             $unset: { stripeAccountId: '', stripeAccountEnabled: '' },
           })

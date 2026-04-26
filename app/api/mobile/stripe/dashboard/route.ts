@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
           })),
         }
       } catch (err: any) {
-        if (err?.code === 'resource_missing') {
+        if (err?.code === 'resource_missing' || err?.code === 'account_invalid') {
           await UserModel.findByIdAndUpdate(tokenPayload.id, {
             $unset: { stripeAccountId: '', stripeAccountEnabled: '' },
           })
