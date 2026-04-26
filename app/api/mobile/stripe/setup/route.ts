@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import stripe from '@/app/lib/stripe'
-import { ApiVersion } from 'stripe'
+import { ApiVersion } from 'stripe/cjs/apiVersion.js'
 import UserModel from '@/app/lib/models/user'
 
 async function getOrCreateCustomer(user: any): Promise<string> {
