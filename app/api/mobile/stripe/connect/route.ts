@@ -22,10 +22,20 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ connected: false, payoutsEnabled: false })
     }
 
-    // Refresh status from Stripe in case it changed
-    const account = await stripe.accounts.retrieve(user.stripeAccountId)
-    const payoutsEnabled = account.payouts_enabled ?? false
+    let account
+    try {
+      account = await stripe.accounts.retrieve(user.stripeAccountId)
+    } catch (err: any) {
+      if (err?.code === 'resource_missing') {
+        await UserModel.findByIdAndUpdate(tokenPayload.id, {
+          $unset: { stripeAccountId: '', stripeAccountEnabled: '' },
+        })
+        return NextResponse.json({ connected: false, payoutsEnabled: false })
+      }
+      throw err
+    }
 
+    const payoutsEnabled = account.payouts_enabled ?? false
     if (payoutsEnabled !== user.stripeAccountEnabled) {
       await UserModel.findByIdAndUpdate(tokenPayload.id, { stripeAccountEnabled: payoutsEnabled })
     }

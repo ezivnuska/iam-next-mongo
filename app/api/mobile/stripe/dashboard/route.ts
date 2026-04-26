@@ -48,19 +48,29 @@ export async function GET(req: NextRequest) {
     } | null = null
 
     if (user?.stripeAccountId) {
-      const [balance, transfers] = await Promise.all([
-        stripe.balance.retrieve({}, { stripeAccount: user.stripeAccountId }),
-        stripe.transfers.list({ destination: user.stripeAccountId, limit: 20 }),
-      ])
-      connect = {
-        availableCents: balance.available.reduce((sum, b) => sum + b.amount, 0),
-        pendingCents: balance.pending.reduce((sum, b) => sum + b.amount, 0),
-        transfers: transfers.data.map((t) => ({
-          id: t.id,
-          amountCents: t.amount,
-          created: t.created,
-          description: t.description ?? null,
-        })),
+      try {
+        const [balance, transfers] = await Promise.all([
+          stripe.balance.retrieve({}, { stripeAccount: user.stripeAccountId }),
+          stripe.transfers.list({ destination: user.stripeAccountId, limit: 20 }),
+        ])
+        connect = {
+          availableCents: balance.available.reduce((sum, b) => sum + b.amount, 0),
+          pendingCents: balance.pending.reduce((sum, b) => sum + b.amount, 0),
+          transfers: transfers.data.map((t) => ({
+            id: t.id,
+            amountCents: t.amount,
+            created: t.created,
+            description: t.description ?? null,
+          })),
+        }
+      } catch (err: any) {
+        if (err?.code === 'resource_missing') {
+          await UserModel.findByIdAndUpdate(tokenPayload.id, {
+            $unset: { stripeAccountId: '', stripeAccountEnabled: '' },
+          })
+        } else {
+          throw err
+        }
       }
     }
 
