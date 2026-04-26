@@ -8,8 +8,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import stripe from '@/app/lib/stripe'
-import { ApiVersion } from 'stripe/cjs/apiVersion.js'
 import UserModel from '@/app/lib/models/user'
+
+// Keep in sync with node_modules/stripe/cjs/apiVersion.js when upgrading the stripe package
+const STRIPE_API_VERSION = '2026-04-22.dahlia'
 
 async function getOrCreateCustomer(user: any): Promise<string> {
   if (user.stripeCustomerId) return user.stripeCustomerId
@@ -64,7 +66,7 @@ export async function POST(req: NextRequest) {
       }),
       stripe.ephemeralKeys.create(
         { customer: customerId },
-        { apiVersion: ApiVersion }
+        { apiVersion: STRIPE_API_VERSION }
       ),
     ])
 
