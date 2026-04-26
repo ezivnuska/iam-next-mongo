@@ -47,6 +47,23 @@ export async function POST(req: NextRequest) {
 
     const BASE = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://iameric.me'
     let accountId = user?.stripeAccountId
+
+    // Verify the saved account still exists in Stripe
+    if (accountId) {
+      try {
+        await stripe.accounts.retrieve(accountId)
+      } catch (err: any) {
+        if (err?.code === 'resource_missing') {
+          await UserModel.findByIdAndUpdate(tokenPayload.id, {
+            $unset: { stripeAccountId: '', stripeAccountEnabled: '' },
+          })
+          accountId = null
+        } else {
+          throw err
+        }
+      }
+    }
+
     if (!accountId) {
       const account = await stripe.accounts.create({
         type: 'express',
