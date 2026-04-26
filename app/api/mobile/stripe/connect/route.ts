@@ -45,23 +45,30 @@ export async function POST(req: NextRequest) {
     await connectToDatabase()
     const user = await UserModel.findById(tokenPayload.id).lean() as any
 
+    const BASE = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://iameric.me'
     let accountId = user?.stripeAccountId
     if (!accountId) {
       const account = await stripe.accounts.create({
         type: 'express',
         email: user.email,
+        business_type: 'individual',
+        business_profile: {
+          url: BASE,
+          mcc: '7299', // Services, NEC
+        },
         metadata: { userId: tokenPayload.id },
+        capabilities: { transfers: { requested: true } },
       })
       accountId = account.id
       await UserModel.findByIdAndUpdate(tokenPayload.id, { stripeAccountId: accountId })
     }
 
-    const BASE = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://iameric.me'
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
       return_url: `${BASE}/`,
       refresh_url: `${BASE}/`,
       type: 'account_onboarding',
+      collection_options: { fields: 'currently_due' },
     })
 
     return NextResponse.json({ url: accountLink.url })
