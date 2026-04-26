@@ -58,6 +58,18 @@ export async function POST(req: NextRequest) {
     let accountId = user?.stripeAccountId
     let card: any
 
+    // Validate any saved account ID is still accessible
+    if (accountId) {
+      try {
+        await stripe.accounts.retrieve(accountId)
+      } catch {
+        await UserModel.findByIdAndUpdate(tokenPayload.id, {
+          $unset: { stripeAccountId: '', stripeAccountEnabled: '' },
+        })
+        accountId = null
+      }
+    }
+
     if (!accountId) {
       // Create account with external_account in one call — avoids the separate
       // createExternalAccount permission requirement on Custom accounts
