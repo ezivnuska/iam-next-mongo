@@ -1,6 +1,8 @@
 // app/api/mobile/stripe/connect/route.ts
-// GET  — return Connect account status
-// POST — create/get Connect account and return onboarding URL
+// GET    — return Connect account status
+// POST   — create/get Connect account and return onboarding URL
+// PATCH  — generate a one-time Express dashboard login link
+// DELETE — unlink (and delete if unused) the Connect account
 
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
@@ -66,5 +68,53 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     console.error('[stripe/connect POST]', err)
     return NextResponse.json({ error: err?.message ?? 'Failed to create Connect onboarding' }, { status: 500 })
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  const tokenPayload = await verifyToken(req)
+  if (!tokenPayload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  try {
+    await connectToDatabase()
+    const user = await UserModel.findById(tokenPayload.id).lean() as any
+
+    if (!user?.stripeAccountId) {
+      return NextResponse.json({ error: 'No Connect account linked' }, { status: 404 })
+    }
+
+    const loginLink = await stripe.accounts.createLoginLink(user.stripeAccountId)
+    return NextResponse.json({ url: loginLink.url })
+  } catch (err: any) {
+    console.error('[stripe/connect PATCH]', err)
+    return NextResponse.json({ error: err?.message ?? 'Failed to generate login link' }, { status: 500 })
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  const tokenPayload = await verifyToken(req)
+  if (!tokenPayload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  try {
+    await connectToDatabase()
+    const user = await UserModel.findById(tokenPayload.id).lean() as any
+
+    if (user?.stripeAccountId) {
+      try {
+        await stripe.accounts.del(user.stripeAccountId)
+      } catch (err: any) {
+        // Account has activity and cannot be deleted — just unlink it
+        console.warn('[stripe/connect DELETE] could not delete account, unlinking only:', err?.message)
+      }
+    }
+
+    await UserModel.findByIdAndUpdate(tokenPayload.id, {
+      $unset: { stripeAccountId: '', stripeAccountEnabled: '' },
+    })
+
+    return NextResponse.json({ ok: true })
+  } catch (err: any) {
+    console.error('[stripe/connect DELETE]', err)
+    return NextResponse.json({ error: err?.message ?? 'Failed to unlink account' }, { status: 500 })
   }
 }
