@@ -7,6 +7,8 @@ import UserModel from '@/app/lib/models/user'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import { serializeApplicant } from '@/app/lib/mobile/serializers'
 import Applicant from '@/app/lib/models/applicant'
+import Pledge from '@/app/lib/models/pledge'
+import stripe from '@/app/lib/stripe'
 
 export async function PATCH(
   req: NextRequest,
@@ -53,6 +55,32 @@ export async function PATCH(
     applicant.status = 'accepted'
     applicant.acceptedAt = new Date()
     await applicant.save()
+
+    // Cancel PaymentIntents for deny voters — their funds will never be needed
+    const denyVoterIds = new Set(
+      applicant.votes
+        .filter((v: any) => v.vote === 'deny')
+        .map((v: any) => v.userId.toString())
+    )
+
+    if (denyVoterIds.size > 0) {
+      const denyPledges = await Pledge.find({
+        needId,
+        stripePaymentIntentId: { $exists: true, $ne: null },
+      }).lean() as any[]
+
+      await Promise.allSettled(
+        denyPledges
+          .filter((p) => denyVoterIds.has(p.userId.toString()))
+          .map(async (p) => {
+            try {
+              await stripe.paymentIntents.cancel(p.stripePaymentIntentId)
+            } catch (err: any) {
+              console.error('[accept] failed to cancel deny voter PI', p.stripePaymentIntentId, err?.message)
+            }
+          })
+      )
+    }
 
     return NextResponse.json({ applicant: serializeApplicant(applicant.toObject()) })
   } catch (err) {

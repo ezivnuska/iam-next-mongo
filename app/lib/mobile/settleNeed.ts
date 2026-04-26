@@ -37,11 +37,26 @@ export async function settleNeed(needId: string): Promise<void> {
     confirmingPledges.map((p) => stripe.paymentIntents.capture(p.stripePaymentIntentId))
   )
 
+  const failedPledges: typeof confirmingPledges = []
   const totalCapturedCents = captureResults.reduce((sum, result, i) => {
     if (result.status === 'fulfilled') return sum + confirmingPledges[i].amount * 100
     console.error('[settleNeed] capture failed for pledge', confirmingPledges[i]._id, (result as PromiseRejectedResult).reason)
+    failedPledges.push(confirmingPledges[i])
     return sum
   }, 0)
+
+  // Cancel any PIs that failed to capture so funds are released immediately
+  if (failedPledges.length > 0) {
+    await Promise.allSettled(
+      failedPledges.map(async (p) => {
+        try {
+          await stripe.paymentIntents.cancel(p.stripePaymentIntentId)
+        } catch (err: any) {
+          console.error('[settleNeed] failed to cancel uncaptured PI', p.stripePaymentIntentId, err?.message)
+        }
+      })
+    )
+  }
 
   if (totalCapturedCents > 0) {
     await stripe.transfers.create({

@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import stripe from '@/app/lib/stripe'
+import { ApiVersion } from 'stripe'
 import UserModel from '@/app/lib/models/user'
 
 async function getOrCreateCustomer(user: any): Promise<string> {
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
       }),
       stripe.ephemeralKeys.create(
         { customer: customerId },
-        { apiVersion: '2024-04-10' }
+        { apiVersion: ApiVersion }
       ),
     ])
 
