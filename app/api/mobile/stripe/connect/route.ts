@@ -39,9 +39,6 @@ export async function POST(req: NextRequest) {
   const tokenPayload = await verifyToken(req)
   if (!tokenPayload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const BASE = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://iameric.me'
-  const returnUrl = `${BASE}/stripe/connect/return`
-
   try {
     await connectToDatabase()
     const user = await UserModel.findById(tokenPayload.id).lean() as any
@@ -62,10 +59,11 @@ export async function POST(req: NextRequest) {
       await UserModel.findByIdAndUpdate(tokenPayload.id, { stripeAccountId: accountId })
     }
 
+    const BASE = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://iameric.me'
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
-      return_url: returnUrl,
-      refresh_url: returnUrl,
+      return_url: `${BASE}/`,
+      refresh_url: `${BASE}/`,
       type: 'account_onboarding',
     })
 
