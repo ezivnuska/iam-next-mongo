@@ -157,12 +157,21 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Cancel all open PaymentIntents before deleting pledges
-    const pledges = await Pledge.find({ needId: id, stripePaymentIntentId: { $exists: true } }).lean()
+    // Release funds for all pledges with a PaymentIntent
+    const pledges = await Pledge.find({ needId: id, stripePaymentIntentId: { $exists: true, $ne: null } }).lean()
     await Promise.allSettled(
-      pledges
-        .filter((p: any) => p.stripePaymentIntentId)
-        .map((p: any) => stripe.paymentIntents.cancel(p.stripePaymentIntentId).catch(() => {}))
+      (pledges as any[]).map(async (p) => {
+        try {
+          const pi = await stripe.paymentIntents.retrieve(p.stripePaymentIntentId)
+          if (pi.status === 'requires_capture') {
+            await stripe.paymentIntents.cancel(p.stripePaymentIntentId)
+          } else if (pi.status === 'succeeded') {
+            await stripe.refunds.create({ payment_intent: p.stripePaymentIntentId })
+          }
+        } catch (err) {
+          console.error(`[needs DELETE] Failed to release PI ${p.stripePaymentIntentId}:`, err)
+        }
+      })
     )
 
     await Promise.all([
