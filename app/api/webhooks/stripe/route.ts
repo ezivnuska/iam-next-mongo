@@ -21,13 +21,16 @@ export async function POST(req: NextRequest) {
   try {
     await connectToDatabase()
 
-    if (event.type === 'account.updated') {
-      const account = event.data.object as any
-      const userId = account.metadata?.userId
-      if (userId) {
-        await UserModel.findByIdAndUpdate(userId, {
-          stripeAccountEnabled: account.payouts_enabled ?? false,
-        })
+    if (event.type === 'v2.core.account.updated') {
+      const accountId = (event.data as any).id as string
+      if (accountId) {
+        const account = await stripe.accounts.retrieve(accountId)
+        const userId = account.metadata?.userId
+        if (userId) {
+          await UserModel.findByIdAndUpdate(userId, {
+            stripeAccountEnabled: account.payouts_enabled ?? false,
+          })
+        }
       }
     }
 
