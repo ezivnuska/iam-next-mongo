@@ -49,9 +49,11 @@ export async function POST(req: NextRequest) {
   const tokenPayload = await verifyToken(req)
   if (!tokenPayload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const userId = tokenPayload.id
+
   try {
     await connectToDatabase()
-    const user = await UserModel.findById(tokenPayload.id).lean() as any
+    const user = await UserModel.findById(userId).lean() as any
     const { token } = await req.json()
     if (!token) return NextResponse.json({ error: 'Card token required' }, { status: 400 })
 
@@ -63,21 +65,27 @@ export async function POST(req: NextRequest) {
       try {
         await stripe.accounts.retrieve(accountId)
       } catch {
-        await UserModel.findByIdAndUpdate(tokenPayload.id, {
+        await UserModel.findByIdAndUpdate(userId, {
           $unset: { stripeAccountId: '', stripeAccountEnabled: '' },
         })
         accountId = null
       }
     }
 
-    if (!accountId) {
-      // Create account with external_account in one call — avoids the separate
-      // createExternalAccount permission requirement on Custom accounts
+    async function createFreshAccount() {
+      // Delete stale Custom account if it exists but can't be used
+      if (accountId) {
+        try { await stripe.accounts.del(accountId) } catch {}
+        await UserModel.findByIdAndUpdate(userId, {
+          $unset: { stripeAccountId: '', stripeAccountEnabled: '' },
+        })
+        accountId = null
+      }
       const account = await stripe.accounts.create({
         type: 'custom',
         email: user.email,
         external_account: token,
-        metadata: { userId: tokenPayload.id },
+        metadata: { userId },
         capabilities: { transfers: { requested: true } },
         tos_acceptance: {
           date: Math.floor(Date.now() / 1000),
@@ -85,20 +93,33 @@ export async function POST(req: NextRequest) {
         },
       })
       accountId = account.id
-      card = account.external_accounts?.data[0]
-      await UserModel.findByIdAndUpdate(tokenPayload.id, { stripeAccountId: accountId })
+      await UserModel.findByIdAndUpdate(userId, { stripeAccountId: accountId })
+      return account.external_accounts?.data[0]
+    }
+
+    if (!accountId) {
+      card = await createFreshAccount()
     } else {
       // Account exists — remove old cards then add new one
       const existing = await stripe.accounts.listExternalAccounts(accountId, { object: 'card' })
       await Promise.allSettled(
         existing.data.map((ea) => stripe.accounts.deleteExternalAccount(accountId, ea.id))
       )
-      card = await stripe.accounts.createExternalAccount(accountId, {
-        external_account: token,
-      })
+      try {
+        card = await stripe.accounts.createExternalAccount(accountId, {
+          external_account: token,
+        })
+      } catch (err: any) {
+        if (err?.code === 'oauth_not_supported' || err?.statusCode === 403) {
+          // Stale account from a different platform or missing permissions — delete and recreate
+          card = await createFreshAccount()
+        } else {
+          throw err
+        }
+      }
     }
 
-    await UserModel.findByIdAndUpdate(tokenPayload.id, { stripeAccountEnabled: true })
+    await UserModel.findByIdAndUpdate(userId, { stripeAccountEnabled: true })
 
     if (!card) return NextResponse.json({ error: 'Card not attached' }, { status: 500 })
     return NextResponse.json({ payoutCard: serializeCard(card) })
