@@ -48,28 +48,37 @@ export async function GET(req: NextRequest) {
     } | null = null
 
     if (user?.stripeAccountId) {
-      try {
-        const [balance, transfers] = await Promise.all([
-          stripe.balance.retrieve({}, { stripeAccount: user.stripeAccountId }),
-          stripe.transfers.list({ destination: user.stripeAccountId, limit: 20 }),
-        ])
+      const [balanceResult, transfersResult] = await Promise.allSettled([
+        stripe.balance.retrieve({}, { stripeAccount: user.stripeAccountId }),
+        stripe.transfers.list({ destination: user.stripeAccountId, limit: 20 }),
+      ])
+
+      const staleAccount = [balanceResult, transfersResult].some((r) => {
+        if (r.status !== 'rejected') return false
+        const code = (r.reason as any)?.code
+        return code === 'resource_missing' || code === 'account_invalid'
+      })
+
+      if (staleAccount) {
+        await UserModel.findByIdAndUpdate(tokenPayload.id, {
+          $unset: { stripeAccountId: '', stripeAccountEnabled: '' },
+        })
+      } else {
+        const balance = balanceResult.status === 'fulfilled' ? balanceResult.value : null
+        const transferData = transfersResult.status === 'fulfilled' ? transfersResult.value.data : []
+        if (balanceResult.status === 'rejected')
+          console.error('[stripe/dashboard] balance.retrieve failed:', (balanceResult as any).reason?.message)
+        if (transfersResult.status === 'rejected')
+          console.error('[stripe/dashboard] transfers.list failed:', (transfersResult as any).reason?.message)
         connect = {
-          availableCents: balance.available.reduce((sum, b) => sum + b.amount, 0),
-          pendingCents: balance.pending.reduce((sum, b) => sum + b.amount, 0),
-          transfers: transfers.data.map((t) => ({
+          availableCents: balance?.available.reduce((sum, b) => sum + b.amount, 0) ?? 0,
+          pendingCents: balance?.pending.reduce((sum, b) => sum + b.amount, 0) ?? 0,
+          transfers: transferData.map((t) => ({
             id: t.id,
             amountCents: t.amount,
             created: t.created,
             description: t.description ?? null,
           })),
-        }
-      } catch (err: any) {
-        if (err?.code === 'resource_missing' || err?.code === 'account_invalid') {
-          await UserModel.findByIdAndUpdate(tokenPayload.id, {
-            $unset: { stripeAccountId: '', stripeAccountEnabled: '' },
-          })
-        } else {
-          throw err
         }
       }
     }

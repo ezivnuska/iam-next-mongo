@@ -3,12 +3,14 @@
 // Called automatically when completion evidence is approved by all reviewers.
 
 import stripe from '@/app/lib/stripe'
+import { connectToDatabase } from '@/app/lib/mongoose'
 import Need from '@/app/lib/models/need'
 import Pledge from '@/app/lib/models/pledge'
 import Applicant from '@/app/lib/models/applicant'
 import UserModel from '@/app/lib/models/user'
 
 export async function settleNeed(needId: string): Promise<void> {
+  await connectToDatabase()
   const need = await Need.findById(needId)
   if (!need || need.status === 'completed') return
 
