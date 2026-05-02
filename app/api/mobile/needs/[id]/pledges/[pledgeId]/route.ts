@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import Pledge from '@/app/lib/models/pledge'
+import { getNeedAudienceIds, emitNeedPledgeRemoved } from '@/app/lib/socket/emit'
 import stripe from '@/app/lib/stripe'
 
 export async function DELETE(
@@ -45,8 +46,12 @@ export async function DELETE(
       }
     }
 
+    const needId = pledge.needId.toString()
     await pledge.deleteOne()
 
+    getNeedAudienceIds(needId).then((audience) =>
+      emitNeedPledgeRemoved({ needId, pledgeId }, audience)
+    ).catch(() => {})
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error('[mobile/needs/pledges DELETE]', err)

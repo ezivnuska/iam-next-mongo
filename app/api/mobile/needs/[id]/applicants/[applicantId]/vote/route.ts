@@ -5,8 +5,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import { serializeApplicant } from '@/app/lib/mobile/serializers'
+import { emitNeedApplicantVoted } from '@/app/lib/socket/emit'
 import Applicant from '@/app/lib/models/applicant'
 import Pledge from '@/app/lib/models/pledge'
+import Need from '@/app/lib/models/need'
 
 export async function POST(
   req: NextRequest,
@@ -68,7 +70,14 @@ export async function POST(
 
     await applicant.save()
 
-    return NextResponse.json({ applicant: serializeApplicant(applicant.toObject()) })
+    const serialized = serializeApplicant(applicant.toObject())
+    const need = await (Need as any).findById(needId, { author: 1 }).lean()
+    const audience = new Set<string>(contributorIds)
+    if (need?.author) audience.add(need.author.toString())
+    audience.add(applicant.userId.toString())
+    emitNeedApplicantVoted({ needId, applicant: serialized }, [...audience]).catch(() => {})
+
+    return NextResponse.json({ applicant: serialized })
   } catch (err) {
     console.error('[mobile/needs/applicants/vote POST]', err)
     return NextResponse.json({ error: 'Failed to submit vote' }, { status: 500 })

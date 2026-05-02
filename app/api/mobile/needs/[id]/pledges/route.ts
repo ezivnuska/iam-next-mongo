@@ -7,6 +7,7 @@ import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import { serializePledge } from '@/app/lib/mobile/serializers'
 import Need from '@/app/lib/models/need'
 import { createPledgeWithPaymentIntent } from '@/app/lib/mobile/createPledge'
+import { getNeedAudienceIds, emitNeedPledgeAdded } from '@/app/lib/socket/emit'
 import '@/app/lib/models/image'
 import '@/app/lib/models/user'
 
@@ -42,7 +43,11 @@ export async function POST(
     const pledge = await createPledgeWithPaymentIntent(tokenPayload.id, id, amount)
     await pledge.populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
 
-    return NextResponse.json({ pledge: serializePledge(pledge.toObject()) }, { status: 201 })
+    const serialized = serializePledge(pledge.toObject())
+    getNeedAudienceIds(id).then((audience) =>
+      emitNeedPledgeAdded({ needId: id, pledge: serialized }, audience)
+    ).catch(() => {})
+    return NextResponse.json({ pledge: serialized }, { status: 201 })
   } catch (err: any) {
     if (err.code === 'NO_PAYMENT_METHOD') {
       return NextResponse.json({ error: err.message, code: 'NO_PAYMENT_METHOD' }, { status: 402 })

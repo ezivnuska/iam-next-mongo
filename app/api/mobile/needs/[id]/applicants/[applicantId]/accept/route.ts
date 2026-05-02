@@ -6,6 +6,7 @@ import { connectToDatabase } from '@/app/lib/mongoose'
 import UserModel from '@/app/lib/models/user'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import { serializeApplicant } from '@/app/lib/mobile/serializers'
+import { getNeedAudienceIds, emitNeedApplicantAccepted } from '@/app/lib/socket/emit'
 import Applicant from '@/app/lib/models/applicant'
 import Pledge from '@/app/lib/models/pledge'
 import stripe from '@/app/lib/stripe'
@@ -82,7 +83,11 @@ export async function PATCH(
       )
     }
 
-    return NextResponse.json({ applicant: serializeApplicant(applicant.toObject()) })
+    const serialized = serializeApplicant(applicant.toObject())
+    getNeedAudienceIds(needId, applicant.userId.toString()).then((audience) =>
+      emitNeedApplicantAccepted({ needId, applicant: serialized }, audience)
+    ).catch(() => {})
+    return NextResponse.json({ applicant: serialized })
   } catch (err) {
     console.error('[mobile/needs/applicants/accept PATCH]', err)
     return NextResponse.json({ error: 'Failed to accept offer' }, { status: 500 })

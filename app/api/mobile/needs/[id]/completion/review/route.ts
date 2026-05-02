@@ -6,6 +6,7 @@ import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import { serializeCompletion, serializeNeed } from '@/app/lib/mobile/serializers'
 import { settleNeed } from '@/app/lib/mobile/settleNeed'
+import { getNeedAudienceIds, emitNeedCompletionReviewed } from '@/app/lib/socket/emit'
 import Completion from '@/app/lib/models/completion'
 import Applicant from '@/app/lib/models/applicant'
 import Pledge from '@/app/lib/models/pledge'
@@ -112,8 +113,17 @@ export async function POST(
       }
     }
 
+    const serializedCompletion = serializeCompletion(completion.toObject())
+    const applicantUserId = applicant?.userId?.toString()
+    getNeedAudienceIds(needId, ...(applicantUserId ? [applicantUserId] : [])).then((audience) =>
+      emitNeedCompletionReviewed(
+        { needId, completion: serializedCompletion, ...(serializedNeed ? { need: serializedNeed } : {}) },
+        audience
+      )
+    ).catch(() => {})
+
     return NextResponse.json({
-      completion: serializeCompletion(completion.toObject()),
+      completion: serializedCompletion,
       ...(serializedNeed ? { need: serializedNeed } : {}),
     })
   } catch (err) {

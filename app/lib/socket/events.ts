@@ -26,6 +26,16 @@ export const SOCKET_EVENTS = {
 	// Activity events
 	ACTIVITY_CREATED: 'activity:created',
 
+	// Need events
+	NEED_APPLICANT_ADDED: 'need:applicant_added',
+	NEED_APPLICANT_REMOVED: 'need:applicant_removed',
+	NEED_APPLICANT_VOTED: 'need:applicant_voted',
+	NEED_APPLICANT_ACCEPTED: 'need:applicant_accepted',
+	NEED_COMPLETION_SUBMITTED: 'need:completion_submitted',
+	NEED_COMPLETION_REVIEWED: 'need:completion_reviewed',
+	NEED_PLEDGE_ADDED: 'need:pledge_added',
+	NEED_PLEDGE_REMOVED: 'need:pledge_removed',
+
 	// Poker events - Core state management
 	POKER_STATE_UPDATE: 'poker:state_update', // Full state sync (restart, initial load)
 	POKER_GAME_CREATED: 'poker:game_created',
@@ -140,6 +150,56 @@ export interface ActivityPayload {
 	entityType: 'post' | 'memory' | 'need' | 'image' | 'comment' | 'like' | 'friendship' | 'pledge'
 	entityId: string
 	createdAt: string
+}
+
+export interface NeedApplicantPayload {
+	needId: string
+	applicant: {
+		id: string
+		userId: string
+		needId: string
+		status: string
+		createdAt: string
+		acceptedAt: string | null
+		votes: { userId: string; vote: 'confirm' | 'deny' }[]
+	}
+}
+
+export interface NeedApplicantRemovedPayload {
+	needId: string
+	applicantId: string
+}
+
+export interface NeedCompletionPayload {
+	needId: string
+	completion: {
+		id: string
+		needId: string
+		applicantId: string
+		images: any[]
+		reviews: { userId: string; vote: 'approve' | 'deny' }[]
+		status: 'pending' | 'approved' | 'denied'
+		createdAt: string
+	}
+	need?: any
+}
+
+export interface NeedPledgePayload {
+	needId: string
+	pledge: {
+		id: string
+		userId: string
+		needId: string
+		amount: number
+		createdAt: string
+		username: string
+		avatar: any | null
+	}
+}
+
+export interface NeedPledgeRemovedPayload {
+	needId: string
+	pledgeId: string
 }
 
 export interface PokerStateUpdatePayload {

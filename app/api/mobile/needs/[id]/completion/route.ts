@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import { serializeCompletion } from '@/app/lib/mobile/serializers'
+import { getNeedAudienceIds, emitNeedCompletionSubmitted } from '@/app/lib/socket/emit'
 import Completion from '@/app/lib/models/completion'
 import Applicant from '@/app/lib/models/applicant'
 import '@/app/lib/models/image'
@@ -79,7 +80,11 @@ export async function POST(
       { upsert: true, new: true }
     ).populate('images')
 
-    return NextResponse.json({ completion: serializeCompletion(completion.toObject()) })
+    const serialized = serializeCompletion(completion.toObject())
+    getNeedAudienceIds(needId).then((audience) =>
+      emitNeedCompletionSubmitted({ needId, completion: serialized }, audience)
+    ).catch(() => {})
+    return NextResponse.json({ completion: serialized })
   } catch (err) {
     console.error('[mobile/needs/completion POST]', err)
     return NextResponse.json({ error: 'Failed to submit completion' }, { status: 500 })
