@@ -3,7 +3,7 @@
 import { NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import Pledge from '@/app/lib/models/pledge'
-import Need from '@/app/lib/models/need'
+import Issue from '@/app/lib/models/issue'
 import '@/app/lib/models/user'
 import '@/app/lib/models/image'
 import { serializePledge } from '@/app/lib/mobile/serializers'
@@ -126,7 +126,7 @@ export async function DELETE(
     const isAdmin = user.role === 'admin'
 
     if (!isOwner && !isAdmin) {
-      const need = await Need.findById((pledge as any).needId).lean()
+      const need = await Issue.findById((pledge as any).issueId).lean()
       if (!need || (need as any).author.toString() !== user.id) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
@@ -139,7 +139,7 @@ export async function DELETE(
       action: 'delete',
       entityType: 'pledge',
       entityId: id,
-      entityData: { needId: (pledge as any).needId.toString(), amount: (pledge as any).amount },
+      entityData: { issueId: (pledge as any).issueId.toString(), amount: (pledge as any).amount },
       metadata: getRequestMetadata(req),
     })
 

@@ -8,7 +8,7 @@ import { serializeApplicant } from '@/app/lib/mobile/serializers'
 import { emitNeedApplicantVoted } from '@/app/lib/socket/emit'
 import Applicant from '@/app/lib/models/applicant'
 import Pledge from '@/app/lib/models/pledge'
-import Need from '@/app/lib/models/need'
+import Issue from '@/app/lib/models/issue'
 
 export async function POST(
   req: NextRequest,
@@ -37,12 +37,12 @@ export async function POST(
     await connectToDatabase()
 
     // Voter must be a contributor
-    const pledge = await Pledge.findOne({ needId, userId: tokenPayload.id }).lean()
+    const pledge = await Pledge.findOne({ issueId: needId, userId: tokenPayload.id }).lean()
     if (!pledge) {
       return NextResponse.json({ error: 'Only contributors can vote' }, { status: 403 })
     }
 
-    const applicant = await Applicant.findOne({ _id: applicantId, needId })
+    const applicant = await Applicant.findOne({ _id: applicantId, issueId: needId })
     if (!applicant) {
       return NextResponse.json({ error: 'Applicant not found' }, { status: 404 })
     }
@@ -58,7 +58,7 @@ export async function POST(
     }
 
     // Recalculate status: all contributors must have voted, at least one confirmed
-    const pledges = await Pledge.find({ needId }).lean()
+    const pledges = await Pledge.find({ issueId: needId }).lean()
     const contributorIds = [...new Set(pledges.map((p) => p.userId.toString()))]
 
     const allVoted = contributorIds.every((cId) =>
@@ -71,7 +71,7 @@ export async function POST(
     await applicant.save()
 
     const serialized = serializeApplicant(applicant.toObject())
-    const need = await (Need as any).findById(needId, { author: 1 }).lean()
+    const need = await (Issue as any).findById(needId, { author: 1 }).lean()
     const audience = new Set<string>(contributorIds)
     if (need?.author) audience.add(need.author.toString())
     audience.add(applicant.userId.toString())

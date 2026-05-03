@@ -18,7 +18,7 @@ const voteSchema = new Schema(
 const applicantSchema = new Schema<IApplicant>(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    needId: { type: Schema.Types.ObjectId, ref: 'Need', required: true },
+    issueId: { type: Schema.Types.ObjectId, ref: 'Issue', required: true },
     status: { type: String, enum: ['pending', 'confirmed', 'accepted'], default: 'pending' },
     votes: { type: [voteSchema], default: [] },
     acceptedAt: { type: Date },
@@ -26,7 +26,7 @@ const applicantSchema = new Schema<IApplicant>(
   { timestamps: true }
 )
 
-applicantSchema.index({ userId: 1, needId: 1 }, { unique: true })
+applicantSchema.index({ userId: 1, issueId: 1 }, { unique: true })
 
 const Applicant: Model<IApplicant> = mongoose.models.Applicant || mongoose.model<IApplicant>('Applicant', applicantSchema)
 export default Applicant

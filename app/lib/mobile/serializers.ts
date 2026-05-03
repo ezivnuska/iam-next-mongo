@@ -19,7 +19,7 @@ export function serializePledge(p: any) {
   return {
     id: p._id.toString(),
     userId: user ? user._id.toString() : p.userId.toString(),
-    needId: p.needId.toString(),
+    needId: p.issueId.toString(),
     amount: p.amount,
     createdAt: p.createdAt?.toISOString() ?? new Date().toISOString(),
     username: user?.username ?? '',
@@ -31,7 +31,7 @@ export function serializeApplicant(a: any) {
   return {
     id: a._id.toString(),
     userId: a.userId.toString(),
-    needId: a.needId.toString(),
+    needId: a.issueId.toString(),
     createdAt: a.createdAt?.toISOString() ?? new Date().toISOString(),
     status: a.status ?? 'pending',
     acceptedAt: a.acceptedAt ? a.acceptedAt.toISOString() : null,
@@ -44,7 +44,7 @@ export function serializeApplicant(a: any) {
 export function serializeCompletion(c: any) {
   return {
     id: c._id.toString(),
-    needId: c.needId.toString(),
+    needId: (c.issueId ?? c.needId).toString(),
     applicantId: c.applicantId.toString(),
     images: Array.isArray(c.images)
       ? c.images.map((img: any) => serializeResource(img)).filter(Boolean)
@@ -57,7 +57,7 @@ export function serializeCompletion(c: any) {
   }
 }
 
-export function serializeNeed(n: any) {
+export function serializeIssue(n: any) {
   const result: Record<string, any> = {
     id: n._id.toString(),
     title: n.title ?? "",

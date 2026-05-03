@@ -7,7 +7,7 @@ import UserModel from '@/app/lib/models/user'
 
 export async function createPledgeWithPaymentIntent(
   userId: string,
-  needId: string,
+  issueId: string,
   amount: number
 ) {
   const user = await UserModel.findById(userId).lean() as any
@@ -30,7 +30,7 @@ export async function createPledgeWithPaymentIntent(
 
   const pledge = await Pledge.create({
     userId,
-    needId,
+    issueId,
     amount,
     stripePaymentIntentId: paymentIntent.id,
   })

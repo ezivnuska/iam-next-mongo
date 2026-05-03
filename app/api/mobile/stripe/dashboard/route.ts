@@ -7,7 +7,7 @@ import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import stripe from '@/app/lib/stripe'
 import Pledge from '@/app/lib/models/pledge'
 import UserModel from '@/app/lib/models/user'
-import '@/app/lib/models/need'
+import '@/app/lib/models/issue'
 
 export async function GET(req: NextRequest) {
   const tokenPayload = await verifyToken(req)
@@ -20,12 +20,12 @@ export async function GET(req: NextRequest) {
 
     // Pledges with need title + status
     const rawPledges = await Pledge.find({ userId: tokenPayload.id })
-      .populate({ path: 'needId', select: 'title status' })
+      .populate({ path: 'issueId', select: 'title status' })
       .sort({ createdAt: -1 })
       .lean() as any[]
 
     const pledges = rawPledges.map((p) => {
-      const need = p.needId as any
+      const need = p.issueId as any
       let status: 'held' | 'paid' | 'pledged'
       if (need?.status === 'completed') status = 'paid'
       else if (p.stripePaymentIntentId) status = 'held'

@@ -6,11 +6,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import { verifyToken } from "@/app/lib/mobile/verifyToken";
-import { serializeNeed } from "@/app/lib/mobile/serializers";
-import Need from "@/app/lib/models/need";
+import { serializeIssue } from "@/app/lib/mobile/serializers";
+import Issue from "@/app/lib/models/issue";
 import Pledge from "@/app/lib/models/pledge";
 import Applicant from "@/app/lib/models/applicant";
-import Completion from "@/app/lib/models/completion";
+import Commission from "@/app/lib/models/commission";
 import stripe from "@/app/lib/stripe";
 import "@/app/lib/models/image";
 import "@/app/lib/models/user";
@@ -33,7 +33,7 @@ export async function GET(
   try {
     await connectToDatabase();
 
-    const need = await Need.findById(id)
+    const need = await Issue.findById(id)
       .populate({
         path: "author",
         select: "_id username avatar",
@@ -43,14 +43,14 @@ export async function GET(
       .lean();
 
     if (!need) {
-      return NextResponse.json({ error: "Need not found" }, { status: 404 });
+      return NextResponse.json({ error: "Issue not found" }, { status: 404 });
     }
 
     const [pledges, applicants] = await Promise.all([
-      Pledge.find({ needId: id }).populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } }).lean(),
-      Applicant.find({ needId: id }).lean(),
+      Pledge.find({ issueId: id }).populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } }).lean(),
+      Applicant.find({ issueId: id }).lean(),
     ])
-    return NextResponse.json({ need: serializeNeed({ ...need, pledged: pledges, applicants }) });
+    return NextResponse.json({ need: serializeIssue({ ...need, pledged: pledges, applicants }) });
   } catch (err) {
     console.error("[mobile/needs GET by id]", err);
     return NextResponse.json({ error: "Failed to fetch need" }, { status: 500 });
@@ -89,9 +89,9 @@ export async function PATCH(
 
     await connectToDatabase();
 
-    const need = await Need.findById(id);
+    const need = await Issue.findById(id);
     if (!need) {
-      return NextResponse.json({ error: "Need not found" }, { status: 404 });
+      return NextResponse.json({ error: "Issue not found" }, { status: 404 });
     }
 
     if (need.author.toString() !== tokenPayload.id) {
@@ -118,10 +118,10 @@ export async function PATCH(
     ]);
 
     const [pledges, applicants] = await Promise.all([
-      Pledge.find({ needId: id }).populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } }).lean(),
-      Applicant.find({ needId: id }).lean(),
+      Pledge.find({ issueId: id }).populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } }).lean(),
+      Applicant.find({ issueId: id }).lean(),
     ])
-    return NextResponse.json({ need: serializeNeed({ ...need.toObject(), pledged: pledges, applicants }) });
+    return NextResponse.json({ need: serializeIssue({ ...need.toObject(), pledged: pledges, applicants }) });
   } catch (err) {
     console.error("[mobile/needs PATCH]", err);
     return NextResponse.json({ error: "Failed to update need" }, { status: 500 });
@@ -146,9 +146,9 @@ export async function DELETE(
   try {
     await connectToDatabase();
 
-    const need = await Need.findById(id);
+    const need = await Issue.findById(id);
     if (!need) {
-      return NextResponse.json({ error: "Need not found" }, { status: 404 });
+      return NextResponse.json({ error: "Issue not found" }, { status: 404 });
     }
 
     const isAuthor = need.author.toString() === tokenPayload.id;
@@ -158,7 +158,7 @@ export async function DELETE(
     }
 
     // Release funds for all pledges with a PaymentIntent
-    const pledges = await Pledge.find({ needId: id, stripePaymentIntentId: { $exists: true, $ne: null } }).lean()
+    const pledges = await Pledge.find({ issueId: id, stripePaymentIntentId: { $exists: true, $ne: null } }).lean()
     await Promise.allSettled(
       (pledges as any[]).map(async (p) => {
         try {
@@ -175,10 +175,10 @@ export async function DELETE(
     )
 
     await Promise.all([
-      Need.findByIdAndDelete(id),
-      Pledge.deleteMany({ needId: id }),
-      Applicant.deleteMany({ needId: id }),
-      Completion.deleteMany({ needId: id }),
+      Issue.findByIdAndDelete(id),
+      Pledge.deleteMany({ issueId: id }),
+      Applicant.deleteMany({ issueId: id }),
+      Commission.deleteMany({ issueId: id }),
     ]);
 
     return NextResponse.json({ ok: true });

@@ -1,6 +1,6 @@
 // app/lib/actions/needs.ts
 
-import Need from "@/app/lib/models/need";
+import Issue from "@/app/lib/models/issue";
 import "@/app/lib/models/image";
 import type { Need as NeedType } from "@/app/lib/definitions/need";
 import { connectToDatabase } from "../mongoose";
@@ -8,7 +8,7 @@ import { transformPopulatedImage, transformPopulatedAuthor } from "@/app/lib/uti
 
 export async function getNeeds(): Promise<NeedType[]> {
   await connectToDatabase()
-  const needsFromDb = await Need.find()
+  const needsFromDb = await Issue.find()
     .sort({ date: -1 })
     .populate({
       path: "author",

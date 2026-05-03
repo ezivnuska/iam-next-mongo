@@ -7,7 +7,7 @@ import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import { serializeCompletion } from '@/app/lib/mobile/serializers'
 import { getNeedAudienceIds, emitNeedCompletionSubmitted } from '@/app/lib/socket/emit'
-import Completion from '@/app/lib/models/completion'
+import Commission from '@/app/lib/models/commission'
 import Applicant from '@/app/lib/models/applicant'
 import '@/app/lib/models/image'
 
@@ -28,7 +28,7 @@ export async function GET(
 
   try {
     await connectToDatabase()
-    const completion = await Completion.findOne({ needId }).populate('images').lean()
+    const completion = await Commission.findOne({ issueId: needId }).populate('images').lean()
     return NextResponse.json({ completion: completion ? serializeCompletion(completion) : null })
   } catch (err) {
     console.error('[mobile/needs/completion GET]', err)
@@ -62,16 +62,16 @@ export async function POST(
   try {
     await connectToDatabase()
 
-    const applicant = await Applicant.findOne({ needId, userId: tokenPayload.id, status: 'accepted' }).lean()
+    const applicant = await Applicant.findOne({ issueId: needId, userId: tokenPayload.id, status: 'accepted' }).lean()
     if (!applicant) {
       return NextResponse.json({ error: 'Only the accepted applicant can submit completion evidence' }, { status: 403 })
     }
 
     // Upsert — replace any prior submission, reset reviews and status
-    const completion = await Completion.findOneAndUpdate(
-      { needId },
+    const completion = await Commission.findOneAndUpdate(
+      { issueId: needId },
       {
-        needId,
+        issueId: needId,
         applicantId: applicant._id,
         images: imageIds,
         reviews: [],

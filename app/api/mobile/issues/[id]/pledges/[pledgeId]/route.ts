@@ -46,7 +46,7 @@ export async function DELETE(
       }
     }
 
-    const needId = pledge.needId.toString()
+    const needId = pledge.issueId.toString()
     await pledge.deleteOne()
 
     getNeedAudienceIds(needId).then((audience) =>

@@ -32,7 +32,7 @@ export async function PATCH(
   try {
     await connectToDatabase()
 
-    const applicant = await Applicant.findOne({ _id: applicantId, needId })
+    const applicant = await Applicant.findOne({ _id: applicantId, issueId: needId })
     if (!applicant) {
       return NextResponse.json({ error: 'Applicant not found' }, { status: 404 })
     }
@@ -66,7 +66,7 @@ export async function PATCH(
 
     if (denyVoterIds.size > 0) {
       const denyPledges = await Pledge.find({
-        needId,
+        issueId: needId,
         stripePaymentIntentId: { $exists: true, $ne: null },
       }).lean() as any[]
 

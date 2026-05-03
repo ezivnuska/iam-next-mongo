@@ -4,13 +4,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
-import { serializeCompletion, serializeNeed } from '@/app/lib/mobile/serializers'
-import { settleNeed } from '@/app/lib/mobile/settleNeed'
+import { serializeCompletion, serializeIssue } from '@/app/lib/mobile/serializers'
+import { settleIssue } from '@/app/lib/mobile/settleIssue'
 import { getNeedAudienceIds, emitNeedCompletionReviewed } from '@/app/lib/socket/emit'
-import Completion from '@/app/lib/models/completion'
+import Commission from '@/app/lib/models/commission'
 import Applicant from '@/app/lib/models/applicant'
 import Pledge from '@/app/lib/models/pledge'
-import Need from '@/app/lib/models/need'
+import Issue from '@/app/lib/models/issue'
 import '@/app/lib/models/image'
 import '@/app/lib/models/user'
 
@@ -37,12 +37,12 @@ export async function POST(
   try {
     await connectToDatabase()
 
-    const pledge = await Pledge.findOne({ needId, userId: tokenPayload.id }).lean()
+    const pledge = await Pledge.findOne({ issueId: needId, userId: tokenPayload.id }).lean()
     if (!pledge) {
       return NextResponse.json({ error: 'Only contributors can review completion' }, { status: 403 })
     }
 
-    const completion = await Completion.findOne({ needId })
+    const completion = await Commission.findOne({ issueId: needId })
     if (!completion) {
       return NextResponse.json({ error: 'No completion submission found' }, { status: 404 })
     }
@@ -62,7 +62,7 @@ export async function POST(
     }
 
     // Only contributors who voted confirm on the accepted applicant must approve
-    const applicant = await Applicant.findOne({ needId, status: 'accepted' }).lean()
+    const applicant = await Applicant.findOne({ issueId: needId, status: 'accepted' }).lean()
     const confirmingIds = applicant
       ? [...new Set(
           applicant.votes
@@ -71,7 +71,7 @@ export async function POST(
         )]
       : []
 
-    const pledges = await Pledge.find({ needId }).lean()
+    const pledges = await Pledge.find({ issueId: needId }).lean()
     const allContributorIds = [...new Set(pledges.map((p) => p.userId.toString()))]
 
     // Reviewers are confirming contributors; fall back to all contributors if none
@@ -94,22 +94,22 @@ export async function POST(
     let serializedNeed = null
     if (newStatus === 'approved') {
       try {
-        await settleNeed(needId)
+        await settleIssue(needId)
       } catch (err) {
-        console.error('[completion/review] settleNeed failed:', err)
+        console.error('[commission/review] settleIssue failed:', err)
       }
 
-      const need = await Need.findById(needId)
+      const need = await Issue.findById(needId)
         .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
         .populate('image')
         .lean()
 
       if (need) {
         const [pledges, applicants] = await Promise.all([
-          Pledge.find({ needId }).populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } }).lean(),
-          Applicant.find({ needId }).lean(),
+          Pledge.find({ issueId: needId }).populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } }).lean(),
+          Applicant.find({ issueId: needId }).lean(),
         ])
-        serializedNeed = serializeNeed({ ...need, pledged: pledges, applicants })
+        serializedNeed = serializeIssue({ ...need, pledged: pledges, applicants })
       }
     }
 

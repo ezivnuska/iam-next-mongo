@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import { serializePledge } from '@/app/lib/mobile/serializers'
-import Need from '@/app/lib/models/need'
+import Issue from '@/app/lib/models/issue'
 import { createPledgeWithPaymentIntent } from '@/app/lib/mobile/createPledge'
 import { getNeedAudienceIds, emitNeedPledgeAdded } from '@/app/lib/socket/emit'
 import '@/app/lib/models/image'
@@ -35,9 +35,9 @@ export async function POST(
 
     await connectToDatabase()
 
-    const need = await Need.findById(id).lean()
-    if (!need) {
-      return NextResponse.json({ error: 'Need not found' }, { status: 404 })
+    const issue = await Issue.findById(id).lean()
+    if (!issue) {
+      return NextResponse.json({ error: 'Issue not found' }, { status: 404 })
     }
 
     const pledge = await createPledgeWithPaymentIntent(tokenPayload.id, id, amount)

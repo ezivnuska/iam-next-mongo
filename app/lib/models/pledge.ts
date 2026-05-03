@@ -10,7 +10,7 @@ import { IPledge } from '@/app/lib/definitions/pledge'
 const pledgeSchema = new Schema<IPledge>(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    needId: { type: Schema.Types.ObjectId, ref: 'Need', required: true },
+    issueId: { type: Schema.Types.ObjectId, ref: 'Issue', required: true },
     amount: { type: Number, required: true },
     stripePaymentIntentId: { type: String },
   },

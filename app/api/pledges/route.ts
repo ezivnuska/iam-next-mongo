@@ -3,7 +3,7 @@
 import { NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import Pledge from '@/app/lib/models/pledge'
-import Need from '@/app/lib/models/need'
+import Issue from '@/app/lib/models/issue'
 import '@/app/lib/models/user'
 import '@/app/lib/models/image'
 import { serializePledge } from '@/app/lib/mobile/serializers'
@@ -29,7 +29,7 @@ export async function GET(req: Request) {
 
     await connectToDatabase()
 
-    const query = needId ? { needId } : {}
+    const query = needId ? { issueId: needId } : {}
     const pledges = await Pledge.find(query)
       .sort({ createdAt: 1 })
       .populate(POPULATE_CONFIG)
@@ -61,12 +61,12 @@ export async function POST(req: Request) {
 
     await connectToDatabase()
 
-    const need = await Need.findById(needId).lean()
+    const need = await Issue.findById(needId).lean()
     if (!need) {
       return NextResponse.json({ error: 'Need not found' }, { status: 404 })
     }
 
-    const pledge = await Pledge.create({ userId, needId, amount })
+    const pledge = await Pledge.create({ userId, issueId: needId, amount })
     await pledge.populate(POPULATE_CONFIG)
 
     const serialized = serializePledge(pledge.toObject())

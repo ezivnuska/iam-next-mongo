@@ -14,7 +14,7 @@ import type {
 	NeedPledgePayload,
 	NeedPledgeRemovedPayload,
 } from './events'
-import Need from '@/app/lib/models/need'
+import Issue from '@/app/lib/models/issue'
 import Pledge from '@/app/lib/models/pledge'
 
 async function emitToUsers(event: string, data: any, userIds: string[]): Promise<void> {
@@ -24,8 +24,8 @@ async function emitToUsers(event: string, data: any, userIds: string[]): Promise
 
 export async function getNeedAudienceIds(needId: string, ...extra: string[]): Promise<string[]> {
 	const [need, pledgerIds] = await Promise.all([
-		(Need as any).findById(needId, { author: 1 }).lean(),
-		(Pledge as any).find({ needId }).distinct('userId'),
+		(Issue as any).findById(needId, { author: 1 }).lean(),
+		(Pledge as any).find({ issueId: needId }).distinct('userId'),
 	])
 	const ids = new Set<string>(extra.filter(Boolean))
 	if (need?.author) ids.add(need.author.toString())

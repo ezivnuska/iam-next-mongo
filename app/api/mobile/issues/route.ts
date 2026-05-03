@@ -5,11 +5,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import { verifyToken } from "@/app/lib/mobile/verifyToken";
-import { serializeNeed } from "@/app/lib/mobile/serializers";
-import Need from "@/app/lib/models/need";
+import { serializeIssue } from "@/app/lib/mobile/serializers";
+import Issue from "@/app/lib/models/issue";
 import Pledge from "@/app/lib/models/pledge";
 import Applicant from "@/app/lib/models/applicant";
-import Completion from "@/app/lib/models/completion";
+import Commission from "@/app/lib/models/commission";
 import { createPledgeWithPaymentIntent } from "@/app/lib/mobile/createPledge";
 import "@/app/lib/models/image";
 
@@ -22,32 +22,32 @@ export async function GET(req: NextRequest) {
   try {
     await connectToDatabase();
 
-    const needs = await Need.find({ author: tokenPayload.id })
+    const needs = await Issue.find({ author: tokenPayload.id })
       .sort({ createdAt: -1 })
       .populate("image")
       .lean();
 
     const needIds = (needs as any[]).map((n) => n._id)
     const [pledges, applicants, completions] = await Promise.all([
-      Pledge.find({ needId: { $in: needIds } }).populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } }).lean(),
-      Applicant.find({ needId: { $in: needIds } }).lean(),
-      Completion.find({ needId: { $in: needIds } }, { needId: 1, status: 1 }).lean(),
+      Pledge.find({ issueId: { $in: needIds } }).populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } }).lean(),
+      Applicant.find({ issueId: { $in: needIds } }).lean(),
+      Commission.find({ issueId: { $in: needIds } }, { issueId: 1, status: 1 }).lean(),
     ])
     const pledgesByNeed: Record<string, any[]> = {}
     for (const p of pledges) {
-      const key = p.needId.toString()
+      const key = p.issueId.toString()
       if (!pledgesByNeed[key]) pledgesByNeed[key] = []
       pledgesByNeed[key].push(p)
     }
     const applicantsByNeed: Record<string, any[]> = {}
     for (const a of applicants) {
-      const key = a.needId.toString()
+      const key = a.issueId.toString()
       if (!applicantsByNeed[key]) applicantsByNeed[key] = []
       applicantsByNeed[key].push(a)
     }
     const completionStatusByNeed: Record<string, string> = {}
     for (const c of completions as any[]) {
-      completionStatusByNeed[c.needId.toString()] = c.status
+      completionStatusByNeed[c.issueId.toString()] = c.status
     }
     const needsWithData = (needs as any[]).map((n) => ({
       ...n,
@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
       completionStatus: completionStatusByNeed[n._id.toString()] ?? null,
     }))
 
-    return NextResponse.json({ needs: needsWithData.map(serializeNeed) });
+    return NextResponse.json({ needs: needsWithData.map(serializeIssue) });
   } catch (err) {
     console.error("[mobile/needs GET]", err);
     return NextResponse.json({ error: "Failed to fetch needs" }, { status: 500 });
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
 
     await connectToDatabase();
 
-    const need = await Need.create({
+    const need = await Issue.create({
       author: tokenPayload.id,
       title: title?.trim() || "Untitled",
       ...(content?.trim() ? { content: content.trim() } : {}),
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
       pledged = [pledge.toObject()];
     }
 
-    return NextResponse.json({ need: serializeNeed({ ...need.toObject(), pledged, applicants: [] }) }, { status: 201 });
+    return NextResponse.json({ need: serializeIssue({ ...need.toObject(), pledged, applicants: [] }) }, { status: 201 });
   } catch (err: any) {
     if (err.code === 'NO_PAYMENT_METHOD') {
       return NextResponse.json({ error: err.message, code: 'NO_PAYMENT_METHOD' }, { status: 402 });

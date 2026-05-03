@@ -4,9 +4,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
-import { serializeNeed } from '@/app/lib/mobile/serializers'
-import { settleNeed } from '@/app/lib/mobile/settleNeed'
-import Need from '@/app/lib/models/need'
+import { serializeIssue } from '@/app/lib/mobile/serializers'
+import { settleIssue } from '@/app/lib/mobile/settleIssue'
+import Issue from '@/app/lib/models/issue'
 import Pledge from '@/app/lib/models/pledge'
 import Applicant from '@/app/lib/models/applicant'
 import '@/app/lib/models/image'
@@ -30,8 +30,8 @@ export async function PATCH(
   try {
     await connectToDatabase()
 
-    const need = await Need.findById(id)
-    if (!need) return NextResponse.json({ error: 'Need not found' }, { status: 404 })
+    const need = await Issue.findById(id)
+    if (!need) return NextResponse.json({ error: 'Issue not found' }, { status: 404 })
 
     const isAuthor = need.author.toString() === tokenPayload.id
     const isAdmin = tokenPayload.role === 'admin'
@@ -40,7 +40,7 @@ export async function PATCH(
     }
 
     if (need.status !== 'completed') {
-      await settleNeed(id)
+      await settleIssue(id)
     }
 
     await need.populate([
@@ -49,11 +49,11 @@ export async function PATCH(
     ])
 
     const [pledges, applicants] = await Promise.all([
-      Pledge.find({ needId: id }).populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } }).lean(),
-      Applicant.find({ needId: id }).lean(),
+      Pledge.find({ issueId: id }).populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } }).lean(),
+      Applicant.find({ issueId: id }).lean(),
     ])
 
-    return NextResponse.json({ need: serializeNeed({ ...need.toObject(), pledged: pledges, applicants }) })
+    return NextResponse.json({ need: serializeIssue({ ...need.toObject(), pledged: pledges, applicants }) })
   } catch (err: any) {
     console.error('[mobile/needs/complete PATCH]', err)
     return NextResponse.json({ error: err?.message ?? 'Failed to complete need' }, { status: 500 })

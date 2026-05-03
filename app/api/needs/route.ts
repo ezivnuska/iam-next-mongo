@@ -2,7 +2,7 @@
 
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/app/lib/mongoose";
-import Need from "@/app/lib/models/need";
+import Issue from "@/app/lib/models/issue";
 import "@/app/lib/models/image";
 import type { Types } from "mongoose";
 import type { ImageVariant } from "@/app/lib/definitions/image";
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
 
     await connectToDatabase();
 
-    const newNeed = await Need.create({
+    const newNeed = await Issue.create({
       author: userId,
       title: title?.trim() || "Untitled",
       content: content.trim(),
@@ -72,9 +72,9 @@ export async function POST(req: Request) {
       ...(imageId && { image: imageId }),
     });
 
-    await newNeed.populate(CONTENT_POPULATE_CONFIG);
+    await newIssue.populate(CONTENT_POPULATE_CONFIG);
 
-    const populated = newNeed.toObject() as unknown as PopulatedNeedObj;
+    const populated = newIssue.toObject() as unknown as PopulatedNeedObj;
 
     await logActivity({
       userId,

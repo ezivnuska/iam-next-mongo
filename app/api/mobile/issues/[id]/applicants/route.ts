@@ -8,7 +8,7 @@ import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import { serializeApplicant } from '@/app/lib/mobile/serializers'
 import { getNeedAudienceIds, emitNeedApplicantAdded, emitNeedApplicantRemoved } from '@/app/lib/socket/emit'
 import Applicant from '@/app/lib/models/applicant'
-import Need from '@/app/lib/models/need'
+import Issue from '@/app/lib/models/issue'
 
 export async function POST(
   req: NextRequest,
@@ -28,14 +28,14 @@ export async function POST(
   try {
     await connectToDatabase()
 
-    const need = await Need.findById(id).lean()
-    if (!need) {
-      return NextResponse.json({ error: 'Need not found' }, { status: 404 })
+    const issue = await Issue.findById(id).lean()
+    if (!issue) {
+      return NextResponse.json({ error: 'Issue not found' }, { status: 404 })
     }
 
     const applicant = await Applicant.create({
       userId: tokenPayload.id,
-      needId: id,
+      issueId: id,
     })
 
     const serialized = serializeApplicant(applicant.toObject())
@@ -70,7 +70,7 @@ export async function DELETE(
   try {
     await connectToDatabase()
 
-    const result = await Applicant.findOneAndDelete({ userId: tokenPayload.id, needId: id })
+    const result = await Applicant.findOneAndDelete({ userId: tokenPayload.id, issueId: id })
     if (!result) {
       return NextResponse.json({ error: 'Application not found' }, { status: 404 })
     }

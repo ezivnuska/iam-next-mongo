@@ -2,7 +2,7 @@
 
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/app/lib/mongoose";
-import Need from "@/app/lib/models/need";
+import Issue from "@/app/lib/models/issue";
 import "@/app/lib/models/image";
 import type { Types } from "mongoose";
 import type { ImageVariant } from "@/app/lib/definitions/image";
@@ -75,7 +75,7 @@ export async function PUT(
 
     await connectToDatabase();
 
-    const need = await Need.findById(id);
+    const need = await Issue.findById(id);
     if (!need) {
       return NextResponse.json({ error: "Need not found" }, { status: 404 });
     }
@@ -150,7 +150,7 @@ export async function DELETE(
 
     await connectToDatabase();
 
-    const need = await Need.findById(id);
+    const need = await Issue.findById(id);
     if (!need) {
       return NextResponse.json({ error: "Need not found" }, { status: 404 });
     }
@@ -170,7 +170,7 @@ export async function DELETE(
       authorId: need.author.toString(),
     };
 
-    await Need.findByIdAndDelete(id);
+    await Issue.findByIdAndDelete(id);
 
     await logActivity({
       userId: user.id,
