@@ -24,7 +24,6 @@ interface PopulatedNeedObj {
       variants: ImageVariant[];
     };
   };
-  title?: string;
   content: string;
   minPay?: number;
   maxPay?: number;
@@ -43,7 +42,7 @@ export async function POST(req: Request) {
   try {
     const { id: userId } = await requireAuth();
 
-    const { title, content, minPay, maxPay, imageId } = await req.json();
+    const { content, minPay, maxPay, imageId } = await req.json();
 
     if (content && content.length > 5000) {
       return NextResponse.json({ error: "Content must be 5000 characters or less" }, { status: 400 });
@@ -51,10 +50,6 @@ export async function POST(req: Request) {
 
     if (!content || !content.trim()) {
       return NextResponse.json({ error: "Need must have content" }, { status: 400 });
-    }
-
-    if (title && title.length > 200) {
-      return NextResponse.json({ error: "Title must be 200 characters or less" }, { status: 400 });
     }
 
     if (imageId && !/^[a-f\d]{24}$/i.test(imageId)) {
@@ -65,7 +60,6 @@ export async function POST(req: Request) {
 
     const newIssue = await Issue.create({
       author: userId,
-      title: title?.trim() || "Untitled",
       content: content.trim(),
       ...(minPay != null && { minPay }),
       ...(maxPay != null && { maxPay }),
@@ -82,7 +76,6 @@ export async function POST(req: Request) {
       entityType: 'need',
       entityId: populated._id,
       entityData: {
-        title: populated.title,
         content: populated.content,
         minPay: populated.minPay,
         maxPay: populated.maxPay,
@@ -93,7 +86,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       id: populated._id.toString(),
-      title: populated.title,
       content: populated.content,
       minPay: populated.minPay,
       maxPay: populated.maxPay,

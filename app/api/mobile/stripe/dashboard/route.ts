@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
     // Pledges with need title + status
     const rawPledges = await Pledge.find({ userId: tokenPayload.id })
-      .populate({ path: 'issueId', select: 'title status' })
+      .populate({ path: 'issueId', select: 'issueType status' })
       .sort({ createdAt: -1 })
       .lean() as any[]
 
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
       return {
         id: p._id.toString(),
         needId: need?._id?.toString() ?? null,
-        needTitle: need?.title ?? 'Untitled',
+        issueType: need?.issueType ?? null,
         amount: p.amount,
         status,
         createdAt: p.createdAt,

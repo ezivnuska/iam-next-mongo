@@ -24,7 +24,6 @@ interface PopulatedNeedObj {
       variants: ImageVariant[];
     };
   };
-  title?: string;
   content: string;
   minPay?: number;
   maxPay?: number;
@@ -55,7 +54,7 @@ export async function PUT(
       return NextResponse.json({ error: "Invalid need ID format" }, { status: 400 });
     }
 
-    const { title, content, minPay, maxPay, imageId } = await req.json();
+    const { content, minPay, maxPay, imageId } = await req.json();
 
     if (content && content.length > 5000) {
       return NextResponse.json({ error: "Content must be 5000 characters or less" }, { status: 400 });
@@ -63,10 +62,6 @@ export async function PUT(
 
     if (!content || !content.trim()) {
       return NextResponse.json({ error: "Need must have content" }, { status: 400 });
-    }
-
-    if (title && title.length > 200) {
-      return NextResponse.json({ error: "Title must be 200 characters or less" }, { status: 400 });
     }
 
     if (imageId && imageId !== null && !/^[a-f\d]{24}$/i.test(imageId)) {
@@ -84,7 +79,6 @@ export async function PUT(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    need.title = title?.trim() || "Untitled";
     need.content = content.trim();
     need.minPay = minPay ?? undefined;
     need.maxPay = maxPay ?? undefined;
@@ -103,7 +97,6 @@ export async function PUT(
       entityType: 'need',
       entityId: populated._id,
       entityData: {
-        title: populated.title,
         content: populated.content,
         minPay: populated.minPay,
         maxPay: populated.maxPay,
@@ -114,7 +107,6 @@ export async function PUT(
 
     return NextResponse.json({
       id: populated._id.toString(),
-      title: populated.title,
       content: populated.content,
       minPay: populated.minPay,
       maxPay: populated.maxPay,
@@ -163,7 +155,6 @@ export async function DELETE(
     }
 
     const needData = {
-      title: need.title,
       content: need.content,
       minPay: need.minPay,
       maxPay: need.maxPay,
