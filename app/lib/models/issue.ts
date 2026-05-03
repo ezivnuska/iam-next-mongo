@@ -1,4 +1,4 @@
-// app/lib/models/need.ts
+// app/lib/models/issue.ts
 
 // Prevent execution on client side
 if (typeof window !== 'undefined') {
@@ -6,9 +6,9 @@ if (typeof window !== 'undefined') {
 }
 
 import mongoose, { Schema, Model } from 'mongoose'
-import { INeed } from '@/app/lib/definitions/need'
+import { IIssue } from '@/app/lib/definitions/issue'
 
-const needSchema = new Schema<INeed>(
+const issueSchema = new Schema<IIssue>(
   {
     author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     title: { type: String },
@@ -24,10 +24,10 @@ const needSchema = new Schema<INeed>(
   { timestamps: true }
 )
 
-needSchema.pre('save', function (next) {
+issueSchema.pre('save', function (next) {
   this.title = this.title || 'Untitled'
   next()
 })
 
-const Need: Model<INeed> = mongoose.models.Need || mongoose.model<INeed>('Need', needSchema)
-export default Need
+const Issue: Model<IIssue> = mongoose.models.Issue || mongoose.model<IIssue>('Issue', issueSchema)
+export default Issue

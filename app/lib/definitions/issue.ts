@@ -1,16 +1,16 @@
-// app/lib/definitions/need.ts
+// app/lib/definitions/issue.ts
 
 import { PartialUser } from './user'
 import type { Image } from './image'
 import type { Types, Document } from 'mongoose'
 
-export type NeedStatus = 'open' | 'completed'
+export type IssueStatus = 'open' | 'completed'
 
-export interface INeed extends Document {
+export interface IIssue extends Document {
   author: Types.ObjectId
   title?: string
   content?: string
-  status: NeedStatus
+  status: IssueStatus
   minPay?: number
   maxPay?: number
   location?: { latitude: number; longitude: number }
@@ -19,7 +19,7 @@ export interface INeed extends Document {
   likes?: Types.ObjectId[]
 }
 
-export interface Need {
+export interface Issue {
   id: string
   title?: string
   content?: string

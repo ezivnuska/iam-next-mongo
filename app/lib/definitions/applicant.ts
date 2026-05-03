@@ -11,7 +11,7 @@ export interface IVote {
 
 export interface IApplicant extends Document {
   userId: Types.ObjectId
-  needId: Types.ObjectId
+  issueId: Types.ObjectId
   status: ApplicantStatus
   votes: IVote[]
   acceptedAt?: Date

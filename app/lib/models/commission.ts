@@ -1,11 +1,11 @@
-// app/lib/models/completion.ts
+// app/lib/models/commission.ts
 
 if (typeof window !== 'undefined') {
   throw new Error('Server-only module')
 }
 
 import mongoose, { Schema, Model } from 'mongoose'
-import { ICompletion } from '@/app/lib/definitions/completion'
+import { ICommission } from '@/app/lib/definitions/commission'
 
 const reviewSchema = new Schema(
   {
@@ -15,9 +15,9 @@ const reviewSchema = new Schema(
   { _id: false }
 )
 
-const completionSchema = new Schema<ICompletion>(
+const commissionSchema = new Schema<ICommission>(
   {
-    needId: { type: Schema.Types.ObjectId, ref: 'Need', required: true },
+    issueId: { type: Schema.Types.ObjectId, ref: 'Issue', required: true },
     applicantId: { type: Schema.Types.ObjectId, ref: 'Applicant', required: true },
     images: [{ type: Schema.Types.ObjectId, ref: 'Image' }],
     reviews: { type: [reviewSchema], default: [] },
@@ -26,9 +26,9 @@ const completionSchema = new Schema<ICompletion>(
   { timestamps: true }
 )
 
-completionSchema.index({ needId: 1 }, { unique: true })
+commissionSchema.index({ issueId: 1 }, { unique: true })
 
-const Completion: Model<ICompletion> =
-  mongoose.models.Completion || mongoose.model<ICompletion>('Completion', completionSchema)
+const Commission: Model<ICommission> =
+  mongoose.models.Commission || mongoose.model<ICommission>('Commission', commissionSchema)
 
-export default Completion
+export default Commission

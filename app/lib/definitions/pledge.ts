@@ -5,7 +5,7 @@ import type { PartialUser } from './user'
 
 export interface IPledge extends Document {
   userId: Types.ObjectId
-  needId: Types.ObjectId
+  issueId: Types.ObjectId
   amount: number
   stripePaymentIntentId?: string
   createdAt: Date
@@ -14,7 +14,7 @@ export interface IPledge extends Document {
 
 export interface Pledge {
   id: string
-  needId: string
+  issueId: string
   amount: number
   createdAt: string
   updatedAt: string
