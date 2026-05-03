@@ -26,15 +26,15 @@ export const SOCKET_EVENTS = {
 	// Activity events
 	ACTIVITY_CREATED: 'activity:created',
 
-	// Need events
-	NEED_APPLICANT_ADDED: 'need:applicant_added',
-	NEED_APPLICANT_REMOVED: 'need:applicant_removed',
-	NEED_APPLICANT_VOTED: 'need:applicant_voted',
-	NEED_APPLICANT_ACCEPTED: 'need:applicant_accepted',
-	NEED_COMPLETION_SUBMITTED: 'need:completion_submitted',
-	NEED_COMPLETION_REVIEWED: 'need:completion_reviewed',
-	NEED_PLEDGE_ADDED: 'need:pledge_added',
-	NEED_PLEDGE_REMOVED: 'need:pledge_removed',
+	// Issue events
+	ISSUE_APPLICANT_ADDED: 'issue:applicant_added',
+	ISSUE_APPLICANT_REMOVED: 'issue:applicant_removed',
+	ISSUE_APPLICANT_VOTED: 'issue:applicant_voted',
+	ISSUE_APPLICANT_ACCEPTED: 'issue:applicant_accepted',
+	ISSUE_COMPLETION_SUBMITTED: 'issue:completion_submitted',
+	ISSUE_COMPLETION_REVIEWED: 'issue:completion_reviewed',
+	ISSUE_PLEDGE_ADDED: 'issue:pledge_added',
+	ISSUE_PLEDGE_REMOVED: 'issue:pledge_removed',
 
 	// Poker events - Core state management
 	POKER_STATE_UPDATE: 'poker:state_update', // Full state sync (restart, initial load)
@@ -147,17 +147,17 @@ export interface ActivityPayload {
 	activityId: string
 	userId: string
 	action: 'create' | 'update' | 'delete'
-	entityType: 'post' | 'memory' | 'need' | 'image' | 'comment' | 'like' | 'friendship' | 'pledge'
+	entityType: 'post' | 'memory' | 'issue' | 'image' | 'comment' | 'like' | 'friendship' | 'pledge'
 	entityId: string
 	createdAt: string
 }
 
-export interface NeedApplicantPayload {
-	needId: string
+export interface IssueApplicantPayload {
+	issueId: string
 	applicant: {
 		id: string
 		userId: string
-		needId: string
+		issueId: string
 		status: string
 		createdAt: string
 		acceptedAt: string | null
@@ -165,31 +165,31 @@ export interface NeedApplicantPayload {
 	}
 }
 
-export interface NeedApplicantRemovedPayload {
-	needId: string
+export interface IssueApplicantRemovedPayload {
+	issueId: string
 	applicantId: string
 }
 
-export interface NeedCompletionPayload {
-	needId: string
+export interface IssueCompletionPayload {
+	issueId: string
 	completion: {
 		id: string
-		needId: string
+		issueId: string
 		applicantId: string
 		images: any[]
 		reviews: { userId: string; vote: 'approve' | 'deny' }[]
 		status: 'pending' | 'approved' | 'denied'
 		createdAt: string
 	}
-	need?: any
+	issue?: any
 }
 
-export interface NeedPledgePayload {
-	needId: string
+export interface IssuePledgePayload {
+	issueId: string
 	pledge: {
 		id: string
 		userId: string
-		needId: string
+		issueId: string
 		amount: number
 		createdAt: string
 		username: string
@@ -197,8 +197,8 @@ export interface NeedPledgePayload {
 	}
 }
 
-export interface NeedPledgeRemovedPayload {
-	needId: string
+export interface IssuePledgeRemovedPayload {
+	issueId: string
 	pledgeId: string
 }
 

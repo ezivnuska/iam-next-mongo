@@ -24,7 +24,7 @@ export async function PATCH(
   const { id } = await params
 
   if (!/^[a-f\d]{24}$/i.test(id)) {
-    return NextResponse.json({ error: 'Invalid need ID' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
   }
 
   try {
@@ -53,9 +53,9 @@ export async function PATCH(
       Applicant.find({ issueId: id }).lean(),
     ])
 
-    return NextResponse.json({ need: serializeIssue({ ...need.toObject(), pledged: pledges, applicants }) })
+    return NextResponse.json({ issue: serializeIssue({ ...need.toObject(), pledged: pledges, applicants }) })
   } catch (err: any) {
-    console.error('[mobile/needs/complete PATCH]', err)
+    console.error('[mobile/issues/complete PATCH]', err)
     return NextResponse.json({ error: err?.message ?? 'Failed to complete need' }, { status: 500 })
   }
 }

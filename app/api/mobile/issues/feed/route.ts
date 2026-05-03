@@ -41,32 +41,32 @@ export async function GET(req: NextRequest) {
       Applicant.find({ issueId: { $in: needIds } }).lean(),
       Commission.find({ issueId: { $in: needIds } }, { issueId: 1, status: 1 }).lean(),
     ])
-    const pledgesByNeed: Record<string, any[]> = {}
+    const pledgesByIssue: Record<string, any[]> = {}
     for (const p of pledges) {
       const key = p.issueId.toString()
-      if (!pledgesByNeed[key]) pledgesByNeed[key] = []
-      pledgesByNeed[key].push(p)
+      if (!pledgesByIssue[key]) pledgesByIssue[key] = []
+      pledgesByIssue[key].push(p)
     }
-    const applicantsByNeed: Record<string, any[]> = {}
+    const applicantsByIssue: Record<string, any[]> = {}
     for (const a of applicants) {
       const key = a.issueId.toString()
-      if (!applicantsByNeed[key]) applicantsByNeed[key] = []
-      applicantsByNeed[key].push(a)
+      if (!applicantsByIssue[key]) applicantsByIssue[key] = []
+      applicantsByIssue[key].push(a)
     }
-    const completionStatusByNeed: Record<string, string> = {}
+    const completionStatusByIssue: Record<string, string> = {}
     for (const c of completions as any[]) {
-      completionStatusByNeed[c.issueId.toString()] = c.status
+      completionStatusByIssue[c.issueId.toString()] = c.status
     }
-    const needsWithData = (needs as any[]).map((n) => ({
+    const issuesWithData = (needs as any[]).map((n) => ({
       ...n,
-      pledged: pledgesByNeed[n._id.toString()] ?? [],
-      applicants: applicantsByNeed[n._id.toString()] ?? [],
-      completionStatus: completionStatusByNeed[n._id.toString()] ?? null,
+      pledged: pledgesByIssue[n._id.toString()] ?? [],
+      applicants: applicantsByIssue[n._id.toString()] ?? [],
+      completionStatus: completionStatusByIssue[n._id.toString()] ?? null,
     }))
 
-    return NextResponse.json({ needs: needsWithData.map(serializeIssue) });
+    return NextResponse.json({ issues: issuesWithData.map(serializeIssue) });
   } catch (err) {
-    console.error("[mobile/needs/feed GET]", err);
+    console.error("[mobile/issues/feed GET]", err);
     return NextResponse.json({ error: "Failed to fetch needs" }, { status: 500 });
   }
 }

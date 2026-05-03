@@ -6,7 +6,7 @@ import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import { serializeCompletion, serializeIssue } from '@/app/lib/mobile/serializers'
 import { settleIssue } from '@/app/lib/mobile/settleIssue'
-import { getNeedAudienceIds, emitNeedCompletionReviewed } from '@/app/lib/socket/emit'
+import { getIssueAudienceIds, emitIssueCompletionReviewed } from '@/app/lib/socket/emit'
 import Commission from '@/app/lib/models/commission'
 import Applicant from '@/app/lib/models/applicant'
 import Pledge from '@/app/lib/models/pledge'
@@ -26,7 +26,7 @@ export async function POST(
   const { id: needId } = await params
 
   if (!/^[a-f\d]{24}$/i.test(needId)) {
-    return NextResponse.json({ error: 'Invalid need ID' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
   }
 
   const { vote } = await req.json()
@@ -115,19 +115,19 @@ export async function POST(
 
     const serializedCompletion = serializeCompletion(completion.toObject())
     const applicantUserId = applicant?.userId?.toString()
-    getNeedAudienceIds(needId, ...(applicantUserId ? [applicantUserId] : [])).then((audience) =>
-      emitNeedCompletionReviewed(
-        { needId, completion: serializedCompletion, ...(serializedNeed ? { need: serializedNeed } : {}) },
+    getIssueAudienceIds(needId, ...(applicantUserId ? [applicantUserId] : [])).then((audience) =>
+      emitIssueCompletionReviewed(
+        { issueId: needId, completion: serializedCompletion, ...(serializedNeed ? { issue: serializedNeed } : {}) },
         audience
       )
     ).catch(() => {})
 
     return NextResponse.json({
       completion: serializedCompletion,
-      ...(serializedNeed ? { need: serializedNeed } : {}),
+      ...(serializedNeed ? { issue: serializedNeed } : {}),
     })
   } catch (err) {
-    console.error('[mobile/needs/completion/review POST]', err)
+    console.error('[mobile/issues/completion/review POST]', err)
     return NextResponse.json({ error: 'Failed to submit review' }, { status: 500 })
   }
 }

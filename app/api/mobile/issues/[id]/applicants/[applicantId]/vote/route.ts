@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import { serializeApplicant } from '@/app/lib/mobile/serializers'
-import { emitNeedApplicantVoted } from '@/app/lib/socket/emit'
+import { emitIssueApplicantVoted } from '@/app/lib/socket/emit'
 import Applicant from '@/app/lib/models/applicant'
 import Pledge from '@/app/lib/models/pledge'
 import Issue from '@/app/lib/models/issue'
@@ -22,7 +22,7 @@ export async function POST(
   const { id: needId, applicantId } = await params
 
   if (!/^[a-f\d]{24}$/i.test(needId)) {
-    return NextResponse.json({ error: 'Invalid need ID' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
   }
   if (!/^[a-f\d]{24}$/i.test(applicantId)) {
     return NextResponse.json({ error: 'Invalid applicant ID' }, { status: 400 })
@@ -75,11 +75,11 @@ export async function POST(
     const audience = new Set<string>(contributorIds)
     if (need?.author) audience.add(need.author.toString())
     audience.add(applicant.userId.toString())
-    emitNeedApplicantVoted({ needId, applicant: serialized }, [...audience]).catch(() => {})
+    emitIssueApplicantVoted({ issueId: needId, applicant: serialized }, [...audience]).catch(() => {})
 
     return NextResponse.json({ applicant: serialized })
   } catch (err) {
-    console.error('[mobile/needs/applicants/vote POST]', err)
+    console.error('[mobile/issues/applicants/vote POST]', err)
     return NextResponse.json({ error: 'Failed to submit vote' }, { status: 500 })
   }
 }

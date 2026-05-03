@@ -27,7 +27,7 @@ export async function GET(
   const { id } = await params;
 
   if (!/^[a-f\d]{24}$/i.test(id)) {
-    return NextResponse.json({ error: "Invalid need ID" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid issue ID" }, { status: 400 });
   }
 
   try {
@@ -50,9 +50,9 @@ export async function GET(
       Pledge.find({ issueId: id }).populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } }).lean(),
       Applicant.find({ issueId: id }).lean(),
     ])
-    return NextResponse.json({ need: serializeIssue({ ...need, pledged: pledges, applicants }) });
+    return NextResponse.json({ issue: serializeIssue({ ...need, pledged: pledges, applicants }) });
   } catch (err) {
-    console.error("[mobile/needs GET by id]", err);
+    console.error("[mobile/issues GET by id]", err);
     return NextResponse.json({ error: "Failed to fetch need" }, { status: 500 });
   }
 }
@@ -69,7 +69,7 @@ export async function PATCH(
   const { id } = await params;
 
   if (!/^[a-f\d]{24}$/i.test(id)) {
-    return NextResponse.json({ error: "Invalid need ID" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid issue ID" }, { status: 400 });
   }
 
   try {
@@ -122,9 +122,9 @@ export async function PATCH(
       Pledge.find({ issueId: id }).populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } }).lean(),
       Applicant.find({ issueId: id }).lean(),
     ])
-    return NextResponse.json({ need: serializeIssue({ ...need.toObject(), pledged: pledges, applicants }) });
+    return NextResponse.json({ issue: serializeIssue({ ...need.toObject(), pledged: pledges, applicants }) });
   } catch (err) {
-    console.error("[mobile/needs PATCH]", err);
+    console.error("[mobile/issues PATCH]", err);
     return NextResponse.json({ error: "Failed to update need" }, { status: 500 });
   }
 }
@@ -141,7 +141,7 @@ export async function DELETE(
   const { id } = await params;
 
   if (!/^[a-f\d]{24}$/i.test(id)) {
-    return NextResponse.json({ error: "Invalid need ID" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid issue ID" }, { status: 400 });
   }
 
   try {
@@ -184,7 +184,7 @@ export async function DELETE(
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[mobile/needs DELETE]", err);
+    console.error("[mobile/issues DELETE]", err);
     return NextResponse.json({ error: "Failed to delete need" }, { status: 500 });
   }
 }

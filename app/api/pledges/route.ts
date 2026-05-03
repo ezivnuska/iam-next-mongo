@@ -24,7 +24,7 @@ export async function GET(req: Request) {
     const needId = searchParams.get('needId')
 
     if (needId && !/^[a-f\d]{24}$/i.test(needId)) {
-      return NextResponse.json({ error: 'Invalid need ID' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
     }
 
     await connectToDatabase()
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
     const { needId, amount } = await req.json()
 
     if (!needId || !/^[a-f\d]{24}$/i.test(needId)) {
-      return NextResponse.json({ error: 'Invalid need ID' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
     }
 
     if (typeof amount !== 'number' || amount <= 0) {
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
 
     const need = await Issue.findById(needId).lean()
     if (!need) {
-      return NextResponse.json({ error: 'Need not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Issue not found' }, { status: 404 })
     }
 
     const pledge = await Pledge.create({ userId, issueId: needId, amount })

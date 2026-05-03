@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import { serializeCompletion } from '@/app/lib/mobile/serializers'
-import { getNeedAudienceIds, emitNeedCompletionSubmitted } from '@/app/lib/socket/emit'
+import { getIssueAudienceIds, emitIssueCompletionSubmitted } from '@/app/lib/socket/emit'
 import Commission from '@/app/lib/models/commission'
 import Applicant from '@/app/lib/models/applicant'
 import '@/app/lib/models/image'
@@ -23,7 +23,7 @@ export async function GET(
   const { id: needId } = await params
 
   if (!/^[a-f\d]{24}$/i.test(needId)) {
-    return NextResponse.json({ error: 'Invalid need ID' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
   }
 
   try {
@@ -31,7 +31,7 @@ export async function GET(
     const completion = await Commission.findOne({ issueId: needId }).populate('images').lean()
     return NextResponse.json({ completion: completion ? serializeCompletion(completion) : null })
   } catch (err) {
-    console.error('[mobile/needs/completion GET]', err)
+    console.error('[mobile/issues/completion GET]', err)
     return NextResponse.json({ error: 'Failed to fetch completion' }, { status: 500 })
   }
 }
@@ -48,7 +48,7 @@ export async function POST(
   const { id: needId } = await params
 
   if (!/^[a-f\d]{24}$/i.test(needId)) {
-    return NextResponse.json({ error: 'Invalid need ID' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
   }
 
   const { imageIds } = await req.json()
@@ -81,12 +81,12 @@ export async function POST(
     ).populate('images')
 
     const serialized = serializeCompletion(completion.toObject())
-    getNeedAudienceIds(needId).then((audience) =>
-      emitNeedCompletionSubmitted({ needId, completion: serialized }, audience)
+    getIssueAudienceIds(needId).then((audience) =>
+      emitIssueCompletionSubmitted({ issueId: needId, completion: serialized }, audience)
     ).catch(() => {})
     return NextResponse.json({ completion: serialized })
   } catch (err) {
-    console.error('[mobile/needs/completion POST]', err)
+    console.error('[mobile/issues/completion POST]', err)
     return NextResponse.json({ error: 'Failed to submit completion' }, { status: 500 })
   }
 }

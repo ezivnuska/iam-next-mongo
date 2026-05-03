@@ -7,7 +7,7 @@ import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import { serializePledge } from '@/app/lib/mobile/serializers'
 import Issue from '@/app/lib/models/issue'
 import { createPledgeWithPaymentIntent } from '@/app/lib/mobile/createPledge'
-import { getNeedAudienceIds, emitNeedPledgeAdded } from '@/app/lib/socket/emit'
+import { getIssueAudienceIds, emitIssuePledgeAdded } from '@/app/lib/socket/emit'
 import '@/app/lib/models/image'
 import '@/app/lib/models/user'
 
@@ -23,7 +23,7 @@ export async function POST(
   const { id } = await params
 
   if (!/^[a-f\d]{24}$/i.test(id)) {
-    return NextResponse.json({ error: 'Invalid need ID' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
   }
 
   try {
@@ -44,15 +44,15 @@ export async function POST(
     await pledge.populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
 
     const serialized = serializePledge(pledge.toObject())
-    getNeedAudienceIds(id).then((audience) =>
-      emitNeedPledgeAdded({ needId: id, pledge: serialized }, audience)
+    getIssueAudienceIds(id).then((audience) =>
+      emitIssuePledgeAdded({ issueId: id, pledge: serialized }, audience)
     ).catch(() => {})
     return NextResponse.json({ pledge: serialized }, { status: 201 })
   } catch (err: any) {
     if (err.code === 'NO_PAYMENT_METHOD') {
       return NextResponse.json({ error: err.message, code: 'NO_PAYMENT_METHOD' }, { status: 402 })
     }
-    console.error('[mobile/needs/pledges POST]', err)
+    console.error('[mobile/issues/pledges POST]', err)
     return NextResponse.json({ error: 'Failed to create pledge' }, { status: 500 })
   }
 }
