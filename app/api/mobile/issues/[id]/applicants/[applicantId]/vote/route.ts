@@ -1,6 +1,7 @@
-// app/api/mobile/needs/[id]/applicants/[applicantId]/vote/route.ts
+// app/api/mobile/issues/[id]/applicants/[applicantId]/vote/route.ts
 // POST — cast or update a confirm/deny vote on an applicant (contributors only)
 
+import { isValidObjectId } from '@/app/lib/utils/validation'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
@@ -21,10 +22,10 @@ export async function POST(
 
   const { id: needId, applicantId } = await params
 
-  if (!/^[a-f\d]{24}$/i.test(needId)) {
+  if (!isValidObjectId(needId)) {
     return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
   }
-  if (!/^[a-f\d]{24}$/i.test(applicantId)) {
+  if (!isValidObjectId(applicantId)) {
     return NextResponse.json({ error: 'Invalid applicant ID' }, { status: 400 })
   }
 

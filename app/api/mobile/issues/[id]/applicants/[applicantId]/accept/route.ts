@@ -1,6 +1,7 @@
-// app/api/mobile/needs/[id]/applicants/[applicantId]/accept/route.ts
+// app/api/mobile/issues/[id]/applicants/[applicantId]/accept/route.ts
 // PATCH — applicant accepts the confirmed work offer
 
+import { isValidObjectId } from '@/app/lib/utils/validation'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import UserModel from '@/app/lib/models/user'
@@ -22,10 +23,10 @@ export async function PATCH(
 
   const { id: needId, applicantId } = await params
 
-  if (!/^[a-f\d]{24}$/i.test(needId)) {
+  if (!isValidObjectId(needId)) {
     return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
   }
-  if (!/^[a-f\d]{24}$/i.test(applicantId)) {
+  if (!isValidObjectId(applicantId)) {
     return NextResponse.json({ error: 'Invalid applicant ID' }, { status: 400 })
   }
 

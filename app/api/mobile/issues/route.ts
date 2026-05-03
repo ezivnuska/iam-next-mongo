@@ -1,7 +1,8 @@
-// app/api/mobile/needs/route.ts
+// app/api/mobile/issues/route.ts
 // GET  — list current user's needs
 // POST — create a new need
 
+import { isValidObjectId, USER_WITH_AVATAR_POPULATE } from '@/app/lib/utils/validation'
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import { verifyToken } from "@/app/lib/mobile/verifyToken";
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
 
     const needIds = (needs as any[]).map((n) => n._id)
     const [pledges, applicants, completions] = await Promise.all([
-      Pledge.find({ issueId: { $in: needIds } }).populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } }).lean(),
+      Pledge.find({ issueId: { $in: needIds } }).populate(USER_WITH_AVATAR_POPULATE).lean(),
       Applicant.find({ issueId: { $in: needIds } }).lean(),
       Commission.find({ issueId: { $in: needIds } }, { issueId: 1, status: 1 }).lean(),
     ])
@@ -59,7 +60,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ issues: issuesWithData.map(serializeIssue) });
   } catch (err) {
     console.error("[mobile/issues GET]", err);
-    return NextResponse.json({ error: "Failed to fetch needs" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch issues" }, { status: 500 });
   }
 }
 
@@ -81,7 +82,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Content must be 5000 characters or less" }, { status: 400 });
     }
 
-    if (imageId && !/^[a-f\d]{24}$/i.test(imageId)) {
+    if (imageId && !isValidObjectId(imageId)) {
       return NextResponse.json({ error: "Invalid image ID" }, { status: 400 });
     }
 
@@ -108,7 +109,7 @@ export async function POST(req: NextRequest) {
     let pledged: any[] = [];
     if (initialPledge && typeof initialPledge === 'number' && initialPledge > 0) {
       const pledge = await createPledgeWithPaymentIntent(tokenPayload.id, need._id.toString(), initialPledge);
-      await pledge.populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } });
+      await pledge.populate(USER_WITH_AVATAR_POPULATE);
       pledged = [pledge.toObject()];
     }
 
@@ -118,6 +119,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: err.message, code: 'NO_PAYMENT_METHOD' }, { status: 402 });
     }
     console.error("[mobile/issues POST]", err);
-    return NextResponse.json({ error: "Failed to create need" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to create issue" }, { status: 500 });
   }
 }

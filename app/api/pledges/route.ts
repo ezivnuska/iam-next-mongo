@@ -1,5 +1,6 @@
 // app/api/pledges/route.ts
 
+import { isValidObjectId } from '@/app/lib/utils/validation'
 import { NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import Pledge from '@/app/lib/models/pledge'
@@ -23,7 +24,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url)
     const needId = searchParams.get('needId')
 
-    if (needId && !/^[a-f\d]{24}$/i.test(needId)) {
+    if (needId && !isValidObjectId(needId)) {
       return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
     }
 
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
 
     const { needId, amount } = await req.json()
 
-    if (!needId || !/^[a-f\d]{24}$/i.test(needId)) {
+    if (!needId || !isValidObjectId(needId)) {
       return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
     }
 

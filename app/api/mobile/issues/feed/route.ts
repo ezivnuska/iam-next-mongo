@@ -1,6 +1,7 @@
-// app/api/mobile/needs/feed/route.ts
+// app/api/mobile/issues/feed/route.ts
 // GET — list all needs from all users
 
+import { isValidObjectId, USER_WITH_AVATAR_POPULATE } from '@/app/lib/utils/validation'
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import { verifyToken } from "@/app/lib/mobile/verifyToken";
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest) {
 
     const needIds = (needs as any[]).map((n) => n._id)
     const [pledges, applicants, completions] = await Promise.all([
-      Pledge.find({ issueId: { $in: needIds } }).populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } }).lean(),
+      Pledge.find({ issueId: { $in: needIds } }).populate(USER_WITH_AVATAR_POPULATE).lean(),
       Applicant.find({ issueId: { $in: needIds } }).lean(),
       Commission.find({ issueId: { $in: needIds } }, { issueId: 1, status: 1 }).lean(),
     ])
@@ -67,6 +68,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ issues: issuesWithData.map(serializeIssue) });
   } catch (err) {
     console.error("[mobile/issues/feed GET]", err);
-    return NextResponse.json({ error: "Failed to fetch needs" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch issues" }, { status: 500 });
   }
 }

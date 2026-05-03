@@ -1,7 +1,8 @@
-// app/api/mobile/needs/[id]/applicants/route.ts
+// app/api/mobile/issues/[id]/applicants/route.ts
 // POST   — apply to a need
 // DELETE — withdraw application
 
+import { isValidObjectId } from '@/app/lib/utils/validation'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
@@ -21,7 +22,7 @@ export async function POST(
 
   const { id } = await params
 
-  if (!/^[a-f\d]{24}$/i.test(id)) {
+  if (!isValidObjectId(id)) {
     return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
   }
 
@@ -45,7 +46,7 @@ export async function POST(
     return NextResponse.json({ applicant: serialized }, { status: 201 })
   } catch (err: any) {
     if (err.code === 11000) {
-      return NextResponse.json({ error: 'Already applied to this need' }, { status: 409 })
+      return NextResponse.json({ error: 'Already applied to this issue' }, { status: 409 })
     }
     console.error('[mobile/issues/applicants POST]', err)
     return NextResponse.json({ error: 'Failed to apply' }, { status: 500 })
@@ -63,7 +64,7 @@ export async function DELETE(
 
   const { id } = await params
 
-  if (!/^[a-f\d]{24}$/i.test(id)) {
+  if (!isValidObjectId(id)) {
     return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
   }
 

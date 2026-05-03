@@ -1,5 +1,6 @@
 // app/api/issues/route.ts
 
+import { isValidObjectId } from '@/app/lib/utils/validation'
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import Issue from "@/app/lib/models/issue";
@@ -52,7 +53,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Need must have content" }, { status: 400 });
     }
 
-    if (imageId && !/^[a-f\d]{24}$/i.test(imageId)) {
+    if (imageId && !isValidObjectId(imageId)) {
       return NextResponse.json({ error: "Invalid image ID" }, { status: 400 });
     }
 

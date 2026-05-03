@@ -1,8 +1,9 @@
-// app/api/mobile/needs/[id]/route.ts
+// app/api/mobile/issues/[id]/route.ts
 // GET    — fetch a single need
 // PATCH  — update a need (author only)
 // DELETE — remove a need (author only)
 
+import { isValidObjectId, USER_WITH_AVATAR_POPULATE } from '@/app/lib/utils/validation'
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import { verifyToken } from "@/app/lib/mobile/verifyToken";
@@ -26,7 +27,7 @@ export async function GET(
 
   const { id } = await params;
 
-  if (!/^[a-f\d]{24}$/i.test(id)) {
+  if (!isValidObjectId(id)) {
     return NextResponse.json({ error: "Invalid issue ID" }, { status: 400 });
   }
 
@@ -47,7 +48,7 @@ export async function GET(
     }
 
     const [pledges, applicants] = await Promise.all([
-      Pledge.find({ issueId: id }).populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } }).lean(),
+      Pledge.find({ issueId: id }).populate(USER_WITH_AVATAR_POPULATE).lean(),
       Applicant.find({ issueId: id }).lean(),
     ])
     return NextResponse.json({ issue: serializeIssue({ ...need, pledged: pledges, applicants }) });
@@ -68,7 +69,7 @@ export async function PATCH(
 
   const { id } = await params;
 
-  if (!/^[a-f\d]{24}$/i.test(id)) {
+  if (!isValidObjectId(id)) {
     return NextResponse.json({ error: "Invalid issue ID" }, { status: 400 });
   }
 
@@ -84,7 +85,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Content must be 5000 characters or less" }, { status: 400 });
     }
 
-    if (imageId !== undefined && imageId !== null && !/^[a-f\d]{24}$/i.test(imageId)) {
+    if (imageId !== undefined && imageId !== null && !isValidObjectId(imageId)) {
       return NextResponse.json({ error: "Invalid image ID" }, { status: 400 });
     }
 
@@ -119,7 +120,7 @@ export async function PATCH(
     ]);
 
     const [pledges, applicants] = await Promise.all([
-      Pledge.find({ issueId: id }).populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } }).lean(),
+      Pledge.find({ issueId: id }).populate(USER_WITH_AVATAR_POPULATE).lean(),
       Applicant.find({ issueId: id }).lean(),
     ])
     return NextResponse.json({ issue: serializeIssue({ ...need.toObject(), pledged: pledges, applicants }) });
@@ -140,7 +141,7 @@ export async function DELETE(
 
   const { id } = await params;
 
-  if (!/^[a-f\d]{24}$/i.test(id)) {
+  if (!isValidObjectId(id)) {
     return NextResponse.json({ error: "Invalid issue ID" }, { status: 400 });
   }
 

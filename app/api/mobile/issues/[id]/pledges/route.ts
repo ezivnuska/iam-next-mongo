@@ -1,6 +1,7 @@
-// app/api/mobile/needs/[id]/pledges/route.ts
+// app/api/mobile/issues/[id]/pledges/route.ts
 // POST — create a pledge for a need (requires saved payment method)
 
+import { isValidObjectId, USER_WITH_AVATAR_POPULATE } from '@/app/lib/utils/validation'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
@@ -22,7 +23,7 @@ export async function POST(
 
   const { id } = await params
 
-  if (!/^[a-f\d]{24}$/i.test(id)) {
+  if (!isValidObjectId(id)) {
     return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
   }
 
@@ -41,7 +42,7 @@ export async function POST(
     }
 
     const pledge = await createPledgeWithPaymentIntent(tokenPayload.id, id, amount)
-    await pledge.populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
+    await pledge.populate(USER_WITH_AVATAR_POPULATE)
 
     const serialized = serializePledge(pledge.toObject())
     getIssueAudienceIds(id).then((audience) =>

@@ -1,5 +1,6 @@
 // app/api/issues/[id]/route.ts
 
+import { isValidObjectId } from '@/app/lib/utils/validation'
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import Issue from "@/app/lib/models/issue";
@@ -50,7 +51,7 @@ export async function PUT(
       return NextResponse.json({ error: "Missing need ID" }, { status: 400 });
     }
 
-    if (!/^[a-f\d]{24}$/i.test(id)) {
+    if (!isValidObjectId(id)) {
       return NextResponse.json({ error: "Invalid need ID format" }, { status: 400 });
     }
 
@@ -64,7 +65,7 @@ export async function PUT(
       return NextResponse.json({ error: "Need must have content" }, { status: 400 });
     }
 
-    if (imageId && imageId !== null && !/^[a-f\d]{24}$/i.test(imageId)) {
+    if (imageId && imageId !== null && !isValidObjectId(imageId)) {
       return NextResponse.json({ error: "Invalid image ID" }, { status: 400 });
     }
 
@@ -136,7 +137,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Missing need ID" }, { status: 400 });
     }
 
-    if (!/^[a-f\d]{24}$/i.test(id)) {
+    if (!isValidObjectId(id)) {
       return NextResponse.json({ error: "Invalid need ID format" }, { status: 400 });
     }
 

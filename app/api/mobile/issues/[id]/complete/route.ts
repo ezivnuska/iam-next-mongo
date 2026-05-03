@@ -1,6 +1,7 @@
-// app/api/mobile/needs/[id]/complete/route.ts
+// app/api/mobile/issues/[id]/complete/route.ts
 // PATCH — admin/author fallback to manually trigger settlement if auto-settlement failed.
 
+import { isValidObjectId, USER_WITH_AVATAR_POPULATE } from '@/app/lib/utils/validation'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
@@ -23,7 +24,7 @@ export async function PATCH(
 
   const { id } = await params
 
-  if (!/^[a-f\d]{24}$/i.test(id)) {
+  if (!isValidObjectId(id)) {
     return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
   }
 
@@ -49,13 +50,13 @@ export async function PATCH(
     ])
 
     const [pledges, applicants] = await Promise.all([
-      Pledge.find({ issueId: id }).populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } }).lean(),
+      Pledge.find({ issueId: id }).populate(USER_WITH_AVATAR_POPULATE).lean(),
       Applicant.find({ issueId: id }).lean(),
     ])
 
     return NextResponse.json({ issue: serializeIssue({ ...need.toObject(), pledged: pledges, applicants }) })
   } catch (err: any) {
     console.error('[mobile/issues/complete PATCH]', err)
-    return NextResponse.json({ error: err?.message ?? 'Failed to complete need' }, { status: 500 })
+    return NextResponse.json({ error: err?.message ?? 'Failed to complete issue' }, { status: 500 })
   }
 }

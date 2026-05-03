@@ -1,6 +1,7 @@
-// app/api/mobile/needs/[id]/completion/review/route.ts
+// app/api/mobile/issues/[id]/commission/review/route.ts
 // POST — confirming contributor approves or denies the completion submission
 
+import { isValidObjectId, USER_WITH_AVATAR_POPULATE } from '@/app/lib/utils/validation'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
@@ -25,7 +26,7 @@ export async function POST(
 
   const { id: needId } = await params
 
-  if (!/^[a-f\d]{24}$/i.test(needId)) {
+  if (!isValidObjectId(needId)) {
     return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
   }
 
@@ -106,7 +107,7 @@ export async function POST(
 
       if (need) {
         const [pledges, applicants] = await Promise.all([
-          Pledge.find({ issueId: needId }).populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } }).lean(),
+          Pledge.find({ issueId: needId }).populate(USER_WITH_AVATAR_POPULATE).lean(),
           Applicant.find({ issueId: needId }).lean(),
         ])
         serializedNeed = serializeIssue({ ...need, pledged: pledges, applicants })

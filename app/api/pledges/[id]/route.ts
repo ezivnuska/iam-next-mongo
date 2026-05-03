@@ -1,5 +1,6 @@
 // app/api/pledges/[id]/route.ts
 
+import { isValidObjectId } from '@/app/lib/utils/validation'
 import { NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import Pledge from '@/app/lib/models/pledge'
@@ -25,7 +26,7 @@ export async function GET(
 
     const { id } = await params
 
-    if (!/^[a-f\d]{24}$/i.test(id)) {
+    if (!isValidObjectId(id)) {
       return NextResponse.json({ error: 'Invalid pledge ID' }, { status: 400 })
     }
 
@@ -54,7 +55,7 @@ export async function PATCH(
     const user = await requireAuthFlexible(req)
     const { id } = await params
 
-    if (!/^[a-f\d]{24}$/i.test(id)) {
+    if (!isValidObjectId(id)) {
       return NextResponse.json({ error: 'Invalid pledge ID' }, { status: 400 })
     }
 
@@ -111,7 +112,7 @@ export async function DELETE(
     const user = await requireAuthFlexible(req)
     const { id } = await params
 
-    if (!/^[a-f\d]{24}$/i.test(id)) {
+    if (!isValidObjectId(id)) {
       return NextResponse.json({ error: 'Invalid pledge ID' }, { status: 400 })
     }
 

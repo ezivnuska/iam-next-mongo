@@ -1,6 +1,7 @@
-// app/api/mobile/needs/[id]/pledges/[pledgeId]/route.ts
+// app/api/mobile/issues/[id]/pledges/[pledgeId]/route.ts
 // DELETE — remove a pledge and cancel the associated PaymentIntent (owner only)
 
+import { isValidObjectId } from '@/app/lib/utils/validation'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
@@ -19,7 +20,7 @@ export async function DELETE(
 
   const { pledgeId } = await params
 
-  if (!/^[a-f\d]{24}$/i.test(pledgeId)) {
+  if (!isValidObjectId(pledgeId)) {
     return NextResponse.json({ error: 'Invalid pledge ID' }, { status: 400 })
   }
 

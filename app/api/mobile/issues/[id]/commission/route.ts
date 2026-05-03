@@ -1,7 +1,8 @@
-// app/api/mobile/needs/[id]/completion/route.ts
+// app/api/mobile/issues/[id]/commission/route.ts
 // GET  — fetch current completion submission
 // POST — accepted applicant submits (or resubmits) completion images
 
+import { isValidObjectId } from '@/app/lib/utils/validation'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
@@ -22,7 +23,7 @@ export async function GET(
 
   const { id: needId } = await params
 
-  if (!/^[a-f\d]{24}$/i.test(needId)) {
+  if (!isValidObjectId(needId)) {
     return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
   }
 
@@ -47,7 +48,7 @@ export async function POST(
 
   const { id: needId } = await params
 
-  if (!/^[a-f\d]{24}$/i.test(needId)) {
+  if (!isValidObjectId(needId)) {
     return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
   }
 
@@ -55,7 +56,7 @@ export async function POST(
   if (!Array.isArray(imageIds) || imageIds.length === 0) {
     return NextResponse.json({ error: 'At least one image is required' }, { status: 400 })
   }
-  if (imageIds.some((id: any) => !/^[a-f\d]{24}$/i.test(id))) {
+  if (imageIds.some((id: any) => !isValidObjectId(id))) {
     return NextResponse.json({ error: 'Invalid image ID' }, { status: 400 })
   }
 
