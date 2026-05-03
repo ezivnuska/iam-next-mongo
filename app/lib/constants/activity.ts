@@ -19,7 +19,7 @@ export const actionColors: Record<ActivityAction, string> = {
 // Label mapping for entity types
 export const entityTypeLabels: Record<ActivityEntityType, string> = {
   memory: "Memory",
-  need: "Need",
+  issue: \"Issue\",
   post: "Post",
   image: "Image",
   comment: "Comment",

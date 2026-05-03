@@ -73,7 +73,7 @@ export async function POST(req: Request) {
     await logActivity({
       userId,
       action: 'create',
-      entityType: 'need',
+      entityType: 'issue',
       entityId: populated._id,
       entityData: {
         content: populated.content,

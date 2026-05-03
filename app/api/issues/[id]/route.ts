@@ -94,7 +94,7 @@ export async function PUT(
     await logActivity({
       userId: user.id,
       action: 'update',
-      entityType: 'need',
+      entityType: 'issue',
       entityId: populated._id,
       entityData: {
         content: populated.content,
@@ -166,7 +166,7 @@ export async function DELETE(
     await logActivity({
       userId: user.id,
       action: 'delete',
-      entityType: 'need',
+      entityType: 'issue',
       entityId: id,
       entityData: needData,
       metadata: getRequestMetadata(req),
