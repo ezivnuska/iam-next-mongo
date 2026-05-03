@@ -73,14 +73,15 @@ export async function PATCH(
   }
 
   try {
-    const { title, content, imageId, location, locationVisible } = await req.json();
+    const { issueType, content, imageId, location, locationVisible } = await req.json();
+
+    const validIssueTypes = ['Clean Up', 'Gardening', 'Hauling']
+    if (issueType !== undefined && !validIssueTypes.includes(issueType)) {
+      return NextResponse.json({ error: "Invalid issue type" }, { status: 400 });
+    }
 
     if (content !== undefined && content.length > 5000) {
       return NextResponse.json({ error: "Content must be 5000 characters or less" }, { status: 400 });
-    }
-
-    if (title !== undefined && title.length > 200) {
-      return NextResponse.json({ error: "Title must be 200 characters or less" }, { status: 400 });
     }
 
     if (imageId !== undefined && imageId !== null && !/^[a-f\d]{24}$/i.test(imageId)) {
@@ -98,7 +99,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    if (title !== undefined) need.title = title.trim() || "Untitled";
+    if (issueType !== undefined) need.issueType = issueType;
     if (content !== undefined) need.content = content.trim();
     if (imageId !== undefined) need.image = imageId ?? undefined;
     if (location !== undefined) {

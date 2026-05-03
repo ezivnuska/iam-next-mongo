@@ -5,10 +5,12 @@ import type { Image } from './image'
 import type { Types, Document } from 'mongoose'
 
 export type IssueStatus = 'open' | 'completed'
+export type IssueType = 'Clean Up' | 'Gardening' | 'Hauling'
+export const ISSUE_TYPES: IssueType[] = ['Clean Up', 'Gardening', 'Hauling']
 
 export interface IIssue extends Document {
   author: Types.ObjectId
-  title?: string
+  issueType: IssueType
   content?: string
   status: IssueStatus
   minPay?: number
@@ -21,7 +23,7 @@ export interface IIssue extends Document {
 
 export interface Issue {
   id: string
-  title?: string
+  issueType: IssueType
   content?: string
   minPay?: number
   maxPay?: number

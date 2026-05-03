@@ -11,7 +11,7 @@ import { IIssue } from '@/app/lib/definitions/issue'
 const issueSchema = new Schema<IIssue>(
   {
     author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    title: { type: String },
+    issueType: { type: String, enum: ['Clean Up', 'Gardening', 'Hauling'], required: true },
     content: { type: String },
     status: { type: String, enum: ['open', 'completed'], default: 'open' },
     minPay: { type: Number },
@@ -24,10 +24,6 @@ const issueSchema = new Schema<IIssue>(
   { timestamps: true }
 )
 
-issueSchema.pre('save', function (next) {
-  this.title = this.title || 'Untitled'
-  next()
-})
 
 const Issue: Model<IIssue> = mongoose.models.Issue || mongoose.model<IIssue>('Issue', issueSchema)
 export default Issue

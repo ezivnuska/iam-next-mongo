@@ -70,14 +70,15 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { title, content, imageId, location, locationVisible, initialPledge } = await req.json();
+    const { issueType, content, imageId, location, locationVisible, initialPledge } = await req.json();
+
+    const validIssueTypes = ['Clean Up', 'Gardening', 'Hauling']
+    if (!issueType || !validIssueTypes.includes(issueType)) {
+      return NextResponse.json({ error: "Invalid issue type" }, { status: 400 });
+    }
 
     if (content && content.length > 5000) {
       return NextResponse.json({ error: "Content must be 5000 characters or less" }, { status: 400 });
-    }
-
-    if (title && title.length > 200) {
-      return NextResponse.json({ error: "Title must be 200 characters or less" }, { status: 400 });
     }
 
     if (imageId && !/^[a-f\d]{24}$/i.test(imageId)) {
@@ -99,7 +100,7 @@ export async function POST(req: NextRequest) {
 
     const need = await Issue.create({
       author: tokenPayload.id,
-      title: title?.trim() || "Untitled",
+      issueType,
       ...(content?.trim() ? { content: content.trim() } : {}),
       ...(validLocation ? { location: validLocation } : {}),
       locationVisible: locationVisible === true,

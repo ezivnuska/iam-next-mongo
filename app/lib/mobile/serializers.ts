@@ -60,7 +60,7 @@ export function serializeCompletion(c: any) {
 export function serializeIssue(n: any) {
   const result: Record<string, any> = {
     id: n._id.toString(),
-    title: n.title ?? "",
+    issueType: n.issueType,
     content: n.content ?? "",
     status: n.status ?? 'open',
     pledged: Array.isArray(n.pledged) ? n.pledged.map(serializePledge) : [],
