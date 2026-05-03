@@ -22,10 +22,11 @@ function serializeCard(card: any) {
 export async function GET(req: NextRequest) {
   const tokenPayload = await verifyToken(req)
   if (!tokenPayload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const userId = tokenPayload.id
 
   try {
     await connectToDatabase()
-    const user = await UserModel.findById(tokenPayload.id).lean() as any
+    const user = await UserModel.findById(userId).lean() as any
 
     if (!user?.stripeAccountId) return NextResponse.json({ payoutCard: null })
 
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ payoutCard: card ? serializeCard(card) : null })
   } catch (err: any) {
     if (err?.code === 'resource_missing' || err?.code === 'account_invalid') {
-      await UserModel.findByIdAndUpdate(tokenPayload.id, {
+      await UserModel.findByIdAndUpdate(userId, {
         $unset: { stripeAccountId: '', stripeAccountEnabled: '' },
       })
       return NextResponse.json({ payoutCard: null })
@@ -48,7 +49,6 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const tokenPayload = await verifyToken(req)
   if (!tokenPayload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
   const userId = tokenPayload.id
 
   try {
@@ -110,8 +110,8 @@ export async function POST(req: NextRequest) {
           external_account: token,
         })
       } catch (err: any) {
-        if (err?.code === 'oauth_not_supported' || err?.statusCode === 403) {
-          // Stale account from a different platform or missing permissions — delete and recreate
+        if (err?.code === 'oauth_not_supported') {
+          // Stale Custom account without platform permissions — delete and recreate inline
           card = await createFreshAccount()
         } else {
           throw err
@@ -133,10 +133,11 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const tokenPayload = await verifyToken(req)
   if (!tokenPayload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const userId = tokenPayload.id
 
   try {
     await connectToDatabase()
-    const user = await UserModel.findById(tokenPayload.id).lean() as any
+    const user = await UserModel.findById(userId).lean() as any
 
     if (user?.stripeAccountId) {
       const existing = await stripe.accounts.listExternalAccounts(user.stripeAccountId, { object: 'card' })
@@ -145,7 +146,7 @@ export async function DELETE(req: NextRequest) {
       )
     }
 
-    await UserModel.findByIdAndUpdate(tokenPayload.id, { stripeAccountEnabled: false })
+    await UserModel.findByIdAndUpdate(userId, { stripeAccountEnabled: false })
     return NextResponse.json({ ok: true })
   } catch (err: any) {
     console.error('[stripe/payout-card DELETE]', err)

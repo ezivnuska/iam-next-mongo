@@ -1,4 +1,4 @@
-// app/api/needs/route.ts
+// app/api/issues/route.ts
 
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/app/lib/mongoose";
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
 
     await connectToDatabase();
 
-    const newNeed = await Issue.create({
+    const newIssue = await Issue.create({
       author: userId,
       title: title?.trim() || "Untitled",
       content: content.trim(),

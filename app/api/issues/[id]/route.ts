@@ -1,4 +1,4 @@
-// app/api/needs/[id]/route.ts
+// app/api/issues/[id]/route.ts
 
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/app/lib/mongoose";

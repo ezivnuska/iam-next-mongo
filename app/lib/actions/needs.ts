@@ -2,7 +2,7 @@
 
 import Issue from "@/app/lib/models/issue";
 import "@/app/lib/models/image";
-import type { Need as NeedType } from "@/app/lib/definitions/need";
+import type { Issue as NeedType } from "@/app/lib/definitions/issue";
 import { connectToDatabase } from "../mongoose";
 import { transformPopulatedImage, transformPopulatedAuthor } from "@/app/lib/utils/transformers";
 
