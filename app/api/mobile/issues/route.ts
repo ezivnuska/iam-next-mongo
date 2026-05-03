@@ -85,10 +85,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid image ID" }, { status: 400 });
     }
 
-    if (initialPledge !== undefined && (typeof initialPledge !== 'number' || initialPledge <= 0)) {
-      return NextResponse.json({ error: "Initial pledge must be a positive number" }, { status: 400 });
-    }
-
     const validLocation =
       location &&
       typeof location.latitude === 'number' &&
@@ -110,7 +106,7 @@ export async function POST(req: NextRequest) {
     await need.populate("image");
 
     let pledged: any[] = [];
-    if (initialPledge > 0) {
+    if (initialPledge && typeof initialPledge === 'number' && initialPledge > 0) {
       const pledge = await createPledgeWithPaymentIntent(tokenPayload.id, need._id.toString(), initialPledge);
       await pledge.populate({ path: 'userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } });
       pledged = [pledge.toObject()];
