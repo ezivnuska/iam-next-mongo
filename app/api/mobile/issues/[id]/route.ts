@@ -28,11 +28,13 @@ export const GET = withAuth(async (req, token, ctx) => {
       .lean()
     if (!need) return NextResponse.json({ error: 'Issue not found' }, { status: 404 })
 
-    const [pledges, applicants] = await Promise.all([
+    const [pledges, applicants, commission] = await Promise.all([
       Pledge.find({ issueId: id }).populate(USER_WITH_AVATAR_POPULATE).lean(),
       Applicant.find({ issueId: id }).lean(),
+      Commission.findOne({ issueId: id }, { status: 1 }).lean(),
     ])
-    return NextResponse.json({ issue: serializeIssue({ ...need, pledged: pledges, applicants }) })
+    const completionStatus = (commission as any)?.status ?? null
+    return NextResponse.json({ issue: serializeIssue({ ...need, pledged: pledges, applicants, completionStatus }) })
   } catch (err) {
     console.error('[mobile/issues GET by id]', err)
     return NextResponse.json({ error: 'Failed to fetch issue' }, { status: 500 })
