@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 
     const status = req.nextUrl.searchParams.get('status') ?? 'open'
     const query = status === 'open'
-      ? { $or: [{ status: 'open' }, { status: { $exists: false } }] }
+      ? { $or: [{ status: 'open' }, { status: 'completed' }, { status: { $exists: false } }] }
       : { status }
     const needs = await Issue.find(query)
       .sort({ createdAt: -1 })
