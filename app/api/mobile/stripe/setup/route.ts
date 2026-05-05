@@ -9,6 +9,7 @@ import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import stripe from '@/app/lib/stripe'
 import UserModel from '@/app/lib/models/user'
+import Pledge from '@/app/lib/models/pledge'
 
 // Keep in sync with node_modules/stripe/cjs/apiVersion.js when upgrading the stripe package
 const STRIPE_API_VERSION = '2026-04-22.dahlia'
@@ -129,6 +130,18 @@ export async function DELETE(req: NextRequest) {
 
   try {
     await connectToDatabase()
+
+    const heldPledge = await Pledge.findOne({
+      userId: tokenPayload.id,
+      stripePaymentIntentId: { $exists: true, $ne: null },
+    }).lean()
+    if (heldPledge) {
+      return NextResponse.json(
+        { error: 'You have funds currently held for active pledges. Your payment method cannot be removed until those issues are resolved.' },
+        { status: 409 }
+      )
+    }
+
     const user = await UserModel.findById(tokenPayload.id).lean() as any
     if (user?.stripeDefaultPaymentMethodId) {
       await stripe.paymentMethods.detach(user.stripeDefaultPaymentMethodId)

@@ -8,6 +8,8 @@ import { connectToDatabase } from '@/app/lib/mongoose'
 import { verifyToken } from '@/app/lib/mobile/verifyToken'
 import stripe from '@/app/lib/stripe'
 import UserModel from '@/app/lib/models/user'
+import Pledge from '@/app/lib/models/pledge'
+import Applicant from '@/app/lib/models/applicant'
 
 function serializeCard(card: any) {
   return {
@@ -81,8 +83,11 @@ export async function POST(req: NextRequest) {
         })
         accountId = null
       }
+      const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_')
       const account = await stripe.accounts.create({
         type: 'custom',
+        country: 'US',
+        business_type: 'individual',
         email: user.email,
         external_account: token,
         metadata: { userId },
@@ -91,6 +96,16 @@ export async function POST(req: NextRequest) {
           date: Math.floor(Date.now() / 1000),
           ip: req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? '127.0.0.1',
         },
+        ...(isTestMode && {
+          individual: {
+            first_name: user.username ?? 'Test',
+            last_name: 'User',
+            email: user.email,
+            dob: { day: 1, month: 1, year: 1990 },
+            address: { line1: '123 Main St', city: 'San Francisco', state: 'CA', postal_code: '94111' },
+            ssn_last_4: '0000',
+          },
+        }),
       })
       accountId = account.id
       await UserModel.findByIdAndUpdate(userId, { stripeAccountId: accountId })
@@ -137,6 +152,21 @@ export async function DELETE(req: NextRequest) {
 
   try {
     await connectToDatabase()
+
+    const acceptedApplication = await Applicant.findOne({ userId, status: 'accepted' }).lean() as any
+    if (acceptedApplication) {
+      const heldPledge = await Pledge.findOne({
+        issueId: acceptedApplication.issueId,
+        stripePaymentIntentId: { $exists: true, $ne: null },
+      }).lean()
+      if (heldPledge) {
+        return NextResponse.json(
+          { error: 'You have funds pending payout for accepted work. Your payout card cannot be removed until that issue is settled.' },
+          { status: 409 }
+        )
+      }
+    }
+
     const user = await UserModel.findById(userId).lean() as any
 
     if (user?.stripeAccountId) {
