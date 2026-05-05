@@ -54,6 +54,7 @@ export function serializeCompletion(c: any) {
       : [],
     status: c.status ?? 'pending',
     createdAt: c.createdAt?.toISOString() ?? new Date().toISOString(),
+    completedAt: c.status === 'approved' ? (c.updatedAt?.toISOString() ?? null) : null,
   }
 }
 
