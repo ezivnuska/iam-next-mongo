@@ -1,5 +1,5 @@
 // app/api/mobile/issues/[id]/commission/route.ts
-// GET  — fetch current completion submission
+// GET  — fetch current completion submission + caller's rating
 // POST — accepted applicant submits (or resubmits) completion images
 
 import { isValidObjectId } from '@/app/lib/utils/validation'
@@ -10,6 +10,7 @@ import { serializeCompletion } from '@/app/lib/mobile/serializers'
 import { getIssueAudienceIds, emitIssueCompletionSubmitted } from '@/app/lib/socket/emit'
 import Commission from '@/app/lib/models/commission'
 import Applicant from '@/app/lib/models/applicant'
+import Rating from '@/app/lib/models/rating'
 import '@/app/lib/models/image'
 
 export const GET = withAuth(async (req, token, ctx) => {
@@ -18,8 +19,16 @@ export const GET = withAuth(async (req, token, ctx) => {
 
   try {
     await connectToDatabase()
-    const completion = await Commission.findOne({ issueId: needId }).populate('images').lean()
-    return NextResponse.json({ completion: completion ? serializeCompletion(completion) : null })
+
+    const [commission, myRatingDoc] = await Promise.all([
+      Commission.findOne({ issueId: needId }).populate('images').lean(),
+      Rating.findOne({ issueId: needId, raterId: token.id }).lean() as any,
+    ])
+
+    return NextResponse.json({
+      completion: commission ? serializeCompletion(commission) : null,
+      myRating: myRatingDoc?.score ?? null,
+    })
   } catch (err) {
     console.error('[mobile/issues/completion GET]', err)
     return NextResponse.json({ error: 'Failed to fetch completion' }, { status: 500 })
