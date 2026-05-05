@@ -7,7 +7,7 @@ import { connectToDatabase } from '@/app/lib/mongoose'
 import { withAuth } from '@/app/lib/mobile/withAuth'
 import { serializePledge } from '@/app/lib/mobile/serializers'
 import { createPledgeWithPaymentIntent } from '@/app/lib/mobile/createPledge'
-import { getIssueAudienceIds, emitIssuePledgeAdded } from '@/app/lib/socket/emit'
+import { emitIssuePledgeAdded } from '@/app/lib/socket/emit'
 import Issue from '@/app/lib/models/issue'
 import '@/app/lib/models/image'
 import '@/app/lib/models/user'
@@ -29,8 +29,7 @@ export const POST = withAuth(async (req, token, ctx) => {
     await pledge.populate(USER_WITH_AVATAR_POPULATE)
 
     const serialized = serializePledge(pledge.toObject())
-    getIssueAudienceIds(id).then((audience) =>
-      emitIssuePledgeAdded({ issueId: id, pledge: serialized }, audience)
+    emitIssuePledgeAdded({ issueId: id, pledge: serialized }, token.id
     ).catch(() => {})
     return NextResponse.json({ pledge: serialized }, { status: 201 })
   } catch (err: any) {

@@ -93,12 +93,12 @@ export async function emitIssueCompletionReviewed(payload: IssueCompletionPayloa
 	await emitToUsers(SOCKET_EVENTS.ISSUE_COMPLETION_REVIEWED, payload, toUserIds)
 }
 
-export async function emitIssuePledgeAdded(payload: IssuePledgePayload, toUserIds: string[]): Promise<void> {
-	await emitToUsers(SOCKET_EVENTS.ISSUE_PLEDGE_ADDED, payload, toUserIds)
+export async function emitIssuePledgeAdded(payload: IssuePledgePayload, excludeUserId: string): Promise<void> {
+	await emitViaAPI(SOCKET_EVENTS.ISSUE_PLEDGE_ADDED, payload, undefined, excludeUserId)
 }
 
-export async function emitIssuePledgeRemoved(payload: IssuePledgeRemovedPayload, toUserIds: string[]): Promise<void> {
-	await emitToUsers(SOCKET_EVENTS.ISSUE_PLEDGE_REMOVED, payload, toUserIds)
+export async function emitIssuePledgeRemoved(payload: IssuePledgeRemovedPayload, excludeUserId: string): Promise<void> {
+	await emitViaAPI(SOCKET_EVENTS.ISSUE_PLEDGE_REMOVED, payload, undefined, excludeUserId)
 }
 
 // Note: Poker events are now handled by PokerSocketEmitter in socket-helper.ts

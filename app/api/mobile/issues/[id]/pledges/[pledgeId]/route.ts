@@ -5,7 +5,7 @@ import { isValidObjectId } from '@/app/lib/utils/validation'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { withAuth } from '@/app/lib/mobile/withAuth'
-import { getIssueAudienceIds, emitIssuePledgeRemoved } from '@/app/lib/socket/emit'
+import { emitIssuePledgeRemoved } from '@/app/lib/socket/emit'
 import Pledge from '@/app/lib/models/pledge'
 import stripe from '@/app/lib/stripe'
 
@@ -32,8 +32,7 @@ export const DELETE = withAuth(async (req, token, ctx) => {
     const issueId = pledge.issueId.toString()
     await pledge.deleteOne()
 
-    getIssueAudienceIds(issueId).then((audience) =>
-      emitIssuePledgeRemoved({ issueId, pledgeId }, audience)
+    emitIssuePledgeRemoved({ issueId, pledgeId }, token.id
     ).catch(() => {})
     return NextResponse.json({ ok: true })
   } catch (err) {
