@@ -63,7 +63,7 @@ export const POST = withAuth(async (req, token, ctx) => {
     ).populate('images')
 
     const serialized = serializeCompletion(completion.toObject())
-    getIssueAudienceIds(needId).then((audience) =>
+    getIssueAudienceIds(needId, token.id).then((audience) =>
       emitIssueCompletionSubmitted({ issueId: needId, completion: serialized }, audience)
     ).catch(() => {})
     return NextResponse.json({ completion: serialized })

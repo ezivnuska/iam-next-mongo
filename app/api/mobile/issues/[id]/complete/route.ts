@@ -5,11 +5,13 @@ import { isValidObjectId, USER_WITH_AVATAR_POPULATE } from '@/app/lib/utils/vali
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { withAuth } from '@/app/lib/mobile/withAuth'
-import { serializeIssue } from '@/app/lib/mobile/serializers'
+import { serializeIssue, serializeCompletion } from '@/app/lib/mobile/serializers'
 import { settleIssue } from '@/app/lib/mobile/settleIssue'
+import { getIssueAudienceIds, emitIssueCompletionReviewed } from '@/app/lib/socket/emit'
 import Issue from '@/app/lib/models/issue'
 import Pledge from '@/app/lib/models/pledge'
 import Applicant from '@/app/lib/models/applicant'
+import Commission from '@/app/lib/models/commission'
 import '@/app/lib/models/image'
 import '@/app/lib/models/user'
 
@@ -32,11 +34,26 @@ export const PATCH = withAuth(async (req, token, ctx) => {
       { path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } },
       { path: 'image' },
     ])
-    const [pledges, applicants] = await Promise.all([
+    const [pledges, applicants, commission, acceptedApplicant] = await Promise.all([
       Pledge.find({ issueId: id }).populate(USER_WITH_AVATAR_POPULATE).lean(),
       Applicant.find({ issueId: id }).lean(),
+      Commission.findOne({ issueId: id }).populate('images').lean(),
+      Applicant.findOne({ issueId: id, status: 'accepted' }).lean() as any,
     ])
-    return NextResponse.json({ issue: serializeIssue({ ...need.toObject(), pledged: pledges, applicants }) })
+
+    const serializedIssue = serializeIssue({ ...need.toObject(), pledged: pledges, applicants })
+
+    if (commission) {
+      const applicantUserId = acceptedApplicant?.userId?.toString()
+      getIssueAudienceIds(id, ...(applicantUserId ? [applicantUserId] : [])).then((audience) =>
+        emitIssueCompletionReviewed(
+          { issueId: id, completion: serializeCompletion(commission), issue: serializedIssue },
+          audience
+        )
+      ).catch(() => {})
+    }
+
+    return NextResponse.json({ issue: serializedIssue })
   } catch (err: any) {
     console.error('[mobile/issues/complete PATCH]', err)
     return NextResponse.json({ error: err?.message ?? 'Failed to complete issue' }, { status: 500 })

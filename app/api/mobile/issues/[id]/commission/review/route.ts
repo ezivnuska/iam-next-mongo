@@ -26,8 +26,13 @@ export const POST = withAuth(async (req, token, ctx) => {
   try {
     await connectToDatabase()
 
-    const pledge = await Pledge.findOne({ issueId: needId, userId: token.id }).lean()
-    if (!pledge) return NextResponse.json({ error: 'Only contributors can review completion' }, { status: 403 })
+    const [pledge, issue] = await Promise.all([
+      Pledge.findOne({ issueId: needId, userId: token.id }).lean(),
+      Issue.findById(needId, { author: 1 }).lean() as any,
+    ])
+    const isAuthorReviewing = issue?.author?.toString() === token.id
+    if (!pledge && !isAuthorReviewing)
+      return NextResponse.json({ error: 'Only contributors or the author can review completion' }, { status: 403 })
 
     const completion = await Commission.findOne({ issueId: needId })
     if (!completion) return NextResponse.json({ error: 'No completion submission found' }, { status: 404 })
@@ -48,9 +53,14 @@ export const POST = withAuth(async (req, token, ctx) => {
 
     const pledges = await Pledge.find({ issueId: needId }).lean()
     const allContributorIds = [...new Set(pledges.map((p) => p.userId.toString()))]
-    const reviewerIds = confirmingIds.length > 0
+    const baseReviewerIds = confirmingIds.length > 0
       ? allContributorIds.filter((id) => confirmingIds.includes(id))
       : allContributorIds
+    // Author is always a required reviewer
+    const authorId = issue?.author?.toString()
+    const reviewerIds = authorId && !baseReviewerIds.includes(authorId)
+      ? [...baseReviewerIds, authorId]
+      : baseReviewerIds
 
     const anyDenied = completion.reviews.some(
       (r) => reviewerIds.includes(r.userId.toString()) && r.vote === 'deny'
