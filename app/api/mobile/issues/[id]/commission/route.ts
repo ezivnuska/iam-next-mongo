@@ -10,7 +10,6 @@ import { serializeCompletion } from '@/app/lib/mobile/serializers'
 import { getIssueAudienceIds, emitIssueCompletionSubmitted } from '@/app/lib/socket/emit'
 import Commission from '@/app/lib/models/commission'
 import Applicant from '@/app/lib/models/applicant'
-import Rating from '@/app/lib/models/rating'
 import '@/app/lib/models/image'
 
 export const GET = withAuth(async (req, token, ctx) => {
@@ -20,14 +19,20 @@ export const GET = withAuth(async (req, token, ctx) => {
   try {
     await connectToDatabase()
 
-    const [commission, myRatingDoc] = await Promise.all([
-      Commission.findOne({ issueId: needId }).populate('images').lean(),
-      Rating.findOne({ issueId: needId, raterId: token.id }).lean() as any,
-    ])
+    const commission = await Commission.findOne({ issueId: needId }).populate('images').lean()
+
+    let myRating: number | null = null
+    try {
+      const Rating = (await import('@/app/lib/models/rating')).default
+      const doc = await Rating.findOne({ issueId: needId, raterId: token.id }).lean() as any
+      myRating = doc?.score ?? null
+    } catch {
+      // rating lookup is non-critical — don't fail the whole response
+    }
 
     return NextResponse.json({
       completion: commission ? serializeCompletion(commission) : null,
-      myRating: myRatingDoc?.score ?? null,
+      myRating,
     })
   } catch (err) {
     console.error('[mobile/issues/completion GET]', err)
