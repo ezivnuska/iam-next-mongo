@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
 
     await connectToDatabase();
 
-    await import("@/app/lib/models/image"); // ensure Image model is registered for populate
+    await import("@/app/lib/models/image");
     const userDoc = await UserModel.findById(payload.id as string).populate("avatar", "_id variants");
     if (!userDoc) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -35,6 +35,18 @@ export async function GET(req: NextRequest) {
         }
       : null;
 
+    let reputation: { average: number; count: number } | null = null;
+    try {
+      const Rating = (await import('@/app/lib/models/rating')).default;
+      const ratings = await Rating.find({ workerId: userDoc._id }).lean() as any[];
+      if (ratings.length > 0) {
+        reputation = {
+          average: Math.round((ratings.reduce((s, r) => s + r.score, 0) / ratings.length) * 10) / 10,
+          count: ratings.length,
+        };
+      }
+    } catch {}
+
     return NextResponse.json({
       id: userDoc._id.toString(),
       username: userDoc.username,
@@ -42,6 +54,7 @@ export async function GET(req: NextRequest) {
       role: userDoc.role,
       bio: userDoc.bio,
       avatar,
+      reputation,
     });
   } catch (err) {
     return NextResponse.json(
