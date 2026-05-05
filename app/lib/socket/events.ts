@@ -186,6 +186,7 @@ export interface IssueCompletionPayload {
 
 export interface IssuePledgePayload {
 	issueId: string
+	actorId: string
 	pledge: {
 		id: string
 		userId: string
@@ -199,6 +200,7 @@ export interface IssuePledgePayload {
 
 export interface IssuePledgeRemovedPayload {
 	issueId: string
+	actorId: string
 	pledgeId: string
 }
 
