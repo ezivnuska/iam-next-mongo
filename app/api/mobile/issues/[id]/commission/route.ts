@@ -5,27 +5,16 @@
 import { isValidObjectId } from '@/app/lib/utils/validation'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
-import { verifyToken } from '@/app/lib/mobile/verifyToken'
+import { withAuth } from '@/app/lib/mobile/withAuth'
 import { serializeCompletion } from '@/app/lib/mobile/serializers'
 import { getIssueAudienceIds, emitIssueCompletionSubmitted } from '@/app/lib/socket/emit'
 import Commission from '@/app/lib/models/commission'
 import Applicant from '@/app/lib/models/applicant'
 import '@/app/lib/models/image'
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const tokenPayload = await verifyToken(req)
-  if (!tokenPayload) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const { id: needId } = await params
-
-  if (!isValidObjectId(needId)) {
-    return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
-  }
+export const GET = withAuth(async (req, token, ctx) => {
+  const { id: needId } = await ctx.params
+  if (!isValidObjectId(needId)) return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
 
   try {
     await connectToDatabase()
@@ -35,49 +24,27 @@ export async function GET(
     console.error('[mobile/issues/completion GET]', err)
     return NextResponse.json({ error: 'Failed to fetch completion' }, { status: 500 })
   }
-}
+})
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const tokenPayload = await verifyToken(req)
-  if (!tokenPayload) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const { id: needId } = await params
-
-  if (!isValidObjectId(needId)) {
-    return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
-  }
+export const POST = withAuth(async (req, token, ctx) => {
+  const { id: needId } = await ctx.params
+  if (!isValidObjectId(needId)) return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
 
   const { imageIds } = await req.json()
-  if (!Array.isArray(imageIds) || imageIds.length === 0) {
+  if (!Array.isArray(imageIds) || imageIds.length === 0)
     return NextResponse.json({ error: 'At least one image is required' }, { status: 400 })
-  }
-  if (imageIds.some((id: any) => !isValidObjectId(id))) {
+  if (imageIds.some((id: any) => !isValidObjectId(id)))
     return NextResponse.json({ error: 'Invalid image ID' }, { status: 400 })
-  }
 
   try {
     await connectToDatabase()
-
-    const applicant = await Applicant.findOne({ issueId: needId, userId: tokenPayload.id, status: 'accepted' }).lean()
-    if (!applicant) {
+    const applicant = await Applicant.findOne({ issueId: needId, userId: token.id, status: 'accepted' }).lean()
+    if (!applicant)
       return NextResponse.json({ error: 'Only the accepted applicant can submit completion evidence' }, { status: 403 })
-    }
 
-    // Upsert — replace any prior submission, reset reviews and status
     const completion = await Commission.findOneAndUpdate(
       { issueId: needId },
-      {
-        issueId: needId,
-        applicantId: applicant._id,
-        images: imageIds,
-        reviews: [],
-        status: 'pending',
-      },
+      { issueId: needId, applicantId: applicant._id, images: imageIds, reviews: [], status: 'pending' },
       { upsert: true, new: true }
     ).populate('images')
 
@@ -90,4 +57,4 @@ export async function POST(
     console.error('[mobile/issues/completion POST]', err)
     return NextResponse.json({ error: 'Failed to submit completion' }, { status: 500 })
   }
-}
+})

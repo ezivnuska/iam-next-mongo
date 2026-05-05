@@ -3,23 +3,18 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
-import { verifyToken } from '@/app/lib/mobile/verifyToken'
+import { withAuth } from '@/app/lib/mobile/withAuth'
 import stripe from '@/app/lib/stripe'
 import Pledge from '@/app/lib/models/pledge'
 import UserModel from '@/app/lib/models/user'
 import '@/app/lib/models/issue'
 
-export async function GET(req: NextRequest) {
-  const tokenPayload = await verifyToken(req)
-  if (!tokenPayload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withAuth(async (req, token) => {
   try {
     await connectToDatabase()
+    const user = await UserModel.findById(token.id).lean() as any
 
-    const user = await UserModel.findById(tokenPayload.id).lean() as any
-
-    // Pledges with need title + status
-    const rawPledges = await Pledge.find({ userId: tokenPayload.id })
+    const rawPledges = await Pledge.find({ userId: token.id })
       .populate({ path: 'issueId', select: 'issueType status' })
       .sort({ createdAt: -1 })
       .lean() as any[]
@@ -40,7 +35,6 @@ export async function GET(req: NextRequest) {
       }
     })
 
-    // Connect account balance + recent transfers
     let connect: {
       availableCents: number
       pendingCents: number
@@ -60,9 +54,7 @@ export async function GET(req: NextRequest) {
       })
 
       if (staleAccount) {
-        await UserModel.findByIdAndUpdate(tokenPayload.id, {
-          $unset: { stripeAccountId: '', stripeAccountEnabled: '' },
-        })
+        await UserModel.findByIdAndUpdate(token.id, { $unset: { stripeAccountId: '', stripeAccountEnabled: '' } })
       } else {
         const balance = balanceResult.status === 'fulfilled' ? balanceResult.value : null
         const transferData = transfersResult.status === 'fulfilled' ? transfersResult.value.data : []
@@ -73,12 +65,7 @@ export async function GET(req: NextRequest) {
         connect = {
           availableCents: balance?.available.reduce((sum, b) => sum + b.amount, 0) ?? 0,
           pendingCents: balance?.pending.reduce((sum, b) => sum + b.amount, 0) ?? 0,
-          transfers: transferData.map((t) => ({
-            id: t.id,
-            amountCents: t.amount,
-            created: t.created,
-            description: t.description ?? null,
-          })),
+          transfers: transferData.map((t) => ({ id: t.id, amountCents: t.amount, created: t.created, description: t.description ?? null })),
         }
       }
     }
@@ -88,4 +75,4 @@ export async function GET(req: NextRequest) {
     console.error('[stripe/dashboard GET]', err)
     return NextResponse.json({ error: err?.message ?? 'Failed to load dashboard' }, { status: 500 })
   }
-}
+})

@@ -4,61 +4,39 @@
 import { isValidObjectId } from '@/app/lib/utils/validation'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
-import { verifyToken } from '@/app/lib/mobile/verifyToken'
+import { withAuth } from '@/app/lib/mobile/withAuth'
 import { serializeApplicant } from '@/app/lib/mobile/serializers'
 import { emitIssueApplicantVoted } from '@/app/lib/socket/emit'
 import Applicant from '@/app/lib/models/applicant'
 import Pledge from '@/app/lib/models/pledge'
 import Issue from '@/app/lib/models/issue'
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string; applicantId: string }> }
-) {
-  const tokenPayload = await verifyToken(req)
-  if (!tokenPayload) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+export const POST = withAuth(async (req, token, ctx) => {
+  const { id: needId, applicantId } = await ctx.params
 
-  const { id: needId, applicantId } = await params
-
-  if (!isValidObjectId(needId)) {
-    return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
-  }
-  if (!isValidObjectId(applicantId)) {
-    return NextResponse.json({ error: 'Invalid applicant ID' }, { status: 400 })
-  }
+  if (!isValidObjectId(needId)) return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
+  if (!isValidObjectId(applicantId)) return NextResponse.json({ error: 'Invalid applicant ID' }, { status: 400 })
 
   const { vote } = await req.json()
-  if (vote !== 'confirm' && vote !== 'deny') {
+  if (vote !== 'confirm' && vote !== 'deny')
     return NextResponse.json({ error: 'Vote must be "confirm" or "deny"' }, { status: 400 })
-  }
 
   try {
     await connectToDatabase()
 
-    // Voter must be a contributor
-    const pledge = await Pledge.findOne({ issueId: needId, userId: tokenPayload.id }).lean()
-    if (!pledge) {
-      return NextResponse.json({ error: 'Only contributors can vote' }, { status: 403 })
-    }
+    const pledge = await Pledge.findOne({ issueId: needId, userId: token.id }).lean()
+    if (!pledge) return NextResponse.json({ error: 'Only contributors can vote' }, { status: 403 })
 
     const applicant = await Applicant.findOne({ _id: applicantId, issueId: needId })
-    if (!applicant) {
-      return NextResponse.json({ error: 'Applicant not found' }, { status: 404 })
-    }
+    if (!applicant) return NextResponse.json({ error: 'Applicant not found' }, { status: 404 })
 
-    // Upsert this contributor's vote
-    const existingIndex = applicant.votes.findIndex(
-      (v) => v.userId.toString() === tokenPayload.id
-    )
+    const existingIndex = applicant.votes.findIndex((v) => v.userId.toString() === token.id)
     if (existingIndex >= 0) {
       applicant.votes[existingIndex].vote = vote
     } else {
-      applicant.votes.push({ userId: tokenPayload.id as any, vote })
+      applicant.votes.push({ userId: token.id as any, vote })
     }
 
-    // Recalculate status: all contributors must have voted, at least one confirmed
     const pledges = await Pledge.find({ issueId: needId }).lean()
     const contributorIds = [...new Set(pledges.map((p) => p.userId.toString()))]
 
@@ -66,7 +44,6 @@ export async function POST(
       applicant.votes.some((v) => v.userId.toString() === cId)
     )
     const anyConfirmed = applicant.votes.some((v) => v.vote === 'confirm')
-
     applicant.status = allVoted && anyConfirmed ? 'confirmed' : 'pending'
 
     await applicant.save()
@@ -83,4 +60,4 @@ export async function POST(
     console.error('[mobile/issues/applicants/vote POST]', err)
     return NextResponse.json({ error: 'Failed to submit vote' }, { status: 500 })
   }
-}
+})
