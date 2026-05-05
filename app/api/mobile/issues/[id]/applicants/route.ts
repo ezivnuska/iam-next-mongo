@@ -34,6 +34,11 @@ export async function POST(
       return NextResponse.json({ error: 'Issue not found' }, { status: 404 })
     }
 
+    const existing = await Applicant.findOne({ userId: tokenPayload.id, issueId: id }).lean()
+    if (existing) {
+      return NextResponse.json({ error: 'Already applied to this issue' }, { status: 409 })
+    }
+
     const applicant = await Applicant.create({
       userId: tokenPayload.id,
       issueId: id,

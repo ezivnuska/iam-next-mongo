@@ -29,4 +29,8 @@ const applicantSchema = new Schema<IApplicant>(
 applicantSchema.index({ userId: 1, issueId: 1 }, { unique: true })
 
 const Applicant: Model<IApplicant> = mongoose.models.Applicant || mongoose.model<IApplicant>('Applicant', applicantSchema)
+
+// Drop the stale needId index left over from the needId → issueId rename
+Applicant.collection.dropIndex('userId_1_needId_1').catch(() => {})
+
 export default Applicant
