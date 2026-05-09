@@ -27,7 +27,7 @@ export const GET = withAuth(async (req, token, ctx) => {
       const Rating = (await import('@/app/lib/models/rating')).default
       const [myDoc, allRatings] = await Promise.all([
         Rating.findOne({ issueId: needId, raterId: token.id }).lean() as any,
-        Rating.find({ issueId: needId }).lean() as any[],
+        Rating.find({ issueId: needId }).lean() as unknown as any[],
       ])
       myRating = myDoc?.score ?? null
       if (allRatings.length > 0) {
