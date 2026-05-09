@@ -62,10 +62,12 @@ export const POST = withAuth(async (req, token) => {
         accountId = null
       }
       const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_')
+      const BASE = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://iameric.me'
       const account = await stripe.accounts.create({
         type: 'custom',
         country: 'US',
         business_type: 'individual',
+        business_profile: { url: BASE, mcc: '7299' },
         email: user.email,
         external_account: cardToken,
         metadata: { userId },
@@ -80,13 +82,24 @@ export const POST = withAuth(async (req, token) => {
             last_name: 'User',
             email: user.email,
             dob: { day: 1, month: 1, year: 1990 },
-            address: { line1: '123 Main St', city: 'San Francisco', state: 'CA', postal_code: '94111' },
+            address: { line1: '123 Main St', city: 'San Francisco', state: 'CA', postal_code: '94111', country: 'US' },
             ssn_last_4: '0000',
           },
         }),
       })
       accountId = account.id
       await UserModel.findByIdAndUpdate(userId, { stripeAccountId: accountId })
+
+      // In test mode, verify the transfers capability activated; if still pending, update to trigger re-evaluation
+      if (isTestMode) {
+        const retrieved = await stripe.accounts.retrieve(accountId)
+        if (retrieved.capabilities?.transfers !== 'active') {
+          await stripe.accounts.update(accountId, {
+            individual: { ssn_last_4: '0000' },
+          }).catch(() => {})
+        }
+      }
+
       return account.external_accounts?.data[0]
     }
 
