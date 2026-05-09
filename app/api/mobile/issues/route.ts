@@ -9,8 +9,10 @@ import { withAuth } from '@/app/lib/mobile/withAuth'
 import { serializeIssue } from '@/app/lib/mobile/serializers'
 import { attachIssueData } from '@/app/lib/mobile/attachIssueData'
 import { createPledgeWithPaymentIntent } from '@/app/lib/mobile/createPledge'
+import { emitIssueCreated } from '@/app/lib/socket/emit'
 import Issue from '@/app/lib/models/issue'
 import '@/app/lib/models/image'
+import '@/app/lib/models/user'
 
 export const GET = withAuth(async (req, token) => {
   try {
@@ -65,7 +67,10 @@ export const POST = withAuth(async (req, token) => {
       ...(imageId ? { image: imageId } : {}),
     })
 
-    await issue.populate('image')
+    await issue.populate([
+      { path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } },
+      { path: 'image' },
+    ])
 
     let pledged: any[] = []
     if (initialPledge && typeof initialPledge === 'number' && initialPledge > 0) {
@@ -74,7 +79,10 @@ export const POST = withAuth(async (req, token) => {
       pledged = [pledge.toObject()]
     }
 
-    return NextResponse.json({ issue: serializeIssue({ ...issue.toObject(), pledged, applicants: [] }) }, { status: 201 })
+    const serialized = serializeIssue({ ...issue.toObject(), pledged, applicants: [] })
+    emitIssueCreated({ actorId: token.id, issue: serialized }).catch(() => {})
+
+    return NextResponse.json({ issue: serialized }, { status: 201 })
   } catch (err: any) {
     if (err.code === 'NO_PAYMENT_METHOD') {
       return NextResponse.json({ error: err.message, code: 'NO_PAYMENT_METHOD' }, { status: 402 })

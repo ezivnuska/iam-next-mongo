@@ -8,6 +8,7 @@ import type {
 	CommentPayload,
 	LikePayload,
 	ActivityPayload,
+	IssueCreatedPayload,
 	IssueApplicantPayload,
 	IssueApplicantRemovedPayload,
 	IssueCompletionPayload,
@@ -69,6 +70,10 @@ export async function emitActivityCreated(payload: ActivityPayload) {
 	await emitViaAPI(SOCKET_EVENTS.ACTIVITY_CREATED, payload)
 }
 
+export async function emitIssueCreated(payload: IssueCreatedPayload): Promise<void> {
+	await emitViaAPI(SOCKET_EVENTS.ISSUE_CREATED, payload, undefined, payload.actorId)
+}
+
 export async function emitIssueApplicantAdded(payload: IssueApplicantPayload, toUserIds: string[]): Promise<void> {
 	await emitToUsers(SOCKET_EVENTS.ISSUE_APPLICANT_ADDED, payload, toUserIds)
 }
@@ -94,11 +99,11 @@ export async function emitIssueCompletionReviewed(payload: IssueCompletionPayloa
 }
 
 export async function emitIssuePledgeAdded(payload: IssuePledgePayload): Promise<void> {
-	await emitViaAPI(SOCKET_EVENTS.ISSUE_PLEDGE_ADDED, payload)
+	await emitViaAPI(SOCKET_EVENTS.ISSUE_PLEDGE_ADDED, payload, undefined, payload.actorId)
 }
 
 export async function emitIssuePledgeRemoved(payload: IssuePledgeRemovedPayload): Promise<void> {
-	await emitViaAPI(SOCKET_EVENTS.ISSUE_PLEDGE_REMOVED, payload)
+	await emitViaAPI(SOCKET_EVENTS.ISSUE_PLEDGE_REMOVED, payload, undefined, payload.actorId)
 }
 
 // Note: Poker events are now handled by PokerSocketEmitter in socket-helper.ts

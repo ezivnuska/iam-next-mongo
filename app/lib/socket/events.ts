@@ -27,6 +27,7 @@ export const SOCKET_EVENTS = {
 	ACTIVITY_CREATED: 'activity:created',
 
 	// Issue events
+	ISSUE_CREATED: 'issue:created',
 	ISSUE_APPLICANT_ADDED: 'issue:applicant_added',
 	ISSUE_APPLICANT_REMOVED: 'issue:applicant_removed',
 	ISSUE_APPLICANT_VOTED: 'issue:applicant_voted',
@@ -182,6 +183,11 @@ export interface IssueCompletionPayload {
 		createdAt: string
 	}
 	issue?: any
+}
+
+export interface IssueCreatedPayload {
+	actorId: string
+	issue: any
 }
 
 export interface IssuePledgePayload {
