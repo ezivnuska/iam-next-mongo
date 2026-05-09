@@ -12,9 +12,9 @@ import Pledge from '@/app/lib/models/pledge'
 import Issue from '@/app/lib/models/issue'
 
 export const POST = withAuth(async (req, token, ctx) => {
-  const { id: needId, applicantId } = await ctx.params
+  const { id: issueId, applicantId } = await ctx.params
 
-  if (!isValidObjectId(needId)) return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
+  if (!isValidObjectId(issueId)) return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
   if (!isValidObjectId(applicantId)) return NextResponse.json({ error: 'Invalid applicant ID' }, { status: 400 })
 
   const { vote } = await req.json()
@@ -24,10 +24,10 @@ export const POST = withAuth(async (req, token, ctx) => {
   try {
     await connectToDatabase()
 
-    const pledge = await Pledge.findOne({ issueId: needId, userId: token.id }).lean()
+    const pledge = await Pledge.findOne({ issueId: issueId, userId: token.id }).lean()
     if (!pledge) return NextResponse.json({ error: 'Only contributors can vote' }, { status: 403 })
 
-    const applicant = await Applicant.findOne({ _id: applicantId, issueId: needId })
+    const applicant = await Applicant.findOne({ _id: applicantId, issueId: issueId })
     if (!applicant) return NextResponse.json({ error: 'Applicant not found' }, { status: 404 })
 
     const existingIndex = applicant.votes.findIndex((v) => v.userId.toString() === token.id)
@@ -37,7 +37,7 @@ export const POST = withAuth(async (req, token, ctx) => {
       applicant.votes.push({ userId: token.id as any, vote })
     }
 
-    const pledges = await Pledge.find({ issueId: needId }).lean()
+    const pledges = await Pledge.find({ issueId: issueId }).lean()
     const contributorIds = [...new Set(pledges.map((p) => p.userId.toString()))]
 
     const allVoted = contributorIds.every((cId) =>
@@ -49,11 +49,11 @@ export const POST = withAuth(async (req, token, ctx) => {
     await applicant.save()
 
     const serialized = serializeApplicant(applicant.toObject())
-    const need = await (Issue as any).findById(needId, { author: 1 }).lean()
+    const issue = await Issue.findById(issueId, { author: 1 }).lean() as any
     const audience = new Set<string>(contributorIds)
-    if (need?.author) audience.add(need.author.toString())
+    if (issue?.author) audience.add(issue.author.toString())
     audience.add(applicant.userId.toString())
-    emitIssueApplicantVoted({ issueId: needId, applicant: serialized }, [...audience]).catch(() => {})
+    emitIssueApplicantVoted({ issueId: issueId, applicant: serialized }, [...audience]).catch(() => {})
 
     return NextResponse.json({ applicant: serialized })
   } catch (err) {

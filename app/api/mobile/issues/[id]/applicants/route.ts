@@ -18,9 +18,6 @@ export const POST = withAuth(async (req, token, ctx) => {
   try {
     await connectToDatabase()
 
-    // Drop stale index from needId→issueId rename (no-ops once gone)
-    await Applicant.collection.dropIndex('userId_1_needId_1').catch(() => {})
-
     const issue = await Issue.findById(id).lean()
     if (!issue) return NextResponse.json({ error: 'Issue not found' }, { status: 404 })
 
