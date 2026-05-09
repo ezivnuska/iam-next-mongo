@@ -9,6 +9,38 @@ import Pledge from '@/app/lib/models/pledge'
 import Applicant from '@/app/lib/models/applicant'
 import UserModel from '@/app/lib/models/user'
 
+const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_')
+
+async function ensureTransfersCapability(accountId: string): Promise<void> {
+  const account = await stripe.accounts.retrieve(accountId)
+  if (account.capabilities?.transfers === 'active') return
+
+  if (!isTestMode) {
+    throw new Error(`Destination account ${accountId} does not have transfers capability active`)
+  }
+
+  // Test mode: push the required identity fields to trigger capability activation
+  await stripe.accounts.update(accountId, {
+    business_profile: { url: process.env.NEXT_PUBLIC_BASE_URL ?? 'https://iameric.me', mcc: '7299' },
+    individual: {
+      first_name: (account as any).individual?.first_name ?? 'Test',
+      last_name:  (account as any).individual?.last_name  ?? 'User',
+      dob:        (account as any).individual?.dob        ?? { day: 1, month: 1, year: 1990 },
+      address:    (account as any).individual?.address    ?? { line1: '123 Main St', city: 'San Francisco', state: 'CA', postal_code: '94111', country: 'US' },
+      ssn_last_4: '0000',
+    },
+  } as any)
+
+  // Poll up to 5 s for the capability to activate
+  for (let i = 0; i < 10; i++) {
+    await new Promise((r) => setTimeout(r, 500))
+    const updated = await stripe.accounts.retrieve(accountId)
+    if (updated.capabilities?.transfers === 'active') return
+  }
+
+  throw new Error(`Transfers capability still not active on account ${accountId} after update`)
+}
+
 export async function settleIssue(issueId: string): Promise<void> {
   await connectToDatabase()
   const issue = await Issue.findById(issueId)
@@ -19,6 +51,9 @@ export async function settleIssue(issueId: string): Promise<void> {
 
   const applicantUser = await UserModel.findById(acceptedApplicant.userId).lean() as any
   if (!applicantUser?.stripeAccountId) throw new Error('Applicant has no payout account')
+
+  // Ensure the destination account can receive transfers before capturing any funds
+  await ensureTransfersCapability(applicantUser.stripeAccountId)
 
   // Deny voters' PIs were already cancelled at acceptance time — capture everything remaining
   const pledges = await Pledge.find({
