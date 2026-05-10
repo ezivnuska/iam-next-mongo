@@ -34,7 +34,7 @@ export const GET = withAuth(async (req, token) => {
 
 export const POST = withAuth(async (req, token) => {
   try {
-    const { issueType, content, imageId, location, locationVisible, initialPledge } = await req.json()
+    const { issueType, content, imageId, location, locationVisible } = await req.json()
 
     const validIssueTypes = ['Clean Up', 'Gardening', 'Hauling']
     if (!issueType || !validIssueTypes.includes(issueType)) {
@@ -72,12 +72,9 @@ export const POST = withAuth(async (req, token) => {
       { path: 'image' },
     ])
 
-    let pledged: any[] = []
-    if (initialPledge && typeof initialPledge === 'number' && initialPledge > 0) {
-      const pledge = await createPledgeWithPaymentIntent(token.id, issue._id.toString(), initialPledge)
-      await pledge.populate(USER_WITH_AVATAR_POPULATE)
-      pledged = [pledge.toObject()]
-    }
+    const pledge = await createPledgeWithPaymentIntent(token.id, issue._id.toString(), 1)
+    await pledge.populate(USER_WITH_AVATAR_POPULATE)
+    const pledged = [pledge.toObject()]
 
     const serialized = serializeIssue({ ...issue.toObject(), pledged, applicants: [] })
     emitIssueCreated({ actorId: token.id, issue: serialized }).catch((err: any) => console.warn('[socket]', err?.message ?? err))
