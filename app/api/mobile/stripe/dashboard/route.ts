@@ -27,7 +27,7 @@ export const GET = withAuth(async (req, token) => {
       else status = 'pledged'
       return {
         id: p._id.toString(),
-        needId: need?._id?.toString() ?? null,
+        issueId: need?._id?.toString() ?? null,
         issueType: need?.issueType ?? null,
         amount: p.amount,
         status,
