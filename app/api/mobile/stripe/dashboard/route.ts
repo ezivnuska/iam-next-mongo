@@ -6,6 +6,7 @@ import { connectToDatabase } from '@/app/lib/mongoose'
 import { withAuth } from '@/app/lib/mobile/withAuth'
 import stripe from '@/app/lib/stripe'
 import Pledge from '@/app/lib/models/pledge'
+import Applicant from '@/app/lib/models/applicant'
 import UserModel from '@/app/lib/models/user'
 import '@/app/lib/models/issue'
 
@@ -19,15 +20,25 @@ export const GET = withAuth(async (req, token) => {
       .sort({ createdAt: -1 })
       .lean() as any[]
 
+    // Batch-check which issues have an accepted applicant so status is accurate
+    const activeIssueIds = rawPledges
+      .map((p) => (p.issueId as any)?._id)
+      .filter(Boolean)
+    const acceptedApplicants = activeIssueIds.length > 0
+      ? await Applicant.find({ issueId: { $in: activeIssueIds }, status: 'accepted' }).select('issueId').lean()
+      : []
+    const acceptedIssueIds = new Set((acceptedApplicants as any[]).map((a) => a.issueId.toString()))
+
     const pledges = rawPledges.map((p) => {
       const need = p.issueId as any
+      const issueId = need?._id?.toString() ?? null
       let status: 'held' | 'paid' | 'pledged'
       if (need?.status === 'completed') status = 'paid'
-      else if (p.stripePaymentIntentId) status = 'held'
+      else if (issueId && acceptedIssueIds.has(issueId)) status = 'held'
       else status = 'pledged'
       return {
         id: p._id.toString(),
-        issueId: need?._id?.toString() ?? null,
+        issueId,
         issueType: need?.issueType ?? null,
         amount: p.amount,
         status,
