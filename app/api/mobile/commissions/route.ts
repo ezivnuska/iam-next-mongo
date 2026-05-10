@@ -15,7 +15,8 @@ export const GET = withAuth(async (req, token) => {
   try {
     await connectToDatabase()
 
-    const acceptedApplications = await Applicant.find({ userId: token.id, status: 'accepted' }).lean()
+    const userId = req.nextUrl.searchParams.get('userId') ?? token.id
+    const acceptedApplications = await Applicant.find({ userId, status: 'accepted' }).lean()
     const issueIds = acceptedApplications.map((a: any) => a.issueId)
 
     if (issueIds.length === 0) return NextResponse.json({ issues: [] })
