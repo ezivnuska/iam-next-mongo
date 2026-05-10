@@ -1,7 +1,7 @@
 // app/lib/mobile/createPledge.ts
-// Shared utility: create a pledge + authorize a Stripe PaymentIntent
+// Records a pledge commitment. No Stripe charge is created here — pledges are
+// charged immediately when the applicant accepts the work offer.
 
-import stripe from '@/app/lib/stripe'
 import Pledge from '@/app/lib/models/pledge'
 import UserModel from '@/app/lib/models/user'
 
@@ -17,23 +17,6 @@ export async function createPledgeWithPaymentIntent(
     throw err
   }
 
-  // Authorize (but do not capture) a PaymentIntent for the pledge amount
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: Math.round(amount * 100), // cents
-    currency: 'usd',
-    customer: user.stripeCustomerId,
-    payment_method: user.stripeDefaultPaymentMethodId,
-    capture_method: 'manual',
-    confirm: true,
-    off_session: true,
-  })
-
-  const pledge = await Pledge.create({
-    userId,
-    issueId,
-    amount,
-    stripePaymentIntentId: paymentIntent.id,
-  })
-
+  const pledge = await Pledge.create({ userId, issueId, amount })
   return pledge
 }

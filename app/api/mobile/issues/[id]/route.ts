@@ -104,31 +104,21 @@ export const DELETE = withAuth(async (req, token, ctx) => {
     const isAdmin = token.role === 'admin'
     if (!isAuthor && !isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const [pledges, fee, commission] = await Promise.all([
+    const [pledgesWithPI, commission] = await Promise.all([
       Pledge.find({ issueId: id, stripePaymentIntentId: { $exists: true, $ne: null } }).lean(),
-      Fee.findOne({ issueId: id, stripePaymentIntentId: { $exists: true, $ne: null } }).lean(),
       Commission.findOne({ issueId: id }).select('images').lean(),
     ])
 
-    // Capture the non-refundable fee to the platform account
-    if (fee) {
-      try {
-        const pi = await stripe.paymentIntents.retrieve((fee as any).stripePaymentIntentId)
-        if (pi.status === 'requires_capture') await stripe.paymentIntents.capture((fee as any).stripePaymentIntentId)
-      } catch (err) {
-        console.error(`[issues DELETE] Failed to capture fee PI ${(fee as any).stripePaymentIntentId}:`, err)
-      }
-    }
-
-    // Cancel or refund contributor pledges
+    // Fee was charged immediately at issue creation — no Stripe action needed.
+    // Pledges charged at acceptance need to be refunded; pre-acceptance pledges have no PI.
     await Promise.allSettled(
-      (pledges as any[]).map(async (p) => {
+      (pledgesWithPI as any[]).map(async (p) => {
         try {
-          const pi = await stripe.paymentIntents.retrieve(p.stripePaymentIntentId)
-          if (pi.status === 'requires_capture') await stripe.paymentIntents.cancel(p.stripePaymentIntentId)
-          else if (pi.status === 'succeeded') await stripe.refunds.create({ payment_intent: p.stripePaymentIntentId })
-        } catch (err) {
-          console.error(`[issues DELETE] Failed to release pledge PI ${p.stripePaymentIntentId}:`, err)
+          await stripe.refunds.create({ payment_intent: p.stripePaymentIntentId })
+        } catch (err: any) {
+          if (err?.code !== 'charge_already_refunded') {
+            console.error(`[issues DELETE] Failed to refund pledge ${p.stripePaymentIntentId}:`, err)
+          }
         }
       })
     )

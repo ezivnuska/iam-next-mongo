@@ -23,7 +23,7 @@ export async function createIssueFee(
     currency: 'usd',
     customer: user.stripeCustomerId,
     payment_method: user.stripeDefaultPaymentMethodId,
-    capture_method: 'manual',
+    capture_method: 'automatic',
     confirm: true,
     off_session: true,
   })

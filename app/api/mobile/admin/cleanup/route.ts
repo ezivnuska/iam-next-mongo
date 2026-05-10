@@ -56,11 +56,11 @@ export const POST = withAuth(async (req, token) => {
     await Promise.allSettled(
       (pledgesWithStripe as any[]).map(async (p) => {
         try {
-          const pi = await stripe.paymentIntents.retrieve(p.stripePaymentIntentId)
-          if (pi.status === 'requires_capture') await stripe.paymentIntents.cancel(p.stripePaymentIntentId)
-          else if (pi.status === 'succeeded') await stripe.refunds.create({ payment_intent: p.stripePaymentIntentId })
-        } catch (err) {
-          console.error(`[admin/cleanup] Failed to release PI ${p.stripePaymentIntentId}:`, err)
+          await stripe.refunds.create({ payment_intent: p.stripePaymentIntentId })
+        } catch (err: any) {
+          if (err?.code !== 'charge_already_refunded') {
+            console.error(`[admin/cleanup] Failed to refund pledge PI ${p.stripePaymentIntentId}:`, err)
+          }
         }
       })
     )

@@ -1,5 +1,6 @@
 // app/api/mobile/issues/[id]/applicants/[applicantId]/accept/route.ts
-// PATCH — applicant accepts the confirmed work offer
+// PATCH — applicant accepts the confirmed work offer.
+//         Deny-voter pledges are removed; remaining pledgers are charged immediately.
 
 import { isValidObjectId } from '@/app/lib/utils/validation'
 import { NextRequest, NextResponse } from 'next/server'
@@ -36,26 +37,46 @@ export const PATCH = withAuth(async (req, token, ctx) => {
     applicant.acceptedAt = new Date()
     await applicant.save()
 
-    const denyVoterIds = new Set(
-      applicant.votes
-        .filter((v: any) => v.vote === 'deny')
-        .map((v: any) => v.userId.toString())
-    )
-    if (denyVoterIds.size > 0) {
-      const denyPledges = await Pledge.find({
-        issueId: needId,
-        stripePaymentIntentId: { $exists: true, $ne: null },
-      }).lean() as any[]
+    // Remove pledges from contributors who voted to deny this applicant
+    const denyVoterIds = applicant.votes
+      .filter((v: any) => v.vote === 'deny')
+      .map((v: any) => v.userId.toString())
+
+    if (denyVoterIds.length > 0) {
+      await Pledge.deleteMany({ issueId: needId, userId: { $in: denyVoterIds } })
+    }
+
+    // Charge all remaining pledgers immediately
+    const pledges = await Pledge.find({ issueId: needId }).lean() as any[]
+    if (pledges.length > 0) {
+      const pledgerIds = pledges.map((p) => p.userId)
+      const pledgers = await UserModel.find({ _id: { $in: pledgerIds } }).lean() as any[]
+      const pledgerMap = new Map(pledgers.map((u) => [u._id.toString(), u]))
+
       await Promise.allSettled(
-        denyPledges
-          .filter((p) => denyVoterIds.has(p.userId.toString()))
-          .map(async (p) => {
-            try {
-              await stripe.paymentIntents.cancel(p.stripePaymentIntentId)
-            } catch (err: any) {
-              console.error('[accept] failed to cancel deny voter PI', p.stripePaymentIntentId, err?.message)
-            }
-          })
+        pledges.map(async (p) => {
+          const pledger = pledgerMap.get(p.userId.toString())
+          if (!pledger?.stripeCustomerId || !pledger?.stripeDefaultPaymentMethodId) {
+            console.warn('[accept] pledger has no payment method, removing pledge', p._id)
+            await Pledge.findByIdAndDelete(p._id)
+            return
+          }
+          try {
+            const pi = await stripe.paymentIntents.create({
+              amount: Math.round(p.amount * 100),
+              currency: 'usd',
+              customer: pledger.stripeCustomerId,
+              payment_method: pledger.stripeDefaultPaymentMethodId,
+              capture_method: 'automatic',
+              confirm: true,
+              off_session: true,
+            })
+            await Pledge.findByIdAndUpdate(p._id, { stripePaymentIntentId: pi.id })
+          } catch (err: any) {
+            console.error('[accept] charge failed for pledger', p.userId, err?.message)
+            await Pledge.findByIdAndDelete(p._id)
+          }
+        })
       )
     }
 

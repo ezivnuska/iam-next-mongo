@@ -9,7 +9,6 @@ import { emitIssuePledgeRemoved } from '@/app/lib/socket/emit'
 import Pledge from '@/app/lib/models/pledge'
 import Issue from '@/app/lib/models/issue'
 import Applicant from '@/app/lib/models/applicant'
-import stripe from '@/app/lib/stripe'
 
 export const DELETE = withAuth(async (req, token, ctx) => {
   const { pledgeId } = await ctx.params
@@ -31,16 +30,6 @@ export const DELETE = withAuth(async (req, token, ctx) => {
 
     if (acceptedApplicant)
       return NextResponse.json({ error: 'A worker has been accepted — your pledge cannot be removed' }, { status: 409 })
-
-    if (pledge.stripePaymentIntentId) {
-      try {
-        await stripe.paymentIntents.cancel(pledge.stripePaymentIntentId)
-      } catch (stripeErr: any) {
-        if (!['already_canceled', 'already_captured'].includes(stripeErr?.code)) {
-          console.error('[pledge DELETE] Stripe cancel error', stripeErr)
-        }
-      }
-    }
 
     const issueId = pledge.issueId.toString()
     await pledge.deleteOne()
