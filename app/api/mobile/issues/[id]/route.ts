@@ -12,8 +12,10 @@ import Issue from '@/app/lib/models/issue'
 import Pledge from '@/app/lib/models/pledge'
 import Applicant from '@/app/lib/models/applicant'
 import Commission from '@/app/lib/models/commission'
+import Rating from '@/app/lib/models/rating'
+import ImageModel from '@/app/lib/models/image'
 import stripe from '@/app/lib/stripe'
-import '@/app/lib/models/image'
+import { deleteS3File } from '@/app/lib/aws/s3'
 import '@/app/lib/models/user'
 
 export const GET = withAuth(async (req, token, ctx) => {
@@ -101,7 +103,11 @@ export const DELETE = withAuth(async (req, token, ctx) => {
     const isAdmin = token.role === 'admin'
     if (!isAuthor && !isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const pledges = await Pledge.find({ issueId: id, stripePaymentIntentId: { $exists: true, $ne: null } }).lean()
+    const [pledges, commission] = await Promise.all([
+      Pledge.find({ issueId: id, stripePaymentIntentId: { $exists: true, $ne: null } }).lean(),
+      Commission.findOne({ issueId: id }).select('images').lean(),
+    ])
+
     await Promise.allSettled(
       (pledges as any[]).map(async (p) => {
         try {
@@ -113,12 +119,37 @@ export const DELETE = withAuth(async (req, token, ctx) => {
         }
       })
     )
+
+    const commissionImageIds = (commission as any)?.images ?? []
+    const issueImageId = need.image
+
+    const [commissionImages, issueImage] = await Promise.all([
+      commissionImageIds.length > 0 ? ImageModel.find({ _id: { $in: commissionImageIds } }).lean() : Promise.resolve([]),
+      issueImageId ? ImageModel.findById(issueImageId).lean() : Promise.resolve(null),
+    ])
+
     await Promise.all([
       Issue.findByIdAndDelete(id),
       Pledge.deleteMany({ issueId: id }),
       Applicant.deleteMany({ issueId: id }),
       Commission.deleteMany({ issueId: id }),
+      Rating.deleteMany({ issueId: id }),
+      commissionImageIds.length > 0 ? ImageModel.deleteMany({ _id: { $in: commissionImageIds } }) : Promise.resolve(),
+      issueImageId ? ImageModel.findByIdAndDelete(issueImageId) : Promise.resolve(),
     ])
+
+    const allImages = [...(commissionImages as any[]), ...(issueImage ? [issueImage] : [])]
+    await Promise.allSettled(
+      allImages.flatMap((img: any) =>
+        (img.variants ?? [])
+          .filter((v: any) => v.url)
+          .map((v: any) => {
+            const key = v.url.split(`https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`)[1]
+            return key ? deleteS3File(key) : Promise.resolve()
+          })
+      )
+    )
+
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error('[mobile/issues DELETE]', err)
