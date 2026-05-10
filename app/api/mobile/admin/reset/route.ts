@@ -63,7 +63,7 @@ export const POST = withAuth(async (req, token) => {
       ? await ImageModel.find({ _id: { $in: commissionImageIds } }).lean()
       : []
 
-    const [issueResult, pledgeResult, applicantResult, commissionResult, ratingResult] = await Promise.all([
+    const [issueResult, pledgeResult, feeResult, applicantResult, commissionResult, ratingResult] = await Promise.all([
       Issue.deleteMany({}),
       Pledge.deleteMany({}),
       Fee.deleteMany({}),
@@ -88,6 +88,7 @@ export const POST = withAuth(async (req, token) => {
       deleted: {
         issues: issueResult.deletedCount,
         pledges: pledgeResult.deletedCount,
+        fees: feeResult.deletedCount,
         applicants: applicantResult.deletedCount,
         commissions: commissionResult.deletedCount,
         ratings: ratingResult.deletedCount,

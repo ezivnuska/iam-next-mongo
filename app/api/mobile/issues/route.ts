@@ -72,10 +72,16 @@ export const POST = withAuth(async (req, token) => {
       { path: 'image' },
     ])
 
-    await createIssueFee(token.id, issue._id.toString(), 1)
-    const pledged: any[] = []
+    try {
+      await createIssueFee(token.id, issue._id.toString(), 1)
+    } catch (err: any) {
+      await Issue.findByIdAndDelete(issue._id)
+      if (err.code === 'NO_PAYMENT_METHOD')
+        return NextResponse.json({ error: err.message, code: 'NO_PAYMENT_METHOD' }, { status: 402 })
+      throw err
+    }
 
-    const serialized = serializeIssue({ ...issue.toObject(), pledged, applicants: [] })
+    const serialized = serializeIssue({ ...issue.toObject(), pledged: [], applicants: [] })
     emitIssueCreated({ actorId: token.id, issue: serialized }).catch((err: any) => console.warn('[socket]', err?.message ?? err))
 
     return NextResponse.json({ issue: serialized }, { status: 201 })

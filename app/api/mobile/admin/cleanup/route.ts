@@ -21,8 +21,9 @@ export const POST = withAuth(async (req, token) => {
   try {
     await connectToDatabase()
 
-    const [allPledgeIssueIds, allApplicantIssueIds, allCommissionIssueIds, allRatingIssueIds] = await Promise.all([
+    const [allPledgeIssueIds, allFeeIssueIds, allApplicantIssueIds, allCommissionIssueIds, allRatingIssueIds] = await Promise.all([
       Pledge.distinct('issueId'),
+      Fee.distinct('issueId'),
       Applicant.distinct('issueId'),
       Commission.distinct('issueId'),
       Rating.distinct('issueId'),
@@ -31,19 +32,20 @@ export const POST = withAuth(async (req, token) => {
     const candidateIds = [
       ...new Set([
         ...allPledgeIssueIds.map((id: any) => id.toString()),
+        ...allFeeIssueIds.map((id: any) => id.toString()),
         ...allApplicantIssueIds.map((id: any) => id.toString()),
         ...allCommissionIssueIds.map((id: any) => id.toString()),
         ...allRatingIssueIds.map((id: any) => id.toString()),
       ]),
     ]
 
-    if (candidateIds.length === 0) return NextResponse.json({ deleted: { pledges: 0, applicants: 0, commissions: 0, ratings: 0 } })
+    if (candidateIds.length === 0) return NextResponse.json({ deleted: { pledges: 0, fees: 0, applicants: 0, commissions: 0, ratings: 0 } })
 
     const existingIssues = await Issue.find({ _id: { $in: candidateIds } }).select('_id').lean()
     const existingIds = new Set(existingIssues.map((i: any) => i._id.toString()))
     const orphanIds = candidateIds.filter((id) => !existingIds.has(id))
 
-    if (orphanIds.length === 0) return NextResponse.json({ deleted: { pledges: 0, applicants: 0, commissions: 0, ratings: 0 } })
+    if (orphanIds.length === 0) return NextResponse.json({ deleted: { pledges: 0, fees: 0, applicants: 0, commissions: 0, ratings: 0 } })
 
     // Stripe cleanup for orphaned pledges
     const pledgesWithStripe = await Pledge.find({
@@ -71,7 +73,7 @@ export const POST = withAuth(async (req, token) => {
       ? await ImageModel.find({ _id: { $in: commissionImageIds } }).lean()
       : []
 
-    const [pledgeResult, applicantResult, commissionResult, ratingResult] = await Promise.all([
+    const [pledgeResult, feeResult, applicantResult, commissionResult, ratingResult] = await Promise.all([
       Pledge.deleteMany({ issueId: { $in: orphanIds } }),
       Fee.deleteMany({ issueId: { $in: orphanIds } }),
       Applicant.deleteMany({ issueId: { $in: orphanIds } }),
@@ -95,6 +97,7 @@ export const POST = withAuth(async (req, token) => {
       deleted: {
         orphanIssueIds: orphanIds,
         pledges: pledgeResult.deletedCount,
+        fees: feeResult.deletedCount,
         applicants: applicantResult.deletedCount,
         commissions: commissionResult.deletedCount,
         ratings: ratingResult.deletedCount,
