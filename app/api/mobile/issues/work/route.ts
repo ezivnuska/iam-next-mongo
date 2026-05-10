@@ -2,6 +2,7 @@
 // GET — list issues where the current user has applied
 
 import { NextResponse } from 'next/server'
+import mongoose from 'mongoose'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { withAuth } from '@/app/lib/mobile/withAuth'
 import { serializeIssue } from '@/app/lib/mobile/serializers'
@@ -15,7 +16,8 @@ export const GET = withAuth(async (req, token) => {
   try {
     await connectToDatabase()
 
-    const applicantRecords = await Applicant.find({ userId: token.id }).lean()
+    const userId = new mongoose.Types.ObjectId(token.id)
+    const applicantRecords = await Applicant.find({ userId }).lean()
     const issueIds = applicantRecords.map((a) => a.issueId)
 
     if (issueIds.length === 0) return NextResponse.json({ issues: [] })
