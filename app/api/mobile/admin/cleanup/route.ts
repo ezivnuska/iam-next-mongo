@@ -7,6 +7,7 @@ import { connectToDatabase } from '@/app/lib/mongoose'
 import { withAuth } from '@/app/lib/mobile/withAuth'
 import Issue from '@/app/lib/models/issue'
 import Pledge from '@/app/lib/models/pledge'
+import Fee from '@/app/lib/models/fee'
 import Applicant from '@/app/lib/models/applicant'
 import Commission from '@/app/lib/models/commission'
 import Rating from '@/app/lib/models/rating'
@@ -72,6 +73,7 @@ export const POST = withAuth(async (req, token) => {
 
     const [pledgeResult, applicantResult, commissionResult, ratingResult] = await Promise.all([
       Pledge.deleteMany({ issueId: { $in: orphanIds } }),
+      Fee.deleteMany({ issueId: { $in: orphanIds } }),
       Applicant.deleteMany({ issueId: { $in: orphanIds } }),
       Commission.deleteMany({ issueId: { $in: orphanIds } }),
       Rating.deleteMany({ issueId: { $in: orphanIds } }),

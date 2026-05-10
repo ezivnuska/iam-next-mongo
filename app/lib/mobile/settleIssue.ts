@@ -6,6 +6,7 @@ import stripe from '@/app/lib/stripe'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import Issue from '@/app/lib/models/issue'
 import Pledge from '@/app/lib/models/pledge'
+import Fee from '@/app/lib/models/fee'
 import Applicant from '@/app/lib/models/applicant'
 import UserModel from '@/app/lib/models/user'
 
@@ -55,7 +56,18 @@ export async function settleIssue(issueId: string): Promise<void> {
   // Ensure the destination account can receive transfers before capturing any funds
   await ensureTransfersCapability(applicantUser.stripeAccountId)
 
-  // Deny voters' PIs were already cancelled at acceptance time — capture everything remaining
+  // Capture the platform fee — stays on platform, no transfer
+  const fee = await Fee.findOne({ issueId, stripePaymentIntentId: { $exists: true, $ne: null } }).lean() as any
+  if (fee) {
+    try {
+      const pi = await stripe.paymentIntents.retrieve(fee.stripePaymentIntentId)
+      if (pi.status === 'requires_capture') await stripe.paymentIntents.capture(fee.stripePaymentIntentId)
+    } catch (err: any) {
+      console.error('[settleIssue] fee capture failed:', err?.message)
+    }
+  }
+
+  // Deny voters' PIs were already cancelled at acceptance time — capture and transfer everything remaining
   const pledges = await Pledge.find({
     issueId,
     stripePaymentIntentId: { $exists: true, $ne: null },
@@ -98,7 +110,6 @@ export async function settleIssue(issueId: string): Promise<void> {
           description: `Payment for issue ${issueId}`,
         })
       } catch (err: any) {
-        // Funds were captured but transfer failed — money is stuck on the platform account
         const msg = `Transfer failed for pledge ${pledge._id} (charge ${chargeId}): ${err?.message}`
         console.error('[settleIssue]', msg)
         transferErrors.push(msg)

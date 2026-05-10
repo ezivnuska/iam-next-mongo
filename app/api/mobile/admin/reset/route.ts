@@ -8,6 +8,7 @@ import { connectToDatabase } from '@/app/lib/mongoose'
 import { withAuth } from '@/app/lib/mobile/withAuth'
 import Issue from '@/app/lib/models/issue'
 import Pledge from '@/app/lib/models/pledge'
+import Fee from '@/app/lib/models/fee'
 import Applicant from '@/app/lib/models/applicant'
 import Commission from '@/app/lib/models/commission'
 import Rating from '@/app/lib/models/rating'
@@ -21,7 +22,23 @@ export const POST = withAuth(async (req, token) => {
   try {
     await connectToDatabase()
 
-    // Stripe cleanup for all pledges with a payment intent
+    // Capture all fees to the platform account (non-refundable)
+    const feesWithStripe = await Fee.find({
+      stripePaymentIntentId: { $exists: true, $ne: null },
+    }).lean()
+
+    await Promise.allSettled(
+      (feesWithStripe as any[]).map(async (f) => {
+        try {
+          const pi = await stripe.paymentIntents.retrieve(f.stripePaymentIntentId)
+          if (pi.status === 'requires_capture') await stripe.paymentIntents.capture(f.stripePaymentIntentId)
+        } catch (err) {
+          console.error(`[admin/reset] Failed to capture fee PI ${f.stripePaymentIntentId}:`, err)
+        }
+      })
+    )
+
+    // Cancel or refund contributor pledges
     const pledgesWithStripe = await Pledge.find({
       stripePaymentIntentId: { $exists: true, $ne: null },
     }).lean()
@@ -33,7 +50,7 @@ export const POST = withAuth(async (req, token) => {
           if (pi.status === 'requires_capture') await stripe.paymentIntents.cancel(p.stripePaymentIntentId)
           else if (pi.status === 'succeeded') await stripe.refunds.create({ payment_intent: p.stripePaymentIntentId })
         } catch (err) {
-          console.error(`[admin/reset] Failed to release PI ${p.stripePaymentIntentId}:`, err)
+          console.error(`[admin/reset] Failed to release pledge PI ${p.stripePaymentIntentId}:`, err)
         }
       })
     )
@@ -49,6 +66,7 @@ export const POST = withAuth(async (req, token) => {
     const [issueResult, pledgeResult, applicantResult, commissionResult, ratingResult] = await Promise.all([
       Issue.deleteMany({}),
       Pledge.deleteMany({}),
+      Fee.deleteMany({}),
       Applicant.deleteMany({}),
       Commission.deleteMany({}),
       Rating.deleteMany({}),

@@ -2,13 +2,13 @@
 // GET  — list current user's issues
 // POST — create a new issue
 
-import { isValidObjectId, USER_WITH_AVATAR_POPULATE } from '@/app/lib/utils/validation'
+import { isValidObjectId } from '@/app/lib/utils/validation'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { withAuth } from '@/app/lib/mobile/withAuth'
 import { serializeIssue } from '@/app/lib/mobile/serializers'
 import { attachIssueData } from '@/app/lib/mobile/attachIssueData'
-import { createPledgeWithPaymentIntent } from '@/app/lib/mobile/createPledge'
+import { createIssueFee } from '@/app/lib/mobile/createFee'
 import { emitIssueCreated } from '@/app/lib/socket/emit'
 import Issue from '@/app/lib/models/issue'
 import '@/app/lib/models/image'
@@ -72,9 +72,8 @@ export const POST = withAuth(async (req, token) => {
       { path: 'image' },
     ])
 
-    const pledge = await createPledgeWithPaymentIntent(token.id, issue._id.toString(), 1)
-    await pledge.populate(USER_WITH_AVATAR_POPULATE)
-    const pledged = [pledge.toObject()]
+    await createIssueFee(token.id, issue._id.toString(), 1)
+    const pledged: any[] = []
 
     const serialized = serializeIssue({ ...issue.toObject(), pledged, applicants: [] })
     emitIssueCreated({ actorId: token.id, issue: serialized }).catch((err: any) => console.warn('[socket]', err?.message ?? err))

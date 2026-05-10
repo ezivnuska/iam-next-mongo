@@ -10,6 +10,7 @@ import { withAuth } from '@/app/lib/mobile/withAuth'
 import { serializeIssue } from '@/app/lib/mobile/serializers'
 import Issue from '@/app/lib/models/issue'
 import Pledge from '@/app/lib/models/pledge'
+import Fee from '@/app/lib/models/fee'
 import Applicant from '@/app/lib/models/applicant'
 import Commission from '@/app/lib/models/commission'
 import Rating from '@/app/lib/models/rating'
@@ -103,11 +104,23 @@ export const DELETE = withAuth(async (req, token, ctx) => {
     const isAdmin = token.role === 'admin'
     if (!isAuthor && !isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const [pledges, commission] = await Promise.all([
+    const [pledges, fee, commission] = await Promise.all([
       Pledge.find({ issueId: id, stripePaymentIntentId: { $exists: true, $ne: null } }).lean(),
+      Fee.findOne({ issueId: id, stripePaymentIntentId: { $exists: true, $ne: null } }).lean(),
       Commission.findOne({ issueId: id }).select('images').lean(),
     ])
 
+    // Capture the non-refundable fee to the platform account
+    if (fee) {
+      try {
+        const pi = await stripe.paymentIntents.retrieve((fee as any).stripePaymentIntentId)
+        if (pi.status === 'requires_capture') await stripe.paymentIntents.capture((fee as any).stripePaymentIntentId)
+      } catch (err) {
+        console.error(`[issues DELETE] Failed to capture fee PI ${(fee as any).stripePaymentIntentId}:`, err)
+      }
+    }
+
+    // Cancel or refund contributor pledges
     await Promise.allSettled(
       (pledges as any[]).map(async (p) => {
         try {
@@ -115,7 +128,7 @@ export const DELETE = withAuth(async (req, token, ctx) => {
           if (pi.status === 'requires_capture') await stripe.paymentIntents.cancel(p.stripePaymentIntentId)
           else if (pi.status === 'succeeded') await stripe.refunds.create({ payment_intent: p.stripePaymentIntentId })
         } catch (err) {
-          console.error(`[issues DELETE] Failed to release PI ${p.stripePaymentIntentId}:`, err)
+          console.error(`[issues DELETE] Failed to release pledge PI ${p.stripePaymentIntentId}:`, err)
         }
       })
     )
@@ -131,6 +144,7 @@ export const DELETE = withAuth(async (req, token, ctx) => {
     await Promise.all([
       Issue.findByIdAndDelete(id),
       Pledge.deleteMany({ issueId: id }),
+      Fee.deleteMany({ issueId: id }),
       Applicant.deleteMany({ issueId: id }),
       Commission.deleteMany({ issueId: id }),
       Rating.deleteMany({ issueId: id }),
