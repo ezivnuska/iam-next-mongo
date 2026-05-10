@@ -8,7 +8,7 @@ import { connectToDatabase } from '@/app/lib/mongoose'
 import { withAuth } from '@/app/lib/mobile/withAuth'
 import { serializeCompletion } from '@/app/lib/mobile/serializers'
 import { getIssueAudienceIds, emitIssueCompletionSubmitted } from '@/app/lib/socket/emit'
-import Commission from '@/app/lib/models/commission'
+import Issue from '@/app/lib/models/issue'
 import Applicant from '@/app/lib/models/applicant'
 import ImageModel from '@/app/lib/models/image'
 
@@ -19,15 +19,16 @@ export const GET = withAuth(async (req, token, ctx) => {
   try {
     await connectToDatabase()
 
-    const commission = await Commission.findOne({ issueId: issueId }).populate('images').lean()
+    const issue = await Issue.findById(issueId).populate('completion.images').lean() as any
+    const completion = issue?.completion ?? null
 
     let myRating: number | null = null
     let averageRating: number | null = null
     try {
       const Rating = (await import('@/app/lib/models/rating')).default
       const [myDoc, allRatings] = await Promise.all([
-        Rating.findOne({ issueId: issueId, raterId: token.id }).lean() as any,
-        Rating.find({ issueId: issueId }).lean() as unknown as any[],
+        Rating.findOne({ issueId, raterId: token.id }).lean() as any,
+        Rating.find({ issueId }).lean() as unknown as any[],
       ])
       myRating = myDoc?.score ?? null
       if (allRatings.length > 0) {
@@ -40,7 +41,7 @@ export const GET = withAuth(async (req, token, ctx) => {
     }
 
     return NextResponse.json({
-      completion: commission ? serializeCompletion(commission) : null,
+      completion: completion ? serializeCompletion(completion, issueId) : null,
       myRating,
       averageRating,
     })
@@ -62,7 +63,7 @@ export const POST = withAuth(async (req, token, ctx) => {
 
   try {
     await connectToDatabase()
-    const applicant = await Applicant.findOne({ issueId: issueId, userId: token.id, status: 'accepted' }).lean()
+    const applicant = await Applicant.findOne({ issueId, userId: token.id, status: 'accepted' }).lean()
     if (!applicant)
       return NextResponse.json({ error: 'Only the accepted applicant can submit completion evidence' }, { status: 403 })
 
@@ -70,15 +71,21 @@ export const POST = withAuth(async (req, token, ctx) => {
     if (ownedImages.length !== imageIds.length)
       return NextResponse.json({ error: 'One or more images not found or not owned by you' }, { status: 403 })
 
-    const completion = await Commission.findOneAndUpdate(
-      { issueId: issueId },
-      { issueId: issueId, applicantId: applicant._id, images: imageIds, reviews: [], status: 'pending' },
-      { upsert: true, new: true }
-    ).populate('images')
+    const issue = await Issue.findById(issueId)
+    if (!issue) return NextResponse.json({ error: 'Issue not found' }, { status: 404 })
 
-    const serialized = serializeCompletion(completion.toObject())
+    issue.completion = {
+      applicantId: (applicant as any)._id,
+      images: imageIds,
+      reviews: [],
+      status: 'pending',
+    } as any
+    await issue.save()
+    await issue.populate('completion.images')
+
+    const serialized = serializeCompletion((issue.completion as any).toObject(), issueId)
     getIssueAudienceIds(issueId, token.id).then((audience) =>
-      emitIssueCompletionSubmitted({ issueId: issueId, completion: serialized }, audience)
+      emitIssueCompletionSubmitted({ issueId, completion: serialized }, audience)
     ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
     return NextResponse.json({ completion: serialized })
   } catch (err) {

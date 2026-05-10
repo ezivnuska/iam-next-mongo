@@ -8,7 +8,6 @@ import { withAuth } from '@/app/lib/mobile/withAuth'
 import { serializeCompletion, serializeIssue } from '@/app/lib/mobile/serializers'
 import { settleIssue } from '@/app/lib/mobile/settleIssue'
 import { getIssueAudienceIds, emitIssueCompletionReviewed } from '@/app/lib/socket/emit'
-import Commission from '@/app/lib/models/commission'
 import Applicant from '@/app/lib/models/applicant'
 import Pledge from '@/app/lib/models/pledge'
 import Issue from '@/app/lib/models/issue'
@@ -27,91 +26,89 @@ export const POST = withAuth(async (req, token, ctx) => {
     await connectToDatabase()
 
     const [pledge, issue] = await Promise.all([
-      Pledge.findOne({ issueId: issueId, userId: token.id }).lean(),
-      Issue.findById(issueId, { author: 1 }).lean() as any,
+      Pledge.findOne({ issueId, userId: token.id }).lean(),
+      Issue.findById(issueId).lean() as any,
     ])
     const isAuthorReviewing = issue?.author?.toString() === token.id
     if (!pledge && !isAuthorReviewing)
       return NextResponse.json({ error: 'Only contributors or the author can review completion' }, { status: 403 })
 
-    const completion = await Commission.findOne({ issueId: issueId })
-    if (!completion) return NextResponse.json({ error: 'No completion submission found' }, { status: 404 })
-    if (completion.status !== 'pending')
+    if (!issue?.completion)
+      return NextResponse.json({ error: 'No completion submission found' }, { status: 404 })
+    if (issue.completion.status !== 'pending')
       return NextResponse.json({ error: 'Submission is no longer pending' }, { status: 400 })
 
-    const existingIndex = completion.reviews.findIndex((r) => r.userId.toString() === token.id)
+    // Build updated reviews in memory
+    const reviews = issue.completion.reviews.map((r: any) => ({ userId: r.userId, vote: r.vote }))
+    const existingIndex = reviews.findIndex((r: any) => r.userId.toString() === token.id)
     if (existingIndex >= 0) {
-      completion.reviews[existingIndex].vote = vote
+      reviews[existingIndex].vote = vote
     } else {
-      completion.reviews.push({ userId: token.id as any, vote })
+      reviews.push({ userId: token.id, vote })
     }
 
-    const applicant = await Applicant.findOne({ issueId: issueId, status: 'accepted' }).lean()
+    const applicant = await Applicant.findOne({ issueId, status: 'accepted' }).lean()
     const confirmingIds = applicant
-      ? [...new Set(applicant.votes.filter((v: any) => v.vote === 'confirm').map((v: any) => v.userId.toString()))]
+      ? [...new Set((applicant as any).votes.filter((v: any) => v.vote === 'confirm').map((v: any) => v.userId.toString()))]
       : []
 
-    const pledges = await Pledge.find({ issueId: issueId }).lean()
+    const pledges = await Pledge.find({ issueId }).lean()
     const allContributorIds = [...new Set(pledges.map((p) => p.userId.toString()))]
     const baseReviewerIds = confirmingIds.length > 0
       ? allContributorIds.filter((id) => confirmingIds.includes(id))
       : allContributorIds
-    // Author is always a required reviewer
     const authorId = issue?.author?.toString()
     const reviewerIds = authorId && !baseReviewerIds.includes(authorId)
       ? [...baseReviewerIds, authorId]
       : baseReviewerIds
 
-    const anyDenied = completion.reviews.some(
-      (r) => reviewerIds.includes(r.userId.toString()) && r.vote === 'deny'
-    )
-    const allApproved = reviewerIds.every((rId) =>
-      completion.reviews.some((r) => r.userId.toString() === rId && r.vote === 'approve')
-    )
-
+    const anyDenied  = reviews.some((r: any) => reviewerIds.includes(r.userId.toString()) && r.vote === 'deny')
+    const allApproved = reviewerIds.every((rId) => reviews.some((r: any) => r.userId.toString() === rId && r.vote === 'approve'))
     const newStatus = anyDenied ? 'denied' : allApproved ? 'approved' : 'pending'
 
     if (newStatus === 'approved') {
-      // Atomically claim the pending→approved transition; only the winning request proceeds to settlement
-      const claimed = await Commission.findOneAndUpdate(
-        { _id: completion._id, status: 'pending' },
-        { $set: { status: 'approved', reviews: completion.reviews } }
+      // Atomically claim the pending→approved transition on the issue document
+      const claimed = await Issue.findOneAndUpdate(
+        { _id: issueId, 'completion.status': 'pending' },
+        { $set: { 'completion.status': 'approved', 'completion.reviews': reviews, status: 'completed' } }
       )
       if (!claimed) {
         // Another concurrent request already claimed the transition — return current state
-        const current = await Commission.findOne({ issueId: issueId }).populate('images')
-        return NextResponse.json({ completion: serializeCompletion(current!.toObject()) })
+        const current = await Issue.findById(issueId).populate('completion.images').lean() as any
+        return NextResponse.json({ completion: serializeCompletion(current.completion, issueId) })
       }
-      completion.status = 'approved'
-    } else {
-      completion.status = newStatus
-      await completion.save()
-    }
-    await completion.populate('images')
 
-    let serializedNeed = null
-    if (newStatus === 'approved') {
       try { await settleIssue(issueId) } catch (err) {
         console.error('[commission/review] settleIssue failed:', err)
       }
-      const issue = await Issue.findById(issueId)
-        .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
-        .populate('image')
-        .lean()
-      if (issue) {
-        const [p, a] = await Promise.all([
-          Pledge.find({ issueId: issueId }).populate(USER_WITH_AVATAR_POPULATE).lean(),
-          Applicant.find({ issueId: issueId }).lean(),
-        ])
-        serializedNeed = serializeIssue({ ...issue, pledged: p, applicants: a })
-      }
+    } else {
+      await Issue.findOneAndUpdate(
+        { _id: issueId },
+        { $set: { 'completion.status': newStatus, 'completion.reviews': reviews } }
+      )
     }
 
-    const serializedCompletion = serializeCompletion(completion.toObject())
-    const applicantUserId = applicant?.userId?.toString()
+    const updatedIssue = await Issue.findById(issueId)
+      .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
+      .populate('image')
+      .populate('completion.images')
+      .lean() as any
+
+    const serializedCompletion = serializeCompletion(updatedIssue.completion, issueId)
+
+    let serializedNeed = null
+    if (newStatus === 'approved' && updatedIssue) {
+      const [p, a] = await Promise.all([
+        Pledge.find({ issueId }).populate(USER_WITH_AVATAR_POPULATE).lean(),
+        Applicant.find({ issueId }).lean(),
+      ])
+      serializedNeed = serializeIssue({ ...updatedIssue, pledged: p, applicants: a })
+    }
+
+    const applicantUserId = (applicant as any)?.userId?.toString()
     getIssueAudienceIds(issueId, ...(applicantUserId ? [applicantUserId] : [])).then((audience) =>
       emitIssueCompletionReviewed(
-        { issueId: issueId, completion: serializedCompletion, ...(serializedNeed ? { issue: serializedNeed } : {}) },
+        { issueId, completion: serializedCompletion, ...(serializedNeed ? { issue: serializedNeed } : {}) },
         audience
       )
     ).catch((err: any) => console.warn('[socket]', err?.message ?? err))

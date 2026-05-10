@@ -12,7 +12,6 @@ import Issue from '@/app/lib/models/issue'
 import Pledge from '@/app/lib/models/pledge'
 import Fee from '@/app/lib/models/fee'
 import Applicant from '@/app/lib/models/applicant'
-import Commission from '@/app/lib/models/commission'
 import Rating from '@/app/lib/models/rating'
 import ImageModel from '@/app/lib/models/image'
 import stripe from '@/app/lib/stripe'
@@ -31,12 +30,11 @@ export const GET = withAuth(async (req, token, ctx) => {
       .lean()
     if (!need) return NextResponse.json({ error: 'Issue not found' }, { status: 404 })
 
-    const [pledges, applicants, commission] = await Promise.all([
+    const [pledges, applicants] = await Promise.all([
       Pledge.find({ issueId: id }).populate(USER_WITH_AVATAR_POPULATE).lean(),
       Applicant.find({ issueId: id }).lean(),
-      Commission.findOne({ issueId: id }, { status: 1 }).lean(),
     ])
-    const completionStatus = (commission as any)?.status ?? null
+    const completionStatus = (need as any).completion?.status ?? null
     return NextResponse.json({ issue: serializeIssue({ ...need, pledged: pledges, applicants, completionStatus }) })
   } catch (err) {
     console.error('[mobile/issues GET by id]', err)
@@ -104,10 +102,7 @@ export const DELETE = withAuth(async (req, token, ctx) => {
     const isAdmin = token.role === 'admin'
     if (!isAuthor && !isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const [pledgesWithPI, commission] = await Promise.all([
-      Pledge.find({ issueId: id, stripePaymentIntentId: { $exists: true, $ne: null } }).lean(),
-      Commission.findOne({ issueId: id }).select('images').lean(),
-    ])
+    const pledgesWithPI = await Pledge.find({ issueId: id, stripePaymentIntentId: { $exists: true, $ne: null } }).lean()
 
     // Fee was charged immediately at issue creation — no Stripe action needed.
     // Pledges charged at acceptance need to be refunded; pre-acceptance pledges have no PI.
@@ -123,11 +118,11 @@ export const DELETE = withAuth(async (req, token, ctx) => {
       })
     )
 
-    const commissionImageIds = (commission as any)?.images ?? []
+    const completionImageIds = (need as any).completion?.images ?? []
     const issueImageId = need.image
 
-    const [commissionImages, issueImage] = await Promise.all([
-      commissionImageIds.length > 0 ? ImageModel.find({ _id: { $in: commissionImageIds } }).lean() : Promise.resolve([]),
+    const [completionImages, issueImage] = await Promise.all([
+      completionImageIds.length > 0 ? ImageModel.find({ _id: { $in: completionImageIds } }).lean() : Promise.resolve([]),
       issueImageId ? ImageModel.findById(issueImageId).lean() : Promise.resolve(null),
     ])
 
@@ -136,13 +131,12 @@ export const DELETE = withAuth(async (req, token, ctx) => {
       Pledge.deleteMany({ issueId: id }),
       Fee.deleteMany({ issueId: id }),
       Applicant.deleteMany({ issueId: id }),
-      Commission.deleteMany({ issueId: id }),
       Rating.deleteMany({ issueId: id }),
-      commissionImageIds.length > 0 ? ImageModel.deleteMany({ _id: { $in: commissionImageIds } }) : Promise.resolve(),
+      completionImageIds.length > 0 ? ImageModel.deleteMany({ _id: { $in: completionImageIds } }) : Promise.resolve(),
       issueImageId ? ImageModel.findByIdAndDelete(issueImageId) : Promise.resolve(),
     ])
 
-    const allImages = [...(commissionImages as any[]), ...(issueImage ? [issueImage] : [])]
+    const allImages = [...(completionImages as any[]), ...(issueImage ? [issueImage] : [])]
     await Promise.allSettled(
       allImages.flatMap((img: any) =>
         (img.variants ?? [])

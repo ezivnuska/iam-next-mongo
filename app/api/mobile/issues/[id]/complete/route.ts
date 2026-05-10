@@ -11,7 +11,6 @@ import { getIssueAudienceIds, emitIssueCompletionReviewed } from '@/app/lib/sock
 import Issue from '@/app/lib/models/issue'
 import Pledge from '@/app/lib/models/pledge'
 import Applicant from '@/app/lib/models/applicant'
-import Commission from '@/app/lib/models/commission'
 import '@/app/lib/models/image'
 import '@/app/lib/models/user'
 
@@ -30,24 +29,25 @@ export const PATCH = withAuth(async (req, token, ctx) => {
 
     if (need.status !== 'completed') await settleIssue(id)
 
-    await need.populate([
-      { path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } },
-      { path: 'image' },
-    ])
-    const [pledges, applicants, commission, acceptedApplicant] = await Promise.all([
+    const updatedIssue = await Issue.findById(id)
+      .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
+      .populate('image')
+      .populate('completion.images')
+      .lean() as any
+
+    const [pledges, applicants, acceptedApplicant] = await Promise.all([
       Pledge.find({ issueId: id }).populate(USER_WITH_AVATAR_POPULATE).lean(),
       Applicant.find({ issueId: id }).lean(),
-      Commission.findOne({ issueId: id }).populate('images').lean(),
       Applicant.findOne({ issueId: id, status: 'accepted' }).lean() as any,
     ])
 
-    const serializedIssue = serializeIssue({ ...need.toObject(), pledged: pledges, applicants })
+    const serializedIssue = serializeIssue({ ...updatedIssue, pledged: pledges, applicants })
 
-    if (commission) {
+    if (updatedIssue?.completion) {
       const applicantUserId = acceptedApplicant?.userId?.toString()
       getIssueAudienceIds(id, ...(applicantUserId ? [applicantUserId] : [])).then((audience) =>
         emitIssueCompletionReviewed(
-          { issueId: id, completion: serializeCompletion(commission), issue: serializedIssue },
+          { issueId: id, completion: serializeCompletion(updatedIssue.completion, id), issue: serializedIssue },
           audience
         )
       ).catch((err: any) => console.warn('[socket]', err?.message ?? err))

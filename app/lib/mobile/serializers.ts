@@ -41,10 +41,10 @@ export function serializeApplicant(a: any) {
   }
 }
 
-export function serializeCompletion(c: any) {
+export function serializeCompletion(c: any, issueId?: string) {
   return {
     id: c._id.toString(),
-    issueId: (c.issueId ?? c.needId).toString(),
+    issueId: issueId ?? (c.issueId ?? c.needId)?.toString(),
     applicantId: c.applicantId.toString(),
     images: Array.isArray(c.images)
       ? c.images.map((img: any) => serializeResource(img)).filter(Boolean)

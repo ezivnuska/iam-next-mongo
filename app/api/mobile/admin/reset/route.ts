@@ -10,7 +10,6 @@ import Issue from '@/app/lib/models/issue'
 import Pledge from '@/app/lib/models/pledge'
 import Fee from '@/app/lib/models/fee'
 import Applicant from '@/app/lib/models/applicant'
-import Commission from '@/app/lib/models/commission'
 import Rating from '@/app/lib/models/rating'
 import ImageModel from '@/app/lib/models/image'
 import stripe from '@/app/lib/stripe'
@@ -55,26 +54,28 @@ export const POST = withAuth(async (req, token) => {
       })
     )
 
-    // Collect all commission images for S3 cleanup
-    const allCommissions = await Commission.find({}).select('images').lean()
-    const commissionImageIds = (allCommissions as any[]).flatMap((c) => c.images ?? [])
+    // Collect completion images from issues before deleting them
+    const issuesWithCompletion = await Issue.find(
+      { 'completion.images': { $exists: true, $ne: [] } },
+      { 'completion.images': 1 }
+    ).lean() as any[]
+    const completionImageIds = issuesWithCompletion.flatMap((n) => n.completion?.images ?? [])
 
-    const commissionImages = commissionImageIds.length > 0
-      ? await ImageModel.find({ _id: { $in: commissionImageIds } }).lean()
+    const completionImages = completionImageIds.length > 0
+      ? await ImageModel.find({ _id: { $in: completionImageIds } }).lean()
       : []
 
-    const [issueResult, pledgeResult, feeResult, applicantResult, commissionResult, ratingResult] = await Promise.all([
+    const [issueResult, pledgeResult, feeResult, applicantResult, ratingResult] = await Promise.all([
       Issue.deleteMany({}),
       Pledge.deleteMany({}),
       Fee.deleteMany({}),
       Applicant.deleteMany({}),
-      Commission.deleteMany({}),
       Rating.deleteMany({}),
-      commissionImageIds.length > 0 ? ImageModel.deleteMany({ _id: { $in: commissionImageIds } }) : Promise.resolve(),
+      completionImageIds.length > 0 ? ImageModel.deleteMany({ _id: { $in: completionImageIds } }) : Promise.resolve(),
     ])
 
     await Promise.allSettled(
-      (commissionImages as any[]).flatMap((img) =>
+      (completionImages as any[]).flatMap((img) =>
         (img.variants ?? [])
           .filter((v: any) => v.url)
           .map((v: any) => {
@@ -90,9 +91,8 @@ export const POST = withAuth(async (req, token) => {
         pledges: pledgeResult.deletedCount,
         fees: feeResult.deletedCount,
         applicants: applicantResult.deletedCount,
-        commissions: commissionResult.deletedCount,
         ratings: ratingResult.deletedCount,
-        commissionImages: commissionImageIds.length,
+        completionImages: completionImageIds.length,
       },
     })
   } catch (err) {

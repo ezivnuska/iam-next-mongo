@@ -5,7 +5,7 @@ import { isValidObjectId } from '@/app/lib/utils/validation'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { withAuth } from '@/app/lib/mobile/withAuth'
-import Commission from '@/app/lib/models/commission'
+import Issue from '@/app/lib/models/issue'
 import Pledge from '@/app/lib/models/pledge'
 import Applicant from '@/app/lib/models/applicant'
 import Rating from '@/app/lib/models/rating'
@@ -21,9 +21,9 @@ export const POST = withAuth(async (req, token, ctx) => {
   try {
     await connectToDatabase()
 
-    const commission = await Commission.findOne({ issueId }).lean() as any
-    if (!commission) return NextResponse.json({ error: 'No commission found' }, { status: 404 })
-    if (commission.status !== 'approved')
+    const issue = await Issue.findById(issueId).select('completion').lean() as any
+    if (!issue?.completion) return NextResponse.json({ error: 'No commission found' }, { status: 404 })
+    if (issue.completion.status !== 'approved')
       return NextResponse.json({ error: 'Can only rate approved commissions' }, { status: 400 })
 
     const pledge = await Pledge.findOne({ issueId, userId: token.id }).lean()
@@ -32,9 +32,11 @@ export const POST = withAuth(async (req, token, ctx) => {
     const acceptedApplicant = await Applicant.findOne({ issueId, status: 'accepted' }).lean() as any
     if (!acceptedApplicant) return NextResponse.json({ error: 'No accepted applicant found' }, { status: 404 })
 
+    const commissionId = issue.completion._id
+
     await Rating.findOneAndUpdate(
-      { commissionId: commission._id, raterId: token.id },
-      { issueId, commissionId: commission._id, raterId: token.id, workerId: acceptedApplicant.userId, score },
+      { commissionId, raterId: token.id },
+      { issueId, commissionId, raterId: token.id, workerId: acceptedApplicant.userId, score },
       { upsert: true }
     )
 

@@ -4,7 +4,6 @@
 
 import stripe from '@/app/lib/stripe'
 import { connectToDatabase } from '@/app/lib/mongoose'
-import Issue from '@/app/lib/models/issue'
 import Pledge from '@/app/lib/models/pledge'
 import Applicant from '@/app/lib/models/applicant'
 import UserModel from '@/app/lib/models/user'
@@ -41,8 +40,6 @@ async function ensureTransfersCapability(accountId: string): Promise<void> {
 
 export async function settleIssue(issueId: string): Promise<void> {
   await connectToDatabase()
-  const issue = await Issue.findById(issueId)
-  if (!issue || issue.status === 'completed') return
 
   const acceptedApplicant = await Applicant.findOne({ issueId, status: 'accepted' }).lean() as any
   if (!acceptedApplicant) throw new Error('No accepted applicant')
@@ -58,11 +55,7 @@ export async function settleIssue(issueId: string): Promise<void> {
     stripePaymentIntentId: { $exists: true, $ne: null },
   }).lean() as any[]
 
-  if (pledges.length === 0) {
-    issue.status = 'completed'
-    await issue.save()
-    return
-  }
+  if (pledges.length === 0) return
 
   const transferErrors: string[] = []
 
@@ -93,7 +86,4 @@ export async function settleIssue(issueId: string): Promise<void> {
   if (transferErrors.length > 0) {
     throw new Error(`Settlement incomplete — transfers failed: ${transferErrors.join('; ')}`)
   }
-
-  issue.status = 'completed'
-  await issue.save()
 }
