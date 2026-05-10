@@ -9,7 +9,7 @@ import Pledge from '@/app/lib/models/pledge'
 import Applicant from '@/app/lib/models/applicant'
 import UserModel from '@/app/lib/models/user'
 
-const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_')
+const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') && process.env.NODE_ENV !== 'production'
 
 async function ensureTransfersCapability(accountId: string): Promise<void> {
   const account = await stripe.accounts.retrieve(accountId)
@@ -65,7 +65,9 @@ export async function settleIssue(issueId: string): Promise<void> {
     pledges.map((p) => stripe.paymentIntents.capture(p.stripePaymentIntentId))
   )
 
-  // Transfer per captured PI using source_transaction — no platform balance required
+  let successfulCaptures = 0
+  const transferErrors: string[] = []
+
   await Promise.allSettled(
     captureResults.map(async (result, i) => {
       const pledge = pledges[i]
@@ -80,6 +82,7 @@ export async function settleIssue(issueId: string): Promise<void> {
         return
       }
 
+      successfulCaptures++
       const chargeId = result.value.latest_charge as string
       if (!chargeId) {
         console.error('[settleIssue] captured PI has no charge', pledge.stripePaymentIntentId)
@@ -95,10 +98,21 @@ export async function settleIssue(issueId: string): Promise<void> {
           description: `Payment for issue ${issueId}`,
         })
       } catch (err: any) {
-        console.error('[settleIssue] transfer failed for pledge', pledge._id, err?.message)
+        // Funds were captured but transfer failed — money is stuck on the platform account
+        const msg = `Transfer failed for pledge ${pledge._id} (charge ${chargeId}): ${err?.message}`
+        console.error('[settleIssue]', msg)
+        transferErrors.push(msg)
       }
     })
   )
+
+  if (pledges.length > 0 && successfulCaptures === 0) {
+    throw new Error('All pledge captures failed — settlement aborted, issue remains open')
+  }
+
+  if (transferErrors.length > 0) {
+    throw new Error(`Settlement incomplete — captured funds not transferred: ${transferErrors.join('; ')}`)
+  }
 
   issue.status = 'completed'
   await issue.save()

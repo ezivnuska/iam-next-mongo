@@ -29,7 +29,7 @@ export const POST = withAuth(async (req, token, ctx) => {
     await pledge.populate(USER_WITH_AVATAR_POPULATE)
 
     const serialized = serializePledge(pledge.toObject())
-    emitIssuePledgeAdded({ issueId: id, actorId: token.id, pledge: serialized }).catch(() => {})
+    emitIssuePledgeAdded({ issueId: id, actorId: token.id, pledge: serialized }).catch((err: any) => console.warn('[socket]', err?.message ?? err))
     return NextResponse.json({ pledge: serialized }, { status: 201 })
   } catch (err: any) {
     if (err.code === 'NO_PAYMENT_METHOD')

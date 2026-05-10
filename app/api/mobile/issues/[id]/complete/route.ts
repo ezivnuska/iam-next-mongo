@@ -50,7 +50,7 @@ export const PATCH = withAuth(async (req, token, ctx) => {
           { issueId: id, completion: serializeCompletion(commission), issue: serializedIssue },
           audience
         )
-      ).catch(() => {})
+      ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
     }
 
     return NextResponse.json({ issue: serializedIssue })

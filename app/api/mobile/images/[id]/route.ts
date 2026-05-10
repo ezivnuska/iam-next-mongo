@@ -29,9 +29,10 @@ export const DELETE = withAuth(async (req, token, ctx) => {
     await Comment.deleteMany({ refId: objectId, refType: 'Image' })
 
     const user = await UserModel.findById(token.id)
-    if (user?.avatar?.toString() === imageId) {
-      user.avatar = null
-      await user.save()
+    const wasAvatar = (user?.avatar as any)?.toString() === imageId
+    if (wasAvatar) {
+      user!.avatar = null
+      await user!.save()
     }
 
     const postsWithImage = await Post.find({ image: objectId })
@@ -48,7 +49,6 @@ export const DELETE = withAuth(async (req, token, ctx) => {
     }
 
     await ImageModel.findByIdAndDelete(imageId)
-    const wasAvatar = user?.avatar === null && image.userId.toString() === token.id
     return NextResponse.json({ ok: true, avatarCleared: wasAvatar })
   } catch (err) {
     console.error('[mobile/images DELETE]', err)

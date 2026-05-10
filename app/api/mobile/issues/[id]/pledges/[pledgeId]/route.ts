@@ -32,7 +32,7 @@ export const DELETE = withAuth(async (req, token, ctx) => {
     const issueId = pledge.issueId.toString()
     await pledge.deleteOne()
 
-    emitIssuePledgeRemoved({ issueId, actorId: token.id, pledgeId }).catch(() => {})
+    emitIssuePledgeRemoved({ issueId, actorId: token.id, pledgeId }).catch((err: any) => console.warn('[socket]', err?.message ?? err))
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error('[mobile/issues/pledges DELETE]', err)

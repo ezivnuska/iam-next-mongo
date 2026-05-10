@@ -1,25 +1,13 @@
 // app/api/mobile/profile/bio/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
 import { connectToDatabase } from "@/app/lib/mongoose";
+import { withAuth } from "@/app/lib/mobile/withAuth";
 import UserModel from "@/app/lib/models/user";
 import "@/app/lib/models/image";
 
-const secret = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || "change-this-secret"
-);
-
-export async function PATCH(req: NextRequest) {
+export const PATCH = withAuth(async (req, token) => {
   try {
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const token = authHeader.slice(7);
-    const { payload } = await jwtVerify(token, secret);
-
     const { bio } = await req.json();
 
     if (typeof bio !== "string") {
@@ -35,12 +23,15 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const sanitizedBio = trimmedBio.replace(/[<>]/g, "");
+    // Strip HTML tags and encoded entities so no markup survives
+    const sanitizedBio = trimmedBio
+      .replace(/<[^>]*>/g, '')
+      .replace(/&(?:[a-z\d]+|#\d+|#x[a-f\d]+);/gi, '');
 
     await connectToDatabase();
 
     const userDoc = await UserModel.findByIdAndUpdate(
-      payload.id as string,
+      token.id,
       { bio: sanitizedBio },
       { new: true }
     ).populate("avatar", "_id variants");
@@ -66,10 +57,8 @@ export async function PATCH(req: NextRequest) {
         avatar,
       },
     });
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid or expired token" },
-      { status: 401 }
-    );
+  } catch (err) {
+    console.error('[profile/bio PATCH]', err);
+    return NextResponse.json({ error: "Failed to update bio" }, { status: 500 });
   }
-}
+});

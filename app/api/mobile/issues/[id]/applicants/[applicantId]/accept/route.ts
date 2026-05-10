@@ -62,7 +62,7 @@ export const PATCH = withAuth(async (req, token, ctx) => {
     const serialized = serializeApplicant(applicant.toObject())
     getIssueAudienceIds(needId, applicant.userId.toString()).then((audience) =>
       emitIssueApplicantAccepted({ issueId: needId, applicant: serialized }, audience)
-    ).catch(() => {})
+    ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
     return NextResponse.json({ applicant: serialized })
   } catch (err) {
     console.error('[mobile/issues/applicants/accept PATCH]', err)

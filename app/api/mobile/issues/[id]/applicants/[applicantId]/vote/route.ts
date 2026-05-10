@@ -29,6 +29,8 @@ export const POST = withAuth(async (req, token, ctx) => {
 
     const applicant = await Applicant.findOne({ _id: applicantId, issueId: issueId })
     if (!applicant) return NextResponse.json({ error: 'Applicant not found' }, { status: 404 })
+    if (applicant.userId.toString() === token.id)
+      return NextResponse.json({ error: 'Applicants cannot vote on their own application' }, { status: 403 })
 
     const existingIndex = applicant.votes.findIndex((v) => v.userId.toString() === token.id)
     if (existingIndex >= 0) {
@@ -53,7 +55,7 @@ export const POST = withAuth(async (req, token, ctx) => {
     const audience = new Set<string>(contributorIds)
     if (issue?.author) audience.add(issue.author.toString())
     audience.add(applicant.userId.toString())
-    emitIssueApplicantVoted({ issueId: issueId, applicant: serialized }, [...audience]).catch(() => {})
+    emitIssueApplicantVoted({ issueId: issueId, applicant: serialized }, [...audience]).catch((err: any) => console.warn('[socket]', err?.message ?? err))
 
     return NextResponse.json({ applicant: serialized })
   } catch (err) {

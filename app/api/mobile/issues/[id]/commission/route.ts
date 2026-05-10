@@ -10,7 +10,7 @@ import { serializeCompletion } from '@/app/lib/mobile/serializers'
 import { getIssueAudienceIds, emitIssueCompletionSubmitted } from '@/app/lib/socket/emit'
 import Commission from '@/app/lib/models/commission'
 import Applicant from '@/app/lib/models/applicant'
-import '@/app/lib/models/image'
+import ImageModel from '@/app/lib/models/image'
 
 export const GET = withAuth(async (req, token, ctx) => {
   const { id: issueId } = await ctx.params
@@ -66,6 +66,10 @@ export const POST = withAuth(async (req, token, ctx) => {
     if (!applicant)
       return NextResponse.json({ error: 'Only the accepted applicant can submit completion evidence' }, { status: 403 })
 
+    const ownedImages = await ImageModel.find({ _id: { $in: imageIds }, userId: token.id }, '_id').lean()
+    if (ownedImages.length !== imageIds.length)
+      return NextResponse.json({ error: 'One or more images not found or not owned by you' }, { status: 403 })
+
     const completion = await Commission.findOneAndUpdate(
       { issueId: issueId },
       { issueId: issueId, applicantId: applicant._id, images: imageIds, reviews: [], status: 'pending' },
@@ -75,7 +79,7 @@ export const POST = withAuth(async (req, token, ctx) => {
     const serialized = serializeCompletion(completion.toObject())
     getIssueAudienceIds(issueId, token.id).then((audience) =>
       emitIssueCompletionSubmitted({ issueId: issueId, completion: serialized }, audience)
-    ).catch(() => {})
+    ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
     return NextResponse.json({ completion: serialized })
   } catch (err) {
     console.error('[mobile/issues/completion POST]', err)

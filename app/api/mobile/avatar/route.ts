@@ -95,6 +95,10 @@ export const PATCH = withAuth(async (req, token) => {
       return NextResponse.json({ error: 'Invalid imageId' }, { status: 400 })
 
     await connectToDatabase()
+    if (imageId !== null) {
+      const image = await ImageModel.findOne({ _id: imageId, userId: token.id }, '_id').lean()
+      if (!image) return NextResponse.json({ error: 'Image not found' }, { status: 404 })
+    }
     const user = await UserModel.findByIdAndUpdate(token.id, { avatar: imageId }, { new: true }).populate('avatar', '_id variants')
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 

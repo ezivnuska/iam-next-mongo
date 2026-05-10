@@ -19,8 +19,10 @@ export const GET = withAuth(async (req) => {
       ? { $or: [{ status: 'open' }, { status: 'completed' }, { status: { $exists: false } }] }
       : { status }
 
+    const limit = Math.min(parseInt(req.nextUrl.searchParams.get('limit') ?? '100'), 200)
     const issues = await Issue.find(query)
       .sort({ createdAt: -1 })
+      .limit(limit)
       .populate({
         path: 'author',
         select: '_id username avatar',

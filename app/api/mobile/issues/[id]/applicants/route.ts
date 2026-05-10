@@ -28,7 +28,7 @@ export const POST = withAuth(async (req, token, ctx) => {
     const serialized = serializeApplicant(applicant.toObject())
     getIssueAudienceIds(id).then((audience) =>
       emitIssueApplicantAdded({ issueId: id, applicant: serialized }, audience)
-    ).catch(() => {})
+    ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
     return NextResponse.json({ applicant: serialized }, { status: 201 })
   } catch (err: any) {
     if (err.code === 11000) return NextResponse.json({ error: 'Already applied to this issue' }, { status: 409 })
@@ -49,7 +49,7 @@ export const DELETE = withAuth(async (req, token, ctx) => {
     const applicantId = result._id.toString()
     getIssueAudienceIds(id).then((audience) =>
       emitIssueApplicantRemoved({ issueId: id, applicantId }, audience)
-    ).catch(() => {})
+    ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error('[mobile/issues/applicants DELETE]', err)

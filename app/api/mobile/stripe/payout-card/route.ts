@@ -61,7 +61,7 @@ export const POST = withAuth(async (req, token) => {
         await UserModel.findByIdAndUpdate(userId, { $unset: { stripeAccountId: '', stripeAccountEnabled: '' } })
         accountId = null
       }
-      const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_')
+      const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') && process.env.NODE_ENV !== 'production'
       const BASE = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://iameric.me'
       const account = await stripe.accounts.create({
         type: 'custom',
@@ -124,7 +124,19 @@ export const POST = withAuth(async (req, token) => {
     return NextResponse.json({ payoutCard: serializeCard(card) })
   } catch (err: any) {
     console.error('[stripe/payout-card POST]', err)
-    return NextResponse.json({ error: err?.raw?.message ?? err?.message ?? 'Failed to set up payout card' }, { status: 500 })
+    const stripeErrorMessages: Record<string, string> = {
+      oauth_not_supported: 'Unable to link card to this account. Please try again.',
+      resource_missing: 'Payout account not found. Please set up a new one.',
+      account_invalid: 'Payout account is invalid. Please set up a new one.',
+      card_declined: 'The card was declined. Please use a different debit card.',
+      incorrect_number: 'The card number is incorrect.',
+      expired_card: 'The card has expired.',
+      incorrect_cvc: 'The card security code is incorrect.',
+      invalid_expiry_year: 'The expiry year is invalid.',
+      invalid_expiry_month: 'The expiry month is invalid.',
+    }
+    const userMessage = (err?.code && stripeErrorMessages[err.code]) ?? 'Failed to set up payout card. Please try again.'
+    return NextResponse.json({ error: userMessage }, { status: 500 })
   }
 })
 

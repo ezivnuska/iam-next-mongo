@@ -70,8 +70,23 @@ export const POST = withAuth(async (req, token, ctx) => {
     )
 
     const newStatus = anyDenied ? 'denied' : allApproved ? 'approved' : 'pending'
-    completion.status = newStatus
-    await completion.save()
+
+    if (newStatus === 'approved') {
+      // Atomically claim the pending→approved transition; only the winning request proceeds to settlement
+      const claimed = await Commission.findOneAndUpdate(
+        { _id: completion._id, status: 'pending' },
+        { $set: { status: 'approved', reviews: completion.reviews } }
+      )
+      if (!claimed) {
+        // Another concurrent request already claimed the transition — return current state
+        const current = await Commission.findOne({ issueId: issueId }).populate('images')
+        return NextResponse.json({ completion: serializeCompletion(current!.toObject()) })
+      }
+      completion.status = 'approved'
+    } else {
+      completion.status = newStatus
+      await completion.save()
+    }
     await completion.populate('images')
 
     let serializedNeed = null
@@ -99,7 +114,7 @@ export const POST = withAuth(async (req, token, ctx) => {
         { issueId: issueId, completion: serializedCompletion, ...(serializedNeed ? { issue: serializedNeed } : {}) },
         audience
       )
-    ).catch(() => {})
+    ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
 
     return NextResponse.json({
       completion: serializedCompletion,

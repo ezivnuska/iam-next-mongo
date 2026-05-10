@@ -80,7 +80,7 @@ export const POST = withAuth(async (req, token) => {
     }
 
     const serialized = serializeIssue({ ...issue.toObject(), pledged, applicants: [] })
-    emitIssueCreated({ actorId: token.id, issue: serialized }).catch(() => {})
+    emitIssueCreated({ actorId: token.id, issue: serialized }).catch((err: any) => console.warn('[socket]', err?.message ?? err))
 
     return NextResponse.json({ issue: serialized }, { status: 201 })
   } catch (err: any) {
