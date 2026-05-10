@@ -7,7 +7,6 @@ import { connectToDatabase } from '@/app/lib/mongoose'
 import { withAuth } from '@/app/lib/mobile/withAuth'
 import { emitIssuePledgeRemoved } from '@/app/lib/socket/emit'
 import Pledge from '@/app/lib/models/pledge'
-import Issue from '@/app/lib/models/issue'
 import Applicant from '@/app/lib/models/applicant'
 
 export const DELETE = withAuth(async (req, token, ctx) => {
@@ -20,13 +19,7 @@ export const DELETE = withAuth(async (req, token, ctx) => {
     if (!pledge) return NextResponse.json({ error: 'Pledge not found' }, { status: 404 })
     if (pledge.userId.toString() !== token.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const [issue, acceptedApplicant] = await Promise.all([
-      Issue.findById(pledge.issueId, { author: 1 }).lean() as any,
-      Applicant.findOne({ issueId: pledge.issueId, status: 'accepted' }, '_id').lean(),
-    ])
-
-    if (issue?.author?.toString() === token.id)
-      return NextResponse.json({ error: 'Your initial pledge cannot be removed' }, { status: 403 })
+    const acceptedApplicant = await Applicant.findOne({ issueId: pledge.issueId, status: 'accepted' }, '_id').lean()
 
     if (acceptedApplicant)
       return NextResponse.json({ error: 'A worker has been accepted — your pledge cannot be removed' }, { status: 409 })
