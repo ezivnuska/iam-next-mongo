@@ -14,6 +14,7 @@ export interface IApplicant extends Document {
   issueId: Types.ObjectId
   status: ApplicantStatus
   votes: IVote[]
+  bidAmount?: number
   acceptedAt?: Date
   completionDeadline?: Date
   createdAt: Date

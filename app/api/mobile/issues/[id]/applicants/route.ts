@@ -18,13 +18,16 @@ export const POST = withAuth(async (req, token, ctx) => {
   try {
     await connectToDatabase()
 
+    const body = await req.json().catch(() => ({}))
+    const bidAmount = typeof body.bidAmount === 'number' && body.bidAmount > 0 ? body.bidAmount : undefined
+
     const issue = await Issue.findById(id).lean()
     if (!issue) return NextResponse.json({ error: 'Issue not found' }, { status: 404 })
 
     const existing = await Applicant.findOne({ userId: token.id, issueId: id }).lean()
     if (existing) return NextResponse.json({ error: 'Already applied to this issue' }, { status: 409 })
 
-    const applicant = await Applicant.create({ userId: token.id, issueId: id })
+    const applicant = await Applicant.create({ userId: token.id, issueId: id, bidAmount })
     const serialized = serializeApplicant(applicant.toObject())
     getIssueAudienceIds(id).then((audience) =>
       emitIssueApplicantAdded({ issueId: id, applicant: serialized }, audience)

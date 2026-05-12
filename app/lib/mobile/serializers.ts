@@ -34,6 +34,7 @@ export function serializeApplicant(a: any) {
     issueId: a.issueId.toString(),
     createdAt: a.createdAt?.toISOString() ?? new Date().toISOString(),
     status: a.status ?? 'pending',
+    bidAmount: a.bidAmount ?? null,
     acceptedAt: a.acceptedAt ? a.acceptedAt.toISOString() : null,
     completionDeadline: a.completionDeadline ? a.completionDeadline.toISOString() : null,
     votes: Array.isArray(a.votes)
