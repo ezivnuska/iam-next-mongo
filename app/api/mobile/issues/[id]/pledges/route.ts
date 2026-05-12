@@ -26,9 +26,6 @@ export const POST = withAuth(async (req, token, ctx) => {
     const issue = await Issue.findById(id).lean()
     if (!issue) return NextResponse.json({ error: 'Issue not found' }, { status: 404 })
 
-    const existing = await Pledge.findOne({ issueId: id, userId: token.id }).lean()
-    if (existing) return NextResponse.json({ error: 'You have already pledged to this issue' }, { status: 409 })
-
     const pledge = await createPledgeWithPaymentIntent(token.id, id, amount)
     await pledge.populate(USER_WITH_AVATAR_POPULATE)
 

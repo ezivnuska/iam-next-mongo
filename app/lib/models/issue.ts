@@ -21,6 +21,7 @@ const completionSchema = new Schema(
     images:      [{ type: Schema.Types.ObjectId, ref: 'Image' }],
     reviews:     { type: [completionReviewSchema], default: [] },
     status:      { type: String, enum: ['pending', 'approved', 'denied'], default: 'pending' },
+    autoApproveAt: { type: Date },
   },
   { _id: true, timestamps: true }
 )

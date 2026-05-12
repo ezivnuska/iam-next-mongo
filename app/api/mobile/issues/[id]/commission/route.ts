@@ -74,11 +74,14 @@ export const POST = withAuth(async (req, token, ctx) => {
     const issue = await Issue.findById(issueId)
     if (!issue) return NextResponse.json({ error: 'Issue not found' }, { status: 404 })
 
+    const autoApproveAt = new Date(Date.now() + 48 * 60 * 60 * 1000)
+
     issue.completion = {
       applicantId: (applicant as any)._id,
       images: imageIds,
       reviews: [],
       status: 'pending',
+      autoApproveAt,
     } as any
     await issue.save()
     await issue.populate('completion.images')

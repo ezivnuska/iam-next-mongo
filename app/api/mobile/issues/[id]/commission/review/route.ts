@@ -86,6 +86,12 @@ export const POST = withAuth(async (req, token, ctx) => {
         { _id: issueId },
         { $set: { 'completion.status': newStatus, 'completion.reviews': reviews } }
       )
+      if (newStatus === 'denied' && applicant) {
+        const resubmitDeadline = new Date()
+        resubmitDeadline.setDate(resubmitDeadline.getDate() + 1)
+        resubmitDeadline.setHours(23, 59, 59, 999)
+        await Applicant.findByIdAndUpdate((applicant as any)._id, { completionDeadline: resubmitDeadline })
+      }
     }
 
     const updatedIssue = await Issue.findById(issueId)

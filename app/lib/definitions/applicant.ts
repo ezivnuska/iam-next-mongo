@@ -15,5 +15,6 @@ export interface IApplicant extends Document {
   status: ApplicantStatus
   votes: IVote[]
   acceptedAt?: Date
+  completionDeadline?: Date
   createdAt: Date
 }

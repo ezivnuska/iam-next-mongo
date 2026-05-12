@@ -33,8 +33,13 @@ export const PATCH = withAuth(async (req, token, ctx) => {
     if (!user?.stripeAccountId || !user?.stripeAccountEnabled)
       return NextResponse.json({ error: 'A payout account is required to accept work', code: 'NO_STRIPE_ACCOUNT' }, { status: 402 })
 
+    const deadline = new Date()
+    deadline.setDate(deadline.getDate() + 1)
+    deadline.setHours(23, 59, 59, 999)
+
     applicant.status = 'accepted'
     applicant.acceptedAt = new Date()
+    applicant.completionDeadline = deadline
     await applicant.save()
 
     // Remove pledges from contributors who voted to deny this applicant

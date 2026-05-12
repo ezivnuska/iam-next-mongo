@@ -22,6 +22,7 @@ const applicantSchema = new Schema<IApplicant>(
     status: { type: String, enum: ['pending', 'confirmed', 'accepted'], default: 'pending' },
     votes: { type: [voteSchema], default: [] },
     acceptedAt: { type: Date },
+    completionDeadline: { type: Date },
   },
   { timestamps: true }
 )
