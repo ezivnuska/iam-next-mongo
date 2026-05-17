@@ -4,6 +4,7 @@
 // DELETE — remove an issue (author only)
 
 import { isValidObjectId, USER_WITH_AVATAR_POPULATE, APPLICANT_USER_POPULATE } from '@/app/lib/utils/validation'
+import { serializeCompletion } from '@/app/lib/mobile/serializers'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { withAuth } from '@/app/lib/mobile/withAuth'
@@ -27,6 +28,7 @@ export const GET = withAuth(async (req, token, ctx) => {
     const need = await Issue.findById(id)
       .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
       .populate('image')
+      .populate('completion.images')
       .lean()
     if (!need) return NextResponse.json({ error: 'Issue not found' }, { status: 404 })
 
@@ -34,8 +36,10 @@ export const GET = withAuth(async (req, token, ctx) => {
       Pledge.find({ issueId: id }).populate(USER_WITH_AVATAR_POPULATE).lean(),
       Applicant.find({ issueId: id }).populate(APPLICANT_USER_POPULATE).lean(),
     ])
-    const completionStatus = (need as any).completion?.status ?? null
-    return NextResponse.json({ issue: serializeIssue({ ...need, pledged: pledges, applicants, completionStatus }) })
+    const rawCompletion = (need as any).completion ?? null
+    const completionStatus = rawCompletion?.status ?? null
+    const completion = rawCompletion ? serializeCompletion(rawCompletion, id) : null
+    return NextResponse.json({ issue: serializeIssue({ ...need, pledged: pledges, applicants, completionStatus }), completion })
   } catch (err) {
     console.error('[mobile/issues GET by id]', err)
     return NextResponse.json({ error: 'Failed to fetch issue' }, { status: 500 })
