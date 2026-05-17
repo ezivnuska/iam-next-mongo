@@ -9,8 +9,8 @@ import { serializeCompletion, serializeIssue } from '@/app/lib/mobile/serializer
 import { settleIssue } from '@/app/lib/mobile/settleIssue'
 import { getIssueAudienceIds, emitIssueCompletionReviewed } from '@/app/lib/socket/emit'
 import Applicant from '@/app/lib/models/applicant'
-import { midnightFollowingDay } from '@/app/lib/mobile/deadlines'
 import Pledge from '@/app/lib/models/pledge'
+import { midnightFollowingDay } from '@/app/lib/mobile/deadlines'
 import Issue from '@/app/lib/models/issue'
 import '@/app/lib/models/image'
 import '@/app/lib/models/user'
@@ -49,23 +49,11 @@ export const POST = withAuth(async (req, token, ctx) => {
     }
 
     const applicant = await Applicant.findOne({ issueId, status: 'accepted' }).lean()
-    const confirmingIds = applicant
-      ? [...new Set((applicant as any).votes.filter((v: any) => v.vote === 'confirm').map((v: any) => v.userId.toString()))]
-      : []
-
-    const pledges = await Pledge.find({ issueId }).lean()
-    const allContributorIds = [...new Set(pledges.map((p) => p.userId.toString()))]
-    const baseReviewerIds = confirmingIds.length > 0
-      ? allContributorIds.filter((id) => confirmingIds.includes(id))
-      : allContributorIds
     const authorId = issue?.author?.toString()
-    const reviewerIds = authorId && !baseReviewerIds.includes(authorId)
-      ? [...baseReviewerIds, authorId]
-      : baseReviewerIds
 
-    const anyDenied     = reviews.some((r: any) => reviewerIds.includes(r.userId.toString()) && r.vote === 'deny')
     const authorApproved = !!authorId && reviews.some((r: any) => r.userId.toString() === authorId && r.vote === 'approve')
-    const newStatus = anyDenied ? 'denied' : authorApproved ? 'approved' : 'pending'
+    const anyDenied      = !!authorId && reviews.some((r: any) => r.userId.toString() === authorId && r.vote === 'deny')
+    const newStatus = authorApproved ? 'approved' : anyDenied ? 'denied' : 'pending'
 
     if (newStatus === 'approved') {
       // Atomically claim the pending→approved transition on the issue document

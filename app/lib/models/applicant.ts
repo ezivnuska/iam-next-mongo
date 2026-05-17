@@ -19,7 +19,7 @@ const applicantSchema = new Schema<IApplicant>(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     issueId: { type: Schema.Types.ObjectId, ref: 'Issue', required: true },
-    status: { type: String, enum: ['pending', 'confirmed', 'accepted'], default: 'pending' },
+    status: { type: String, enum: ['pending', 'accepted'], default: 'pending' },
     votes: { type: [voteSchema], default: [] },
     bidAmount: { type: Number },
     acceptedAt: { type: Date },

@@ -16,8 +16,8 @@ export const GET = withAuth(async (req) => {
 
     const status = req.nextUrl.searchParams.get('status') ?? 'open'
     const query = status === 'open'
-      ? { $or: [{ status: 'open' }, { status: 'completed' }, { status: { $exists: false } }] }
-      : { status }
+      ? { $or: [{ status: 'open' }, { status: 'completed' }, { status: { $exists: false } }], flagged: { $ne: true } }
+      : { status, flagged: { $ne: true } }
 
     const limit = Math.min(parseInt(req.nextUrl.searchParams.get('limit') ?? '100'), 200)
     const issues = await Issue.find(query)

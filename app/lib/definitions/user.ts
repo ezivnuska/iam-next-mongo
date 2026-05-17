@@ -32,6 +32,7 @@ export interface UserDocument extends Document {
   stripeDefaultPaymentMethodId?: string;
   stripeAccountId?: string;
   stripeAccountEnabled?: boolean;
+  expoPushToken?: string;
   createdAt: Date;
   updatedAt: Date;
   emailVerified?: Date | null;

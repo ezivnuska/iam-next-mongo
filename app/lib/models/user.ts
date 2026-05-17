@@ -25,6 +25,7 @@ const UserSchema = new Schema<UserDocument>(
     stripeDefaultPaymentMethodId: { type: String },
     stripeAccountId: { type: String },
     stripeAccountEnabled: { type: Boolean, default: false },
+    expoPushToken: { type: String },
   },
   {
     timestamps: true,

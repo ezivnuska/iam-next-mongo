@@ -50,7 +50,7 @@ export function serializeApplicant(a: any) {
 export function serializeCompletion(c: any, issueId?: string) {
   return {
     id: c._id.toString(),
-    issueId: issueId ?? (c.issueId ?? c.needId)?.toString(),
+    issueId: issueId ?? c.issueId?.toString(),
     applicantId: c.applicantId.toString(),
     images: Array.isArray(c.images)
       ? c.images.map((img: any) => serializeResource(img)).filter(Boolean)
@@ -82,6 +82,7 @@ export function serializeIssue(n: any) {
   result.locationVisible = n.locationVisible === true;
   const completionStatus = n.completion?.status ?? n.completionStatus ?? null
   if (completionStatus != null) result.completionStatus = completionStatus
+  if (n.flagged === true) result.flagged = true
   const image = serializeResource(n.image);
   if (image) result.image = image;
   const author = serializeAuthor(n.author);

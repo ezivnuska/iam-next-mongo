@@ -2,7 +2,7 @@
 
 import type { Types, Document } from 'mongoose'
 
-export type ApplicantStatus = 'pending' | 'confirmed' | 'accepted'
+export type ApplicantStatus = 'pending' | 'accepted'
 
 export interface IVote {
   userId: Types.ObjectId

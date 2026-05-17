@@ -28,6 +28,7 @@ export interface IIssue extends Document {
   maxPay?: number
   location?: { latitude: number; longitude: number }
   locationVisible?: boolean
+  flagged?: boolean
   image?: Types.ObjectId
   likes?: Types.ObjectId[]
   completion?: ICompletion | null
