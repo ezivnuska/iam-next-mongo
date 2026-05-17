@@ -1,0 +1,46 @@
+// app/api/mobile/issues/[id]/commission/extend/route.ts
+// PATCH — author extends the accepted applicant's completion deadline by 24 hours
+
+import { isValidObjectId } from '@/app/lib/utils/validation'
+import { NextResponse } from 'next/server'
+import { connectToDatabase } from '@/app/lib/mongoose'
+import { withAuth } from '@/app/lib/mobile/withAuth'
+import { serializeApplicant } from '@/app/lib/mobile/serializers'
+import { getIssueAudienceIds, emitIssueApplicantAccepted } from '@/app/lib/socket/emit'
+import Issue from '@/app/lib/models/issue'
+import Applicant from '@/app/lib/models/applicant'
+
+export const PATCH = withAuth(async (req, token, ctx) => {
+  const { id: issueId } = await ctx.params
+  if (!isValidObjectId(issueId)) return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
+
+  try {
+    await connectToDatabase()
+
+    const issue = await Issue.findById(issueId).lean() as any
+    if (!issue) return NextResponse.json({ error: 'Issue not found' }, { status: 404 })
+    if (issue.author.toString() !== token.id)
+      return NextResponse.json({ error: 'Only the author can extend the deadline' }, { status: 403 })
+
+    const applicant = await Applicant.findOne({ issueId, status: 'accepted' })
+    if (!applicant) return NextResponse.json({ error: 'No accepted applicant found' }, { status: 404 })
+
+    const current = applicant.completionDeadline ?? new Date()
+    const extended = new Date(Math.max(current.getTime(), Date.now()))
+    extended.setDate(extended.getDate() + 1)
+    extended.setHours(23, 59, 59, 999)
+
+    applicant.completionDeadline = extended
+    await applicant.save()
+
+    const serialized = serializeApplicant(applicant.toObject())
+    getIssueAudienceIds(issueId, applicant.userId.toString()).then((audience) =>
+      emitIssueApplicantAccepted({ issueId, applicant: serialized }, audience)
+    ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
+
+    return NextResponse.json({ applicant: serialized })
+  } catch (err) {
+    console.error('[commission/extend PATCH]', err)
+    return NextResponse.json({ error: 'Failed to extend deadline' }, { status: 500 })
+  }
+})
