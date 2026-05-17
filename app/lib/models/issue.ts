@@ -30,6 +30,7 @@ const issueSchema = new Schema<IIssue>(
   {
     author:          { type: Schema.Types.ObjectId, ref: 'User', required: true },
     issueType:       { type: String, enum: ['Clean Up', 'Gardening', 'Hauling'], required: true },
+    title:           { type: String },
     content:         { type: String },
     status:          { type: String, enum: ['open', 'completed'], default: 'open' },
     minPay:          { type: Number },

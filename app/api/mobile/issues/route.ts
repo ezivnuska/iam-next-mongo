@@ -10,6 +10,7 @@ import { serializeIssue } from '@/app/lib/mobile/serializers'
 import { attachIssueData } from '@/app/lib/mobile/attachIssueData'
 import { createIssueFee } from '@/app/lib/mobile/createFee'
 import { emitIssueCreated } from '@/app/lib/socket/emit'
+import { generateIssueTitle } from '@/app/lib/mobile/generateTitle'
 import Issue from '@/app/lib/models/issue'
 import '@/app/lib/models/image'
 import '@/app/lib/models/user'
@@ -36,6 +37,7 @@ export const POST = withAuth(async (req, token) => {
   try {
     const { issueType, content, imageId, location, locationVisible } = await req.json()
 
+
     const validIssueTypes = ['Clean Up', 'Gardening', 'Hauling']
     if (!issueType || !validIssueTypes.includes(issueType)) {
       return NextResponse.json({ error: 'Invalid issue type' }, { status: 400 })
@@ -56,11 +58,15 @@ export const POST = withAuth(async (req, token) => {
         ? { latitude: location.latitude, longitude: location.longitude }
         : undefined
 
-    await connectToDatabase()
+    const [, title] = await Promise.all([
+      connectToDatabase(),
+      validLocation ? generateIssueTitle(validLocation.latitude, validLocation.longitude) : null,
+    ])
 
     const issue = await Issue.create({
       author: token.id,
       issueType,
+      ...(title ? { title } : {}),
       ...(content?.trim() ? { content: content.trim() } : {}),
       ...(validLocation ? { location: validLocation } : {}),
       locationVisible: locationVisible === true,

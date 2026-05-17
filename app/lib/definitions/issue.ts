@@ -21,6 +21,7 @@ export interface ICompletion {
 export interface IIssue extends Document {
   author: Types.ObjectId
   issueType: IssueType
+  title?: string
   content?: string
   status: IssueStatus
   minPay?: number

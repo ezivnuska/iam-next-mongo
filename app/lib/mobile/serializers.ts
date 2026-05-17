@@ -69,6 +69,7 @@ export function serializeIssue(n: any) {
   const result: Record<string, any> = {
     id: n._id.toString(),
     issueType: n.issueType,
+    title: n.title ?? null,
     content: n.content ?? "",
     status: n.status ?? 'open',
     pledged: Array.isArray(n.pledged) ? n.pledged.map(serializePledge) : [],
