@@ -80,7 +80,8 @@ export function serializeIssue(n: any) {
     result.location = { latitude: n.location.latitude, longitude: n.location.longitude };
   }
   result.locationVisible = n.locationVisible === true;
-  if (n.completionStatus != null) result.completionStatus = n.completionStatus;
+  const completionStatus = n.completion?.status ?? n.completionStatus ?? null
+  if (completionStatus != null) result.completionStatus = completionStatus
   const image = serializeResource(n.image);
   if (image) result.image = image;
   const author = serializeAuthor(n.author);

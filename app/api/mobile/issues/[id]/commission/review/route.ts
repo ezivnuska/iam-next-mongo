@@ -63,9 +63,9 @@ export const POST = withAuth(async (req, token, ctx) => {
       ? [...baseReviewerIds, authorId]
       : baseReviewerIds
 
-    const anyDenied  = reviews.some((r: any) => reviewerIds.includes(r.userId.toString()) && r.vote === 'deny')
-    const allApproved = reviewerIds.every((rId) => reviews.some((r: any) => r.userId.toString() === rId && r.vote === 'approve'))
-    const newStatus = anyDenied ? 'denied' : allApproved ? 'approved' : 'pending'
+    const anyDenied     = reviews.some((r: any) => reviewerIds.includes(r.userId.toString()) && r.vote === 'deny')
+    const authorApproved = !!authorId && reviews.some((r: any) => r.userId.toString() === authorId && r.vote === 'approve')
+    const newStatus = anyDenied ? 'denied' : authorApproved ? 'approved' : 'pending'
 
     if (newStatus === 'approved') {
       // Atomically claim the pending→approved transition on the issue document
