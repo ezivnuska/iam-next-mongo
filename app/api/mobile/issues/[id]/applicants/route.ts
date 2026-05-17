@@ -9,6 +9,7 @@ import { withAuth } from '@/app/lib/mobile/withAuth'
 import { serializeApplicant } from '@/app/lib/mobile/serializers'
 import { getIssueAudienceIds, emitIssueApplicantAdded, emitIssueApplicantRemoved } from '@/app/lib/socket/emit'
 import Applicant from '@/app/lib/models/applicant'
+import Pledge from '@/app/lib/models/pledge'
 import Issue from '@/app/lib/models/issue'
 
 export const POST = withAuth(async (req, token, ctx) => {
@@ -24,8 +25,12 @@ export const POST = withAuth(async (req, token, ctx) => {
     const issue = await Issue.findById(id).lean()
     if (!issue) return NextResponse.json({ error: 'Issue not found' }, { status: 404 })
 
-    const existing = await Applicant.findOne({ userId: token.id, issueId: id }).lean()
+    const [existing, pledge] = await Promise.all([
+      Applicant.findOne({ userId: token.id, issueId: id }).lean(),
+      Pledge.findOne({ issueId: id, userId: token.id }).lean(),
+    ])
     if (existing) return NextResponse.json({ error: 'Already applied to this issue' }, { status: 409 })
+    if (pledge) return NextResponse.json({ error: 'Contributors cannot place a bid on an issue they have funded' }, { status: 403 })
 
     const applicant = await Applicant.create({ userId: token.id, issueId: id, bidAmount })
     const serialized = serializeApplicant(applicant.toObject())
