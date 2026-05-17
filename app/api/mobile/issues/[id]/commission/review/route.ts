@@ -1,5 +1,6 @@
 // app/api/mobile/issues/[id]/commission/review/route.ts
-// POST — contributor approves or denies the completion submission
+// POST — author reviews completion evidence via a 0–5 rating.
+//         0 = deny; 1–5 = approve with that quality score.
 
 import { isValidObjectId, USER_WITH_AVATAR_POPULATE } from '@/app/lib/utils/validation'
 import { NextRequest, NextResponse } from 'next/server'
@@ -10,6 +11,7 @@ import { settleIssue } from '@/app/lib/mobile/settleIssue'
 import { getIssueAudienceIds, emitIssueCompletionReviewed } from '@/app/lib/socket/emit'
 import Applicant from '@/app/lib/models/applicant'
 import Pledge from '@/app/lib/models/pledge'
+import Rating from '@/app/lib/models/rating'
 import { midnightFollowingDay } from '@/app/lib/mobile/deadlines'
 import Issue from '@/app/lib/models/issue'
 import '@/app/lib/models/image'
@@ -19,9 +21,10 @@ export const POST = withAuth(async (req, token, ctx) => {
   const { id: issueId } = await ctx.params
   if (!isValidObjectId(issueId)) return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
 
-  const { vote } = await req.json()
-  if (vote !== 'approve' && vote !== 'deny')
-    return NextResponse.json({ error: 'Vote must be "approve" or "deny"' }, { status: 400 })
+  const { rating } = await req.json()
+  if (!Number.isInteger(rating) || rating < 0 || rating > 5)
+    return NextResponse.json({ error: 'Rating must be an integer between 0 and 5' }, { status: 400 })
+  const vote = rating === 0 ? 'deny' : 'approve'
 
   try {
     await connectToDatabase()
@@ -69,6 +72,17 @@ export const POST = withAuth(async (req, token, ctx) => {
 
       try { await settleIssue(issueId) } catch (err) {
         console.error('[commission/review] settleIssue failed:', err)
+      }
+
+      if (rating > 0 && applicant) {
+        const commissionId = (claimed as any)?.completion?._id
+        if (commissionId) {
+          await Rating.findOneAndUpdate(
+            { commissionId, raterId: token.id },
+            { issueId, commissionId, raterId: token.id, workerId: (applicant as any).userId, score: rating },
+            { upsert: true }
+          ).catch((err: any) => console.warn('[commission/review] rating upsert failed:', err?.message))
+        }
       }
     } else {
       await Issue.findOneAndUpdate(
