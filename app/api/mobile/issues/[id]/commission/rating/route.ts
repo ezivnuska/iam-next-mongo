@@ -7,6 +7,7 @@ import { isValidObjectId } from '@/app/lib/utils/validation'
 import { NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { withAuth } from '@/app/lib/mobile/withAuth'
+import { calculateAverageRating } from '@/app/lib/utils/ratingUtils'
 import Issue from '@/app/lib/models/issue'
 import Pledge from '@/app/lib/models/pledge'
 import Applicant from '@/app/lib/models/applicant'
@@ -17,8 +18,8 @@ export const POST = withAuth(async (req, token, ctx) => {
   if (!isValidObjectId(issueId)) return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
 
   const { score } = await req.json()
-  if (!Number.isInteger(score) || score < 0 || score > 5)
-    return NextResponse.json({ error: 'Score must be an integer between 0 and 5' }, { status: 400 })
+  if (!Number.isInteger(score) || score < 1 || score > 5)
+    return NextResponse.json({ error: 'Score must be an integer between 1 and 5' }, { status: 400 })
 
   try {
     await connectToDatabase()
@@ -45,7 +46,10 @@ export const POST = withAuth(async (req, token, ctx) => {
       { upsert: true }
     )
 
-    return NextResponse.json({ score })
+    const allRatings = await Rating.find({ commissionId }).lean() as any[]
+    const averageRating = calculateAverageRating(allRatings)
+
+    return NextResponse.json({ score, averageRating })
   } catch (err: any) {
     console.error('[commission/rating POST]', err)
     return NextResponse.json({ error: 'Failed to submit rating' }, { status: 500 })

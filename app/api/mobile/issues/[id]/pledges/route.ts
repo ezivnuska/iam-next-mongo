@@ -8,6 +8,7 @@ import { withAuth } from '@/app/lib/mobile/withAuth'
 import { serializePledge, serializeApplicant } from '@/app/lib/mobile/serializers'
 import { createPledgeWithPaymentIntent } from '@/app/lib/mobile/createPledge'
 import { midnightFollowingDay } from '@/app/lib/mobile/deadlines'
+import { selectFundedWinner } from '@/app/lib/mobile/fundingUtils'
 import {
   emitIssuePledgeAdded,
   emitIssueApplicantAccepted,
@@ -16,7 +17,6 @@ import {
 import Issue from '@/app/lib/models/issue'
 import Pledge from '@/app/lib/models/pledge'
 import Applicant from '@/app/lib/models/applicant'
-import UserModel from '@/app/lib/models/user'
 import '@/app/lib/models/image'
 import '@/app/lib/models/user'
 
@@ -61,47 +61,24 @@ export const POST = withAuth(async (req, token, ctx) => {
     // Check if any pending bid is now funded
     const alreadyAccepted = await Applicant.exists({ issueId: id, status: 'accepted' })
     if (!alreadyAccepted) {
-      const allPledges = await Pledge.find({ issueId: id }).lean() as any[]
-      const blanketTotal = allPledges
-        .filter((p) => !p.applicantId)
-        .reduce((s, p) => s + p.amount, 0)
+      const [allPledges, pendingBidders] = await Promise.all([
+        Pledge.find({ issueId: id }).lean() as Promise<any[]>,
+        Applicant.find({ issueId: id, status: 'pending', bidAmount: { $exists: true, $ne: null } })
+          .sort({ createdAt: 1 }).lean() as Promise<any[]>,
+      ])
 
-      const pendingBidders = await Applicant.find({
-        issueId: id,
-        status: 'pending',
-        bidAmount: { $exists: true, $ne: null },
-      }).sort({ createdAt: 1 }).lean() as any[]
-
-      const candidates = pendingBidders.filter((a) => {
-        const directed = allPledges
-          .filter((p) => p.applicantId?.toString() === a._id.toString())
-          .reduce((s: number, p: any) => s + p.amount, 0)
-        return directed + blanketTotal >= a.bidAmount
-      })
-
-      if (candidates.length > 0) {
-        // Sort by reputation desc, then createdAt asc
-        const userIds = candidates.map((a: any) => a.userId)
-        const users = await UserModel.find({ _id: { $in: userIds } }).lean() as any[]
-        const reputationMap = new Map(
-          users.map((u: any) => [u._id.toString(), u.reputation?.average ?? -1])
-        )
-        candidates.sort((a: any, b: any) => {
-          const repDiff = (reputationMap.get(b.userId.toString()) ?? -1) -
-                          (reputationMap.get(a.userId.toString()) ?? -1)
-          if (repDiff !== 0) return repDiff
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        })
-
-        const winner = candidates[0]
+      const winner = await selectFundedWinner(pendingBidders, allPledges)
+      if (winner) {
         await Applicant.findByIdAndUpdate(winner._id, {
           status: 'accepted',
           acceptedAt: new Date(),
           completionDeadline: midnightFollowingDay(),
         })
 
-        // Resolve directed pledges for losing applicants
-        const loserIds = candidates.slice(1).map((a: any) => a._id.toString())
+        // Resolve directed pledges for all other pending applicants (losers)
+        const loserIds = pendingBidders
+          .filter((a: any) => a._id.toString() !== winner._id.toString())
+          .map((a: any) => a._id.toString())
         if (loserIds.length > 0) {
           await Pledge.updateMany(
             { issueId: id, applicantId: { $in: loserIds }, rescindIfLost: false },

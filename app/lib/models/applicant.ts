@@ -29,6 +29,7 @@ const applicantSchema = new Schema<IApplicant>(
 )
 
 applicantSchema.index({ userId: 1, issueId: 1 }, { unique: true })
+applicantSchema.index({ issueId: 1, status: 1 })
 
 const Applicant: Model<IApplicant> = mongoose.models.Applicant || mongoose.model<IApplicant>('Applicant', applicantSchema)
 export default Applicant

@@ -20,5 +20,8 @@ const pledgeSchema = new Schema<IPledge>(
   { timestamps: true }
 )
 
+pledgeSchema.index({ issueId: 1 })
+pledgeSchema.index({ issueId: 1, applicantId: 1 })
+
 const Pledge: Model<IPledge> = mongoose.models.Pledge || mongoose.model<IPledge>('Pledge', pledgeSchema)
 export default Pledge

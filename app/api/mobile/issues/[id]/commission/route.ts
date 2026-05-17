@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { withAuth } from '@/app/lib/mobile/withAuth'
 import { serializeCompletion } from '@/app/lib/mobile/serializers'
+import { calculateAverageRating } from '@/app/lib/utils/ratingUtils'
 import { getIssueAudienceIds, emitIssueCompletionSubmitted } from '@/app/lib/socket/emit'
 import Issue from '@/app/lib/models/issue'
 import Applicant from '@/app/lib/models/applicant'
@@ -31,11 +32,7 @@ export const GET = withAuth(async (req, token, ctx) => {
         Rating.find({ issueId }).lean() as unknown as any[],
       ])
       myRating = myDoc?.score ?? null
-      if (allRatings.length > 0) {
-        averageRating = Math.round(
-          (allRatings.reduce((s: number, r: any) => s + r.score, 0) / allRatings.length) * 10
-        ) / 10
-      }
+      averageRating = calculateAverageRating(allRatings)
     } catch {
       // rating lookup is non-critical
     }
