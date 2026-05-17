@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { withAuth } from '@/app/lib/mobile/withAuth'
 import { serializeApplicant } from '@/app/lib/mobile/serializers'
+import { midnightFollowingDay } from '@/app/lib/mobile/deadlines'
 import { getIssueAudienceIds, emitIssueApplicantAccepted } from '@/app/lib/socket/emit'
 import Applicant from '@/app/lib/models/applicant'
 import Pledge from '@/app/lib/models/pledge'
@@ -33,13 +34,9 @@ export const PATCH = withAuth(async (req, token, ctx) => {
     if (!user?.stripeAccountId || !user?.stripeAccountEnabled)
       return NextResponse.json({ error: 'A payout account is required to accept work', code: 'NO_STRIPE_ACCOUNT' }, { status: 402 })
 
-    const deadline = new Date()
-    deadline.setDate(deadline.getDate() + 1)
-    deadline.setHours(23, 59, 59, 999)
-
     applicant.status = 'accepted'
     applicant.acceptedAt = new Date()
-    applicant.completionDeadline = deadline
+    applicant.completionDeadline = midnightFollowingDay()
     await applicant.save()
 
     // Remove pledges from contributors who voted to deny this applicant

@@ -7,6 +7,7 @@ import { connectToDatabase } from '@/app/lib/mongoose'
 import { withAuth } from '@/app/lib/mobile/withAuth'
 import { serializePledge, serializeApplicant } from '@/app/lib/mobile/serializers'
 import { createPledgeWithPaymentIntent } from '@/app/lib/mobile/createPledge'
+import { midnightFollowingDay } from '@/app/lib/mobile/deadlines'
 import {
   emitIssuePledgeAdded,
   emitIssueApplicantAccepted,
@@ -93,14 +94,10 @@ export const POST = withAuth(async (req, token, ctx) => {
         })
 
         const winner = candidates[0]
-        const deadline = new Date()
-        deadline.setDate(deadline.getDate() + 1)
-        deadline.setHours(23, 59, 59, 999)
-
         await Applicant.findByIdAndUpdate(winner._id, {
           status: 'accepted',
           acceptedAt: new Date(),
-          completionDeadline: deadline,
+          completionDeadline: midnightFollowingDay(),
         })
 
         // Resolve directed pledges for losing applicants

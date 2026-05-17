@@ -6,6 +6,7 @@ import { NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { withAuth } from '@/app/lib/mobile/withAuth'
 import { serializeApplicant } from '@/app/lib/mobile/serializers'
+import { midnightFollowingDay } from '@/app/lib/mobile/deadlines'
 import { getIssueAudienceIds, emitIssueApplicantAccepted } from '@/app/lib/socket/emit'
 import Issue from '@/app/lib/models/issue'
 import Applicant from '@/app/lib/models/applicant'
@@ -25,12 +26,7 @@ export const PATCH = withAuth(async (req, token, ctx) => {
     const applicant = await Applicant.findOne({ issueId, status: 'accepted' })
     if (!applicant) return NextResponse.json({ error: 'No accepted applicant found' }, { status: 404 })
 
-    const current = applicant.completionDeadline ?? new Date()
-    const extended = new Date(Math.max(current.getTime(), Date.now()))
-    extended.setDate(extended.getDate() + 1)
-    extended.setHours(23, 59, 59, 999)
-
-    applicant.completionDeadline = extended
+    applicant.completionDeadline = midnightFollowingDay()
     await applicant.save()
 
     const serialized = serializeApplicant(applicant.toObject())

@@ -9,6 +9,7 @@ import { serializeCompletion, serializeIssue } from '@/app/lib/mobile/serializer
 import { settleIssue } from '@/app/lib/mobile/settleIssue'
 import { getIssueAudienceIds, emitIssueCompletionReviewed } from '@/app/lib/socket/emit'
 import Applicant from '@/app/lib/models/applicant'
+import { midnightFollowingDay } from '@/app/lib/mobile/deadlines'
 import Pledge from '@/app/lib/models/pledge'
 import Issue from '@/app/lib/models/issue'
 import '@/app/lib/models/image'
@@ -87,10 +88,7 @@ export const POST = withAuth(async (req, token, ctx) => {
         { $set: { 'completion.status': newStatus, 'completion.reviews': reviews } }
       )
       if (newStatus === 'denied' && applicant) {
-        const resubmitDeadline = new Date()
-        resubmitDeadline.setDate(resubmitDeadline.getDate() + 1)
-        resubmitDeadline.setHours(23, 59, 59, 999)
-        await Applicant.findByIdAndUpdate((applicant as any)._id, { completionDeadline: resubmitDeadline })
+        await Applicant.findByIdAndUpdate((applicant as any)._id, { completionDeadline: midnightFollowingDay() })
       }
     }
 

@@ -8,6 +8,7 @@ import { withAuth } from '@/app/lib/mobile/withAuth'
 import { serializeApplicant } from '@/app/lib/mobile/serializers'
 import { getIssueAudienceIds, emitIssueApplicantAccepted, emitIssueApplicantAdded } from '@/app/lib/socket/emit'
 import Issue from '@/app/lib/models/issue'
+import { midnightFollowingDay } from '@/app/lib/mobile/deadlines'
 import Applicant from '@/app/lib/models/applicant'
 import Pledge from '@/app/lib/models/pledge'
 import UserModel from '@/app/lib/models/user'
@@ -71,13 +72,9 @@ export const POST = withAuth(async (req, token, ctx) => {
     })
 
     const winner = funded[0]
-    const deadline = new Date()
-    deadline.setDate(deadline.getDate() + 1)
-    deadline.setHours(23, 59, 59, 999)
-
     const nextApplicant = await Applicant.findByIdAndUpdate(
       winner._id,
-      { status: 'accepted', acceptedAt: new Date(), completionDeadline: deadline },
+      { status: 'accepted', acceptedAt: new Date(), completionDeadline: midnightFollowingDay() },
       { new: true }
     )
 
