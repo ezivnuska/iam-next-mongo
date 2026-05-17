@@ -40,6 +40,34 @@ export const POST = withAuth(async (req, token, ctx) => {
   }
 })
 
+export const PATCH = withAuth(async (req, token, ctx) => {
+  const { id } = await ctx.params
+  if (!isValidObjectId(id)) return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
+
+  try {
+    const { bidAmount } = await req.json()
+    if (typeof bidAmount !== 'number' || bidAmount <= 0)
+      return NextResponse.json({ error: 'Bid amount must be a positive number' }, { status: 400 })
+
+    await connectToDatabase()
+    const applicant = await Applicant.findOneAndUpdate(
+      { userId: token.id, issueId: id, status: 'pending' },
+      { $set: { bidAmount } },
+      { new: true }
+    )
+    if (!applicant) return NextResponse.json({ error: 'Active application not found' }, { status: 404 })
+
+    const serialized = serializeApplicant(applicant.toObject())
+    getIssueAudienceIds(id).then((audience) =>
+      emitIssueApplicantAdded({ issueId: id, applicant: serialized }, audience)
+    ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
+    return NextResponse.json({ applicant: serialized })
+  } catch (err) {
+    console.error('[mobile/issues/applicants PATCH]', err)
+    return NextResponse.json({ error: 'Failed to update bid' }, { status: 500 })
+  }
+})
+
 export const DELETE = withAuth(async (req, token, ctx) => {
   const { id } = await ctx.params
   if (!isValidObjectId(id)) return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })

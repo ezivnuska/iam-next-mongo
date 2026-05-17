@@ -7,6 +7,9 @@ export interface IPledge extends Document {
   userId: Types.ObjectId
   issueId: Types.ObjectId
   amount: number
+  applicantId?: Types.ObjectId | null
+  rescindIfLost: boolean
+  anonymous: boolean
   stripePaymentIntentId?: string
   createdAt: Date
   updatedAt: Date
