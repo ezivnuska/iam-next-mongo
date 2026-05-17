@@ -6,6 +6,7 @@ import { NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { withAuth } from '@/app/lib/mobile/withAuth'
 import { serializeApplicant } from '@/app/lib/mobile/serializers'
+import { APPLICANT_USER_POPULATE } from '@/app/lib/utils/validation'
 import { midnightFollowingDay } from '@/app/lib/mobile/deadlines'
 import { getIssueAudienceIds, emitIssueApplicantAccepted } from '@/app/lib/socket/emit'
 import Issue from '@/app/lib/models/issue'
@@ -23,7 +24,7 @@ export const PATCH = withAuth(async (req, token, ctx) => {
     if (issue.author.toString() !== token.id)
       return NextResponse.json({ error: 'Only the author can extend the deadline' }, { status: 403 })
 
-    const applicant = await Applicant.findOne({ issueId, status: 'accepted' })
+    const applicant = await Applicant.findOne({ issueId, status: 'accepted' }).populate(APPLICANT_USER_POPULATE)
     if (!applicant) return NextResponse.json({ error: 'No accepted applicant found' }, { status: 404 })
 
     applicant.completionDeadline = midnightFollowingDay()

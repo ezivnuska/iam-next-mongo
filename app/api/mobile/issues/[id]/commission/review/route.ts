@@ -2,7 +2,7 @@
 // POST — author reviews completion evidence via a 0–5 rating.
 //         0 = deny; 1–5 = approve with that quality score.
 
-import { isValidObjectId, USER_WITH_AVATAR_POPULATE } from '@/app/lib/utils/validation'
+import { isValidObjectId, USER_WITH_AVATAR_POPULATE, APPLICANT_USER_POPULATE } from '@/app/lib/utils/validation'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { withAuth } from '@/app/lib/mobile/withAuth'
@@ -106,7 +106,7 @@ export const POST = withAuth(async (req, token, ctx) => {
     if (newStatus === 'approved' && updatedIssue) {
       const [p, a] = await Promise.all([
         Pledge.find({ issueId }).populate(USER_WITH_AVATAR_POPULATE).lean(),
-        Applicant.find({ issueId }).lean(),
+        Applicant.find({ issueId }).populate(APPLICANT_USER_POPULATE).lean(),
       ])
       serializedNeed = serializeIssue({ ...updatedIssue, pledged: p, applicants: a })
     }

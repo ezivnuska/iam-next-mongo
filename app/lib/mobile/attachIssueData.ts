@@ -2,7 +2,7 @@
 // Attaches pledges and applicants to an array of raw Issue documents.
 // completionStatus is read directly from the embedded issue.completion field.
 
-import { USER_WITH_AVATAR_POPULATE } from '@/app/lib/utils/validation'
+import { USER_WITH_AVATAR_POPULATE, APPLICANT_USER_POPULATE } from '@/app/lib/utils/validation'
 import Pledge from '@/app/lib/models/pledge'
 import Applicant from '@/app/lib/models/applicant'
 
@@ -13,7 +13,7 @@ export async function attachIssueData(issues: any[]) {
 
   const [pledges, applicants] = await Promise.all([
     Pledge.find({ issueId: { $in: ids } }).populate(USER_WITH_AVATAR_POPULATE).lean(),
-    Applicant.find({ issueId: { $in: ids } }).lean(),
+    Applicant.find({ issueId: { $in: ids } }).populate(APPLICANT_USER_POPULATE).lean(),
   ])
 
   const pledgesByIssue: Record<string, any[]> = {}

@@ -9,6 +9,7 @@ import { serializePledge, serializeApplicant } from '@/app/lib/mobile/serializer
 import { createPledgeWithPaymentIntent } from '@/app/lib/mobile/createPledge'
 import { midnightFollowingDay } from '@/app/lib/mobile/deadlines'
 import { selectFundedWinner } from '@/app/lib/mobile/fundingUtils'
+import { APPLICANT_USER_POPULATE } from '@/app/lib/utils/validation'
 import {
   emitIssuePledgeAdded,
   emitIssueApplicantAccepted,
@@ -89,7 +90,7 @@ export const POST = withAuth(async (req, token, ctx) => {
           )
         }
 
-        const accepted = await Applicant.findById(winner._id).lean() as any
+        const accepted = await Applicant.findById(winner._id).populate(APPLICANT_USER_POPULATE).lean() as any
         const serializedApplicant = serializeApplicant(accepted)
         getIssueAudienceIds(id, winner.userId.toString()).then((audience) =>
           emitIssueApplicantAccepted({ issueId: id, applicant: serializedApplicant }, audience)

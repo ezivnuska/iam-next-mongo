@@ -3,7 +3,7 @@
 // PATCH  — update an issue (author only)
 // DELETE — remove an issue (author only)
 
-import { isValidObjectId, USER_WITH_AVATAR_POPULATE } from '@/app/lib/utils/validation'
+import { isValidObjectId, USER_WITH_AVATAR_POPULATE, APPLICANT_USER_POPULATE } from '@/app/lib/utils/validation'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { withAuth } from '@/app/lib/mobile/withAuth'
@@ -32,7 +32,7 @@ export const GET = withAuth(async (req, token, ctx) => {
 
     const [pledges, applicants] = await Promise.all([
       Pledge.find({ issueId: id }).populate(USER_WITH_AVATAR_POPULATE).lean(),
-      Applicant.find({ issueId: id }).lean(),
+      Applicant.find({ issueId: id }).populate(APPLICANT_USER_POPULATE).lean(),
     ])
     const completionStatus = (need as any).completion?.status ?? null
     return NextResponse.json({ issue: serializeIssue({ ...need, pledged: pledges, applicants, completionStatus }) })
@@ -80,7 +80,7 @@ export const PATCH = withAuth(async (req, token, ctx) => {
     ])
     const [pledges, applicants] = await Promise.all([
       Pledge.find({ issueId: id }).populate(USER_WITH_AVATAR_POPULATE).lean(),
-      Applicant.find({ issueId: id }).lean(),
+      Applicant.find({ issueId: id }).populate(APPLICANT_USER_POPULATE).lean(),
     ])
     return NextResponse.json({ issue: serializeIssue({ ...need.toObject(), pledged: pledges, applicants }) })
   } catch (err) {

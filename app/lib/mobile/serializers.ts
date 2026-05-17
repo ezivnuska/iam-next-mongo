@@ -32,10 +32,13 @@ export function serializePledge(p: any) {
 }
 
 export function serializeApplicant(a: any) {
+  const user = a.userId && typeof a.userId === 'object' ? a.userId : null
   return {
     id: a._id.toString(),
-    userId: a.userId.toString(),
+    userId: user ? user._id.toString() : a.userId.toString(),
     issueId: a.issueId.toString(),
+    username: user?.username ?? null,
+    avatar: user?.avatar ? serializeResource(user.avatar) : null,
     createdAt: a.createdAt?.toISOString() ?? new Date().toISOString(),
     status: a.status ?? 'pending',
     bidAmount: a.bidAmount ?? null,

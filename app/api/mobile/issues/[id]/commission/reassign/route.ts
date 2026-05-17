@@ -7,6 +7,7 @@ import { connectToDatabase } from '@/app/lib/mongoose'
 import { withAuth } from '@/app/lib/mobile/withAuth'
 import { serializeApplicant } from '@/app/lib/mobile/serializers'
 import { getIssueAudienceIds, emitIssueApplicantAccepted, emitIssueApplicantAdded } from '@/app/lib/socket/emit'
+import { APPLICANT_USER_POPULATE } from '@/app/lib/utils/validation'
 import { midnightFollowingDay } from '@/app/lib/mobile/deadlines'
 import { selectFundedWinner } from '@/app/lib/mobile/fundingUtils'
 import Issue from '@/app/lib/models/issue'
@@ -25,7 +26,7 @@ export const POST = withAuth(async (req, token, ctx) => {
     if (issue.author.toString() !== token.id)
       return NextResponse.json({ error: 'Only the author can reassign the contract' }, { status: 403 })
 
-    const current = await Applicant.findOne({ issueId, status: 'accepted' })
+    const current = await Applicant.findOne({ issueId, status: 'accepted' }).populate(APPLICANT_USER_POPULATE)
     if (!current) return NextResponse.json({ error: 'No accepted applicant to reassign from' }, { status: 404 })
 
     current.status = 'pending'
@@ -54,7 +55,7 @@ export const POST = withAuth(async (req, token, ctx) => {
       winner._id,
       { status: 'accepted', acceptedAt: new Date(), completionDeadline: midnightFollowingDay() },
       { new: true }
-    )
+    ).populate(APPLICANT_USER_POPULATE)
 
     const nextSerialized = serializeApplicant(nextApplicant!.toObject())
 

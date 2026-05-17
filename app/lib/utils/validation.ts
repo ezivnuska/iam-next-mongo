@@ -9,3 +9,6 @@ export const USER_WITH_AVATAR_POPULATE = {
   select: '_id username avatar',
   populate: { path: 'avatar', select: '_id variants' },
 } as const
+
+// Same shape — used when populating applicant.userId
+export const APPLICANT_USER_POPULATE = USER_WITH_AVATAR_POPULATE
