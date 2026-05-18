@@ -82,10 +82,6 @@ export async function emitIssueApplicantRemoved(payload: IssueApplicantRemovedPa
 	await emitToUsers(SOCKET_EVENTS.ISSUE_APPLICANT_REMOVED, payload, toUserIds)
 }
 
-export async function emitIssueApplicantVoted(payload: IssueApplicantPayload, toUserIds: string[]): Promise<void> {
-	await emitToUsers(SOCKET_EVENTS.ISSUE_APPLICANT_VOTED, payload, toUserIds)
-}
-
 export async function emitIssueApplicantAccepted(payload: IssueApplicantPayload, toUserIds: string[]): Promise<void> {
 	await emitToUsers(SOCKET_EVENTS.ISSUE_APPLICANT_ACCEPTED, payload, toUserIds)
 }

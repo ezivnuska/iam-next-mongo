@@ -30,7 +30,6 @@ export const SOCKET_EVENTS = {
 	ISSUE_CREATED: 'issue:created',
 	ISSUE_APPLICANT_ADDED: 'issue:applicant_added',
 	ISSUE_APPLICANT_REMOVED: 'issue:applicant_removed',
-	ISSUE_APPLICANT_VOTED: 'issue:applicant_voted',
 	ISSUE_APPLICANT_ACCEPTED: 'issue:applicant_accepted',
 	ISSUE_COMPLETION_SUBMITTED: 'issue:completion_submitted',
 	ISSUE_COMPLETION_REVIEWED: 'issue:completion_reviewed',
@@ -162,7 +161,6 @@ export interface IssueApplicantPayload {
 		status: string
 		createdAt: string
 		acceptedAt: string | null
-		votes: { userId: string; vote: 'confirm' | 'deny' }[]
 	}
 }
 
