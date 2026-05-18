@@ -19,6 +19,7 @@ async function ensureTransfersCapability(accountId: string): Promise<void> {
   }
 
   await stripe.accounts.update(accountId, {
+    business_type: 'individual',
     business_profile: { url: process.env.NEXT_PUBLIC_BASE_URL ?? 'https://iameric.me', mcc: '7299' },
     individual: {
       first_name: (account as any).individual?.first_name ?? 'Test',
