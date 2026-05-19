@@ -35,12 +35,15 @@ export const GET = withAuth(async (req, token) => {
 
 export const POST = withAuth(async (req, token) => {
   try {
-    const { issueType, content, imageId, location, locationVisible } = await req.json()
-
+    const { issueType, title: userTitle, content, imageId, location, locationVisible } = await req.json()
 
     const validIssueTypes = ['Clean Up', 'Gardening', 'Hauling']
     if (!issueType || !validIssueTypes.includes(issueType)) {
       return NextResponse.json({ error: 'Invalid issue type' }, { status: 400 })
+    }
+
+    if (userTitle && userTitle.length > 120) {
+      return NextResponse.json({ error: 'Title must be 120 characters or less' }, { status: 400 })
     }
 
     if (content && content.length > 5000) {
@@ -58,10 +61,13 @@ export const POST = withAuth(async (req, token) => {
         ? { latitude: location.latitude, longitude: location.longitude }
         : undefined
 
-    const [, title] = await Promise.all([
+    const trimmedTitle = userTitle?.trim() || null
+    const [, generatedTitle] = await Promise.all([
       connectToDatabase(),
-      validLocation ? generateIssueTitle(validLocation.latitude, validLocation.longitude) : null,
+      !trimmedTitle && validLocation ? generateIssueTitle(validLocation.latitude, validLocation.longitude) : null,
     ])
+
+    const title = trimmedTitle ?? generatedTitle
 
     const issue = await Issue.create({
       author: token.id,
