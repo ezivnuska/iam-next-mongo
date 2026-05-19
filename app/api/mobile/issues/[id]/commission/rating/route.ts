@@ -118,6 +118,7 @@ export const POST = withAuth(async (req, token, ctx) => {
     return NextResponse.json({
       score,
       averageRating,
+      ratingCount: allRatings.length,
       ...(serializedCompletion ? { completion: serializedCompletion } : {}),
       ...(serializedNeed ? { issue: serializedNeed } : {}),
     })

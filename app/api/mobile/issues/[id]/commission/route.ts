@@ -25,22 +25,28 @@ export const GET = withAuth(async (req, token, ctx) => {
 
     let myRating: number | null = null
     let averageRating: number | null = null
-    try {
-      const Rating = (await import('@/app/lib/models/rating')).default
-      const [myDoc, allRatings] = await Promise.all([
-        Rating.findOne({ issueId, raterId: token.id }).lean() as any,
-        Rating.find({ issueId }).lean() as unknown as any[],
-      ])
-      myRating = myDoc?.score ?? null
-      averageRating = calculateAverageRating(allRatings)
-    } catch {
-      // rating lookup is non-critical
+    let ratingCount = 0
+    const commissionId = completion?._id ?? null
+    if (commissionId) {
+      try {
+        const Rating = (await import('@/app/lib/models/rating')).default
+        const [myDoc, allRatings] = await Promise.all([
+          Rating.findOne({ commissionId, raterId: token.id }).lean() as any,
+          Rating.find({ commissionId }).lean() as unknown as any[],
+        ])
+        myRating = myDoc?.score ?? null
+        averageRating = calculateAverageRating(allRatings)
+        ratingCount = allRatings.length
+      } catch {
+        // rating lookup is non-critical
+      }
     }
 
     return NextResponse.json({
       completion: completion ? serializeCompletion(completion, issueId) : null,
       myRating,
       averageRating,
+      ratingCount,
     })
   } catch (err) {
     console.error('[mobile/issues/completion GET]', err)
