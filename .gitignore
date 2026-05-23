@@ -52,4 +52,4 @@ ccswitch.sh
 
 *.conf
 
-ecosystem.config.js
+#ecosystem.config.js
