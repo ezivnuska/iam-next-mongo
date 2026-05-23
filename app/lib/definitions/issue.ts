@@ -18,6 +18,15 @@ export interface ICompletion {
   updatedAt: Date
 }
 
+export interface IIssueReport {
+  _id: Types.ObjectId
+  userId: Types.ObjectId
+  imageId?: Types.ObjectId
+  content?: string
+  createdAt: Date
+  updatedAt: Date
+}
+
 export interface IIssue extends Document {
   author: Types.ObjectId
   issueType: IssueType
@@ -32,6 +41,7 @@ export interface IIssue extends Document {
   image?: Types.ObjectId
   likes?: Types.ObjectId[]
   completion?: ICompletion | null
+  reports?: IIssueReport[]
 }
 
 export interface Issue {

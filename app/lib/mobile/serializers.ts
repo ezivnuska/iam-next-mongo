@@ -1,5 +1,18 @@
 // app/lib/mobile/serializers.ts
 
+export function serializeReport(r: any) {
+  const user = r.userId && typeof r.userId === 'object' ? r.userId : null
+  return {
+    id: r._id.toString(),
+    userId: user ? user._id.toString() : r.userId.toString(),
+    username: user?.username ?? null,
+    avatar: user?.avatar ? serializeResource(user.avatar) : null,
+    image: serializeResource(r.imageId) ?? null,
+    content: r.content ?? '',
+    createdAt: r.createdAt?.toISOString() ?? new Date().toISOString(),
+  }
+}
+
 export function serializeResource(obj: any): { id: string; variants: any[] } | null {
   if (!obj || typeof obj !== "object" || !obj._id) return null;
   return { id: obj._id.toString(), variants: obj.variants ?? [] };
@@ -90,6 +103,8 @@ export function serializeIssue(n: any) {
   if (image) result.image = image;
   const author = serializeAuthor(n.author);
   if (author) result.author = author;
+  if (Array.isArray(n.reports) && n.reports.length > 0)
+    result.reports = n.reports.map(serializeReport)
   return result;
 }
 

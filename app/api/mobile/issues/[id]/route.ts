@@ -29,6 +29,8 @@ export const GET = withAuth(async (req, token, ctx) => {
       .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
       .populate('image')
       .populate('completion.images')
+      .populate({ path: 'reports.userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
+      .populate({ path: 'reports.imageId', select: '_id variants' })
       .lean()
     if (!need) return NextResponse.json({ error: 'Issue not found' }, { status: 404 })
 

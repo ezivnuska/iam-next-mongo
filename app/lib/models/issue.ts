@@ -7,6 +7,15 @@ if (typeof window !== 'undefined') {
 import mongoose, { Schema, Model } from 'mongoose'
 import { IIssue } from '@/app/lib/definitions/issue'
 
+const issueReportSchema = new Schema(
+  {
+    userId:  { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    imageId: { type: Schema.Types.ObjectId, ref: 'Image' },
+    content: { type: String },
+  },
+  { _id: true, timestamps: true }
+)
+
 const completionReviewSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
@@ -41,6 +50,7 @@ const issueSchema = new Schema<IIssue>(
     image:           { type: Schema.Types.ObjectId, ref: 'Image' },
     likes:           [{ type: Schema.Types.ObjectId, ref: 'User', default: [] }],
     completion:      { type: completionSchema, default: null },
+    reports:         { type: [issueReportSchema], default: [] },
   },
   { timestamps: true }
 )
