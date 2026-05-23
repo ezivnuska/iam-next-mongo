@@ -12,7 +12,7 @@ import { logActivity, getRequestMetadata } from "@/app/lib/utils/activity-logger
 import { requireAuth } from "@/app/lib/utils/auth";
 import { CONTENT_POPULATE_CONFIG } from "@/app/lib/utils/db-query-config";
 
-interface PopulatedNeedObj {
+interface PopulatedIssueObj {
   _id: Types.ObjectId;
   author: {
     _id: Types.ObjectId;
@@ -28,13 +28,13 @@ interface PopulatedNeedObj {
   content: string;
   minPay?: number;
   maxPay?: number;
-  image?: {
+  images?: {
     _id: Types.ObjectId;
     userId: Types.ObjectId;
     username: string;
     alt?: string;
     variants: ImageVariant[];
-  };
+  }[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -64,12 +64,12 @@ export async function POST(req: Request) {
       content: content.trim(),
       ...(minPay != null && { minPay }),
       ...(maxPay != null && { maxPay }),
-      ...(imageId && { image: imageId }),
+      ...(imageId && { images: [imageId] }),
     });
 
     await newIssue.populate(CONTENT_POPULATE_CONFIG);
 
-    const populated = newIssue.toObject() as unknown as PopulatedNeedObj;
+    const populated = newIssue.toObject() as unknown as PopulatedIssueObj;
 
     await logActivity({
       userId,
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
         content: populated.content,
         minPay: populated.minPay,
         maxPay: populated.maxPay,
-        hasImage: !!populated.image,
+        hasImage: !!(populated.images?.length),
       },
       metadata: getRequestMetadata(req),
     });
@@ -93,7 +93,7 @@ export async function POST(req: Request) {
       createdAt: populated.createdAt.toISOString(),
       updatedAt: populated.updatedAt.toISOString(),
       author: transformPopulatedAuthor(populated.author),
-      ...(populated.image && { image: transformPopulatedImage(populated.image) }),
+      ...(populated.images?.length && { image: transformPopulatedImage(populated.images[0]) }),
     });
   } catch (err: any) {
     console.error("Error creating need:", err);

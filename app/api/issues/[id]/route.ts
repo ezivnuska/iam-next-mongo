@@ -12,7 +12,7 @@ import { logActivity, getRequestMetadata } from "@/app/lib/utils/activity-logger
 import { requireAuth } from "@/app/lib/utils/auth";
 import { CONTENT_POPULATE_CONFIG } from "@/app/lib/utils/db-query-config";
 
-interface PopulatedNeedObj {
+interface PopulatedIssueObj {
   _id: Types.ObjectId;
   author: {
     _id: Types.ObjectId;
@@ -28,13 +28,13 @@ interface PopulatedNeedObj {
   content: string;
   minPay?: number;
   maxPay?: number;
-  image?: {
+  images?: {
     _id: Types.ObjectId;
     userId: Types.ObjectId;
     username: string;
     alt?: string;
     variants: ImageVariant[];
-  };
+  }[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -84,13 +84,13 @@ export async function PUT(
     need.minPay = minPay ?? undefined;
     need.maxPay = maxPay ?? undefined;
     if (imageId !== undefined) {
-      need.image = imageId || undefined;
+      (need as any).images = imageId ? [imageId] : []
     }
 
     await need.save();
     await need.populate(CONTENT_POPULATE_CONFIG);
 
-    const populated = need.toObject() as unknown as PopulatedNeedObj;
+    const populated = need.toObject() as unknown as PopulatedIssueObj;
 
     await logActivity({
       userId: user.id,
@@ -101,7 +101,7 @@ export async function PUT(
         content: populated.content,
         minPay: populated.minPay,
         maxPay: populated.maxPay,
-        hasImage: !!populated.image,
+        hasImage: !!(populated.images?.length),
       },
       metadata: getRequestMetadata(req),
     });
@@ -114,7 +114,7 @@ export async function PUT(
       createdAt: populated.createdAt.toISOString(),
       updatedAt: populated.updatedAt.toISOString(),
       author: transformPopulatedAuthor(populated.author),
-      ...(populated.image && { image: transformPopulatedImage(populated.image) }),
+      ...(populated.images?.length && { image: transformPopulatedImage(populated.images[0]) }),
     });
   } catch (err: any) {
     console.error("Error updating need:", err);
