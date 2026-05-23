@@ -22,6 +22,7 @@ export const GET = withAuth(async (req, token) => {
     const issues = await Issue.find({ author: token.id })
       .sort({ createdAt: -1 })
       .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
+      .populate('images')
       .populate('image')
       .lean()
 
@@ -76,11 +77,12 @@ export const POST = withAuth(async (req, token) => {
       ...(content?.trim() ? { content: content.trim() } : {}),
       ...(validLocation ? { location: validLocation } : {}),
       locationVisible: locationVisible === true,
-      ...(imageId ? { image: imageId } : {}),
+      images: imageId ? [imageId] : [],
     })
 
     await issue.populate([
       { path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } },
+      { path: 'images' },
       { path: 'image' },
     ])
 

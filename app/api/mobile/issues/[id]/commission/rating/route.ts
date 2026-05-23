@@ -92,6 +92,7 @@ export const POST = withAuth(async (req, token, ctx) => {
     if (autoDecision) {
       const updatedIssue = await Issue.findById(issueId)
         .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
+        .populate('images')
         .populate('image')
         .populate('completion.images')
         .lean() as any

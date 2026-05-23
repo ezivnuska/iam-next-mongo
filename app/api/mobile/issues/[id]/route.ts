@@ -27,6 +27,7 @@ export const GET = withAuth(async (req, token, ctx) => {
     await connectToDatabase()
     const need = await Issue.findById(id)
       .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
+      .populate('images')
       .populate('image')
       .populate('completion.images')
       .populate({ path: 'reports.userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
@@ -70,7 +71,8 @@ export const PATCH = withAuth(async (req, token, ctx) => {
 
     if (issueType !== undefined) need.issueType = issueType
     if (content !== undefined) need.content = content.trim()
-    if (imageId !== undefined) need.image = imageId ?? undefined
+    if (imageId === null) (need as any).images = []
+    else if (typeof imageId === 'string') (need as any).images = [imageId]
     if (location !== undefined) {
       need.location = location !== null && typeof location.latitude === 'number' && typeof location.longitude === 'number'
         ? { latitude: location.latitude, longitude: location.longitude }
@@ -82,6 +84,7 @@ export const PATCH = withAuth(async (req, token, ctx) => {
     await need.save()
     await need.populate([
       { path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } },
+      { path: 'images' },
       { path: 'image' },
     ])
     const [pledges, applicants] = await Promise.all([
@@ -125,11 +128,11 @@ export const DELETE = withAuth(async (req, token, ctx) => {
     )
 
     const completionImageIds = (need as any).completion?.images ?? []
-    const issueImageId = need.image
+    const issueImageIds = (need as any).images ?? []
 
-    const [completionImages, issueImage] = await Promise.all([
+    const [completionImages, issueImages] = await Promise.all([
       completionImageIds.length > 0 ? ImageModel.find({ _id: { $in: completionImageIds } }).lean() : Promise.resolve([]),
-      issueImageId ? ImageModel.findById(issueImageId).lean() : Promise.resolve(null),
+      issueImageIds.length > 0 ? ImageModel.find({ _id: { $in: issueImageIds } }).lean() : Promise.resolve([]),
     ])
 
     await Promise.all([
@@ -139,10 +142,10 @@ export const DELETE = withAuth(async (req, token, ctx) => {
       Applicant.deleteMany({ issueId: id }),
       Rating.deleteMany({ issueId: id }),
       completionImageIds.length > 0 ? ImageModel.deleteMany({ _id: { $in: completionImageIds } }) : Promise.resolve(),
-      issueImageId ? ImageModel.findByIdAndDelete(issueImageId) : Promise.resolve(),
+      issueImageIds.length > 0 ? ImageModel.deleteMany({ _id: { $in: issueImageIds } }) : Promise.resolve(),
     ])
 
-    const allImages = [...(completionImages as any[]), ...(issueImage ? [issueImage] : [])]
+    const allImages = [...(completionImages as any[]), ...(issueImages as any[])]
     await Promise.allSettled(
       allImages.flatMap((img: any) =>
         (img.variants ?? [])

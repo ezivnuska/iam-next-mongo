@@ -99,8 +99,12 @@ export function serializeIssue(n: any) {
   const completionStatus = n.completion?.status ?? n.completionStatus ?? null
   if (completionStatus != null) result.completionStatus = completionStatus
   if (n.flagged === true) result.flagged = true
-  const image = serializeResource(n.image);
-  if (image) result.image = image;
+  // Support both new `images[]` and legacy `image` field on old documents
+  const imageDocs = Array.isArray(n.images) && n.images.length > 0
+    ? n.images
+    : n.image ? [n.image] : []
+  const serializedImages = imageDocs.map(serializeResource).filter(Boolean)
+  if (serializedImages.length > 0) result.images = serializedImages
   const author = serializeAuthor(n.author);
   if (author) result.author = author;
   if (Array.isArray(n.reports) && n.reports.length > 0)

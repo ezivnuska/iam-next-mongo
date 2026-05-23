@@ -66,7 +66,7 @@ export const POST = withAuth(async (req, token, ctx) => {
       )
       if (!claimed) {
         // Another concurrent request already claimed the transition — return current state
-        const current = await Issue.findById(issueId).populate('completion.images').lean() as any
+        const current = await Issue.findById(issueId).populate('images').populate('image').populate('completion.images').lean() as any
         return NextResponse.json({ completion: serializeCompletion(current.completion, issueId) })
       }
 
@@ -96,6 +96,7 @@ export const POST = withAuth(async (req, token, ctx) => {
 
     const updatedIssue = await Issue.findById(issueId)
       .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
+      .populate('images')
       .populate('image')
       .populate('completion.images')
       .lean() as any

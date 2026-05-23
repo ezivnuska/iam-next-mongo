@@ -40,6 +40,7 @@ export const GET = withAuth(async (req, token) => {
       'location.longitude': { $gte: lng - DELTA, $lte: lng + DELTA },
     })
       .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
+      .populate('images')
       .populate('image')
       .lean()
 

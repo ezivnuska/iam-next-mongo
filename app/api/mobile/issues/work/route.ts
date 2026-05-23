@@ -29,6 +29,7 @@ export const GET = withAuth(async (req, token) => {
         select: '_id username avatar',
         populate: { path: 'avatar', select: '_id variants' },
       })
+      .populate('images')
       .populate('image')
       .lean()
 
