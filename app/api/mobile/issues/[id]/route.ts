@@ -53,7 +53,7 @@ export const PATCH = withAuth(async (req, token, ctx) => {
   if (!isValidObjectId(id)) return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
 
   try {
-    const { issueType, content, imageId, imageIds, location, locationVisible } = await req.json()
+    const { issueType, title, content, imageId, imageIds, location, locationVisible } = await req.json()
 
     const validIssueTypes = ['Clean Up', 'Gardening', 'Hauling']
     if (issueType !== undefined && !validIssueTypes.includes(issueType))
@@ -71,6 +71,7 @@ export const PATCH = withAuth(async (req, token, ctx) => {
     if (need.author.toString() !== token.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     if (issueType !== undefined) need.issueType = issueType
+    if (title !== undefined) need.title = title ? title.trim() : undefined
     if (content !== undefined) need.content = content.trim()
     if (Array.isArray(imageIds)) (need as any).images = imageIds
     else if (imageId === null) (need as any).images = []
@@ -86,7 +87,10 @@ export const PATCH = withAuth(async (req, token, ctx) => {
     await need.save()
     await need.populate([
       { path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } },
-      { path: 'images' },    ])
+      { path: 'images' },
+      { path: 'reports.userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } },
+      { path: 'reports.imageId', select: '_id variants' },
+    ])
     const [pledges, applicants] = await Promise.all([
       Pledge.find({ issueId: id }).populate(USER_WITH_AVATAR_POPULATE).lean(),
       Applicant.find({ issueId: id }).populate(APPLICANT_USER_POPULATE).lean(),
