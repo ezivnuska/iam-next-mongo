@@ -53,7 +53,7 @@ export const PATCH = withAuth(async (req, token, ctx) => {
   if (!isValidObjectId(id)) return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
 
   try {
-    const { issueType, content, imageId, location, locationVisible } = await req.json()
+    const { issueType, content, imageId, imageIds, location, locationVisible } = await req.json()
 
     const validIssueTypes = ['Clean Up', 'Gardening', 'Hauling']
     if (issueType !== undefined && !validIssueTypes.includes(issueType))
@@ -62,6 +62,8 @@ export const PATCH = withAuth(async (req, token, ctx) => {
       return NextResponse.json({ error: 'Content must be 5000 characters or less' }, { status: 400 })
     if (imageId !== undefined && imageId !== null && !isValidObjectId(imageId))
       return NextResponse.json({ error: 'Invalid image ID' }, { status: 400 })
+    if (Array.isArray(imageIds) && imageIds.some((id: any) => !isValidObjectId(id)))
+      return NextResponse.json({ error: 'Invalid image ID in imageIds' }, { status: 400 })
 
     await connectToDatabase()
     const need = await Issue.findById(id)
@@ -70,7 +72,8 @@ export const PATCH = withAuth(async (req, token, ctx) => {
 
     if (issueType !== undefined) need.issueType = issueType
     if (content !== undefined) need.content = content.trim()
-    if (imageId === null) (need as any).images = []
+    if (Array.isArray(imageIds)) (need as any).images = imageIds
+    else if (imageId === null) (need as any).images = []
     else if (typeof imageId === 'string') (need as any).images = [imageId]
     if (location !== undefined) {
       need.location = location !== null && typeof location.latitude === 'number' && typeof location.longitude === 'number'
