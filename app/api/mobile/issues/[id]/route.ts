@@ -28,7 +28,6 @@ export const GET = withAuth(async (req, token, ctx) => {
     const need = await Issue.findById(id)
       .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
       .populate('images')
-      .populate('image')
       .populate('completion.images')
       .populate({ path: 'reports.userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
       .populate({ path: 'reports.imageId', select: '_id variants' })
@@ -84,9 +83,7 @@ export const PATCH = withAuth(async (req, token, ctx) => {
     await need.save()
     await need.populate([
       { path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } },
-      { path: 'images' },
-      { path: 'image' },
-    ])
+      { path: 'images' },    ])
     const [pledges, applicants] = await Promise.all([
       Pledge.find({ issueId: id }).populate(USER_WITH_AVATAR_POPULATE).lean(),
       Applicant.find({ issueId: id }).populate(APPLICANT_USER_POPULATE).lean(),

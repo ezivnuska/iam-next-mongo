@@ -23,7 +23,6 @@ export const GET = withAuth(async (req, token) => {
       .sort({ createdAt: -1 })
       .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
       .populate('images')
-      .populate('image')
       .lean()
 
     const issuesWithData = await attachIssueData(issues as any[])
@@ -83,7 +82,6 @@ export const POST = withAuth(async (req, token) => {
     await issue.populate([
       { path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } },
       { path: 'images' },
-      { path: 'image' },
     ])
 
     try {

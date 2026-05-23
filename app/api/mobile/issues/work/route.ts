@@ -30,7 +30,6 @@ export const GET = withAuth(async (req, token) => {
         populate: { path: 'avatar', select: '_id variants' },
       })
       .populate('images')
-      .populate('image')
       .lean()
 
     const issuesWithData = await attachIssueData(issues as any[])

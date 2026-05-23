@@ -41,7 +41,6 @@ export const GET = withAuth(async (req, token) => {
     })
       .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
       .populate('images')
-      .populate('image')
       .lean()
 
     const match = candidates.find((doc) => {

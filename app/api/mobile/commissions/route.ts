@@ -30,7 +30,6 @@ export const GET = withAuth(async (req, token) => {
     const issues = await Issue.find({ _id: { $in: issueIds }, status: 'completed' })
       .sort({ createdAt: -1 })
       .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
-      .populate('image')
       .lean()
 
     const issuesWithData = await attachIssueData(issues as any[])

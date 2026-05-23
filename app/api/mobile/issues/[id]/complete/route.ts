@@ -32,7 +32,6 @@ export const PATCH = withAuth(async (req, token, ctx) => {
     const updatedIssue = await Issue.findById(id)
       .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
       .populate('images')
-      .populate('image')
       .populate('completion.images')
       .lean() as any
 
