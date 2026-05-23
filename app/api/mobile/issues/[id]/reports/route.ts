@@ -41,7 +41,6 @@ export const POST = withAuth(async (req, token, ctx) => {
     await issue.populate([
       { path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } },
       { path: 'images' },
-      { path: 'image' },
       { path: 'reports.userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } },
       { path: 'reports.imageId', select: '_id variants' },
     ])
