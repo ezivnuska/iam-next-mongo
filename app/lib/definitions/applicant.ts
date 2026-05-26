@@ -17,5 +17,6 @@ export interface IApplicant extends Document {
   bidAmount?: number
   acceptedAt?: Date
   completionDeadline?: Date
+  startedAt?: Date
   createdAt: Date
 }

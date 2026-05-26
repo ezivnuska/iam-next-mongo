@@ -57,6 +57,7 @@ export function serializeApplicant(a: any) {
     bidAmount: a.bidAmount ?? null,
     acceptedAt: a.acceptedAt ? a.acceptedAt.toISOString() : null,
     completionDeadline: a.completionDeadline ? a.completionDeadline.toISOString() : null,
+    startedAt: a.startedAt ? a.startedAt.toISOString() : null,
     votes: Array.isArray(a.votes)
       ? a.votes.map((v: any) => ({ userId: v.userId.toString(), vote: v.vote }))
       : [],

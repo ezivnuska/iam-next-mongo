@@ -24,6 +24,7 @@ const applicantSchema = new Schema<IApplicant>(
     bidAmount: { type: Number },
     acceptedAt: { type: Date },
     completionDeadline: { type: Date },
+    startedAt: { type: Date },
   },
   { timestamps: true }
 )

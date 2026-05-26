@@ -62,6 +62,28 @@ sub.post('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
     if (pledge) return c.json({ error: 'Contributors cannot place a bid on an issue they have funded' }, 403)
 
     const applicant = await Applicant.create({ userId: token.id, issueId: id, bidAmount })
+
+    // Auto-accept if this bid is immediately fully funded and no contractor exists yet.
+    const alreadyAccepted = await Applicant.exists({ issueId: id, status: 'accepted' })
+    if (!alreadyAccepted && bidAmount != null) {
+      const allPledges = await Pledge.find({ issueId: id }).lean() as any[]
+      const winner = await selectFundedWinner([applicant.toObject()], allPledges)
+      if (winner) {
+        await Applicant.findByIdAndUpdate(applicant._id, {
+          status: 'accepted',
+          acceptedAt: new Date(),
+          completionDeadline: midnightFollowingDay(),
+        })
+        const accepted = await Applicant.findById(applicant._id).populate(APPLICANT_USER_POPULATE).lean() as any
+        const serializedAccepted = serializeApplicant(accepted)
+        // Include the bidder in the audience so their client updates without needing a refetch.
+        getIssueAudienceIds(id, token.id).then((audience) =>
+          emitIssueApplicantAccepted({ issueId: id, applicant: serializedAccepted }, audience)
+        ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
+        return c.json({ applicant: serializedAccepted }, 201)
+      }
+    }
+
     const serialized = serializeApplicant(applicant.toObject())
     getIssueAudienceIds(id).then((audience) =>
       emitIssueApplicantAdded({ issueId: id, applicant: serialized }, audience)
@@ -467,6 +489,27 @@ sub.post('/api/mobile/issues/:id/commission', authMiddleware, async (c) => {
   } catch (err) {
     console.error('[mobile/issues/commission POST]', err)
     return c.json({ error: 'Failed to submit completion' }, 500)
+  }
+})
+
+// PATCH /api/mobile/issues/:id/commission/start
+sub.patch('/api/mobile/issues/:id/commission/start', authMiddleware, async (c) => {
+  const token = c.get('token')
+  const issueId = c.req.param('id')
+  if (!isValidObjectId(issueId)) return c.json({ error: 'Invalid issue ID' }, 400)
+
+  try {
+    await connectToDatabase()
+    const applicant = await Applicant.findOneAndUpdate(
+      { issueId, userId: token.id, status: 'accepted' },
+      { $set: { startedAt: new Date() } },
+      { new: true }
+    ).populate(APPLICANT_USER_POPULATE)
+    if (!applicant) return c.json({ error: 'Only the accepted applicant can start work' }, 403)
+    return c.json({ applicant: serializeApplicant(applicant.toObject()) })
+  } catch (err) {
+    console.error('[commission/start PATCH]', err)
+    return c.json({ error: 'Failed to start commission' }, 500)
   }
 })
 
