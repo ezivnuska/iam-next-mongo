@@ -71,6 +71,7 @@ sub.post('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
       }
     }
 
+    await applicant.populate(APPLICANT_USER_POPULATE)
     const serialized = serializeApplicant(applicant.toObject())
     emitIssueApplicantAdded({ issueId: id, applicant: serialized })
       .catch((err: any) => console.warn('[socket]', err?.message ?? err))
@@ -107,6 +108,7 @@ sub.patch('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
       return c.json({ applicant: winner })
     }
 
+    await applicant.populate(APPLICANT_USER_POPULATE)
     const serialized = serializeApplicant(applicant.toObject())
     emitIssueApplicantAdded({ issueId: id, applicant: serialized })
       .catch((err: any) => console.warn('[socket]', err?.message ?? err))
