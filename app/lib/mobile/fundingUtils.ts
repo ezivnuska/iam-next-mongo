@@ -19,8 +19,9 @@ export async function selectFundedWinner(
   candidates: any[],
   allPledges: any[],
 ): Promise<any | null> {
+  const totalPledged = allPledges.reduce((sum: number, p: any) => sum + (p.amount ?? 0), 0)
   const funded = candidates.filter(
-    (a) => a.bidAmount != null && effectiveFunding(allPledges, a._id.toString()) >= a.bidAmount
+    (a) => a.bidAmount != null && totalPledged >= a.bidAmount
   )
   if (funded.length === 0) return null
 
