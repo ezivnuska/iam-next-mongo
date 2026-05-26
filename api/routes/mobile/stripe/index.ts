@@ -371,7 +371,7 @@ stripeRoutes.delete('/api/mobile/stripe/payout-card', authMiddleware, async (c) 
     const user = await UserModel.findById(userId).lean() as any
     if (user?.stripeAccountId) {
       const existing = await stripeClient.accounts.listExternalAccounts(user.stripeAccountId, { object: 'card' })
-      await Promise.allSettled(existing.data.map((ea) => stripeClient.accounts.deleteExternalAccount(user.stripeAccountId, ea.id)))
+      await Promise.allSettled(existing.data.map((ea: { id: string }) => stripeClient.accounts.deleteExternalAccount(user.stripeAccountId, ea.id)))
     }
 
     await UserModel.findByIdAndUpdate(userId, { stripeAccountEnabled: false })
