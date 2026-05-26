@@ -321,7 +321,7 @@ stripeRoutes.post('/api/mobile/stripe/payout-card', authMiddleware, async (c) =>
       card = await createFreshAccount()
     } else {
       const existing = await stripeClient.accounts.listExternalAccounts(accountId, { object: 'card' })
-      await Promise.allSettled(existing.data.map((ea) => stripeClient.accounts.deleteExternalAccount(accountId, ea.id)))
+      await Promise.allSettled(existing.data.map((ea: { id: string }) => stripeClient.accounts.deleteExternalAccount(accountId, ea.id)))
       try {
         card = await stripeClient.accounts.createExternalAccount(accountId, { external_account: cardToken })
       } catch (err: any) {
