@@ -14,11 +14,10 @@ import {
 import { isValidObjectId, USER_WITH_AVATAR_POPULATE, APPLICANT_USER_POPULATE } from '../../../../app/lib/utils/validation'
 import { calculateAverageRating } from '../../../../app/lib/utils/ratingUtils'
 import { midnightFollowingDay } from '../../../../app/lib/mobile/deadlines'
-import { selectFundedWinner } from '../../../../app/lib/mobile/fundingUtils'
 import { settleIssue } from '../../../../app/lib/mobile/settleIssue'
 import { createPledgeWithPaymentIntent } from '../../../../app/lib/mobile/createPledge'
+import { tryAutoAccept } from '../../../lib/autoAccept'
 import {
-  getIssueAudienceIds,
   emitIssueApplicantAdded,
   emitIssueApplicantRemoved,
   emitIssueApplicantAccepted,
@@ -63,31 +62,18 @@ sub.post('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
 
     const applicant = await Applicant.create({ userId: token.id, issueId: id, bidAmount })
 
-    // Auto-accept if this bid is immediately fully funded and no contractor exists yet.
-    const alreadyAccepted = await Applicant.exists({ issueId: id, status: 'accepted' })
-    if (!alreadyAccepted && bidAmount != null) {
-      const allPledges = await Pledge.find({ issueId: id }).lean() as any[]
-      const winner = await selectFundedWinner([applicant.toObject()], allPledges)
+    if (bidAmount != null) {
+      const winner = await tryAutoAccept(id, [applicant._id])
       if (winner) {
-        await Applicant.findByIdAndUpdate(applicant._id, {
-          status: 'accepted',
-          acceptedAt: new Date(),
-          completionDeadline: midnightFollowingDay(),
-        })
-        const accepted = await Applicant.findById(applicant._id).populate(APPLICANT_USER_POPULATE).lean() as any
-        const serializedAccepted = serializeApplicant(accepted)
-        // Include the bidder in the audience so their client updates without needing a refetch.
-        getIssueAudienceIds(id, token.id).then((audience) =>
-          emitIssueApplicantAccepted({ issueId: id, applicant: serializedAccepted }, audience)
-        ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
-        return c.json({ applicant: serializedAccepted }, 201)
+        emitIssueApplicantAccepted({ issueId: id, applicant: winner })
+          .catch((err: any) => console.warn('[socket]', err?.message ?? err))
+        return c.json({ applicant: winner }, 201)
       }
     }
 
     const serialized = serializeApplicant(applicant.toObject())
-    getIssueAudienceIds(id).then((audience) =>
-      emitIssueApplicantAdded({ issueId: id, applicant: serialized }, audience)
-    ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
+    emitIssueApplicantAdded({ issueId: id, applicant: serialized })
+      .catch((err: any) => console.warn('[socket]', err?.message ?? err))
     return c.json({ applicant: serialized }, 201)
   } catch (err: any) {
     if (err.code === 11000) return c.json({ error: 'Already applied to this issue' }, 409)
@@ -114,30 +100,16 @@ sub.patch('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
     )
     if (!applicant) return c.json({ error: 'Active application not found' }, 404)
 
-    // Auto-accept if this updated bid is immediately fully funded and no contractor exists yet.
-    const alreadyAccepted = await Applicant.exists({ issueId: id, status: 'accepted' })
-    if (!alreadyAccepted) {
-      const allPledges = await Pledge.find({ issueId: id }).lean() as any[]
-      const winner = await selectFundedWinner([applicant.toObject()], allPledges)
-      if (winner) {
-        await Applicant.findByIdAndUpdate(applicant._id, {
-          status: 'accepted',
-          acceptedAt: new Date(),
-          completionDeadline: midnightFollowingDay(),
-        })
-        const accepted = await Applicant.findById(applicant._id).populate(APPLICANT_USER_POPULATE).lean() as any
-        const serializedAccepted = serializeApplicant(accepted)
-        getIssueAudienceIds(id, token.id).then((audience) =>
-          emitIssueApplicantAccepted({ issueId: id, applicant: serializedAccepted }, audience)
-        ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
-        return c.json({ applicant: serializedAccepted })
-      }
+    const winner = await tryAutoAccept(id, [applicant._id])
+    if (winner) {
+      emitIssueApplicantAccepted({ issueId: id, applicant: winner })
+        .catch((err: any) => console.warn('[socket]', err?.message ?? err))
+      return c.json({ applicant: winner })
     }
 
     const serialized = serializeApplicant(applicant.toObject())
-    getIssueAudienceIds(id).then((audience) =>
-      emitIssueApplicantAdded({ issueId: id, applicant: serialized }, audience)
-    ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
+    emitIssueApplicantAdded({ issueId: id, applicant: serialized })
+      .catch((err: any) => console.warn('[socket]', err?.message ?? err))
     return c.json({ applicant: serialized })
   } catch (err) {
     console.error('[mobile/issues/applicants PATCH]', err)
@@ -156,9 +128,8 @@ sub.delete('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
     if (!result) return c.json({ error: 'Application not found' }, 404)
 
     const applicantId = result._id.toString()
-    getIssueAudienceIds(id).then((audience) =>
-      emitIssueApplicantRemoved({ issueId: id, applicantId }, audience)
-    ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
+    emitIssueApplicantRemoved({ issueId: id, applicantId })
+      .catch((err: any) => console.warn('[socket]', err?.message ?? err))
     return c.json({ ok: true })
   } catch (err) {
     console.error('[mobile/issues/applicants DELETE]', err)
@@ -184,10 +155,8 @@ sub.delete('/api/mobile/issues/:id/applicants/:applicantId', authMiddleware, asy
     const applicant = await Applicant.findOneAndDelete({ _id: applicantId, issueId, status: 'pending' })
     if (!applicant) return c.json({ error: 'Applicant not found or already accepted' }, 404)
 
-    getIssueAudienceIds(issueId).then((audience) =>
-      emitIssueApplicantRemoved({ issueId, applicantId }, audience)
-    ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
-
+    emitIssueApplicantRemoved({ issueId, applicantId })
+      .catch((err: any) => console.warn('[socket]', err?.message ?? err))
     return c.json({ ok: true })
   } catch (err) {
     console.error('[mobile/issues/applicants/:applicantId DELETE]', err)
@@ -235,39 +204,12 @@ sub.post('/api/mobile/issues/:id/pledges', authMiddleware, async (c) => {
     emitIssuePledgeAdded({ issueId: id, actorId: token.id, pledge: serialized })
       .catch((err: any) => console.warn('[socket]', err?.message ?? err))
 
-    const alreadyAccepted = await Applicant.exists({ issueId: id, status: 'accepted' })
-    if (!alreadyAccepted) {
-      const [allPledges, pendingBidders] = await Promise.all([
-        Pledge.find({ issueId: id }).lean() as Promise<any[]>,
-        Applicant.find({ issueId: id, status: 'pending', bidAmount: { $exists: true, $ne: null } })
-          .sort({ createdAt: 1 }).lean() as Promise<any[]>,
-      ])
-
-      const winner = await selectFundedWinner(pendingBidders, allPledges)
-      if (winner) {
-        await Applicant.findByIdAndUpdate(winner._id, {
-          status: 'accepted',
-          acceptedAt: new Date(),
-          completionDeadline: midnightFollowingDay(),
-        })
-
-        const loserIds = pendingBidders
-          .filter((a: any) => a._id.toString() !== winner._id.toString())
-          .map((a: any) => a._id.toString())
-        if (loserIds.length > 0) {
-          await Pledge.updateMany(
-            { issueId: id, applicantId: { $in: loserIds }, rescindIfLost: false },
-            { $set: { applicantId: null } }
-          )
-          await Pledge.deleteMany({ issueId: id, applicantId: { $in: loserIds }, rescindIfLost: true })
-        }
-
-        const accepted = await Applicant.findById(winner._id).populate(APPLICANT_USER_POPULATE).lean() as any
-        const serializedApplicant = serializeApplicant(accepted)
-        getIssueAudienceIds(id, winner.userId.toString()).then((audience) =>
-          emitIssueApplicantAccepted({ issueId: id, applicant: serializedApplicant }, audience)
-        ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
-      }
+    // Check all pending bidders — pledge may have tipped the funding threshold.
+    // tryAutoAccept handles loser directed-pledge cleanup internally.
+    const winner = await tryAutoAccept(id)
+    if (winner) {
+      emitIssueApplicantAccepted({ issueId: id, applicant: winner })
+        .catch((err: any) => console.warn('[socket]', err?.message ?? err))
     }
 
     return c.json({ pledge: serialized }, 201)
@@ -502,9 +444,8 @@ sub.post('/api/mobile/issues/:id/commission', authMiddleware, async (c) => {
     await issue.populate('completion.images')
 
     const serialized = serializeCompletion((issue.completion as any).toObject(), issueId)
-    getIssueAudienceIds(issueId, token.id).then((audience) =>
-      emitIssueCompletionSubmitted({ issueId, completion: serialized }, audience)
-    ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
+    emitIssueCompletionSubmitted({ issueId, completion: serialized })
+      .catch((err: any) => console.warn('[socket]', err?.message ?? err))
     return c.json({ completion: serialized })
   } catch (err) {
     console.error('[mobile/issues/commission POST]', err)
@@ -553,10 +494,8 @@ sub.patch('/api/mobile/issues/:id/commission/extend', authMiddleware, async (c) 
     await applicant.save()
 
     const serialized = serializeApplicant(applicant.toObject())
-    getIssueAudienceIds(issueId, applicant.userId.toString()).then((audience) =>
-      emitIssueApplicantAccepted({ issueId, applicant: serialized }, audience)
-    ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
-
+    emitIssueApplicantAccepted({ issueId, applicant: serialized })
+      .catch((err: any) => console.warn('[socket]', err?.message ?? err))
     return c.json({ applicant: serialized })
   } catch (err) {
     console.error('[commission/extend PATCH]', err)
@@ -593,12 +532,14 @@ sub.post('/api/mobile/issues/:id/commission/reassign', authMiddleware, async (c)
         .sort({ createdAt: 1 }).lean() as Promise<any[]>,
     ])
 
+    // Re-use selectFundedWinner directly here since we've already fetched the
+    // candidate list and pledges — avoids a second round-trip inside tryAutoAccept.
+    const { selectFundedWinner } = await import('../../../../app/lib/mobile/fundingUtils')
     const winner = await selectFundedWinner(candidates, allPledges)
 
     if (!winner) {
-      getIssueAudienceIds(issueId).then((audience) =>
-        emitIssueApplicantAdded({ issueId, applicant: releasedSerialized }, audience)
-      ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
+      emitIssueApplicantAdded({ issueId, applicant: releasedSerialized })
+        .catch((err: any) => console.warn('[socket]', err?.message ?? err))
       return c.json({ applicant: releasedSerialized, nextApplicant: null })
     }
 
@@ -610,10 +551,10 @@ sub.post('/api/mobile/issues/:id/commission/reassign', authMiddleware, async (c)
 
     const nextSerialized = serializeApplicant(nextApplicant!.toObject())
 
-    getIssueAudienceIds(issueId, winner.userId.toString()).then((audience) => {
-      emitIssueApplicantAdded({ issueId, applicant: releasedSerialized }, audience)
-      emitIssueApplicantAccepted({ issueId, applicant: nextSerialized }, audience)
-    }).catch((err: any) => console.warn('[socket]', err?.message ?? err))
+    emitIssueApplicantAdded({ issueId, applicant: releasedSerialized })
+      .catch((err: any) => console.warn('[socket]', err?.message ?? err))
+    emitIssueApplicantAccepted({ issueId, applicant: nextSerialized })
+      .catch((err: any) => console.warn('[socket]', err?.message ?? err))
 
     return c.json({ applicant: releasedSerialized, nextApplicant: nextSerialized })
   } catch (err) {
@@ -708,13 +649,11 @@ sub.post('/api/mobile/issues/:id/commission/rating', authMiddleware, async (c) =
         serializedNeed = serializeIssue({ ...updatedIssue, pledged: p, applicants: a })
       }
 
-      const applicantUserId = acceptedApplicant?.userId?.toString()
-      getIssueAudienceIds(issueId, ...(applicantUserId ? [applicantUserId] : [])).then((audience) =>
-        emitIssueCompletionReviewed(
-          { issueId, completion: serializedCompletion, ...(serializedNeed ? { issue: serializedNeed } : {}) },
-          audience
-        )
-      ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
+      emitIssueCompletionReviewed({
+        issueId,
+        completion: serializedCompletion,
+        ...(serializedNeed ? { issue: serializedNeed } : {}),
+      }).catch((err: any) => console.warn('[socket]', err?.message ?? err))
     }
 
     return c.json({
@@ -823,13 +762,11 @@ sub.post('/api/mobile/issues/:id/commission/review', authMiddleware, async (c) =
       serializedNeed = serializeIssue({ ...updatedIssue, pledged: p, applicants: a })
     }
 
-    const applicantUserId = (applicant as any)?.userId?.toString()
-    getIssueAudienceIds(issueId, ...(applicantUserId ? [applicantUserId] : [])).then((audience) =>
-      emitIssueCompletionReviewed(
-        { issueId, completion: serializedCompletion, ...(serializedNeed ? { issue: serializedNeed } : {}) },
-        audience
-      )
-    ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
+    emitIssueCompletionReviewed({
+      issueId,
+      completion: serializedCompletion,
+      ...(serializedNeed ? { issue: serializedNeed } : {}),
+    }).catch((err: any) => console.warn('[socket]', err?.message ?? err))
 
     return c.json({
       completion: serializedCompletion,
@@ -873,13 +810,11 @@ sub.patch('/api/mobile/issues/:id/complete', authMiddleware, async (c) => {
     const serializedIssue = serializeIssue({ ...updatedIssue, pledged: pledges, applicants })
 
     if (updatedIssue?.completion) {
-      const applicantUserId = acceptedApplicant?.userId?.toString()
-      getIssueAudienceIds(id, ...(applicantUserId ? [applicantUserId] : [])).then((audience) =>
-        emitIssueCompletionReviewed(
-          { issueId: id, completion: serializeCompletion(updatedIssue.completion, id), issue: serializedIssue },
-          audience
-        )
-      ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
+      emitIssueCompletionReviewed({
+        issueId: id,
+        completion: serializeCompletion(updatedIssue.completion, id),
+        issue: serializedIssue,
+      }).catch((err: any) => console.warn('[socket]', err?.message ?? err))
     }
 
     return c.json({ issue: serializedIssue })

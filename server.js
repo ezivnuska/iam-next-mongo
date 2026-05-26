@@ -416,6 +416,15 @@ app.prepare().then(() => {
 			}
 		});
 
+		// Handle issue room join/leave
+		socket.on('issue:join', ({ issueId }) => {
+			if (issueId) socket.join(`issue:${issueId}`)
+		})
+
+		socket.on('issue:leave', ({ issueId }) => {
+			if (issueId) socket.leave(`issue:${issueId}`)
+		})
+
 		socket.on('disconnect', () => {
 			if (socket.userId) {
 				const userId = socket.userId
