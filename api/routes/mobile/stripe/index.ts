@@ -439,8 +439,8 @@ stripeRoutes.get('/api/mobile/stripe/dashboard', authMiddleware, async (c) => {
         if (transfersResult.status === 'rejected')
           console.error('[stripe/dashboard] transfers.list failed:', (transfersResult as any).reason?.message)
         connect = {
-          availableCents: balance?.available.reduce((sum, b) => sum + b.amount, 0) ?? 0,
-          pendingCents: balance?.pending.reduce((sum, b) => sum + b.amount, 0) ?? 0,
+          availableCents: balance?.available.reduce((sum: number, b) => sum + b.amount, 0) ?? 0,
+          pendingCents: balance?.pending.reduce((sum: number, b) => sum + b.amount, 0) ?? 0,
           transfers: transferData.map((t) => ({ id: t.id, amountCents: t.amount, created: t.created, description: t.description ?? null })),
         }
       }
