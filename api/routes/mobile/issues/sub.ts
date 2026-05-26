@@ -469,7 +469,10 @@ sub.patch('/api/mobile/issues/:id/commission/start', authMiddleware, async (c) =
       { new: true }
     ).populate(APPLICANT_USER_POPULATE)
     if (!applicant) return c.json({ error: 'Only the accepted applicant can start work' }, 403)
-    return c.json({ applicant: serializeApplicant(applicant.toObject()) })
+    const serialized = serializeApplicant(applicant.toObject())
+    emitIssueApplicantAccepted({ issueId, applicant: serialized })
+      .catch((err: any) => console.warn('[socket]', err?.message ?? err))
+    return c.json({ applicant: serialized })
   } catch (err) {
     console.error('[commission/start PATCH]', err)
     return c.json({ error: 'Failed to start commission' }, 500)

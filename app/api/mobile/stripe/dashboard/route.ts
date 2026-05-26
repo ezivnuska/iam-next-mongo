@@ -74,9 +74,9 @@ export const GET = withAuth(async (req, token) => {
         if (transfersResult.status === 'rejected')
           console.error('[stripe/dashboard] transfers.list failed:', (transfersResult as any).reason?.message)
         connect = {
-          availableCents: balance?.available.reduce((sum, b) => sum + b.amount, 0) ?? 0,
-          pendingCents: balance?.pending.reduce((sum, b) => sum + b.amount, 0) ?? 0,
-          transfers: transferData.map((t) => ({ id: t.id, amountCents: t.amount, created: t.created, description: t.description ?? null })),
+          availableCents: balance?.available.reduce((sum: number, b: { amount: number }) => sum + b.amount, 0) ?? 0,
+          pendingCents: balance?.pending.reduce((sum: number, b: { amount: number }) => sum + b.amount, 0) ?? 0,
+          transfers: transferData.map((t: { id: string; amount: number; created: number; description?: string | null }) => ({ id: t.id, amountCents: t.amount, created: t.created, description: t.description ?? null })),
         }
       }
     }

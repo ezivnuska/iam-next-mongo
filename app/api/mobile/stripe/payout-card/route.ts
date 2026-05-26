@@ -107,7 +107,7 @@ export const POST = withAuth(async (req, token) => {
       card = await createFreshAccount()
     } else {
       const existing = await stripe.accounts.listExternalAccounts(accountId, { object: 'card' })
-      await Promise.allSettled(existing.data.map((ea) => stripe.accounts.deleteExternalAccount(accountId, ea.id)))
+      await Promise.allSettled(existing.data.map((ea: { id: string }) => stripe.accounts.deleteExternalAccount(accountId, ea.id)))
       try {
         card = await stripe.accounts.createExternalAccount(accountId, { external_account: cardToken })
       } catch (err: any) {
@@ -162,7 +162,7 @@ export const DELETE = withAuth(async (req, token) => {
     const user = await UserModel.findById(userId).lean() as any
     if (user?.stripeAccountId) {
       const existing = await stripe.accounts.listExternalAccounts(user.stripeAccountId, { object: 'card' })
-      await Promise.allSettled(existing.data.map((ea) => stripe.accounts.deleteExternalAccount(user.stripeAccountId, ea.id)))
+      await Promise.allSettled(existing.data.map((ea: { id: string }) => stripe.accounts.deleteExternalAccount(user.stripeAccountId, ea.id)))
     }
 
     await UserModel.findByIdAndUpdate(userId, { stripeAccountEnabled: false })
