@@ -114,6 +114,26 @@ sub.patch('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
     )
     if (!applicant) return c.json({ error: 'Active application not found' }, 404)
 
+    // Auto-accept if this updated bid is immediately fully funded and no contractor exists yet.
+    const alreadyAccepted = await Applicant.exists({ issueId: id, status: 'accepted' })
+    if (!alreadyAccepted) {
+      const allPledges = await Pledge.find({ issueId: id }).lean() as any[]
+      const winner = await selectFundedWinner([applicant.toObject()], allPledges)
+      if (winner) {
+        await Applicant.findByIdAndUpdate(applicant._id, {
+          status: 'accepted',
+          acceptedAt: new Date(),
+          completionDeadline: midnightFollowingDay(),
+        })
+        const accepted = await Applicant.findById(applicant._id).populate(APPLICANT_USER_POPULATE).lean() as any
+        const serializedAccepted = serializeApplicant(accepted)
+        getIssueAudienceIds(id, token.id).then((audience) =>
+          emitIssueApplicantAccepted({ issueId: id, applicant: serializedAccepted }, audience)
+        ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
+        return c.json({ applicant: serializedAccepted })
+      }
+    }
+
     const serialized = serializeApplicant(applicant.toObject())
     getIssueAudienceIds(id).then((audience) =>
       emitIssueApplicantAdded({ issueId: id, applicant: serialized }, audience)
