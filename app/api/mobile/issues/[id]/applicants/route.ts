@@ -1,13 +1,19 @@
 // app/api/mobile/issues/[id]/applicants/route.ts
-// POST   — apply to an issue
+// POST   — apply to an issue (or accept the current pledge total directly)
 // DELETE — withdraw application
 
-import { isValidObjectId } from '@/app/lib/utils/validation'
+import { isValidObjectId, APPLICANT_USER_POPULATE } from '@/app/lib/utils/validation'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { withAuth } from '@/app/lib/mobile/withAuth'
 import { serializeApplicant } from '@/app/lib/mobile/serializers'
-import { getIssueAudienceIds, emitIssueApplicantAdded, emitIssueApplicantRemoved } from '@/app/lib/socket/emit'
+import { midnightFollowingDay } from '@/app/lib/mobile/deadlines'
+import {
+  getIssueAudienceIds,
+  emitIssueApplicantAdded,
+  emitIssueApplicantRemoved,
+  emitIssueApplicantAccepted,
+} from '@/app/lib/socket/emit'
 import Applicant from '@/app/lib/models/applicant'
 import Pledge from '@/app/lib/models/pledge'
 import Issue from '@/app/lib/models/issue'
@@ -20,17 +26,46 @@ export const POST = withAuth(async (req, token, ctx) => {
     await connectToDatabase()
 
     const body = await req.json().catch(() => ({}))
-    const bidAmount = typeof body.bidAmount === 'number' && body.bidAmount > 0 ? body.bidAmount : undefined
+    const acceptPledge = body.acceptPledge === true
+    const bidAmount = !acceptPledge && typeof body.bidAmount === 'number' && body.bidAmount > 0
+      ? body.bidAmount
+      : undefined
 
     const issue = await Issue.findById(id).lean()
     if (!issue) return NextResponse.json({ error: 'Issue not found' }, { status: 404 })
 
-    const [existing, pledge] = await Promise.all([
+    const [existing, myPledge] = await Promise.all([
       Applicant.findOne({ userId: token.id, issueId: id }).lean(),
       Pledge.findOne({ issueId: id, userId: token.id }).lean(),
     ])
     if (existing) return NextResponse.json({ error: 'Already applied to this issue' }, { status: 409 })
-    if (pledge) return NextResponse.json({ error: 'Contributors cannot place a bid on an issue they have funded' }, { status: 403 })
+    if (myPledge) return NextResponse.json({ error: 'Contributors cannot place a bid on an issue they have funded' }, { status: 403 })
+
+    if (acceptPledge) {
+      const alreadyAccepted = await Applicant.exists({ issueId: id, status: 'accepted' })
+      if (alreadyAccepted)
+        return NextResponse.json({ error: 'A worker has already been accepted for this issue' }, { status: 409 })
+
+      const allPledges = await Pledge.find({ issueId: id }).lean() as any[]
+      const pledgedTotal = allPledges.reduce((sum: number, p: any) => sum + (p.amount ?? 0), 0)
+      if (pledgedTotal <= 0)
+        return NextResponse.json({ error: 'There are no pledges to accept' }, { status: 400 })
+
+      const applicant = await Applicant.create({
+        userId: token.id,
+        issueId: id,
+        bidAmount: pledgedTotal,
+        status: 'accepted',
+        acceptedAt: new Date(),
+        completionDeadline: midnightFollowingDay(),
+      })
+      await applicant.populate(APPLICANT_USER_POPULATE)
+      const serialized = serializeApplicant(applicant.toObject())
+      getIssueAudienceIds(id, token.id).then((audience) =>
+        emitIssueApplicantAccepted({ issueId: id, applicant: serialized }, audience)
+      ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
+      return NextResponse.json({ applicant: serialized }, { status: 201 })
+    }
 
     const applicant = await Applicant.create({ userId: token.id, issueId: id, bidAmount })
     const serialized = serializeApplicant(applicant.toObject())
