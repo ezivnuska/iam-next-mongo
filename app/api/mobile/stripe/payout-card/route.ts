@@ -30,6 +30,10 @@ export const GET = withAuth(async (req, token) => {
       await UserModel.findByIdAndUpdate(userId, { $unset: { stripeAccountId: '', stripeAccountEnabled: '' } })
       return NextResponse.json({ payoutCard: null })
     }
+    // Connect not yet enabled on the live platform account — treat as no card rather than error
+    if (err?.code === 'platform_account_required') {
+      return NextResponse.json({ payoutCard: null })
+    }
     console.error('[stripe/payout-card GET]', err)
     return NextResponse.json({ error: 'Failed to fetch payout card' }, { status: 500 })
   }
@@ -168,6 +172,9 @@ export const DELETE = withAuth(async (req, token) => {
     await UserModel.findByIdAndUpdate(userId, { stripeAccountEnabled: false })
     return NextResponse.json({ ok: true })
   } catch (err: any) {
+    if (err?.code === 'platform_account_required') {
+      return NextResponse.json({ ok: true })
+    }
     console.error('[stripe/payout-card DELETE]', err)
     return NextResponse.json({ error: err?.message ?? 'Failed to remove payout card' }, { status: 500 })
   }
