@@ -7,8 +7,8 @@ if (typeof window !== 'undefined') {
 import Stripe from 'stripe'
 
 // Lazy singleton — avoids crashing at import time when STRIPE_SECRET_KEY is absent
-let _stripe: Stripe | null = null
-const stripe = new Proxy({} as Stripe, {
+let _stripe: Stripe.Stripe | null = null
+const stripe = new Proxy({} as Stripe.Stripe, {
   get(_, prop) {
     if (!_stripe) {
       const key = process.env.STRIPE_SECRET_KEY
