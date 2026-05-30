@@ -15,7 +15,18 @@ import Pledge from '@/app/lib/models/pledge'
 const STRIPE_API_VERSION = '2026-04-22.dahlia'
 
 async function getOrCreateCustomer(user: any): Promise<string> {
-  if (user.stripeCustomerId) return user.stripeCustomerId
+  if (user.stripeCustomerId) {
+    try {
+      await stripe.customers.retrieve(user.stripeCustomerId)
+      return user.stripeCustomerId
+    } catch (err: any) {
+      if (err?.code !== 'resource_missing') throw err
+      // Stale ID from a previous Stripe mode — fall through to create a fresh one
+      await UserModel.findByIdAndUpdate(user._id, {
+        $unset: { stripeCustomerId: '', stripeDefaultPaymentMethodId: '' },
+      })
+    }
+  }
   const customer = await stripe.customers.create({
     email: user.email,
     metadata: { userId: user._id.toString() },
@@ -30,10 +41,18 @@ export const GET = withAuth(async (req, token) => {
     const user = await UserModel.findById(token.id).lean() as any
     if (!user?.stripeDefaultPaymentMethodId) return NextResponse.json({ paymentMethod: null })
 
-    const pm = await stripe.paymentMethods.retrieve(user.stripeDefaultPaymentMethodId)
-    return NextResponse.json({
-      paymentMethod: { id: pm.id, brand: pm.card?.brand, last4: pm.card?.last4, expMonth: pm.card?.exp_month, expYear: pm.card?.exp_year },
-    })
+    try {
+      const pm = await stripe.paymentMethods.retrieve(user.stripeDefaultPaymentMethodId)
+      return NextResponse.json({
+        paymentMethod: { id: pm.id, brand: pm.card?.brand, last4: pm.card?.last4, expMonth: pm.card?.exp_month, expYear: pm.card?.exp_year },
+      })
+    } catch (err: any) {
+      if (err?.code === 'resource_missing') {
+        await UserModel.findByIdAndUpdate(token.id, { $unset: { stripeDefaultPaymentMethodId: '' } })
+        return NextResponse.json({ paymentMethod: null })
+      }
+      throw err
+    }
   } catch (err) {
     console.error('[stripe/setup GET]', err)
     return NextResponse.json({ error: 'Failed to fetch payment method' }, { status: 500 })
