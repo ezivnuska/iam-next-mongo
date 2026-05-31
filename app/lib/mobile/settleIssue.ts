@@ -8,7 +8,7 @@ import Pledge from '@/app/lib/models/pledge'
 import Applicant from '@/app/lib/models/applicant'
 import UserModel from '@/app/lib/models/user'
 
-const isTestMode = process.env.STRIPE_SECRET_KEY?.includes('_test_')
+const isTestMode = process.env.NODE_ENV !== 'production'
 
 async function ensureTransfersCapability(accountId: string): Promise<void> {
   const account = await stripe.accounts.retrieve(accountId)
