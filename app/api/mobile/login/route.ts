@@ -24,7 +24,8 @@ export async function POST(req: NextRequest) {
 
     await connectToDatabase();
 
-    const userDoc = await UserModel.findOne({ email });
+    await import("@/app/lib/models/image");
+    const userDoc = await UserModel.findOne({ email }).populate("avatar", "_id variants");
     if (!userDoc) {
       return NextResponse.json(
         { error: "Invalid email or password" },
@@ -40,11 +41,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const avatar = userDoc.avatar
+      ? {
+          id: (userDoc.avatar as any)._id.toString(),
+          variants: (userDoc.avatar as any).variants ?? [],
+        }
+      : null;
+
     const user = {
       id: userDoc._id.toString(),
       username: userDoc.username,
       email: userDoc.email,
       role: userDoc.role,
+      bio: userDoc.bio ?? undefined,
+      avatar,
+      reputation: null,
     };
 
     const token = await new SignJWT(user)

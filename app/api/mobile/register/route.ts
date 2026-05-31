@@ -72,6 +72,9 @@ export async function POST(req: NextRequest) {
       username: newUser.username,
       email: newUser.email,
       role: newUser.role,
+      bio: undefined,
+      avatar: null,
+      reputation: null,
     };
 
     const token = await new SignJWT(user)
