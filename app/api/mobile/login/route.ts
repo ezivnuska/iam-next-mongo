@@ -41,27 +41,38 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const avatar = userDoc.avatar
-      ? {
-          id: (userDoc.avatar as any)._id.toString(),
-          variants: (userDoc.avatar as any).variants ?? [],
-        }
-      : null;
-
-    const user = {
+    const jwtPayload = {
       id: userDoc._id.toString(),
       username: userDoc.username,
       email: userDoc.email,
       role: userDoc.role,
+    };
+
+    const token = await new SignJWT(jwtPayload)
+      .setProtectedHeader({ alg: "HS256" })
+      .setExpirationTime("7d")
+      .sign(secret);
+
+    const avatarDoc = userDoc.avatar as any;
+    const avatar = avatarDoc
+      ? {
+          id: avatarDoc._id.toString(),
+          variants: (avatarDoc.variants ?? []).map((v: any) => ({
+            size: v.size,
+            filename: v.filename,
+            width: v.width,
+            height: v.height,
+            url: v.url,
+          })),
+        }
+      : null;
+
+    const user = {
+      ...jwtPayload,
       bio: userDoc.bio ?? undefined,
       avatar,
       reputation: null,
     };
-
-    const token = await new SignJWT(user)
-      .setProtectedHeader({ alg: "HS256" })
-      .setExpirationTime("7d")
-      .sign(secret);
 
     return NextResponse.json({ token, user });
   } catch (err) {
