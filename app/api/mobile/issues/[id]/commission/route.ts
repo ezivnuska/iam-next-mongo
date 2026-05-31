@@ -12,6 +12,7 @@ import { getIssueAudienceIds, emitIssueCompletionSubmitted } from '@/app/lib/soc
 import Issue from '@/app/lib/models/issue'
 import Applicant from '@/app/lib/models/applicant'
 import ImageModel from '@/app/lib/models/image'
+import Rating from '@/app/lib/models/rating'
 
 export const GET = withAuth(async (req, token, ctx) => {
   const { id: issueId } = await ctx.params
@@ -29,16 +30,18 @@ export const GET = withAuth(async (req, token, ctx) => {
     const commissionId = completion?._id ?? null
     if (commissionId) {
       try {
-        const Rating = (await import('@/app/lib/models/rating')).default
-        const [myDoc, allRatings] = await Promise.all([
-          Rating.findOne({ commissionId, raterId: token.id }).lean() as any,
-          Rating.find({ commissionId }).lean() as unknown as any[],
-        ])
+        let allRatings = await Rating.find({ commissionId }).lean() as any[]
+        // Fallback for ratings stored against an old Commission collection ID
+        // rather than the current embedded completion._id
+        if (allRatings.length === 0) {
+          allRatings = await Rating.find({ issueId }).lean() as any[]
+        }
+        const myDoc = allRatings.find((r: any) => r.raterId?.toString() === token.id) ?? null
         myRating = myDoc?.score ?? null
         averageRating = calculateAverageRating(allRatings)
         ratingCount = allRatings.length
-      } catch {
-        // rating lookup is non-critical
+      } catch (err) {
+        console.error('[commission GET] rating lookup failed:', err)
       }
     }
 
