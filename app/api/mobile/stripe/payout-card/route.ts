@@ -35,20 +35,24 @@ export const GET = withAuth(async (req, token) => {
   const userId = token.id
   try {
     await connectToDatabase()
-    const user = await UserModel.findById(userId).lean() as any
-    if (!user?.stripeAccountId) return NextResponse.json({ payoutCard: null })
+    const [user, workerDoc] = await Promise.all([
+      UserModel.findById(userId).lean() as any,
+      Applicant.exists({ userId, acceptedAt: { $exists: true } }),
+    ])
+    const isWorker = !!workerDoc
+
+    if (!user?.stripeAccountId) return NextResponse.json({ payoutCard: null, isWorker })
 
     const accounts = await stripe.accounts.listExternalAccounts(user.stripeAccountId, { object: 'card', limit: 1 })
     const card = accounts.data[0] ?? null
-    return NextResponse.json({ payoutCard: card ? serializeCard(card) : null })
+    return NextResponse.json({ payoutCard: card ? serializeCard(card) : null, isWorker })
   } catch (err: any) {
     if (err?.code === 'resource_missing' || err?.code === 'account_invalid') {
       await UserModel.findByIdAndUpdate(userId, { $unset: { stripeAccountId: '', stripeAccountEnabled: '' } })
-      return NextResponse.json({ payoutCard: null })
+      return NextResponse.json({ payoutCard: null, isWorker: false })
     }
-    // Connect not yet enabled on the live platform account — treat as no card rather than error
     if (err?.code === 'platform_account_required') {
-      return NextResponse.json({ payoutCard: null })
+      return NextResponse.json({ payoutCard: null, isWorker: false })
     }
     console.error('[stripe/payout-card GET]', err)
     return NextResponse.json({ error: 'Failed to fetch payout card' }, { status: 500 })
