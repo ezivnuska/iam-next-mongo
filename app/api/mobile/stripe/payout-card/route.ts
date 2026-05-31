@@ -95,7 +95,7 @@ export const POST = withAuth(async (req, token) => {
         email: user.email,
         external_account: cardToken,
         metadata: { userId },
-        capabilities: { transfers: { requested: true } },
+        capabilities: { transfers: { requested: true }, card_payments: { requested: true } },
         tos_acceptance: {
           date: Math.floor(Date.now() / 1000),
           ip: req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? '127.0.0.1',
@@ -180,7 +180,9 @@ export const POST = withAuth(async (req, token) => {
       invalid_expiry_year: 'The expiry year is invalid.',
       invalid_expiry_month: 'The expiry month is invalid.',
     }
-    const userMessage = (err?.code && stripeErrorMessages[err.code]) ?? 'Failed to set up payout card. Please try again.'
+    const isCapabilityError = err?.param === 'requested_capabilities' || err?.message?.includes('transfers')
+    const userMessage = (err?.code && stripeErrorMessages[err.code])
+      ?? (isCapabilityError ? 'Payout setup is temporarily unavailable. Please try again later.' : 'Failed to set up payout card. Please try again.')
     return NextResponse.json({ error: userMessage }, { status: 500 })
   }
 })
