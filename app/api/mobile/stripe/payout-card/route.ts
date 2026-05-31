@@ -1,6 +1,7 @@
 // app/api/mobile/stripe/payout-card/route.ts
 // GET    — return saved payout card info
-// POST   — create Custom Connect account (if needed) + attach debit card token
+// POST   — create Custom Connect account (if needed) + attach debit card token;
+//          if paymentMethodToken is also provided, simultaneously set up payment method
 // DELETE — remove payout card
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -13,6 +14,21 @@ import Applicant from '@/app/lib/models/applicant'
 
 function serializeCard(card: any) {
   return { id: card.id, brand: card.brand, last4: card.last4, expMonth: card.exp_month, expYear: card.exp_year }
+}
+
+async function getOrCreateCustomer(userId: string, user: any): Promise<string> {
+  if (user.stripeCustomerId) {
+    try {
+      await stripe.customers.retrieve(user.stripeCustomerId)
+      return user.stripeCustomerId
+    } catch (err: any) {
+      if (err?.code !== 'resource_missing') throw err
+      await UserModel.findByIdAndUpdate(userId, { $unset: { stripeCustomerId: '', stripeDefaultPaymentMethodId: '' } })
+    }
+  }
+  const customer = await stripe.customers.create({ email: user.email, metadata: { userId } })
+  await UserModel.findByIdAndUpdate(userId, { stripeCustomerId: customer.id })
+  return customer.id
 }
 
 export const GET = withAuth(async (req, token) => {
@@ -44,7 +60,7 @@ export const POST = withAuth(async (req, token) => {
   try {
     await connectToDatabase()
     const user = await UserModel.findById(userId).lean() as any
-    const { token: cardToken } = await req.json()
+    const { token: cardToken, paymentMethodToken } = await req.json()
     if (!cardToken) return NextResponse.json({ error: 'Card token required' }, { status: 400 })
 
     let accountId = user?.stripeAccountId
@@ -125,7 +141,28 @@ export const POST = withAuth(async (req, token) => {
 
     await UserModel.findByIdAndUpdate(userId, { stripeAccountEnabled: true })
     if (!card) return NextResponse.json({ error: 'Card not attached' }, { status: 500 })
-    return NextResponse.json({ payoutCard: serializeCard(card) })
+
+    let paymentMethod = null
+    if (paymentMethodToken) {
+      try {
+        const freshUser = await UserModel.findById(userId).lean() as any
+        const customerId = await getOrCreateCustomer(userId, freshUser)
+        const pm = await stripe.paymentMethods.create({ type: 'card', card: { token: paymentMethodToken } })
+        await stripe.paymentMethods.attach(pm.id, { customer: customerId })
+        await UserModel.findByIdAndUpdate(userId, { stripeDefaultPaymentMethodId: pm.id })
+        paymentMethod = {
+          id: pm.id,
+          brand: pm.card?.brand ?? '',
+          last4: pm.card?.last4 ?? '',
+          expMonth: pm.card?.exp_month ?? 0,
+          expYear: pm.card?.exp_year ?? 0,
+        }
+      } catch (err) {
+        console.warn('[stripe/payout-card POST] payment method setup failed, continuing:', (err as any)?.message)
+      }
+    }
+
+    return NextResponse.json({ payoutCard: serializeCard(card), paymentMethod })
   } catch (err: any) {
     console.error('[stripe/payout-card POST]', err)
     const stripeErrorMessages: Record<string, string> = {
