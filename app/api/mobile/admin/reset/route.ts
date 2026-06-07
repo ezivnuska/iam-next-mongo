@@ -54,15 +54,17 @@ export const POST = withAuth(async (req, token) => {
       })
     )
 
-    // Collect completion images from issues before deleting them
-    const issuesWithCompletion = await Issue.find(
-      { 'completion.images': { $exists: true, $ne: [] } },
-      { 'completion.images': 1 }
+    // Collect all image references from issues before deleting them
+    const allIssues = await Issue.find(
+      {},
+      { images: 1, 'completion.images': 1 }
     ).lean() as any[]
-    const completionImageIds = issuesWithCompletion.flatMap((n) => n.completion?.images ?? [])
+    const issueImageIds     = allIssues.flatMap((n) => n.images ?? [])
+    const completionImageIds = allIssues.flatMap((n) => n.completion?.images ?? [])
+    const allImageIds = [...issueImageIds, ...completionImageIds]
 
-    const completionImages = completionImageIds.length > 0
-      ? await ImageModel.find({ _id: { $in: completionImageIds } }).lean()
+    const allImages = allImageIds.length > 0
+      ? await ImageModel.find({ _id: { $in: allImageIds } }).lean()
       : []
 
     const [issueResult, pledgeResult, feeResult, applicantResult, ratingResult] = await Promise.all([
@@ -71,11 +73,11 @@ export const POST = withAuth(async (req, token) => {
       Fee.deleteMany({}),
       Applicant.deleteMany({}),
       Rating.deleteMany({}),
-      completionImageIds.length > 0 ? ImageModel.deleteMany({ _id: { $in: completionImageIds } }) : Promise.resolve(),
+      allImageIds.length > 0 ? ImageModel.deleteMany({ _id: { $in: allImageIds } }) : Promise.resolve(),
     ])
 
     await Promise.allSettled(
-      (completionImages as any[]).flatMap((img) =>
+      (allImages as any[]).flatMap((img) =>
         (img.variants ?? [])
           .filter((v: any) => v.url)
           .map((v: any) => {
@@ -92,7 +94,7 @@ export const POST = withAuth(async (req, token) => {
         fees: feeResult.deletedCount,
         applicants: applicantResult.deletedCount,
         ratings: ratingResult.deletedCount,
-        completionImages: completionImageIds.length,
+        images: allImageIds.length,
       },
     })
   } catch (err) {
