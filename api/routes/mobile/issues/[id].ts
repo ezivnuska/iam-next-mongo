@@ -10,12 +10,8 @@ import { serializeIssue, serializeCompletion } from '../../../../app/lib/mobile/
 import { isValidObjectId, USER_WITH_AVATAR_POPULATE, APPLICANT_USER_POPULATE } from '../../../../app/lib/utils/validation'
 import Issue from '../../../../app/lib/models/issue'
 import Pledge from '../../../../app/lib/models/pledge'
-import Fee from '../../../../app/lib/models/fee'
 import Applicant from '../../../../app/lib/models/applicant'
-import Rating from '../../../../app/lib/models/rating'
-import ImageModel from '../../../../app/lib/models/image'
-import stripe from '../../../../app/lib/stripe'
-import { deleteS3File } from '../../../../app/lib/aws/s3'
+import { deleteIssueWithCleanup } from '../../../../app/lib/mobile/deleteIssue'
 import '../../../../app/lib/models/user'
 
 const issueById = new Hono<{ Variables: { token: TokenPayload } }>()
@@ -112,58 +108,14 @@ issueById.delete('/api/mobile/issues/:id', authMiddleware, async (c) => {
 
   try {
     await connectToDatabase()
-    const need = await Issue.findById(id)
+    const need = await Issue.findById(id).select('author').lean() as any
     if (!need) return c.json({ error: 'Issue not found' }, 404)
 
     const isAuthor = need.author.toString() === token.id
-    const isAdmin = token.role === 'admin'
+    const isAdmin  = token.role === 'admin'
     if (!isAuthor && !isAdmin) return c.json({ error: 'Forbidden' }, 403)
 
-    const pledgesWithPI = await Pledge.find({ issueId: id, stripePaymentIntentId: { $exists: true, $ne: null } }).lean()
-
-    await Promise.allSettled(
-      (pledgesWithPI as any[]).map(async (p) => {
-        try {
-          await stripe.refunds.create({ payment_intent: p.stripePaymentIntentId })
-        } catch (err: any) {
-          if (err?.code !== 'charge_already_refunded')
-            console.error(`[issues DELETE] Failed to refund pledge ${p.stripePaymentIntentId}:`, err)
-        }
-      })
-    )
-
-    const completionImageIds = (need as any).completion?.images ?? []
-    const issueImageIds = (need as any).images ?? []
-    const reportImageIds = ((need as any).reports ?? []).map((r: any) => r.imageId).filter(Boolean)
-    const allImageIds = [...completionImageIds, ...issueImageIds, ...reportImageIds]
-
-    const [completionImages, issueImages, reportImages] = await Promise.all([
-      completionImageIds.length > 0 ? ImageModel.find({ _id: { $in: completionImageIds } }).lean() : Promise.resolve([]),
-      issueImageIds.length > 0 ? ImageModel.find({ _id: { $in: issueImageIds } }).lean() : Promise.resolve([]),
-      reportImageIds.length > 0 ? ImageModel.find({ _id: { $in: reportImageIds } }).lean() : Promise.resolve([]),
-    ])
-
-    await Promise.all([
-      Issue.findByIdAndDelete(id),
-      Pledge.deleteMany({ issueId: id }),
-      Fee.deleteMany({ issueId: id }),
-      Applicant.deleteMany({ issueId: id }),
-      Rating.deleteMany({ issueId: id }),
-      allImageIds.length > 0 ? ImageModel.deleteMany({ _id: { $in: allImageIds } }) : Promise.resolve(),
-    ])
-
-    const allImages = [...(completionImages as any[]), ...(issueImages as any[]), ...(reportImages as any[])]
-    await Promise.allSettled(
-      allImages.flatMap((img: any) =>
-        (img.variants ?? [])
-          .filter((v: any) => v.url)
-          .map((v: any) => {
-            const key = v.url.split(`https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`)[1]
-            return key ? deleteS3File(key) : Promise.resolve()
-          })
-      )
-    )
-
+    await deleteIssueWithCleanup(id)
     return c.json({ ok: true })
   } catch (err) {
     console.error('[mobile/issues DELETE]', err)

@@ -63,7 +63,14 @@ export async function settleIssue(issueId: string): Promise<void> {
   await Promise.allSettled(
     pledges.map(async (pledge) => {
       try {
-        const pi = await stripe.paymentIntents.retrieve(pledge.stripePaymentIntentId)
+        let pi = await stripe.paymentIntents.retrieve(pledge.stripePaymentIntentId)
+
+        // Pledges are held with capture_method: 'manual' — capture before transferring.
+        if (pi.status === 'requires_capture') {
+          await stripe.paymentIntents.capture(pledge.stripePaymentIntentId)
+          pi = await stripe.paymentIntents.retrieve(pledge.stripePaymentIntentId)
+        }
+
         const chargeId = pi.latest_charge as string
         if (!chargeId) {
           console.error('[settleIssue] no charge on PI', pledge.stripePaymentIntentId)

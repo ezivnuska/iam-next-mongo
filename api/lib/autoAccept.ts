@@ -8,6 +8,7 @@ import Pledge from '../../app/lib/models/pledge'
 import { serializeApplicant } from '../../app/lib/mobile/serializers'
 import { selectFundedWinner } from '../../app/lib/mobile/fundingUtils'
 import { midnightFollowingDay } from '../../app/lib/mobile/deadlines'
+import { holdPledges } from '../../app/lib/mobile/pledgePayments'
 import { APPLICANT_USER_POPULATE } from '../../app/lib/utils/validation'
 
 /**
@@ -70,6 +71,10 @@ export async function tryAutoAccept(
       ])
     }
   }
+
+  // Hold all pledge funds now that a worker is committed. Best-effort — failures
+  // are logged inside holdPledges but don't block the acceptance from completing.
+  holdPledges(issueId).catch((err) => console.error('[autoAccept] holdPledges failed:', err))
 
   const accepted = await Applicant.findById(winner._id)
     .populate(APPLICANT_USER_POPULATE).lean()

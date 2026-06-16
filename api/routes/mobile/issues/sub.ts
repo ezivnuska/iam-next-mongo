@@ -16,6 +16,8 @@ import { calculateAverageRating } from '../../../../app/lib/utils/ratingUtils'
 import { midnightFollowingDay } from '../../../../app/lib/mobile/deadlines'
 import { settleIssue } from '../../../../app/lib/mobile/settleIssue'
 import { createPledgeWithPaymentIntent } from '../../../../app/lib/mobile/createPledge'
+import { deleteIssueWithCleanup } from '../../../../app/lib/mobile/deleteIssue'
+import { releasePledgeHolds } from '../../../../app/lib/mobile/pledgePayments'
 import { tryAutoAccept } from '../../../lib/autoAccept'
 import {
   emitIssueApplicantAdded,
@@ -359,7 +361,7 @@ sub.patch('/api/mobile/issues/:id/flag', authMiddleware, async (c) => {
   try {
     await connectToDatabase()
     if (action === 'approve') {
-      await Issue.findByIdAndDelete(id)
+      await deleteIssueWithCleanup(id)
     } else {
       await Issue.findByIdAndUpdate(id, { flagged: false })
     }
@@ -635,6 +637,12 @@ sub.post('/api/mobile/issues/:id/commission/rating', authMiddleware, async (c) =
         { $set: { 'completion.status': 'denied' } }
       )
       await Applicant.findByIdAndUpdate(acceptedApplicant._id, { completionDeadline: midnightFollowingDay() })
+      const eligibleCount = await Applicant.countDocuments({
+        issueId, status: 'pending', bidAmount: { $exists: true, $ne: null },
+      })
+      if (eligibleCount === 0) {
+        releasePledgeHolds(issueId).catch((err) => console.error('[commission/rating] releasePledgeHolds failed:', err))
+      }
     }
 
     if (autoDecision) {
@@ -747,6 +755,12 @@ sub.post('/api/mobile/issues/:id/commission/review', authMiddleware, async (c) =
       )
       if (newStatus === 'denied' && applicant) {
         await Applicant.findByIdAndUpdate((applicant as any)._id, { completionDeadline: midnightFollowingDay() })
+        const eligibleCount = await Applicant.countDocuments({
+          issueId, status: 'pending', bidAmount: { $exists: true, $ne: null },
+        })
+        if (eligibleCount === 0) {
+          releasePledgeHolds(issueId).catch((err) => console.error('[commission/review] releasePledgeHolds failed:', err))
+        }
       }
     }
 
