@@ -66,6 +66,8 @@ lists.get('/api/mobile/issues/feed', authMiddleware, async (c) => {
 })
 
 lists.get('/api/mobile/issues/flagged', authMiddleware, async (c) => {
+  const token = c.get('token')
+  if (token.role !== 'admin') return c.json({ error: 'Forbidden' }, 403)
   try {
     await connectToDatabase()
     const issues = await Issue.find({ flagged: true })

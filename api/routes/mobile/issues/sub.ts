@@ -19,6 +19,7 @@ import { createPledgeWithPaymentIntent } from '../../../../app/lib/mobile/create
 import { deleteIssueWithCleanup } from '../../../../app/lib/mobile/deleteIssue'
 import { releasePledgeHolds } from '../../../../app/lib/mobile/pledgePayments'
 import { tryAutoAccept } from '../../../lib/autoAccept'
+import { holdPledges } from '../../../../app/lib/mobile/pledgePayments'
 import {
   emitIssueApplicantAdded,
   emitIssueApplicantRemoved,
@@ -187,8 +188,10 @@ sub.post('/api/mobile/issues/:id/pledges', authMiddleware, async (c) => {
 
     await connectToDatabase()
 
-    const issue = await Issue.findById(id).lean()
+    const issue = await Issue.findById(id).lean() as any
     if (!issue) return c.json({ error: 'Issue not found' }, 404)
+    if (issue.author.toString() === token.id)
+      return c.json({ error: 'You cannot pledge on your own issue' }, 403)
 
     if (applicantId) {
       const target = await Applicant.findOne({ _id: applicantId, issueId: id }).lean() as any
@@ -351,8 +354,10 @@ sub.post('/api/mobile/issues/:id/flag', authMiddleware, async (c) => {
 })
 
 sub.patch('/api/mobile/issues/:id/flag', authMiddleware, async (c) => {
+  const token = c.get('token')
   const id = c.req.param('id')
   if (!isValidObjectId(id)) return c.json({ error: 'Invalid issue ID' }, 400)
+  if (token.role !== 'admin') return c.json({ error: 'Forbidden' }, 403)
 
   const { action } = await c.req.json()
   if (action !== 'approve' && action !== 'dismiss')
@@ -557,6 +562,8 @@ sub.post('/api/mobile/issues/:id/commission/reassign', authMiddleware, async (c)
     ).populate(APPLICANT_USER_POPULATE)
 
     const nextSerialized = serializeApplicant(nextApplicant!.toObject())
+
+    holdPledges(issueId).catch((err) => console.error('[reassign] holdPledges failed:', err))
 
     emitIssueApplicantAdded({ issueId, applicant: releasedSerialized })
       .catch((err: any) => console.warn('[socket]', err?.message ?? err))

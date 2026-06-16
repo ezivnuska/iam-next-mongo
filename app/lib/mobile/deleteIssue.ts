@@ -11,6 +11,7 @@ import Fee from '@/app/lib/models/fee'
 import Applicant from '@/app/lib/models/applicant'
 import Rating from '@/app/lib/models/rating'
 import ImageModel from '@/app/lib/models/image'
+import stripe from '@/app/lib/stripe'
 import { releasePledgeHolds } from '@/app/lib/mobile/pledgePayments'
 import { deleteS3File } from '@/app/lib/aws/s3'
 
@@ -18,7 +19,21 @@ export async function deleteIssueWithCleanup(issueId: string): Promise<void> {
   const issue = await Issue.findById(issueId).lean() as any
   if (!issue) return
 
-  // Release Stripe holds before removing DB records
+  if (issue.status === 'completed')
+    throw new Error(`Cannot delete completed issue ${issueId} — payment has already been settled`)
+
+  // Refund the creation fee before removing DB records
+  const fee = await Fee.findOne({ issueId }).lean() as any
+  if (fee?.stripePaymentIntentId) {
+    try {
+      await stripe.refunds.create({ payment_intent: fee.stripePaymentIntentId })
+    } catch (err: any) {
+      if (err?.code !== 'charge_already_refunded')
+        console.error(`[deleteIssueWithCleanup] fee refund failed for issue ${issueId}:`, err?.message ?? err)
+    }
+  }
+
+  // Release Stripe holds on pledges before removing DB records
   await releasePledgeHolds(issueId)
 
   const completionImageIds = issue.completion?.images ?? []

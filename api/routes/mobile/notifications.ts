@@ -6,6 +6,7 @@
 import { Hono } from 'hono'
 import { authMiddleware, TokenPayload } from '../../middleware/auth'
 import { connectToDatabase } from '../../../app/lib/mongoose'
+import { isValidObjectId } from '../../../app/lib/utils/validation'
 import UserModel from '../../../app/lib/models/user'
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send'
@@ -45,6 +46,12 @@ notifications.post('/api/mobile/notifications/notify', authMiddleware, async (c)
     const { userId, title, body } = await c.req.json()
     if (!userId || !title || !body)
       return c.json({ error: 'userId, title, and body are required' }, 400)
+    if (!isValidObjectId(userId))
+      return c.json({ error: 'Invalid userId' }, 400)
+    if (typeof title !== 'string' || title.length > 100)
+      return c.json({ error: 'title must be a string under 100 characters' }, 400)
+    if (typeof body !== 'string' || body.length > 500)
+      return c.json({ error: 'body must be a string under 500 characters' }, 400)
 
     await connectToDatabase()
     const user = await UserModel.findById(userId, { expoPushToken: 1 }).lean() as any
