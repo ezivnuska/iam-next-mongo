@@ -22,7 +22,18 @@ const stripeRoutes = new Hono<{ Variables: { token: TokenPayload } }>()
 // ─── /stripe/setup ────────────────────────────────────────────────────────────
 
 async function getOrCreateCustomer(user: any): Promise<string> {
-  if (user.stripeCustomerId) return user.stripeCustomerId
+  if (user.stripeCustomerId) {
+    try {
+      await stripeClient.customers.retrieve(user.stripeCustomerId)
+      return user.stripeCustomerId
+    } catch (err: any) {
+      if (err?.code !== 'resource_missing') throw err
+      // Stale ID from a previous Stripe mode — fall through to create a fresh one
+      await UserModel.findByIdAndUpdate(user._id, {
+        $unset: { stripeCustomerId: '', stripeDefaultPaymentMethodId: '' },
+      })
+    }
+  }
   const customer = await stripeClient.customers.create({
     email: user.email,
     metadata: { userId: user._id.toString() },
@@ -451,6 +462,10 @@ stripeRoutes.get('/api/mobile/stripe/dashboard', authMiddleware, async (c) => {
     console.error('[stripe/dashboard GET]', err)
     return c.json({ error: err?.message ?? 'Failed to load dashboard' }, 500)
   }
+})
+
+stripeRoutes.get('/api/mobile/stripe/config', async (c) => {
+  return c.json({ publishableKey: process.env.STRIPE_PUBLISHABLE_KEY ?? null })
 })
 
 export default stripeRoutes
