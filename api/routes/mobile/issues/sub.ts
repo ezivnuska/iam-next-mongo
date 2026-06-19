@@ -366,7 +366,7 @@ sub.patch('/api/mobile/issues/:id/flag', authMiddleware, async (c) => {
   try {
     await connectToDatabase()
     if (action === 'approve') {
-      await deleteIssueWithCleanup(id)
+      await deleteIssueWithCleanup(id, true)
     } else {
       await Issue.findByIdAndUpdate(id, { flagged: false })
     }

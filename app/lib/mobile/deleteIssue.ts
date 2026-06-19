@@ -15,11 +15,11 @@ import stripe from '@/app/lib/stripe'
 import { releasePledgeHolds } from '@/app/lib/mobile/pledgePayments'
 import { deleteS3File } from '@/app/lib/aws/s3'
 
-export async function deleteIssueWithCleanup(issueId: string): Promise<void> {
+export async function deleteIssueWithCleanup(issueId: string, force = false): Promise<void> {
   const issue = await Issue.findById(issueId).lean() as any
   if (!issue) return
 
-  if (issue.status === 'completed')
+  if (!force && issue.status === 'completed')
     throw new Error(`Cannot delete completed issue ${issueId} — payment has already been settled`)
 
   // Refund the creation fee before removing DB records

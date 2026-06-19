@@ -157,7 +157,7 @@ admin.post('/api/mobile/admin/reset', authMiddleware, async (c) => {
         fees: feeResult.deletedCount,
         applicants: applicantResult.deletedCount,
         ratings: ratingResult.deletedCount,
-        completionImages: completionImageIds.length,
+        images: completionImageIds.length,
       },
     })
   } catch (err) {

@@ -115,7 +115,7 @@ issueById.delete('/api/mobile/issues/:id', authMiddleware, async (c) => {
     const isAdmin  = token.role === 'admin'
     if (!isAuthor && !isAdmin) return c.json({ error: 'Forbidden' }, 403)
 
-    await deleteIssueWithCleanup(id)
+    await deleteIssueWithCleanup(id, isAdmin)
     return c.json({ ok: true })
   } catch (err) {
     console.error('[mobile/issues DELETE]', err)
