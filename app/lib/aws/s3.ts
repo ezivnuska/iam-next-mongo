@@ -2,13 +2,19 @@
 
 import { S3Client, DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
+let _s3Client: S3Client | null = null
+function getS3Client() {
+  if (!_s3Client) {
+    _s3Client = new S3Client({
+      region: process.env.AWS_REGION,
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+      },
+    })
+  }
+  return _s3Client
+}
 
 export async function uploadFileToS3(file: File | Blob, folder = "uploads") {
   const fileName = `${Date.now()}-${(file as any).name || "file"}`;
@@ -22,14 +28,14 @@ export async function uploadFileToS3(file: File | Blob, folder = "uploads") {
     ContentType: (file as any).type || "application/octet-stream",
   });
 
-  await s3Client.send(command);
+  await getS3Client().send(command);
 
   return `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${folder}/${fileName}`;
 }
 
 export async function deleteS3File(key: string) {
     try {
-      await s3Client.send(
+      await getS3Client().send(
         new DeleteObjectCommand({
           Bucket: process.env.AWS_BUCKET_NAME!,
           Key: key,
