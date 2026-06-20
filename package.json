@@ -33,7 +33,6 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@iam/types": "workspace:*",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/postcss": "^4.1.17",
     "@types/bcrypt": "^5.0.2",
