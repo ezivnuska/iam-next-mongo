@@ -6,6 +6,7 @@
 //   /api/mobile/stripe/dashboard   — dashboard data
 
 import { Hono } from 'hono'
+import { getConnInfo } from '@hono/node-server/conninfo'
 import { authMiddleware, TokenPayload } from '../../../middleware/auth'
 import { connectToDatabase } from '../../../../app/lib/mongoose'
 import stripeClient from '../../../../app/lib/stripe'
@@ -159,7 +160,7 @@ stripeRoutes.post('/api/mobile/stripe/connect', authMiddleware, async (c) => {
   try {
     await connectToDatabase()
     const user = await UserModel.findById(token.id).lean() as any
-    const BASE = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://iameric.me'
+    const BASE = process.env.NEXT_PUBLIC_APP_URL ?? 'https://iameric.me'
     let accountId = user?.stripeAccountId
 
     if (accountId) {
@@ -289,8 +290,13 @@ stripeRoutes.post('/api/mobile/stripe/payout-card', authMiddleware, async (c) =>
         accountId = null
       }
       const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') && process.env.NODE_ENV !== 'production'
-      const BASE = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://iameric.me'
-      const forwardedFor = c.req.header('x-forwarded-for')
+      const BASE = process.env.NEXT_PUBLIC_APP_URL ?? 'https://iameric.me'
+      let clientIp: string
+      try {
+        clientIp = getConnInfo(c).remote.address ?? '0.0.0.0'
+      } catch {
+        clientIp = '0.0.0.0'
+      }
       const account = await stripeClient.accounts.create({
         type: 'custom',
         country: 'US',
@@ -302,7 +308,7 @@ stripeRoutes.post('/api/mobile/stripe/payout-card', authMiddleware, async (c) =>
         capabilities: { transfers: { requested: true } },
         tos_acceptance: {
           date: Math.floor(Date.now() / 1000),
-          ip: forwardedFor?.split(',')[0].trim() ?? '127.0.0.1',
+          ip: clientIp,
         },
         ...(isTestMode && {
           individual: {

@@ -7,6 +7,11 @@ import { checkSocketRateLimit, SOCKET_RATE_LIMITS } from '@/app/lib/api/socket-r
 import { generateGuestId, generateGuestUsername, isGuestId } from '@/app/games/poker/lib/utils/guest-utils'
 
 export async function POST(request: NextRequest) {
+	const secret = request.headers.get('x-internal-secret')
+	if (!secret || secret !== process.env.INTERNAL_SECRET) {
+		return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+	}
+
 	try {
 		const body = await request.json()
 		const { event, room, data, excludeUserId, signal, gameId, userId, username } = body

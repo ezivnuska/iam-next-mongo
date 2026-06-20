@@ -51,7 +51,8 @@ sub.post('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
   try {
     await connectToDatabase()
     const body = await c.req.json().catch(() => ({}))
-    const bidAmount = typeof body.bidAmount === 'number' && body.bidAmount > 0 ? body.bidAmount : undefined
+    const rawBid = body.bidAmount
+    const bidAmount = typeof rawBid === 'number' && Number.isFinite(rawBid) && rawBid > 0 && rawBid <= 10000 ? rawBid : undefined
 
     const issue = await Issue.findById(id).lean()
     if (!issue) return c.json({ error: 'Issue not found' }, 404)
@@ -93,8 +94,8 @@ sub.patch('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
 
   try {
     const { bidAmount } = await c.req.json()
-    if (typeof bidAmount !== 'number' || bidAmount <= 0)
-      return c.json({ error: 'Bid amount must be a positive number' }, 400)
+    if (typeof bidAmount !== 'number' || !Number.isFinite(bidAmount) || bidAmount <= 0 || bidAmount > 10000)
+      return c.json({ error: 'Bid amount must be a number between 0 and 10,000' }, 400)
 
     await connectToDatabase()
     const applicant = await Applicant.findOneAndUpdate(
@@ -180,8 +181,8 @@ sub.post('/api/mobile/issues/:id/pledges', authMiddleware, async (c) => {
     const body = await c.req.json()
     const { amount, applicantId, rescindIfLost, anonymous } = body
 
-    if (typeof amount !== 'number' || amount <= 0)
-      return c.json({ error: 'Amount must be a positive number' }, 400)
+    if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0 || amount > 10000)
+      return c.json({ error: 'Amount must be a number between 0 and 10,000' }, 400)
 
     if (applicantId && !isValidObjectId(applicantId))
       return c.json({ error: 'Invalid applicant ID' }, 400)

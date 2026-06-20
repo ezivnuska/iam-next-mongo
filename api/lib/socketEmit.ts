@@ -10,7 +10,7 @@
 // Issue events emit to `issue:{issueId}` rooms so every viewer receives
 // updates without the server computing a per-event audience list.
 
-const SOCKET_API = 'http://localhost:3000/api/socket/emit'
+const SOCKET_API = `http://localhost:${process.env.PORT ?? '3000'}/api/socket/emit`
 
 async function emit(event: string, data: any, room?: string, excludeUserId?: string) {
   const io = (global as any).io
@@ -18,7 +18,10 @@ async function emit(event: string, data: any, room?: string, excludeUserId?: str
   if (!io) {
     const res = await fetch(SOCKET_API, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-internal-secret': process.env.INTERNAL_SECRET ?? '',
+      },
       body: JSON.stringify({ event, data, room, excludeUserId }),
     })
     if (!res.ok) throw new Error(`Socket bridge error: ${await res.text()}`)

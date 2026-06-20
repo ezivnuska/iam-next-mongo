@@ -41,6 +41,8 @@ notifications.delete('/api/mobile/notifications/token', authMiddleware, async (c
   }
 })
 
+const STRIP_TAGS = (s: string) => s.replace(/<[^>]*>/g, '').trim()
+
 notifications.post('/api/mobile/notifications/notify', authMiddleware, async (c) => {
   try {
     const { userId, title, body } = await c.req.json()
@@ -53,6 +55,11 @@ notifications.post('/api/mobile/notifications/notify', authMiddleware, async (c)
     if (typeof body !== 'string' || body.length > 500)
       return c.json({ error: 'body must be a string under 500 characters' }, 400)
 
+    const safeTitle = STRIP_TAGS(title)
+    const safeBody = STRIP_TAGS(body)
+    if (!safeTitle || !safeBody)
+      return c.json({ error: 'Invalid notification content' }, 400)
+
     await connectToDatabase()
     const user = await UserModel.findById(userId, { expoPushToken: 1 }).lean() as any
     if (!user?.expoPushToken) return c.json({ ok: true })
@@ -60,7 +67,7 @@ notifications.post('/api/mobile/notifications/notify', authMiddleware, async (c)
     await fetch(EXPO_PUSH_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ to: user.expoPushToken, title, body, sound: 'default' }),
+      body: JSON.stringify({ to: user.expoPushToken, title: safeTitle, body: safeBody, sound: 'default' }),
     })
 
     return c.json({ ok: true })

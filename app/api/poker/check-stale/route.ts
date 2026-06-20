@@ -11,6 +11,11 @@ import { connectToDatabase } from '@/app/lib/mongoose';
 const STALE_THRESHOLD_MS = 60 * 1000; // 1 minute
 
 export async function POST(request: NextRequest) {
+  const secret = request.headers.get('x-internal-secret')
+  if (!secret || secret !== process.env.INTERNAL_SECRET) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   try {
     // Ensure database connection
     await connectToDatabase();

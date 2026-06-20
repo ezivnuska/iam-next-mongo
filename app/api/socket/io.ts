@@ -18,9 +18,12 @@ export function getIO(): SocketIOServer | null {
 // This works around the issue where API routes run in a different process
 export async function emitViaAPI(event: string, data: any, room?: string, excludeUserId?: string) {
 	try {
-		const response = await fetch('http://localhost:3000/api/socket/emit', {
+		const response = await fetch(`http://localhost:${process.env.PORT ?? '3000'}/api/socket/emit`, {
 			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
+			headers: {
+				'Content-Type': 'application/json',
+				'x-internal-secret': process.env.INTERNAL_SECRET ?? '',
+			},
 			body: JSON.stringify({ event, data, room, excludeUserId }),
 		})
 

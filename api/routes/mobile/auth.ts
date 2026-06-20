@@ -10,16 +10,21 @@ import { connectToDatabase } from '../../../app/lib/mongoose'
 import UserModel from '../../../app/lib/models/user'
 import '../../../app/lib/models/image'
 import Rating from '../../../app/lib/models/rating'
+import { loginRateLimit } from '../../middleware/rate-limit'
 
 const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET || 'change-this-secret')
 
 const auth = new Hono()
 
-auth.post('/api/mobile/login', async (c) => {
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+auth.post('/api/mobile/login', loginRateLimit, async (c) => {
   try {
     const { email, password } = await c.req.json()
     if (!email || !password)
       return c.json({ error: 'Email and password are required' }, 400)
+    if (!EMAIL_RE.test(email))
+      return c.json({ error: 'Invalid email address' }, 400)
 
     await connectToDatabase()
     const userDoc = await UserModel.findOne({ email })
@@ -53,10 +58,16 @@ auth.post('/api/mobile/register', async (c) => {
 
     if (!email || !password)
       return c.json({ error: 'Email and password are required' }, 400)
+    if (!EMAIL_RE.test(email))
+      return c.json({ error: 'Invalid email address' }, 400)
+    if (typeof password !== 'string' || password.length < 8)
+      return c.json({ error: 'Password must be at least 8 characters' }, 400)
     if (!username)
       return c.json({ error: 'Username is required' }, 400)
     if (username.length < 2 || username.length > 20)
       return c.json({ error: 'Username must be between 2 and 20 characters' }, 400)
+    if (!/^[a-zA-Z0-9_.-]{2,20}$/.test(username))
+      return c.json({ error: 'Username may only contain letters, numbers, underscores, hyphens, and periods' }, 400)
 
     await connectToDatabase()
 

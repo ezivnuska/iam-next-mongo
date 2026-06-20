@@ -4,12 +4,17 @@ import { withAuth } from '@/app/lib/api/with-auth';
 import { resetSingletonGame } from '@/app/games/poker/lib/server/game/singleton-game';
 import { PokerSocketEmitter } from '@/app/lib/utils/socket-helper';
 import { withRateLimit, RATE_LIMITS } from '@/app/lib/api/rate-limiter';
+import { UserRole } from '@/app/lib/definitions/user';
 
 /**
  * Reset the singleton poker game to initial state
  * Only accessible to authenticated users
  */
 export const POST = withRateLimit(RATE_LIMITS.DESTRUCTIVE, withAuth(async (request, context, session) => {
+  if (session.user.role !== UserRole.Admin) {
+    return Response.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   try {
     const { gameId } = await request.json();
 

@@ -55,6 +55,11 @@ app.prepare().then(() => {
 	// Expose io to Hono routes via global (same process, no HTTP bridge needed)
 	global.io = io
 
+	const internalHeaders = {
+		'Content-Type': 'application/json',
+		'x-internal-secret': process.env.INTERNAL_SECRET,
+	}
+
 	// Track online users
 	const onlineUsers = new Map() // Map<userId, Set<socketId>>
 
@@ -67,7 +72,7 @@ app.prepare().then(() => {
 				try {
 					await fetch(`http://localhost:${port}/api/poker/check-stale`, {
 						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
+						headers: internalHeaders,
 					})
 				} catch {
 					// Silently fail
@@ -104,7 +109,7 @@ app.prepare().then(() => {
 				try {
 					const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
 						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
+						headers: internalHeaders,
 						body: JSON.stringify({
 							signal: 'poker:player_reconnected',
 							userId,
@@ -129,7 +134,7 @@ app.prepare().then(() => {
 				}
 				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
 					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
+					headers: internalHeaders,
 					body: JSON.stringify({
 						signal: 'poker:join_game',
 						gameId,
@@ -163,7 +168,7 @@ app.prepare().then(() => {
 				}
 				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
 					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
+					headers: internalHeaders,
 					body: JSON.stringify({ signal: 'poker:leave_game', gameId, userId: socket.userId }),
 				})
 				const result = await response.json()
@@ -184,7 +189,7 @@ app.prepare().then(() => {
 			try {
 				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
 					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
+					headers: internalHeaders,
 					body: JSON.stringify({ signal: 'poker:ready_for_next_turn', gameId }),
 				})
 				if (!response.ok) {
@@ -204,7 +209,7 @@ app.prepare().then(() => {
 				}
 				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
 					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
+					headers: internalHeaders,
 					body: JSON.stringify({ signal: 'poker:bet', gameId, userId: socket.userId, chipCount }),
 				})
 				const result = await response.json()
@@ -229,7 +234,7 @@ app.prepare().then(() => {
 				}
 				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
 					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
+					headers: internalHeaders,
 					body: JSON.stringify({ signal: 'poker:fold', gameId, userId: socket.userId }),
 				})
 				const result = await response.json()
@@ -254,7 +259,7 @@ app.prepare().then(() => {
 				}
 				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
 					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
+					headers: internalHeaders,
 					body: JSON.stringify({
 						signal: 'poker:set_timer_action',
 						gameId,
@@ -285,7 +290,7 @@ app.prepare().then(() => {
 				}
 				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
 					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
+					headers: internalHeaders,
 					body: JSON.stringify({
 						signal: 'poker:set_presence',
 						gameId,
@@ -307,7 +312,7 @@ app.prepare().then(() => {
 			try {
 				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
 					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
+					headers: internalHeaders,
 					body: JSON.stringify({ signal: 'poker:winner_notification_complete', gameId }),
 				})
 				if (!response.ok) {

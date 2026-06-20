@@ -4,6 +4,7 @@
 // api/index.ts for standalone dev/testing.
 
 import { Hono } from 'hono'
+import { globalRateLimit } from './middleware/rate-limit'
 
 import auth from './routes/mobile/auth'
 import me from './routes/mobile/me'
@@ -22,6 +23,8 @@ import stripeRoutes from './routes/mobile/stripe/index'
 import adminRoutes from './routes/mobile/admin/index'
 
 const app = new Hono()
+
+app.use('*', globalRateLimit)
 
 app.get('/health', (c) => c.json({ ok: true, ts: Date.now() }))
 
