@@ -3,7 +3,7 @@
 // POST /api/mobile/issues       — create a new issue
 
 import { Hono } from 'hono'
-import { ISSUE_TYPES } from '@iam/types'
+import { ISSUE_TYPES } from '../../../../app/lib/definitions/issue'
 import { authMiddleware, TokenPayload } from '../../../middleware/auth'
 import { connectToDatabase } from '../../../../app/lib/mongoose'
 import { serializeIssue } from '../../../../app/lib/mobile/serializers'
