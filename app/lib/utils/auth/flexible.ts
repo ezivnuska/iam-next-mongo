@@ -4,14 +4,16 @@
 import { jwtVerify } from 'jose'
 import { auth } from '@/app/lib/auth'
 
-if (!process.env.NEXTAUTH_SECRET) throw new Error('NEXTAUTH_SECRET is not set')
-const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET)
+function getSecret(): Uint8Array {
+  if (!process.env.NEXTAUTH_SECRET) throw new Error('NEXTAUTH_SECRET is not set')
+  return new TextEncoder().encode(process.env.NEXTAUTH_SECRET)
+}
 
 export async function requireAuthFlexible(req: Request): Promise<{ id: string; role?: string }> {
   const authHeader = req.headers.get('authorization')
   if (authHeader?.startsWith('Bearer ')) {
     try {
-      const { payload } = await jwtVerify(authHeader.slice(7), secret)
+      const { payload } = await jwtVerify(authHeader.slice(7), getSecret())
       if (typeof payload.id === 'string') {
         return { id: payload.id, role: payload.role as string | undefined }
       }

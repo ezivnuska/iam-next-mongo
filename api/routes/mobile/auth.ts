@@ -12,8 +12,10 @@ import '../../../app/lib/models/image'
 import Rating from '../../../app/lib/models/rating'
 import { loginRateLimit } from '../../middleware/rate-limit'
 
-if (!process.env.NEXTAUTH_SECRET) throw new Error('NEXTAUTH_SECRET is not set')
-const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET)
+function getSecret(): Uint8Array {
+  if (!process.env.NEXTAUTH_SECRET) throw new Error('NEXTAUTH_SECRET is not set')
+  return new TextEncoder().encode(process.env.NEXTAUTH_SECRET)
+}
 
 const auth = new Hono()
 
@@ -44,7 +46,7 @@ auth.post('/api/mobile/login', loginRateLimit, async (c) => {
     })
       .setProtectedHeader({ alg: 'HS256' })
       .setExpirationTime('7d')
-      .sign(secret)
+      .sign(getSecret())
 
     return c.json({ token })
   } catch (err) {
@@ -99,7 +101,7 @@ auth.post('/api/mobile/register', async (c) => {
     })
       .setProtectedHeader({ alg: 'HS256' })
       .setExpirationTime('7d')
-      .sign(secret)
+      .sign(getSecret())
 
     return c.json({ token }, 201)
   } catch (err) {
@@ -114,7 +116,7 @@ auth.get('/api/mobile/me', async (c) => {
     if (!authHeader?.startsWith('Bearer '))
       return c.json({ error: 'Unauthorized' }, 401)
 
-    const { payload } = await jwtVerify(authHeader.slice(7), secret)
+    const { payload } = await jwtVerify(authHeader.slice(7), getSecret())
 
     await connectToDatabase()
     const userDoc = await UserModel.findById(payload.id as string).populate('avatar', '_id variants')
