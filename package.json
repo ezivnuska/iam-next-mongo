@@ -33,6 +33,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@iam/types": "workspace:*",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/postcss": "^4.1.17",
     "@types/bcrypt": "^5.0.2",
@@ -47,15 +48,5 @@
     "postcss": "8.5.1",
     "tailwindcss": "^4.1.17",
     "typescript": "5.9.2"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "bcrypt",
-      "sharp",
-      "unrs-resolver"
-    ],
-    "overrides": {
-      "@auth/core": "0.37.2"
-    }
   }
 }
