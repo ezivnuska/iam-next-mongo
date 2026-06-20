@@ -42,14 +42,14 @@ admin.post('/api/mobile/admin/cleanup', authMiddleware, async (c) => {
     ]
 
     if (candidateIds.length === 0)
-      return c.json({ deleted: { pledges: 0, fees: 0, applicants: 0, ratings: 0 } })
+      return c.json({ deleted: { orphanIssueIds: [], pledges: 0, fees: 0, applicants: 0, ratings: 0 } })
 
     const existingIssues = await Issue.find({ _id: { $in: candidateIds } }).select('_id').lean()
     const existingIds = new Set(existingIssues.map((i: any) => i._id.toString()))
     const orphanIds = candidateIds.filter((id) => !existingIds.has(id))
 
     if (orphanIds.length === 0)
-      return c.json({ deleted: { pledges: 0, fees: 0, applicants: 0, ratings: 0 } })
+      return c.json({ deleted: { orphanIssueIds: [], pledges: 0, fees: 0, applicants: 0, ratings: 0 } })
 
     const pledgesWithStripe = await Pledge.find({
       issueId: { $in: orphanIds },
