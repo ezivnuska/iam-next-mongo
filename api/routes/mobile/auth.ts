@@ -30,19 +30,17 @@ auth.post('/api/mobile/login', async (c) => {
     if (!isValid)
       return c.json({ error: 'Invalid email or password' }, 401)
 
-    const user = {
+    const token = await new SignJWT({
       id: userDoc._id.toString(),
       username: userDoc.username,
       email: userDoc.email,
       role: userDoc.role,
-    }
-
-    const token = await new SignJWT(user)
+    })
       .setProtectedHeader({ alg: 'HS256' })
       .setExpirationTime('7d')
       .sign(secret)
 
-    return c.json({ token, user })
+    return c.json({ token })
   } catch (err) {
     console.error('[mobile/login POST]', err)
     return c.json({ error: 'Failed to login' }, 500)
@@ -81,19 +79,17 @@ auth.post('/api/mobile/register', async (c) => {
     })
     await newUser.save()
 
-    const user = {
+    const token = await new SignJWT({
       id: newUser._id.toString(),
       username: newUser.username,
       email: newUser.email,
       role: newUser.role,
-    }
-
-    const token = await new SignJWT(user)
+    })
       .setProtectedHeader({ alg: 'HS256' })
       .setExpirationTime('7d')
       .sign(secret)
 
-    return c.json({ token, user }, 201)
+    return c.json({ token }, 201)
   } catch (err) {
     console.error('[mobile/register POST]', err)
     return c.json({ error: 'Failed to register' }, 500)

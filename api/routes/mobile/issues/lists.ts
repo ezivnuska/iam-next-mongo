@@ -2,6 +2,7 @@
 // GET /api/mobile/issues/feed    — all issues feed
 // GET /api/mobile/issues/nearby  — nearest open issue within ~100 m
 // GET /api/mobile/issues/work    — issues the current user has applied to
+// GET /api/mobile/issues/mine    — issues where user is author, accepted worker, or contributor
 // GET /api/mobile/issues/counts  — active/completed counts
 // GET /api/mobile/issues/flagged — admin: flagged issues
 
@@ -13,6 +14,7 @@ import { serializeIssue } from '../../../../app/lib/mobile/serializers'
 import { attachIssueData } from '../../../../app/lib/mobile/attachIssueData'
 import Issue from '../../../../app/lib/models/issue'
 import Applicant from '../../../../app/lib/models/applicant'
+import Pledge from '../../../../app/lib/models/pledge'
 import '../../../../app/lib/models/image'
 import '../../../../app/lib/models/user'
 
@@ -116,6 +118,41 @@ lists.get('/api/mobile/issues/nearby', authMiddleware, async (c) => {
   } catch (err) {
     console.error('[mobile/issues/nearby GET]', err)
     return c.json({ error: 'Failed to check nearby issues' }, 500)
+  }
+})
+
+lists.get('/api/mobile/issues/mine', authMiddleware, async (c) => {
+  const token = c.get('token')
+  try {
+    await connectToDatabase()
+    const userId = new mongoose.Types.ObjectId(token.id)
+
+    const [applicantRecords, pledgeRecords] = await Promise.all([
+      Applicant.find({ userId, status: 'accepted' }).lean(),
+      Pledge.find({ userId }).lean(),
+    ])
+
+    const acceptedIssueIds = applicantRecords.map((a) => a.issueId)
+    const pledgedIssueIds  = pledgeRecords.map((p) => p.issueId)
+
+    const issues = await Issue.find({
+      status: { $ne: 'completed' },
+      $or: [
+        { author: userId },
+        { _id: { $in: acceptedIssueIds } },
+        { _id: { $in: pledgedIssueIds } },
+      ],
+    })
+      .sort({ createdAt: -1 })
+      .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
+      .populate('images')
+      .lean()
+
+    const issuesWithData = await attachIssueData(issues as any[])
+    return c.json({ issues: issuesWithData.map(serializeIssue) })
+  } catch (err) {
+    console.error('[mobile/issues/mine GET]', err)
+    return c.json({ error: 'Failed to fetch issues' }, 500)
   }
 })
 
