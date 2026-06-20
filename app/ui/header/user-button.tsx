@@ -20,11 +20,13 @@ export default function UserButton() {
     // Show sign in button if no user or if user is a guest (poker-only)
     const isUnauthenticated = !user || user.isGuest;
 
-    const profilePath = `/users/${user?.username}`;
+    const profilePath = user?.username ? `/users/${user.username}` : '/profile';
+    const pathnameUsername = pathname.match(/^\/users\/([^/]+)$/)?.[1];
+    const isOnOwnProfile = !!pathnameUsername && pathnameUsername === user?.username;
 
     return isUnauthenticated
         ? <SigninButton />
-        : pathname === profilePath
+        : isOnOwnProfile
             ? <SignOutButton />
             : (
                 <Link href={profilePath} className={clsx('w-[40px] h-[40px]', {
