@@ -1,26 +1,25 @@
 import { handlers } from "@/app/lib/auth"
 import { NextRequest, NextResponse } from "next/server"
 
-// NextAuth v5 beta.30 returns undefined on some paths (CSRF checks) and can
-// throw on signout when the session token is missing or malformed. Both cases
-// must produce a valid Response so Next.js 15 doesn't swallow into a 500.
+// NextAuth v5 beta.30 needs ctx.params.nextauth to determine which action
+// to run (signout, session, csrf, etc). Wrapping without forwarding ctx
+// causes handlers to return undefined — hence "no response returned".
+// Cast through any to bypass the incorrect 1-arg TypeScript type.
 
-export async function GET(req: NextRequest): Promise<Response> {
+export async function GET(req: NextRequest, ctx: any): Promise<Response> {
   try {
-    return (await (handlers.GET as any)(req)) ?? new Response(null, { status: 200 })
+    return (await (handlers.GET as any)(req, ctx)) ?? new Response(null, { status: 200 })
   } catch (err) {
     console.error('[auth/GET]', err)
     return new Response(null, { status: 200 })
   }
 }
 
-export async function POST(req: NextRequest): Promise<Response> {
+export async function POST(req: NextRequest, ctx: any): Promise<Response> {
   try {
-    return (await (handlers.POST as any)(req)) ?? new Response(null, { status: 200 })
+    return (await (handlers.POST as any)(req, ctx)) ?? new Response(null, { status: 200 })
   } catch (err) {
     console.error('[auth/POST]', err)
-    // On signout failure: clear the cookie client-side and return the JSON
-    // shape NextAuth's client SDK expects ({ url }) so it can redirect cleanly.
     const isSignout = new URL(req.url).pathname.endsWith('/signout')
     if (isSignout) {
       const cookieName = process.env.NODE_ENV === 'production'
