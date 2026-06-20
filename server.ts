@@ -24,12 +24,8 @@ interface SocketData {
   username?: string
 }
 
-type AppSocket = Socket<
-  Record<string, unknown>,
-  Record<string, unknown>,
-  Record<string, unknown>,
-  SocketData
->
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AppSocket = Socket<Record<string, any>, Record<string, any>, Record<string, any>, SocketData>
 
 const dev = process.env.NODE_ENV !== 'production'
 const hostname = 'localhost'
@@ -45,7 +41,7 @@ app.prepare().then(() => {
 			if (req.url?.startsWith('/api/mobile/')) {
 				return await honoHandler(req, res)
 			}
-			const parsedUrl = parse(req.url, true)
+			const parsedUrl = parse(req.url ?? '/', true)
 			await handle(req, res, parsedUrl)
 		} catch (err) {
 			console.error('Error occurred handling', req.url, err)
@@ -147,7 +143,7 @@ app.prepare().then(() => {
 			}
 		})
 
-		socket.on('poker:join_game', async ({ gameId, username }) => {
+		socket.on('poker:join_game', async ({ gameId, username }: { gameId: string; username?: string }) => {
 			console.log('[Socket] Received poker:join_game for game:', gameId, 'user:', socket.data.userId)
 			try {
 				if (!socket.data.userId) {
@@ -181,7 +177,7 @@ app.prepare().then(() => {
 			}
 		})
 
-		socket.on('poker:leave_game', async ({ gameId }) => {
+		socket.on('poker:leave_game', async ({ gameId }: { gameId: string }) => {
 			console.log('[Socket] Received poker:leave_game for game:', gameId, 'user:', socket.data.userId)
 			try {
 				if (!socket.data.userId) {
@@ -206,7 +202,7 @@ app.prepare().then(() => {
 			}
 		})
 
-		socket.on('poker:ready_for_next_turn', async ({ gameId }) => {
+		socket.on('poker:ready_for_next_turn', async ({ gameId }: { gameId: string }) => {
 			console.log('[Socket] Received poker:ready_for_next_turn for game:', gameId)
 			try {
 				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
@@ -222,7 +218,7 @@ app.prepare().then(() => {
 			}
 		})
 
-		socket.on('poker:bet', async ({ gameId, chipCount }) => {
+		socket.on('poker:bet', async ({ gameId, chipCount }: { gameId: string; chipCount: number }) => {
 			console.log('[Socket] Received poker:bet for game:', gameId, 'user:', socket.data.userId, 'chips:', chipCount)
 			try {
 				if (!socket.data.userId) {
@@ -247,7 +243,7 @@ app.prepare().then(() => {
 			}
 		})
 
-		socket.on('poker:fold', async ({ gameId }) => {
+		socket.on('poker:fold', async ({ gameId }: { gameId: string }) => {
 			console.log('[Socket] Received poker:fold for game:', gameId, 'user:', socket.data.userId)
 			try {
 				if (!socket.data.userId) {
@@ -272,7 +268,7 @@ app.prepare().then(() => {
 			}
 		})
 
-		socket.on('poker:set_timer_action', async ({ gameId, timerAction, betAmount }) => {
+		socket.on('poker:set_timer_action', async ({ gameId, timerAction, betAmount }: { gameId: string; timerAction: string; betAmount?: number }) => {
 			console.log('[Socket] Received poker:set_timer_action for game:', gameId, 'user:', socket.data.userId, 'action:', timerAction)
 			try {
 				if (!socket.data.userId) {
@@ -303,7 +299,7 @@ app.prepare().then(() => {
 			}
 		})
 
-		socket.on('poker:set_presence', async ({ gameId, isAway }) => {
+		socket.on('poker:set_presence', async ({ gameId, isAway }: { gameId: string; isAway: boolean }) => {
 			console.log('[Socket] Received poker:set_presence for game:', gameId, 'user:', socket.data.userId, 'isAway:', isAway)
 			try {
 				if (!socket.data.userId) {
@@ -329,7 +325,7 @@ app.prepare().then(() => {
 			}
 		})
 
-		socket.on('poker:winner_notification_complete', async ({ gameId }) => {
+		socket.on('poker:winner_notification_complete', async ({ gameId }: { gameId: string }) => {
 			console.log('[Socket] Received poker:winner_notification_complete for game:', gameId)
 			try {
 				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
@@ -346,11 +342,11 @@ app.prepare().then(() => {
 			}
 		})
 
-		socket.on('issue:join', ({ issueId }) => {
+		socket.on('issue:join', ({ issueId }: { issueId?: string }) => {
 			if (issueId) socket.join(`issue:${issueId}`)
 		})
 
-		socket.on('issue:leave', ({ issueId }) => {
+		socket.on('issue:leave', ({ issueId }: { issueId?: string }) => {
 			if (issueId) socket.leave(`issue:${issueId}`)
 		})
 

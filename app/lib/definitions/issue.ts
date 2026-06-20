@@ -38,6 +38,7 @@ export interface IIssue extends Document {
   location?: { latitude: number; longitude: number }
   locationVisible?: boolean
   flagged?: boolean
+  flaggedBy?: Types.ObjectId[]
   images?: Types.ObjectId[]
   likes?: Types.ObjectId[]
   completion?: ICompletion | null

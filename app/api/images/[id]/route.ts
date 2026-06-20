@@ -15,6 +15,9 @@ export async function DELETE(req: Request) {
 
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (err: any) {
+    if (err?.message === 'Forbidden') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     console.error(err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

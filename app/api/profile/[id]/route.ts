@@ -6,6 +6,7 @@ import UserModel from "@/app/lib/models/user";
 import bcrypt from "bcrypt";
 import ImageModel from "@/app/lib/models/image";
 import { requireAuth } from "@/app/lib/utils/auth";
+import { isValidObjectId } from "@/app/lib/utils/validation";
 
 export async function POST(req: NextRequest) {
     try {
@@ -17,8 +18,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "id and imageId required" }, { status: 400 });
         }
 
-        // Validate imageId is a valid MongoDB ObjectId (24 hex characters)
-        if (!/^[a-f\d]{24}$/i.test(imageId)) {
+        if (!isValidObjectId(imageId)) {
             return NextResponse.json({ error: "Invalid imageId format" }, { status: 400 });
         }
 

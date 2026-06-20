@@ -1,6 +1,15 @@
 // app/lib/mobile/serializers.ts
 
-export function serializeReport(r: any) {
+import type {
+  IssueReport,
+  IssuePledge,
+  IssueApplicant,
+  IssueCompletion,
+  MobileIssue,
+  IssueAuthor,
+} from '@iam/types'
+
+export function serializeReport(r: any): IssueReport {
   const user = r.userId && typeof r.userId === 'object' ? r.userId : null
   return {
     id: r._id.toString(),
@@ -18,7 +27,7 @@ export function serializeResource(obj: any): { id: string; variants: any[] } | n
   return { id: obj._id.toString(), variants: obj.variants ?? [] };
 }
 
-export function serializeAuthor(author: any): { id: string; username: string; avatar: { id: string; variants: any[] } | null } | null {
+export function serializeAuthor(author: any): IssueAuthor | null {
   if (!author || typeof author !== "object" || !author._id) return null;
   return {
     id: author._id.toString(),
@@ -27,7 +36,7 @@ export function serializeAuthor(author: any): { id: string; username: string; av
   };
 }
 
-export function serializePledge(p: any) {
+export function serializePledge(p: any): IssuePledge {
   const user = p.userId && typeof p.userId === 'object' ? p.userId : null
   const anon = p.anonymous === true
   return {
@@ -44,7 +53,7 @@ export function serializePledge(p: any) {
   }
 }
 
-export function serializeApplicant(a: any) {
+export function serializeApplicant(a: any): IssueApplicant {
   const user = a.userId && typeof a.userId === 'object' ? a.userId : null
   return {
     id: a._id.toString(),
@@ -64,7 +73,7 @@ export function serializeApplicant(a: any) {
   }
 }
 
-export function serializeCompletion(c: any, issueId?: string) {
+export function serializeCompletion(c: any, issueId?: string): IssueCompletion {
   return {
     id: c._id.toString(),
     issueId: issueId ?? c.issueId?.toString(),
@@ -82,7 +91,7 @@ export function serializeCompletion(c: any, issueId?: string) {
   }
 }
 
-export function serializeIssue(n: any) {
+export function serializeIssue(n: any): MobileIssue {
   const result: Record<string, any> = {
     id: n._id.toString(),
     issueType: n.issueType,
@@ -110,7 +119,7 @@ export function serializeIssue(n: any) {
   if (author) result.author = author;
   if (Array.isArray(n.reports) && n.reports.length > 0)
     result.reports = n.reports.map(serializeReport)
-  return result;
+  return result as MobileIssue;
 }
 
 // For routes that build a friendship map keyed by the other user's ID

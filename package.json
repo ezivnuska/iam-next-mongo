@@ -8,6 +8,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@iam/types": "workspace:*",
     "@aws-sdk/client-s3": "^3.946.0",
     "@hono/node-server": "^1.14.0",
     "hono": "^4.7.0",

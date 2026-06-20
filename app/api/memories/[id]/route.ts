@@ -10,6 +10,7 @@ import { transformPopulatedImage, transformPopulatedAuthor } from "@/app/lib/uti
 import { logActivity, getRequestMetadata } from "@/app/lib/utils/activity-logger";
 import { requireAuth } from "@/app/lib/utils/auth";
 import { CONTENT_POPULATE_CONFIG } from "@/app/lib/utils/db-query-config";
+import { isValidObjectId } from "@/app/lib/utils/validation";
 
 interface PopulatedMemoryObj {
   _id: Types.ObjectId;
@@ -50,7 +51,7 @@ export async function PUT(req: Request) {
     }
 
     // Validate memory ID format
-    if (!/^[a-f\d]{24}$/i.test(id)) {
+    if (!isValidObjectId(id)) {
       return NextResponse.json({ error: "Invalid memory ID format" }, { status: 400 });
     }
 
@@ -75,7 +76,7 @@ export async function PUT(req: Request) {
     }
 
     // Validate imageId format if provided
-    if (imageId && imageId !== null && !/^[a-f\d]{24}$/i.test(imageId)) {
+    if (imageId && imageId !== null && !isValidObjectId(imageId)) {
       return NextResponse.json({ error: "Invalid image ID" }, { status: 400 });
     }
 
@@ -154,7 +155,7 @@ export async function DELETE(req: Request) {
     }
 
     // Validate memory ID format
-    if (!/^[a-f\d]{24}$/i.test(id)) {
+    if (!isValidObjectId(id)) {
       return NextResponse.json({ error: "Invalid memory ID format" }, { status: 400 });
     }
 

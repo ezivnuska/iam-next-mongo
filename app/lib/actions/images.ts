@@ -78,6 +78,7 @@ export async function deleteImage(imageId: string) {
 
     const image = await ImageModel.findById(imageId);
     if (!image) throw new Error("Image not found");
+    if (image.userId.toString() !== userId) throw new Error("Forbidden");
 
     // Save image data before deletion for activity log
     const imageData = {
