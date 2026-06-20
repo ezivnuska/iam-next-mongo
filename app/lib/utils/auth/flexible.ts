@@ -4,9 +4,8 @@
 import { jwtVerify } from 'jose'
 import { auth } from '@/app/lib/auth'
 
-const secret = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || 'change-this-secret'
-)
+if (!process.env.NEXTAUTH_SECRET) throw new Error('NEXTAUTH_SECRET is not set')
+const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET)
 
 export async function requireAuthFlexible(req: Request): Promise<{ id: string; role?: string }> {
   const authHeader = req.headers.get('authorization')

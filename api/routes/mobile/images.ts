@@ -103,6 +103,10 @@ images.post('/api/mobile/images', authMiddleware, async (c) => {
     const baseFilename = uuidv4()
     const variants: any[] = []
 
+    const MIME: Record<string, string> = {
+      jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp',
+    }
+
     for (const { name, width } of VARIANT_DEFINITIONS) {
       const sharpImg = width
         ? sharp(buffer).rotate().resize({ width, withoutEnlargement: true })
@@ -115,7 +119,7 @@ images.post('/api/mobile/images', authMiddleware, async (c) => {
         Bucket: process.env.AWS_BUCKET_NAME!,
         Key: key,
         Body: outputBuffer,
-        ContentType: file.type,
+        ContentType: MIME[meta.format ?? ''] ?? 'application/octet-stream',
       }))
       variants.push({ size: name, filename, width: meta.width ?? 0, height: meta.height ?? 0, url: getS3UrlFromKey(key) })
     }

@@ -10,7 +10,7 @@ import { UserDocument, UserRole } from "@/app/lib/definitions/user";
 
 const UserSchema = new Schema<UserDocument>(
   {
-    username: { type: String, required: true },
+    username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
     role: { type: String, enum: Object.values(UserRole), default: UserRole.User },
     bio: { type: String, default: "" },

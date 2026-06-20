@@ -12,7 +12,8 @@ import '../../../app/lib/models/image'
 import Rating from '../../../app/lib/models/rating'
 import { loginRateLimit } from '../../middleware/rate-limit'
 
-const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET || 'change-this-secret')
+if (!process.env.NEXTAUTH_SECRET) throw new Error('NEXTAUTH_SECRET is not set')
+const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET)
 
 const auth = new Hono()
 

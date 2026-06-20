@@ -32,15 +32,18 @@ export async function holdPledges(issueId: string): Promise<void> {
           return
         }
 
-        const pi = await stripe.paymentIntents.create({
-          amount: Math.round(pledge.amount * 100),
-          currency: 'usd',
-          customer: user.stripeCustomerId,
-          payment_method: user.stripeDefaultPaymentMethodId,
-          capture_method: 'manual',
-          confirm: true,
-          off_session: true,
-        })
+        const pi = await stripe.paymentIntents.create(
+          {
+            amount: Math.round(pledge.amount * 100),
+            currency: 'usd',
+            customer: user.stripeCustomerId,
+            payment_method: user.stripeDefaultPaymentMethodId,
+            capture_method: 'manual',
+            confirm: true,
+            off_session: true,
+          },
+          { idempotencyKey: `hold-pledge-${pledge._id}` }
+        )
 
         await Pledge.findByIdAndUpdate(pledge._id, { stripePaymentIntentId: pi.id })
       } catch (err: any) {

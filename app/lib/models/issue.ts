@@ -56,5 +56,10 @@ const issueSchema = new Schema<IIssue>(
   { timestamps: true }
 )
 
+issueSchema.index({ status: 1 })
+issueSchema.index({ author: 1 })
+issueSchema.index({ flagged: 1 })
+issueSchema.index({ 'completion.status': 1, 'completion.autoApproveAt': 1 })
+
 const Issue: Model<IIssue> = mongoose.models.Issue || mongoose.model<IIssue>('Issue', issueSchema)
 export default Issue

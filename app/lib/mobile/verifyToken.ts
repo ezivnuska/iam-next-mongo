@@ -3,9 +3,8 @@
 import { jwtVerify } from "jose";
 import { NextRequest } from "next/server";
 
-const secret = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || "change-this-secret"
-);
+if (!process.env.NEXTAUTH_SECRET) throw new Error('NEXTAUTH_SECRET is not set')
+const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
 
 export async function verifyToken(req: NextRequest): Promise<{ id: string; role?: string } | null> {
   const authHeader = req.headers.get("authorization");

@@ -637,10 +637,13 @@ sub.post('/api/mobile/issues/:id/commission/rating', authMiddleware, async (c) =
     if (autoDecision === 'approved') {
       const claimed = await Issue.findOneAndUpdate(
         { _id: issueId, 'completion.status': 'pending' },
-        { $set: { 'completion.status': 'approved', status: 'completed' } }
+        { $set: { 'completion.status': 'approved' } }
       )
       if (claimed) {
-        try { await settleIssue(issueId) } catch (err) {
+        try {
+          await settleIssue(issueId)
+          await Issue.findByIdAndUpdate(issueId, { $set: { status: 'completed' } })
+        } catch (err) {
           console.error('[commission/rating] settleIssue failed:', err)
         }
       }
@@ -740,14 +743,17 @@ sub.post('/api/mobile/issues/:id/commission/review', authMiddleware, async (c) =
     if (newStatus === 'approved') {
       const claimed = await Issue.findOneAndUpdate(
         { _id: issueId, 'completion.status': 'pending' },
-        { $set: { 'completion.status': 'approved', 'completion.reviews': reviews, status: 'completed' } }
+        { $set: { 'completion.status': 'approved', 'completion.reviews': reviews } }
       )
       if (!claimed) {
         const current = await Issue.findById(issueId).populate('images').populate('completion.images').lean() as any
         return c.json({ completion: serializeCompletion(current.completion, issueId) })
       }
 
-      try { await settleIssue(issueId) } catch (err) {
+      try {
+        await settleIssue(issueId)
+        await Issue.findByIdAndUpdate(issueId, { $set: { status: 'completed' } })
+      } catch (err) {
         console.error('[commission/review] settleIssue failed:', err)
       }
 
