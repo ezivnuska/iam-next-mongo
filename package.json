@@ -1,9 +1,9 @@
 {
   "private": true,
   "scripts": {
-    "dev": "NODE_OPTIONS='--max-old-space-size=4096' node server.js",
+    "dev": "NODE_OPTIONS='--max-old-space-size=4096' tsx server.ts",
     "build": "next build",
-    "start": "NODE_ENV=production node server.js",
+    "start": "NODE_ENV=production tsx server.ts",
     "next:dev": "next dev",
     "lint": "next lint",
     "api": "tsx --tsconfig api/tsconfig.json api/index.ts",
