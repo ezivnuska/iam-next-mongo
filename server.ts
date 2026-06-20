@@ -68,7 +68,10 @@ app.prepare().then(() => {
 		'x-internal-secret': process.env.INTERNAL_SECRET ?? '',
 	}
 
-	const jwtSecret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET || 'change-this-secret')
+	const getJwtSecret = () => {
+		if (!process.env.NEXTAUTH_SECRET) throw new Error('NEXTAUTH_SECRET is not set')
+		return new TextEncoder().encode(process.env.NEXTAUTH_SECRET)
+	}
 
 	// Track online users
 	const onlineUsers = new Map<string, Set<string>>()
@@ -98,7 +101,7 @@ app.prepare().then(() => {
 			if (!userId || !token) return
 
 			try {
-				const { payload } = await jwtVerify(token, jwtSecret)
+				const { payload } = await jwtVerify(token, getJwtSecret())
 				if (payload.id !== userId) return
 			} catch {
 				return
