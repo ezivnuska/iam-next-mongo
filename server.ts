@@ -1,4 +1,3 @@
-// @ts-nocheck
 // server.ts
 // Custom Next.js server with Socket.IO and Hono mobile API support.
 // Replaces server.js — run via: tsx server.ts
@@ -15,9 +14,22 @@ config({ path: path.resolve(process.cwd(), '.env') })
 import { createServer } from 'http'
 import { parse } from 'url'
 import next from 'next'
-import { Server } from 'socket.io'
+import { Server, Socket } from 'socket.io'
+import { jwtVerify } from 'jose'
 import { getRequestListener } from '@hono/node-server'
 import honoApp from './api/app'
+
+interface SocketData {
+  userId: string
+  username?: string
+}
+
+type AppSocket = Socket<
+  Record<string, unknown>,
+  Record<string, unknown>,
+  Record<string, unknown>,
+  SocketData
+>
 
 const dev = process.env.NODE_ENV !== 'production'
 const hostname = 'localhost'
@@ -55,15 +67,17 @@ app.prepare().then(() => {
 	// Expose io to Hono routes via global (same process, no HTTP bridge needed)
 	global.io = io
 
-	const internalHeaders = {
+	const internalHeaders: Record<string, string> = {
 		'Content-Type': 'application/json',
-		'x-internal-secret': process.env.INTERNAL_SECRET,
+		'x-internal-secret': process.env.INTERNAL_SECRET ?? '',
 	}
 
-	// Track online users
-	const onlineUsers = new Map() // Map<userId, Set<socketId>>
+	const jwtSecret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET || 'change-this-secret')
 
-	let staleGameCheckInterval = null
+	// Track online users
+	const onlineUsers = new Map<string, Set<string>>()
+
+	let staleGameCheckInterval: ReturnType<typeof setInterval> | null = null
 
 	function startStaleGameCheck() {
 		if (!staleGameCheckInterval) {
@@ -81,21 +95,29 @@ app.prepare().then(() => {
 		}
 	}
 
-	io.on('connection', (socket) => {
-		socket.on('register', async (data) => {
-			const userId = typeof data === 'string' ? data : data?.userId
-			const username = typeof data === 'object' ? data?.username : undefined
+	io.on('connection', (socket: AppSocket) => {
+		socket.on('register', async (data: unknown) => {
+			if (!data || typeof data !== 'object') return
+			const { userId, token, username } = data as Record<string, string | undefined>
+			if (!userId || !token) return
+
+			try {
+				const { payload } = await jwtVerify(token, jwtSecret)
+				if (payload.id !== userId) return
+			} catch {
+				return
+			}
 
 			if (userId) {
+				socket.data.userId = userId
+				socket.data.username = username
 				socket.join(`user:${userId}`)
-				socket.userId = userId
-				socket.username = username
 
 				const isNewUser = !onlineUsers.has(userId)
 				if (isNewUser) {
 					onlineUsers.set(userId, new Set())
 				}
-				onlineUsers.get(userId).add(socket.id)
+				onlineUsers.get(userId)!.add(socket.id)
 
 				setImmediate(() => {
 					const currentOnlineUsers = Array.from(onlineUsers.keys())
@@ -119,16 +141,16 @@ app.prepare().then(() => {
 					if (!response.ok) {
 						console.log('[Socket] Player reconnection check completed (no active game)')
 					}
-				} catch (error) {
-					console.error('[Socket] Error checking poker game on reconnect:', error.message)
+				} catch (error: unknown) {
+					console.error('[Socket] Error checking poker game on reconnect:', error instanceof Error ? error.message : error)
 				}
 			}
 		})
 
 		socket.on('poker:join_game', async ({ gameId, username }) => {
-			console.log('[Socket] Received poker:join_game for game:', gameId, 'user:', socket.userId)
+			console.log('[Socket] Received poker:join_game for game:', gameId, 'user:', socket.data.userId)
 			try {
-				if (!socket.userId) {
+				if (!socket.data.userId) {
 					socket.emit('poker:join_error', { error: 'Not authenticated - register first' })
 					return
 				}
@@ -138,7 +160,7 @@ app.prepare().then(() => {
 					body: JSON.stringify({
 						signal: 'poker:join_game',
 						gameId,
-						userId: socket.userId,
+						userId: socket.data.userId,
 						username: username || 'Guest',
 					}),
 				})
@@ -153,23 +175,23 @@ app.prepare().then(() => {
 						username: result.username,
 					})
 				}
-			} catch (error) {
+			} catch (error: unknown) {
 				console.error('[Socket] Error processing join_game:', error)
-				socket.emit('poker:join_error', { error: error.message || 'Failed to join game' })
+				socket.emit('poker:join_error', { error: error instanceof Error ? error.message : 'Failed to join game' })
 			}
 		})
 
 		socket.on('poker:leave_game', async ({ gameId }) => {
-			console.log('[Socket] Received poker:leave_game for game:', gameId, 'user:', socket.userId)
+			console.log('[Socket] Received poker:leave_game for game:', gameId, 'user:', socket.data.userId)
 			try {
-				if (!socket.userId) {
+				if (!socket.data.userId) {
 					socket.emit('poker:leave_error', { error: 'Not authenticated - register first' })
 					return
 				}
 				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
 					method: 'POST',
 					headers: internalHeaders,
-					body: JSON.stringify({ signal: 'poker:leave_game', gameId, userId: socket.userId }),
+					body: JSON.stringify({ signal: 'poker:leave_game', gameId, userId: socket.data.userId }),
 				})
 				const result = await response.json()
 				if (!response.ok) {
@@ -178,9 +200,9 @@ app.prepare().then(() => {
 				} else {
 					socket.emit('poker:leave_success', { gameState: result.gameState })
 				}
-			} catch (error) {
+			} catch (error: unknown) {
 				console.error('[Socket] Error processing leave_game:', error)
-				socket.emit('poker:leave_error', { error: error.message || 'Failed to leave game' })
+				socket.emit('poker:leave_error', { error: error instanceof Error ? error.message : 'Failed to leave game' })
 			}
 		})
 
@@ -195,22 +217,22 @@ app.prepare().then(() => {
 				if (!response.ok) {
 					console.error('[Socket] API call failed:', await response.text())
 				}
-			} catch (error) {
+			} catch (error: unknown) {
 				console.error('[Socket] Error processing ready_for_next_turn:', error)
 			}
 		})
 
 		socket.on('poker:bet', async ({ gameId, chipCount }) => {
-			console.log('[Socket] Received poker:bet for game:', gameId, 'user:', socket.userId, 'chips:', chipCount)
+			console.log('[Socket] Received poker:bet for game:', gameId, 'user:', socket.data.userId, 'chips:', chipCount)
 			try {
-				if (!socket.userId) {
+				if (!socket.data.userId) {
 					socket.emit('poker:bet_error', { error: 'Not authenticated - register first' })
 					return
 				}
 				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
 					method: 'POST',
 					headers: internalHeaders,
-					body: JSON.stringify({ signal: 'poker:bet', gameId, userId: socket.userId, chipCount }),
+					body: JSON.stringify({ signal: 'poker:bet', gameId, userId: socket.data.userId, chipCount }),
 				})
 				const result = await response.json()
 				if (!response.ok) {
@@ -219,23 +241,23 @@ app.prepare().then(() => {
 				} else {
 					socket.emit('poker:bet_success', { success: true })
 				}
-			} catch (error) {
+			} catch (error: unknown) {
 				console.error('[Socket] Error processing bet:', error)
-				socket.emit('poker:bet_error', { error: error.message || 'Failed to place bet' })
+				socket.emit('poker:bet_error', { error: error instanceof Error ? error.message : 'Failed to place bet' })
 			}
 		})
 
 		socket.on('poker:fold', async ({ gameId }) => {
-			console.log('[Socket] Received poker:fold for game:', gameId, 'user:', socket.userId)
+			console.log('[Socket] Received poker:fold for game:', gameId, 'user:', socket.data.userId)
 			try {
-				if (!socket.userId) {
+				if (!socket.data.userId) {
 					socket.emit('poker:fold_error', { error: 'Not authenticated - register first' })
 					return
 				}
 				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
 					method: 'POST',
 					headers: internalHeaders,
-					body: JSON.stringify({ signal: 'poker:fold', gameId, userId: socket.userId }),
+					body: JSON.stringify({ signal: 'poker:fold', gameId, userId: socket.data.userId }),
 				})
 				const result = await response.json()
 				if (!response.ok) {
@@ -244,16 +266,16 @@ app.prepare().then(() => {
 				} else {
 					socket.emit('poker:fold_success', { success: true })
 				}
-			} catch (error) {
+			} catch (error: unknown) {
 				console.error('[Socket] Error processing fold:', error)
-				socket.emit('poker:fold_error', { error: error.message || 'Failed to fold' })
+				socket.emit('poker:fold_error', { error: error instanceof Error ? error.message : 'Failed to fold' })
 			}
 		})
 
 		socket.on('poker:set_timer_action', async ({ gameId, timerAction, betAmount }) => {
-			console.log('[Socket] Received poker:set_timer_action for game:', gameId, 'user:', socket.userId, 'action:', timerAction)
+			console.log('[Socket] Received poker:set_timer_action for game:', gameId, 'user:', socket.data.userId, 'action:', timerAction)
 			try {
-				if (!socket.userId) {
+				if (!socket.data.userId) {
 					socket.emit('poker:timer_error', { error: 'Not authenticated - register first' })
 					return
 				}
@@ -263,7 +285,7 @@ app.prepare().then(() => {
 					body: JSON.stringify({
 						signal: 'poker:set_timer_action',
 						gameId,
-						userId: socket.userId,
+						userId: socket.data.userId,
 						timerAction,
 						betAmount,
 					}),
@@ -275,16 +297,16 @@ app.prepare().then(() => {
 				} else {
 					socket.emit('poker:timer_success', { success: true })
 				}
-			} catch (error) {
+			} catch (error: unknown) {
 				console.error('[Socket] Error setting timer action:', error)
-				socket.emit('poker:timer_error', { error: error.message || 'Failed to set timer action' })
+				socket.emit('poker:timer_error', { error: error instanceof Error ? error.message : 'Failed to set timer action' })
 			}
 		})
 
 		socket.on('poker:set_presence', async ({ gameId, isAway }) => {
-			console.log('[Socket] Received poker:set_presence for game:', gameId, 'user:', socket.userId, 'isAway:', isAway)
+			console.log('[Socket] Received poker:set_presence for game:', gameId, 'user:', socket.data.userId, 'isAway:', isAway)
 			try {
-				if (!socket.userId) {
+				if (!socket.data.userId) {
 					console.error('[Socket] Set presence failed - not authenticated')
 					return
 				}
@@ -294,7 +316,7 @@ app.prepare().then(() => {
 					body: JSON.stringify({
 						signal: 'poker:set_presence',
 						gameId,
-						userId: socket.userId,
+						userId: socket.data.userId,
 						isAway,
 					}),
 				})
@@ -302,7 +324,7 @@ app.prepare().then(() => {
 				if (!response.ok) {
 					console.error('[Socket] Set presence failed:', result.error)
 				}
-			} catch (error) {
+			} catch (error: unknown) {
 				console.error('[Socket] Error setting presence:', error)
 			}
 		})
@@ -319,7 +341,7 @@ app.prepare().then(() => {
 					const result = await response.json()
 					console.error('[Socket] Winner notification complete handler failed:', result.error)
 				}
-			} catch (error) {
+			} catch (error: unknown) {
 				console.error('[Socket] Error processing winner notification complete:', error)
 			}
 		})
@@ -333,8 +355,8 @@ app.prepare().then(() => {
 		})
 
 		socket.on('disconnect', () => {
-			if (socket.userId) {
-				const userId = socket.userId
+			if (socket.data.userId) {
+				const userId = socket.data.userId
 				const userSockets = onlineUsers.get(userId)
 
 				if (userSockets) {

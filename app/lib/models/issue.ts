@@ -47,6 +47,7 @@ const issueSchema = new Schema<IIssue>(
     location:        { type: { latitude: Number, longitude: Number }, _id: false },
     locationVisible: { type: Boolean, default: false },
     flagged:         { type: Boolean, default: false },
+    flaggedBy:       [{ type: Schema.Types.ObjectId, ref: 'User', default: [] }],
     images:          [{ type: Schema.Types.ObjectId, ref: 'Image', default: [] }],
     likes:           [{ type: Schema.Types.ObjectId, ref: 'User', default: [] }],
     completion:      { type: completionSchema, default: null },

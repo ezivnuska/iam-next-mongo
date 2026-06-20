@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
 import "@/app/lib/models/image"; // Required for populate("avatar")
-import { normalizeUser } from "@/app/lib/utils/normalizers";
+import { normalizePublicUser } from "@/app/lib/utils/normalizers";
 
 export async function GET(req: Request, { params }: { params: Promise<{ username: string }> }) {
   try {
@@ -20,7 +20,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ username
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json(normalizeUser(userDoc));
+    return NextResponse.json(normalizePublicUser(userDoc));
   } catch (err) {
     console.error("Error fetching user by username:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

@@ -340,13 +340,18 @@ sub.post('/api/mobile/issues/:id/images', authMiddleware, async (c) => {
 // ─── Flag ────────────────────────────────────────────────────────────────────
 
 sub.post('/api/mobile/issues/:id/flag', authMiddleware, async (c) => {
+  const token = c.get('token')
   const id = c.req.param('id')
   if (!isValidObjectId(id)) return c.json({ error: 'Invalid issue ID' }, 400)
 
   try {
     await connectToDatabase()
-    const issue = await Issue.findByIdAndUpdate(id, { flagged: true }, { new: true }).lean()
-    if (!issue) return c.json({ error: 'Issue not found' }, 404)
+    const issue = await Issue.findOneAndUpdate(
+      { _id: id, flaggedBy: { $ne: token.id } },
+      { flagged: true, $addToSet: { flaggedBy: token.id } },
+      { new: true }
+    ).lean()
+    if (!issue) return c.json({ error: 'Already flagged or not found' }, 409)
     return c.json({ ok: true })
   } catch (err) {
     console.error('[mobile/issues/flag POST]', err)

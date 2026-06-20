@@ -3,6 +3,7 @@
 // POST /api/mobile/issues       — create a new issue
 
 import { Hono } from 'hono'
+import { ISSUE_TYPES } from '@iam/types'
 import { authMiddleware, TokenPayload } from '../../../middleware/auth'
 import { connectToDatabase } from '../../../../app/lib/mongoose'
 import { serializeIssue } from '../../../../app/lib/mobile/serializers'
@@ -41,8 +42,7 @@ issues.post('/api/mobile/issues', authMiddleware, async (c) => {
   try {
     const { issueType, title: userTitle, content, imageId, location, locationVisible } = await c.req.json()
 
-    const validIssueTypes = ['Clean Up', 'Gardening', 'Hauling']
-    if (!issueType || !validIssueTypes.includes(issueType))
+    if (!issueType || !ISSUE_TYPES.includes(issueType))
       return c.json({ error: 'Invalid issue type' }, 400)
 
     if (userTitle && userTitle.length > 120)

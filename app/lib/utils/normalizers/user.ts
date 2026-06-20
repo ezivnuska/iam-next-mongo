@@ -34,3 +34,23 @@ export function normalizeUser(doc: UserDocument): User {
 export function normalizeUsers(rawUsers: any[]): User[] {
     return rawUsers.map(normalizeUser)
 }
+
+export function normalizePublicUser(doc: UserDocument) {
+    return {
+        id: doc._id.toString(),
+        username: doc.username,
+        bio: doc.bio,
+        avatar: doc.avatar && typeof doc.avatar === 'object' && 'variants' in doc.avatar
+            ? {
+                id: doc.avatar._id?.toString(),
+                variants: doc.avatar.variants.map((v: any) => ({
+                    size: v.size,
+                    filename: v.filename,
+                    width: v.width,
+                    height: v.height,
+                    url: v.url,
+                })),
+              }
+            : null,
+    }
+}
