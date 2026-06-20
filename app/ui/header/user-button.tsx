@@ -20,12 +20,14 @@ export default function UserButton() {
     // Show sign in button if no user or if user is a guest (poker-only)
     const isUnauthenticated = !user || user.isGuest;
 
+    const profilePath = `/users/${user?.username}`;
+
     return isUnauthenticated
         ? <SigninButton />
-        : pathname === '/profile'
+        : pathname === profilePath
             ? <SignOutButton />
             : (
-                <Link href='/profile' className={clsx('w-[40px] h-[40px]', {
+                <Link href={profilePath} className={clsx('w-[40px] h-[40px]', {
                     'w-[56px] h-[56px]': horizontalLayout,
                 })}>
                     <UserAvatar username={user.username} size={horizontalLayout ? 72 : 50} />
