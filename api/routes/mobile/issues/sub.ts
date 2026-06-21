@@ -537,6 +537,62 @@ sub.patch('/api/mobile/issues/:id/commission/extend', authMiddleware, async (c) 
   }
 })
 
+// POST /api/mobile/issues/:id/commission/cancel — accepted worker cancels their own contract
+sub.post('/api/mobile/issues/:id/commission/cancel', authMiddleware, async (c) => {
+  const token = c.get('token')
+  const issueId = c.req.param('id')
+  if (!isValidObjectId(issueId)) return c.json({ error: 'Invalid issue ID' }, 400)
+
+  try {
+    await connectToDatabase()
+
+    const current = await Applicant.findOne({ issueId, userId: token.id, status: 'accepted' }).populate(APPLICANT_USER_POPULATE)
+    if (!current) return c.json({ error: 'No accepted contract found for this user' }, 404)
+
+    current.status = 'pending'
+    current.acceptedAt = undefined
+    current.completionDeadline = undefined
+    await current.save()
+
+    const releasedSerialized = serializeApplicant(current.toObject())
+
+    const [allPledges, candidates] = await Promise.all([
+      Pledge.find({ issueId }).lean() as Promise<any[]>,
+      Applicant.find({ issueId, status: 'pending', bidAmount: { $exists: true, $ne: null }, _id: { $ne: current._id } })
+        .sort({ createdAt: 1 }).lean() as Promise<any[]>,
+    ])
+
+    const { selectFundedWinner } = await import('../../../../app/lib/mobile/fundingUtils')
+    const winner = await selectFundedWinner(candidates, allPledges)
+
+    if (!winner) {
+      releasePledgeHolds(issueId).catch((err) => console.error('[cancel] releasePledgeHolds failed:', err))
+      emitIssueApplicantAdded({ issueId, applicant: releasedSerialized })
+        .catch((err: any) => console.warn('[socket]', err?.message ?? err))
+      return c.json({ applicant: releasedSerialized, nextApplicant: null })
+    }
+
+    const nextApplicant = await Applicant.findByIdAndUpdate(
+      winner._id,
+      { status: 'accepted', acceptedAt: new Date(), completionDeadline: midnightFollowingDay() },
+      { new: true }
+    ).populate(APPLICANT_USER_POPULATE)
+
+    const nextSerialized = serializeApplicant(nextApplicant!.toObject())
+    holdPledges(issueId).catch((err) => console.error('[cancel] holdPledges failed:', err))
+
+    emitIssueApplicantAdded({ issueId, applicant: releasedSerialized })
+      .catch((err: any) => console.warn('[socket]', err?.message ?? err))
+    emitIssueApplicantAccepted({ issueId, applicant: nextSerialized })
+      .catch((err: any) => console.warn('[socket]', err?.message ?? err))
+
+    return c.json({ applicant: releasedSerialized, nextApplicant: nextSerialized })
+  } catch (err) {
+    console.error('[commission/cancel POST]', err)
+    return c.json({ error: 'Failed to cancel contract' }, 500)
+  }
+})
+
 // POST /api/mobile/issues/:id/commission/reassign
 sub.post('/api/mobile/issues/:id/commission/reassign', authMiddleware, async (c) => {
   const token = c.get('token')
