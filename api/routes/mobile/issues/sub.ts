@@ -209,8 +209,6 @@ sub.post('/api/mobile/issues/:id/pledges', authMiddleware, async (c) => {
 
     const issue = await Issue.findById(id).lean() as any
     if (!issue) return c.json({ error: 'Issue not found' }, 404)
-    if (issue.author.toString() === token.id)
-      return c.json({ error: 'You cannot pledge on your own issue' }, 403)
 
     if (applicantId) {
       const target = await Applicant.findOne({ _id: applicantId, issueId: id }).lean() as any
