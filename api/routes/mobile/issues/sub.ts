@@ -53,6 +53,7 @@ sub.post('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
     const body = await c.req.json().catch(() => ({}))
     const rawBid = body.bidAmount
     const bidAmount = typeof rawBid === 'number' && Number.isFinite(rawBid) && rawBid > 0 && rawBid <= 10000 ? rawBid : undefined
+    const acceptPledge = body.acceptPledge === true
 
     const issue = await Issue.findById(id).lean()
     if (!issue) return c.json({ error: 'Issue not found' }, 404)
@@ -65,6 +66,23 @@ sub.post('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
     if (pledge) return c.json({ error: 'Contributors cannot place a bid on an issue they have funded' }, 403)
 
     const applicant = await Applicant.create({ userId: token.id, issueId: id, bidAmount })
+
+    // acceptPledge: accept immediately if sole applicant, otherwise join the queue
+    if (acceptPledge) {
+      const otherApplicants = await Applicant.exists({ issueId: id, _id: { $ne: applicant._id }, status: 'pending' })
+      if (!otherApplicants) {
+        const accepted = await Applicant.findByIdAndUpdate(
+          applicant._id,
+          { status: 'accepted', acceptedAt: new Date(), completionDeadline: midnightFollowingDay() },
+          { new: true },
+        ).populate(APPLICANT_USER_POPULATE)
+        holdPledges(id).catch((err) => console.error('[acceptPledge] holdPledges failed:', err))
+        const serialized = serializeApplicant(accepted!.toObject())
+        emitIssueApplicantAccepted({ issueId: id, applicant: serialized })
+          .catch((err: any) => console.warn('[socket]', err?.message ?? err))
+        return c.json({ applicant: serialized }, 201)
+      }
+    }
 
     if (bidAmount != null) {
       const winner = await tryAutoAccept(id, [applicant._id])
