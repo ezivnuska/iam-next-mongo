@@ -98,7 +98,7 @@ lists.get('/api/mobile/issues/nearby', authMiddleware, async (c) => {
     await connectToDatabase()
     const DELTA = 0.002
     const candidates = await Issue.find({
-      status: 'open',
+      status: { $ne: 'completed' },
       'location.latitude': { $gte: lat - DELTA, $lte: lat + DELTA },
       'location.longitude': { $gte: lng - DELTA, $lte: lng + DELTA },
     })
