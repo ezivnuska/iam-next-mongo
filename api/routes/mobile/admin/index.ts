@@ -59,10 +59,16 @@ admin.post('/api/mobile/admin/cleanup', authMiddleware, async (c) => {
     await Promise.allSettled(
       (pledgesWithStripe as any[]).map(async (p) => {
         try {
-          await stripeClient.refunds.create({ payment_intent: p.stripePaymentIntentId })
+          const pi = await stripeClient.paymentIntents.retrieve(p.stripePaymentIntentId)
+          if (pi.status === 'requires_capture') {
+            await stripeClient.paymentIntents.cancel(p.stripePaymentIntentId)
+          } else if (pi.status === 'succeeded') {
+            await stripeClient.refunds.create({ payment_intent: p.stripePaymentIntentId })
+          }
+          // canceled or other terminal states — nothing to do
         } catch (err: any) {
           if (err?.code !== 'charge_already_refunded')
-            console.error(`[admin/cleanup] Failed to refund pledge PI ${p.stripePaymentIntentId}:`, err)
+            console.error(`[admin/cleanup] Failed to reverse pledge PI ${p.stripePaymentIntentId}:`, err)
         }
       })
     )
@@ -112,10 +118,15 @@ admin.post('/api/mobile/admin/reset', authMiddleware, async (c) => {
     await Promise.allSettled(
       (pledgesWithStripe as any[]).map(async (p) => {
         try {
-          await stripeClient.refunds.create({ payment_intent: p.stripePaymentIntentId })
+          const pi = await stripeClient.paymentIntents.retrieve(p.stripePaymentIntentId)
+          if (pi.status === 'requires_capture') {
+            await stripeClient.paymentIntents.cancel(p.stripePaymentIntentId)
+          } else if (pi.status === 'succeeded') {
+            await stripeClient.refunds.create({ payment_intent: p.stripePaymentIntentId })
+          }
         } catch (err: any) {
           if (err?.code !== 'charge_already_refunded')
-            console.error(`[admin/reset] Failed to refund pledge PI ${p.stripePaymentIntentId}:`, err)
+            console.error(`[admin/reset] Failed to reverse pledge PI ${p.stripePaymentIntentId}:`, err)
         }
       })
     )

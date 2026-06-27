@@ -1,6 +1,6 @@
 // api/routes/mobile/issues/lists.ts
 // GET /api/mobile/issues/feed    — all issues feed
-// GET /api/mobile/issues/nearby  — nearest open issue within ~100 m
+// GET /api/mobile/issues/nearby  — nearest active (non-completed) issue within ~100 m
 // GET /api/mobile/issues/work    — issues the current user has applied to
 // GET /api/mobile/issues/mine    — issues where user is author, accepted worker, or contributor
 // GET /api/mobile/issues/counts  — active/completed counts
