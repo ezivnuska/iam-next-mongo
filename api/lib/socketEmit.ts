@@ -86,6 +86,10 @@ export async function emitIssueCompletionReviewed(payload: any): Promise<void> {
   await emit('issue:completion_reviewed', payload, `issue:${payload.issueId}`)
 }
 
+export async function emitIssueReviewSubmitted(payload: any): Promise<void> {
+  await emit('issue:review_submitted', payload, `issue:${payload.issueId}`, payload.actorId)
+}
+
 export async function emitIssuePledgeAdded(payload: any): Promise<void> {
   await emit('issue:pledge_added', payload, `issue:${payload.issueId}`, payload.actorId)
 }

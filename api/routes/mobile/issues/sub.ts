@@ -26,6 +26,7 @@ import {
   emitIssueApplicantAccepted,
   emitIssueCompletionSubmitted,
   emitIssueCompletionReviewed,
+  emitIssueReviewSubmitted,
   emitIssuePledgeAdded,
   emitIssuePledgeRemoved,
 } from '../../../lib/socketEmit'
@@ -755,6 +756,13 @@ sub.post('/api/mobile/issues/:id/commission/rating', authMiddleware, async (c) =
         issueId,
         completion: serializedCompletion,
         ...(serializedNeed ? { issue: serializedNeed } : {}),
+      }).catch((err: any) => console.warn('[socket]', err?.message ?? err))
+    } else if (issue.completion.status === 'pending') {
+      emitIssueReviewSubmitted({
+        issueId,
+        actorId: token.id,
+        userId: token.id,
+        vote: score >= 3 ? 'approve' : 'deny',
       }).catch((err: any) => console.warn('[socket]', err?.message ?? err))
     }
 
