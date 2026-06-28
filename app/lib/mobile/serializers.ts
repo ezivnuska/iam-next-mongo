@@ -99,6 +99,10 @@ export function serializeIssue(n: any) {
   result.locationVisible = n.locationVisible === true;
   const completionStatus = n.completion?.status ?? n.completionStatus ?? null
   if (completionStatus != null) result.completionStatus = completionStatus
+  const rawAutoApproveAt = n.completion?.autoApproveAt
+  if (rawAutoApproveAt) {
+    result.autoApproveAt = rawAutoApproveAt instanceof Date ? rawAutoApproveAt.toISOString() : rawAutoApproveAt
+  }
   if (n.flagged === true) result.flagged = true
   // Support both new `images[]` and legacy `image` field on old documents
   const imageDocs = Array.isArray(n.images) && n.images.length > 0
