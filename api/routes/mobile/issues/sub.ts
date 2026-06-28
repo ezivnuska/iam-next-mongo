@@ -463,6 +463,11 @@ sub.post('/api/mobile/issues/:id/commission', authMiddleware, async (c) => {
     const issue = await Issue.findById(issueId)
     if (!issue) return c.json({ error: 'Issue not found' }, 404)
 
+    if ((issue as any).completion?.status === 'denied') {
+      ;(issue as any).previousCompletions = [...((issue as any).previousCompletions ?? []), (issue as any).completion]
+      issue.markModified('previousCompletions')
+    }
+
     const autoApproveAt = new Date(Date.now() + 48 * 60 * 60 * 1000)
     issue.completion = {
       applicantId: (applicant as any)._id,

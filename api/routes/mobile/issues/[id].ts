@@ -27,6 +27,7 @@ issueById.get('/api/mobile/issues/:id', authMiddleware, async (c) => {
       .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
       .populate('images')
       .populate('completion.images')
+      .populate('previousCompletions.images')
       .populate({ path: 'reports.userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
       .populate({ path: 'reports.imageId', select: '_id variants' })
       .lean()

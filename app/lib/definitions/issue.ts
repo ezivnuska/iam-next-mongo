@@ -42,6 +42,7 @@ export interface IIssue extends Document {
   images?: Types.ObjectId[]
   likes?: Types.ObjectId[]
   completion?: ICompletion | null
+  previousCompletions?: ICompletion[]
   reports?: IIssueReport[]
 }
 

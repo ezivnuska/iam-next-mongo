@@ -112,6 +112,10 @@ export function serializeIssue(n: any) {
   if (serializedImages.length > 0) result.images = serializedImages
   const author = serializeAuthor(n.author);
   if (author) result.author = author;
+  if (Array.isArray(n.previousCompletions) && n.previousCompletions.length > 0) {
+    const issueId = n._id.toString()
+    result.previousCompletions = n.previousCompletions.map((c: any) => serializeCompletion(c, issueId))
+  }
   if (Array.isArray(n.reports) && n.reports.length > 0)
     result.reports = n.reports.map(serializeReport)
   return result;

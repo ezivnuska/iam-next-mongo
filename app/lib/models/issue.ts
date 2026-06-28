@@ -50,8 +50,9 @@ const issueSchema = new Schema<IIssue>(
     flaggedBy:       [{ type: Schema.Types.ObjectId, ref: 'User', default: [] }],
     images:          [{ type: Schema.Types.ObjectId, ref: 'Image', default: [] }],
     likes:           [{ type: Schema.Types.ObjectId, ref: 'User', default: [] }],
-    completion:      { type: completionSchema, default: null },
-    reports:         { type: [issueReportSchema], default: [] },
+    completion:            { type: completionSchema, default: null },
+    previousCompletions:   { type: [completionSchema], default: [] },
+    reports:               { type: [issueReportSchema], default: [] },
   },
   { timestamps: true }
 )
