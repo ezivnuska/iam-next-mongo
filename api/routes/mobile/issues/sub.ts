@@ -38,6 +38,7 @@ import Fee from '../../../../app/lib/models/fee'
 import ImageModel from '../../../../app/lib/models/image'
 import stripe from '../../../../app/lib/stripe'
 import { deleteS3File } from '../../../../app/lib/aws/s3'
+import { sendPushToUsers } from '../../../../app/lib/mobile/sendPush'
 import '../../../../app/lib/models/user'
 
 const sub = new Hono<{ Variables: { token: TokenPayload } }>()
@@ -81,6 +82,8 @@ sub.post('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
         const serialized = serializeApplicant(accepted!.toObject())
         emitIssueApplicantAccepted({ issueId: id, applicant: serialized })
           .catch((err: any) => console.warn('[socket]', err?.message ?? err))
+        sendPushToUsers([serialized.userId], 'Bid accepted', "Head to the site — you're on the job.", { issueId: id })
+          .catch((err: any) => console.warn('[push]', err?.message ?? err))
         return c.json({ applicant: serialized }, 201)
       }
     }
@@ -90,6 +93,8 @@ sub.post('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
       if (winner) {
         emitIssueApplicantAccepted({ issueId: id, applicant: winner })
           .catch((err: any) => console.warn('[socket]', err?.message ?? err))
+        sendPushToUsers([winner.userId], 'Bid accepted', "Head to the site — you're on the job.", { issueId: id })
+          .catch((err: any) => console.warn('[push]', err?.message ?? err))
         return c.json({ applicant: winner }, 201)
       }
     }
@@ -128,6 +133,8 @@ sub.patch('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
     if (winner) {
       emitIssueApplicantAccepted({ issueId: id, applicant: winner })
         .catch((err: any) => console.warn('[socket]', err?.message ?? err))
+      sendPushToUsers([winner.userId], 'Bid accepted', "Head to the site — you're on the job.", { issueId: id })
+        .catch((err: any) => console.warn('[push]', err?.message ?? err))
       return c.json({ applicant: winner })
     }
 
@@ -229,12 +236,20 @@ sub.post('/api/mobile/issues/:id/pledges', authMiddleware, async (c) => {
     emitIssuePledgeAdded({ issueId: id, actorId: token.id, pledge: serialized })
       .catch((err: any) => console.warn('[socket]', err?.message ?? err))
 
+    const authorId = issue.author.toString()
+    if (authorId !== token.id) {
+      sendPushToUsers([authorId], 'New pledge', `$${serialized.amount} pledged to your issue.`, { issueId: id })
+        .catch((err: any) => console.warn('[push]', err?.message ?? err))
+    }
+
     // Check all pending bidders — pledge may have tipped the funding threshold.
     // tryAutoAccept handles loser directed-pledge cleanup internally.
     const winner = await tryAutoAccept(id)
     if (winner) {
       emitIssueApplicantAccepted({ issueId: id, applicant: winner })
         .catch((err: any) => console.warn('[socket]', err?.message ?? err))
+      sendPushToUsers([winner.userId], 'Bid accepted', "Head to the site — you're on the job.", { issueId: id })
+        .catch((err: any) => console.warn('[push]', err?.message ?? err))
     }
 
     return c.json({ pledge: serialized }, 201)
@@ -483,6 +498,20 @@ sub.post('/api/mobile/issues/:id/commission', authMiddleware, async (c) => {
     const serialized = serializeCompletion((issue.completion as any).toObject(), issueId)
     emitIssueCompletionSubmitted({ issueId, completion: serialized })
       .catch((err: any) => console.warn('[socket]', err?.message ?? err))
+    ;(async () => {
+      const pledges = await Pledge.find({ issueId }, { userId: 1 }).lean() as any[]
+      const recipientIds = [
+        (issue as any).author.toString(),
+        ...pledges.map((p: any) => p.userId.toString()),
+      ].filter((uid) => uid !== token.id)
+      const label = (issue as any).title ? `"${(issue as any).title}"` : 'Work'
+      await sendPushToUsers(
+        recipientIds,
+        'Work submitted for review',
+        `${label} — rate it before auto-approval in 48 hours.`,
+        { issueId },
+      )
+    })().catch((err: any) => console.warn('[push]', err?.message ?? err))
     return c.json({ completion: serialized })
   } catch (err) {
     console.error('[mobile/issues/commission POST]', err)
@@ -757,6 +786,25 @@ sub.post('/api/mobile/issues/:id/commission/rating', authMiddleware, async (c) =
         completion: serializedCompletion,
         ...(serializedNeed ? { issue: serializedNeed } : {}),
       }).catch((err: any) => console.warn('[socket]', err?.message ?? err))
+
+      if (autoDecision === 'approved' && serializedNeed) {
+        const worker = serializedNeed.applicants.find((a: any) => a.status === 'accepted')
+        const recipientIds = [
+          serializedNeed.author?.id,
+          ...serializedNeed.pledged.map((p: any) => p.userId),
+          worker?.userId,
+        ].filter((uid): uid is string => !!uid)
+        sendPushToUsers(recipientIds, 'Work approved', 'Payment has been released — the issue is resolved.', { issueId })
+          .catch((err: any) => console.warn('[push]', err?.message ?? err))
+      } else if (autoDecision === 'denied') {
+        const recipientIds = [
+          updatedIssue.author._id.toString(),
+          ...pledgerIds,
+          acceptedApplicant.userId.toString(),
+        ].filter((uid): uid is string => !!uid)
+        sendPushToUsers(recipientIds, 'Work not approved', "The submission wasn't approved — the worker can resubmit.", { issueId })
+          .catch((err: any) => console.warn('[push]', err?.message ?? err))
+      }
     } else if (issue.completion.status === 'pending') {
       emitIssueReviewSubmitted({
         issueId,
@@ -887,6 +935,27 @@ sub.post('/api/mobile/issues/:id/commission/review', authMiddleware, async (c) =
       ...(serializedNeed ? { issue: serializedNeed } : {}),
     }).catch((err: any) => console.warn('[socket]', err?.message ?? err))
 
+    if (newStatus === 'approved' && serializedNeed) {
+      const worker = serializedNeed.applicants.find((a: any) => a.status === 'accepted')
+      const recipientIds = [
+        serializedNeed.author?.id,
+        ...serializedNeed.pledged.map((p: any) => p.userId),
+        worker?.userId,
+      ].filter((uid): uid is string => !!uid)
+      sendPushToUsers(recipientIds, 'Work approved', 'Payment has been released — the issue is resolved.', { issueId })
+        .catch((err: any) => console.warn('[push]', err?.message ?? err))
+    } else if (newStatus === 'denied') {
+      ;(async () => {
+        const pledges = await Pledge.find({ issueId }, { userId: 1 }).lean() as any[]
+        const recipientIds = [
+          issue!.author.toString(),
+          ...pledges.map((p: any) => p.userId.toString()),
+          (applicant as any)?.userId?.toString(),
+        ].filter((uid): uid is string => !!uid)
+        await sendPushToUsers(recipientIds, 'Work not approved', "The submission wasn't approved — the worker can resubmit.", { issueId })
+      })().catch((err: any) => console.warn('[push]', err?.message ?? err))
+    }
+
     return c.json({
       completion: serializedCompletion,
       ...(serializedNeed ? { issue: serializedNeed } : {}),
@@ -934,6 +1003,15 @@ sub.patch('/api/mobile/issues/:id/complete', authMiddleware, async (c) => {
         completion: serializeCompletion(updatedIssue.completion, id),
         issue: serializedIssue,
       }).catch((err: any) => console.warn('[socket]', err?.message ?? err))
+
+      const worker = serializedIssue.applicants.find((a: any) => a.status === 'accepted')
+      const recipientIds = [
+        serializedIssue.author?.id,
+        ...serializedIssue.pledged.map((p: any) => p.userId),
+        worker?.userId,
+      ].filter((uid): uid is string => !!uid)
+      sendPushToUsers(recipientIds, 'Work approved', 'Payment has been released — the issue is resolved.', { issueId: id })
+        .catch((err: any) => console.warn('[push]', err?.message ?? err))
     }
 
     return c.json({ issue: serializedIssue })
