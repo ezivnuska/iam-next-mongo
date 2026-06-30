@@ -797,13 +797,15 @@ sub.post('/api/mobile/issues/:id/commission/rating', authMiddleware, async (c) =
         sendPushToUsers(recipientIds, 'Work approved', 'Payment has been released — the issue is resolved.', { issueId })
           .catch((err: any) => console.warn('[push]', err?.message ?? err))
       } else if (autoDecision === 'denied') {
-        const recipientIds = [
-          updatedIssue.author._id.toString(),
-          ...pledgerIds,
-          acceptedApplicant.userId.toString(),
-        ].filter((uid): uid is string => !!uid)
-        sendPushToUsers(recipientIds, 'Work not approved', "The submission wasn't approved — the worker can resubmit.", { issueId })
-          .catch((err: any) => console.warn('[push]', err?.message ?? err))
+        ;(async () => {
+          const pledges = await Pledge.find({ issueId }, { userId: 1 }).lean() as any[]
+          const recipientIds = [
+            updatedIssue.author._id.toString(),
+            ...pledges.map((p: any) => p.userId.toString()),
+            acceptedApplicant.userId.toString(),
+          ].filter((uid): uid is string => !!uid)
+          await sendPushToUsers(recipientIds, 'Work not approved', "The submission wasn't approved — the worker can resubmit.", { issueId })
+        })().catch((err: any) => console.warn('[push]', err?.message ?? err))
       }
     } else if (issue.completion.status === 'pending') {
       emitIssueReviewSubmitted({
