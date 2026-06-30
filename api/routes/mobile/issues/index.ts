@@ -92,6 +92,8 @@ issues.post('/api/mobile/issues', authMiddleware, async (c) => {
       await Issue.findByIdAndDelete(issue._id)
       if (err.code === 'NO_PAYMENT_METHOD')
         return c.json({ error: err.message, code: 'NO_PAYMENT_METHOD' }, 402)
+      if (err.type === 'StripeCardError')
+        return c.json({ error: err.message, code: err.code }, 402)
       throw err
     }
 
