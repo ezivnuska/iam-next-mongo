@@ -305,7 +305,7 @@ stripeRoutes.post('/api/mobile/stripe/payout-card', authMiddleware, async (c) =>
         email: user.email,
         external_account: cardToken,
         metadata: { userId },
-        capabilities: { transfers: { requested: true } },
+        capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
         tos_acceptance: {
           date: Math.floor(Date.now() / 1000),
           ip: clientIp,
