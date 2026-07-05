@@ -82,8 +82,6 @@ sub.post('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
         const serialized = serializeApplicant(accepted!.toObject())
         emitIssueApplicantAccepted({ issueId: id, applicant: serialized })
           .catch((err: any) => console.warn('[socket]', err?.message ?? err))
-        sendPushToUsers([serialized.userId], 'Bid accepted', "Head to the site — you're on the job.", { issueId: id })
-          .catch((err: any) => console.warn('[push]', err?.message ?? err))
         return c.json({ applicant: serialized }, 201)
       }
     }
@@ -93,8 +91,6 @@ sub.post('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
       if (winner) {
         emitIssueApplicantAccepted({ issueId: id, applicant: winner })
           .catch((err: any) => console.warn('[socket]', err?.message ?? err))
-        sendPushToUsers([winner.userId], 'Bid accepted', "Head to the site — you're on the job.", { issueId: id })
-          .catch((err: any) => console.warn('[push]', err?.message ?? err))
         return c.json({ applicant: winner }, 201)
       }
     }
@@ -133,8 +129,6 @@ sub.patch('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
     if (winner) {
       emitIssueApplicantAccepted({ issueId: id, applicant: winner })
         .catch((err: any) => console.warn('[socket]', err?.message ?? err))
-      sendPushToUsers([winner.userId], 'Bid accepted', "Head to the site — you're on the job.", { issueId: id })
-        .catch((err: any) => console.warn('[push]', err?.message ?? err))
       return c.json({ applicant: winner })
     }
 
