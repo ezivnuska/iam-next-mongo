@@ -21,7 +21,7 @@ const applicantSchema = new Schema<IApplicant>(
     issueId: { type: Schema.Types.ObjectId, ref: 'Issue', required: true },
     status: { type: String, enum: ['pending', 'accepted'], default: 'pending' },
     votes: { type: [voteSchema], default: [] },
-    bidAmount: { type: Number },
+    rate: { type: Number },
     acceptedAt: { type: Date },
     completionDeadline: { type: Date },
     startedAt: { type: Date },

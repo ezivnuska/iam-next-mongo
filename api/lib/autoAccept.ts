@@ -37,7 +37,7 @@ export async function tryAutoAccept(
   const query: Record<string, any> = {
     issueId,
     status: 'pending',
-    bidAmount: { $exists: true, $ne: null },
+    rate: { $exists: true, $ne: null },
   }
   if (candidateIds) query._id = { $in: candidateIds }
 

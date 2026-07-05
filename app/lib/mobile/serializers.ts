@@ -54,7 +54,7 @@ export function serializeApplicant(a: any) {
     avatar: user?.avatar ? serializeResource(user.avatar) : null,
     createdAt: a.createdAt?.toISOString() ?? new Date().toISOString(),
     status: a.status ?? 'pending',
-    bidAmount: a.bidAmount ?? null,
+    rate: a.rate ?? null,
     acceptedAt: a.acceptedAt ? a.acceptedAt.toISOString() : null,
     completionDeadline: a.completionDeadline ? a.completionDeadline.toISOString() : null,
     startedAt: a.startedAt ? a.startedAt.toISOString() : null,

@@ -53,8 +53,8 @@ sub.post('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
   try {
     await connectToDatabase()
     const body = await c.req.json().catch(() => ({}))
-    const rawBid = body.bidAmount
-    const bidAmount = typeof rawBid === 'number' && Number.isFinite(rawBid) && rawBid > 0 && rawBid <= 10000 ? rawBid : undefined
+    const rawRate = body.rate
+    const rate = typeof rawRate === 'number' && Number.isFinite(rawRate) && rawRate > 0 && rawRate <= 10000 ? rawRate : undefined
     const acceptPledge = body.acceptPledge === true
 
     const issue = await Issue.findById(id).lean()
@@ -67,7 +67,7 @@ sub.post('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
     if (existing) return c.json({ error: 'Already applied to this issue' }, 409)
     if (pledge) return c.json({ error: 'Contributors cannot place a bid on an issue they have funded' }, 403)
 
-    const applicant = await Applicant.create({ userId: token.id, issueId: id, bidAmount })
+    const applicant = await Applicant.create({ userId: token.id, issueId: id, rate })
 
     // acceptPledge: accept immediately if sole applicant, otherwise join the queue
     if (acceptPledge) {
@@ -86,7 +86,7 @@ sub.post('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
       }
     }
 
-    if (bidAmount != null) {
+    if (rate != null) {
       const winner = await tryAutoAccept(id, [applicant._id])
       if (winner) {
         emitIssueApplicantAccepted({ issueId: id, applicant: winner })
@@ -113,14 +113,14 @@ sub.patch('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
   if (!isValidObjectId(id)) return c.json({ error: 'Invalid issue ID' }, 400)
 
   try {
-    const { bidAmount } = await c.req.json()
-    if (typeof bidAmount !== 'number' || !Number.isFinite(bidAmount) || bidAmount <= 0 || bidAmount > 10000)
-      return c.json({ error: 'Bid amount must be a number between 0 and 10,000' }, 400)
+    const { rate } = await c.req.json()
+    if (typeof rate !== 'number' || !Number.isFinite(rate) || rate <= 0 || rate > 10000)
+      return c.json({ error: 'Rate must be a number between 0 and 10,000' }, 400)
 
     await connectToDatabase()
     const applicant = await Applicant.findOneAndUpdate(
       { userId: token.id, issueId: id, status: 'pending' },
-      { $set: { bidAmount } },
+      { $set: { rate } },
       { new: true }
     )
     if (!applicant) return c.json({ error: 'Active application not found' }, 404)
@@ -242,7 +242,7 @@ sub.post('/api/mobile/issues/:id/pledges', authMiddleware, async (c) => {
     if (winner) {
       emitIssueApplicantAccepted({ issueId: id, applicant: winner })
         .catch((err: any) => console.warn('[socket]', err?.message ?? err))
-      sendPushToUsers([winner.userId], 'Bid accepted', "Head to the site — you're on the job.", { issueId: id })
+      sendPushToUsers([winner.userId], 'Offer matched', "Head to the site — you're on the job.", { issueId: id })
         .catch((err: any) => console.warn('[push]', err?.message ?? err))
     }
 
@@ -583,7 +583,7 @@ sub.post('/api/mobile/issues/:id/commission/cancel', authMiddleware, async (c) =
 
     const [allPledges, candidates] = await Promise.all([
       Pledge.find({ issueId }).lean() as Promise<any[]>,
-      Applicant.find({ issueId, status: 'pending', bidAmount: { $exists: true, $ne: null } })
+      Applicant.find({ issueId, status: 'pending', rate: { $exists: true, $ne: null } })
         .sort({ createdAt: 1 }).lean() as Promise<any[]>,
     ])
 
@@ -643,7 +643,7 @@ sub.post('/api/mobile/issues/:id/commission/reassign', authMiddleware, async (c)
 
     const [allPledges, candidates] = await Promise.all([
       Pledge.find({ issueId }).lean() as Promise<any[]>,
-      Applicant.find({ issueId, status: 'pending', bidAmount: { $exists: true, $ne: null }, _id: { $ne: current._id } })
+      Applicant.find({ issueId, status: 'pending', rate: { $exists: true, $ne: null }, _id: { $ne: current._id } })
         .sort({ createdAt: 1 }).lean() as Promise<any[]>,
     ])
 
@@ -751,7 +751,7 @@ sub.post('/api/mobile/issues/:id/commission/rating', authMiddleware, async (c) =
       )
       await Applicant.findByIdAndUpdate(acceptedApplicant._id, { completionDeadline: midnightFollowingDay() })
       const eligibleCount = await Applicant.countDocuments({
-        issueId, status: 'pending', bidAmount: { $exists: true, $ne: null },
+        issueId, status: 'pending', rate: { $exists: true, $ne: null },
       })
       if (eligibleCount === 0) {
         releasePledgeHolds(issueId).catch((err) => console.error('[commission/rating] releasePledgeHolds failed:', err))
@@ -900,7 +900,7 @@ sub.post('/api/mobile/issues/:id/commission/review', authMiddleware, async (c) =
       if (newStatus === 'denied' && applicant) {
         await Applicant.findByIdAndUpdate((applicant as any)._id, { completionDeadline: midnightFollowingDay() })
         const eligibleCount = await Applicant.countDocuments({
-          issueId, status: 'pending', bidAmount: { $exists: true, $ne: null },
+          issueId, status: 'pending', rate: { $exists: true, $ne: null },
         })
         if (eligibleCount === 0) {
           releasePledgeHolds(issueId).catch((err) => console.error('[commission/review] releasePledgeHolds failed:', err))
