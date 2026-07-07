@@ -915,6 +915,7 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
 
       await Applicant.findByIdAndUpdate(acceptedApplicant._id, {
         status: 'pending',
+        rate: null,
         completionDeadline: null,
         startedAt: null,
         acceptedAt: null,
