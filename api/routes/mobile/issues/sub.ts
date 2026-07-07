@@ -908,7 +908,7 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
 
       await Issue.findByIdAndUpdate(issueId, {
         $push: { previousCompletions: currentCompletion },
-        $set: { completion: null },
+        $set: { completion: null, status: 'open' },
       })
 
       await Pledge.deleteMany({ issueId })
@@ -934,7 +934,7 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
       emitIssueCompletionReviewed({ issueId, completion: { ...serializedOldCompletion, status: 'denied' }, issue: serializedNeed })
         .catch((err: any) => console.warn('[socket]', err?.message ?? err))
 
-      return c.json({ completion: serializedOldCompletion, issue: serializedNeed })
+      return c.json({ issue: serializedNeed })
 
     } else {
       // extend: archive current completion, reset for resubmission
