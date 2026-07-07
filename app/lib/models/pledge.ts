@@ -16,6 +16,7 @@ const pledgeSchema = new Schema<IPledge>(
     rescindIfLost: { type: Boolean, default: false },
     anonymous: { type: Boolean, default: false },
     stripePaymentIntentId: { type: String },
+    withdrawn:             { type: Boolean, default: false },
   },
   { timestamps: true }
 )

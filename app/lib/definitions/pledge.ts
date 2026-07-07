@@ -11,6 +11,7 @@ export interface IPledge extends Document {
   rescindIfLost: boolean
   anonymous: boolean
   stripePaymentIntentId?: string
+  withdrawn?: boolean
   createdAt: Date
   updatedAt: Date
 }

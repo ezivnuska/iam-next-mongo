@@ -29,7 +29,7 @@ const completionSchema = new Schema(
     applicantId: { type: Schema.Types.ObjectId, ref: 'Applicant', required: true },
     images:      [{ type: Schema.Types.ObjectId, ref: 'Image' }],
     reviews:     { type: [completionReviewSchema], default: [] },
-    status:      { type: String, enum: ['pending', 'approved', 'denied'], default: 'pending' },
+    status:      { type: String, enum: ['pending', 'approved', 'denied', 'worker_decision'], default: 'pending' },
     autoApproveAt: { type: Date },
   },
   { _id: true, timestamps: true }

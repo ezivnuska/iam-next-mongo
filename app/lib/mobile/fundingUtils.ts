@@ -1,7 +1,7 @@
 // app/lib/mobile/fundingUtils.ts
 // Shared utilities for pledge-based funding calculations.
 
-import UserModel from '@/app/lib/models/user'
+import Rating from '@/app/lib/models/rating'
 
 /** Effective funding for an applicant = their directed pledges + all blanket pledges. */
 export function effectiveFunding(allPledges: any[], applicantId: string): number {
@@ -26,8 +26,14 @@ export async function selectFundedWinner(
   if (funded.length === 0) return null
 
   const userIds = funded.map((a) => a.userId)
-  const users   = await UserModel.find({ _id: { $in: userIds } }, { _id: 1, 'reputation.average': 1 }).lean() as any[]
-  const repMap  = new Map(users.map((u) => [u._id.toString(), u.reputation?.average ?? -1]))
+  const ratingDocs = await Rating.find({ workerId: { $in: userIds } }).lean() as any[]
+  const repMap = new Map<string, number>()
+  for (const uid of userIds) {
+    const uidStr = uid.toString()
+    const window = ratingDocs.filter((r) => r.workerId.toString() === uidStr).slice(-100)
+    const rate = window.length === 0 ? -1 : window.filter((r) => r.vote === 'approve').length / window.length
+    repMap.set(uidStr, rate)
+  }
 
   funded.sort((a, b) => {
     const repDiff = (repMap.get(b.userId.toString()) ?? -1) - (repMap.get(a.userId.toString()) ?? -1)

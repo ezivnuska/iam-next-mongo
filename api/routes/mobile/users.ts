@@ -68,10 +68,9 @@ users.get('/api/mobile/users/:id', authMiddleware, async (c) => {
 
     if (!userDoc) return c.json({ error: 'User not found' }, 404)
 
-    const reputation = ratings.length === 0 ? null : {
-      average: Math.round((ratings.reduce((s: number, r: any) => s + r.score, 0) / ratings.length) * 10) / 10,
-      count: ratings.length,
-    }
+    const window = ratings.slice(0, 100)
+    const approved = window.filter((r: any) => r.vote === 'approve').length
+    const reputation = window.length === 0 ? null : { approved, total: window.length }
 
     return c.json({
       user: {

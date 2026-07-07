@@ -13,7 +13,7 @@ export interface ICompletion {
   applicantId: Types.ObjectId
   images: Types.ObjectId[]
   reviews: { userId: Types.ObjectId; vote: 'approve' | 'deny' }[]
-  status: 'pending' | 'approved' | 'denied'
+  status: 'pending' | 'approved' | 'denied' | 'worker_decision'
   createdAt: Date
   updatedAt: Date
 }

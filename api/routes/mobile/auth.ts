@@ -127,13 +127,14 @@ auth.get('/api/mobile/me', async (c) => {
       ? { id: (userDoc.avatar as any)._id.toString(), variants: (userDoc.avatar as any).variants ?? [] }
       : null
 
-    let reputation: { average: number; count: number } | null = null
+    let reputation: { approved: number; total: number } | null = null
     try {
-      const ratings = await Rating.find({ workerId: userDoc._id }).lean() as any[]
-      if (ratings.length > 0) {
+      const ratings = await Rating.find({ workerId: userDoc._id }).sort({ createdAt: -1 }).lean() as any[]
+      const window = ratings.slice(0, 100)
+      if (window.length > 0) {
         reputation = {
-          average: Math.round((ratings.reduce((s, r) => s + r.score, 0) / ratings.length) * 10) / 10,
-          count: ratings.length,
+          approved: window.filter((r) => r.vote === 'approve').length,
+          total: window.length,
         }
       }
     } catch {}

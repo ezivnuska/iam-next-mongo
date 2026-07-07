@@ -10,7 +10,7 @@ const ratingSchema = new Schema(
     commissionId: { type: Schema.Types.ObjectId, ref: 'Commission', required: true },
     raterId:      { type: Schema.Types.ObjectId, ref: 'User',       required: true },
     workerId:     { type: Schema.Types.ObjectId, ref: 'User',       required: true },
-    score:        { type: Number, required: false, min: 0, max: 5, default: null },
+    vote:         { type: String, enum: ['approve', 'deny'], required: true },
   },
   { timestamps: true }
 )
