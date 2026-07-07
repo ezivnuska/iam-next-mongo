@@ -903,26 +903,38 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
         }))
       }
 
-      await Issue.findOneAndUpdate(
-        { _id: issueId, 'completion.status': 'worker_decision' },
-        { $set: { 'completion.status': 'approved', status: 'completed' } }
-      )
+      // Archive completion, delete all pledges, revert issue to open
+      const currentCompletion = issue.completion
+
+      await Issue.findByIdAndUpdate(issueId, {
+        $push: { previousCompletions: currentCompletion },
+        $set: { completion: null },
+      })
+
+      await Pledge.deleteMany({ issueId })
+
+      await Applicant.findByIdAndUpdate(acceptedApplicant._id, {
+        status: 'pending',
+        completionDeadline: null,
+        startedAt: null,
+        acceptedAt: null,
+      })
 
       const updatedIssue = await Issue.findById(issueId)
         .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
-        .populate('images').populate('completion.images').lean() as any
+        .populate('images').lean() as any
 
-      const serializedCompletion = serializeCompletion(updatedIssue.completion, issueId)
       const [p, a] = await Promise.all([
         Pledge.find({ issueId }).populate(USER_WITH_AVATAR_POPULATE).lean(),
         Applicant.find({ issueId }).populate(APPLICANT_USER_POPULATE).lean(),
       ])
       const serializedNeed = serializeIssue({ ...updatedIssue, pledged: p, applicants: a })
+      const serializedOldCompletion = serializeCompletion(currentCompletion, issueId)
 
-      emitIssueCompletionReviewed({ issueId, completion: serializedCompletion, issue: serializedNeed })
+      emitIssueCompletionReviewed({ issueId, completion: { ...serializedOldCompletion, status: 'denied' }, issue: serializedNeed })
         .catch((err: any) => console.warn('[socket]', err?.message ?? err))
 
-      return c.json({ completion: serializedCompletion, issue: serializedNeed })
+      return c.json({ completion: serializedOldCompletion, issue: serializedNeed })
 
     } else {
       // extend: archive current completion, reset for resubmission
