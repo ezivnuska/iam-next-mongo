@@ -53,6 +53,7 @@ const issueSchema = new Schema<IIssue>(
     completion:            { type: completionSchema, default: null },
     previousCompletions:   { type: [completionSchema], default: [] },
     reports:               { type: [issueReportSchema], default: [] },
+    acceptedApplicantId:   { type: Schema.Types.ObjectId, ref: 'Applicant', default: null },
   },
   { timestamps: true }
 )

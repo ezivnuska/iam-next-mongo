@@ -73,11 +73,14 @@ sub.post('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
     if (acceptPledge) {
       const otherApplicants = await Applicant.exists({ issueId: id, _id: { $ne: applicant._id }, status: 'pending' })
       if (!otherApplicants) {
-        const accepted = await Applicant.findByIdAndUpdate(
-          applicant._id,
-          { status: 'accepted', acceptedAt: new Date(), completionDeadline: midnightFollowingDay() },
-          { new: true },
-        ).populate(APPLICANT_USER_POPULATE)
+        const [accepted] = await Promise.all([
+          Applicant.findByIdAndUpdate(
+            applicant._id,
+            { status: 'accepted', acceptedAt: new Date(), completionDeadline: midnightFollowingDay() },
+            { new: true },
+          ).populate(APPLICANT_USER_POPULATE),
+          Issue.findByIdAndUpdate(id, { acceptedApplicantId: applicant._id }),
+        ])
         holdPledges(id).catch((err) => console.error('[acceptPledge] holdPledges failed:', err))
         const serialized = serializeApplicant(accepted!.toObject())
         emitIssueApplicantAccepted({ issueId: id, applicant: serialized })
@@ -583,16 +586,20 @@ sub.post('/api/mobile/issues/:id/commission/cancel', authMiddleware, async (c) =
 
     if (!winner) {
       releasePledgeHolds(issueId).catch((err) => console.error('[cancel] releasePledgeHolds failed:', err))
+      await Issue.findByIdAndUpdate(issueId, { acceptedApplicantId: null })
       emitIssueApplicantRemoved({ issueId, applicantId })
         .catch((err: any) => console.warn('[socket]', err?.message ?? err))
       return c.json({ applicantId, nextApplicant: null })
     }
 
-    const nextApplicant = await Applicant.findByIdAndUpdate(
-      winner._id,
-      { status: 'accepted', acceptedAt: new Date(), completionDeadline: midnightFollowingDay() },
-      { new: true }
-    ).populate(APPLICANT_USER_POPULATE)
+    const [nextApplicant] = await Promise.all([
+      Applicant.findByIdAndUpdate(
+        winner._id,
+        { status: 'accepted', acceptedAt: new Date(), completionDeadline: midnightFollowingDay() },
+        { new: true }
+      ).populate(APPLICANT_USER_POPULATE),
+      Issue.findByIdAndUpdate(issueId, { acceptedApplicantId: winner._id }),
+    ])
 
     const nextSerialized = serializeApplicant(nextApplicant!.toObject())
     holdPledges(issueId).catch((err) => console.error('[cancel] holdPledges failed:', err))
@@ -644,16 +651,20 @@ sub.post('/api/mobile/issues/:id/commission/reassign', authMiddleware, async (c)
     const winner = await selectFundedWinner(candidates, allPledges)
 
     if (!winner) {
+      await Issue.findByIdAndUpdate(issueId, { acceptedApplicantId: null })
       emitIssueApplicantAdded({ issueId, applicant: releasedSerialized })
         .catch((err: any) => console.warn('[socket]', err?.message ?? err))
       return c.json({ applicant: releasedSerialized, nextApplicant: null })
     }
 
-    const nextApplicant = await Applicant.findByIdAndUpdate(
-      winner._id,
-      { status: 'accepted', acceptedAt: new Date(), completionDeadline: midnightFollowingDay() },
-      { new: true }
-    ).populate(APPLICANT_USER_POPULATE)
+    const [nextApplicant] = await Promise.all([
+      Applicant.findByIdAndUpdate(
+        winner._id,
+        { status: 'accepted', acceptedAt: new Date(), completionDeadline: midnightFollowingDay() },
+        { new: true }
+      ).populate(APPLICANT_USER_POPULATE),
+      Issue.findByIdAndUpdate(issueId, { acceptedApplicantId: winner._id }),
+    ])
 
     const nextSerialized = serializeApplicant(nextApplicant!.toObject())
 
@@ -906,20 +917,14 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
       // Archive completion, delete all pledges, revert issue to open
       const currentCompletion = issue.completion
 
-      await Issue.findByIdAndUpdate(issueId, {
-        $push: { previousCompletions: currentCompletion },
-        $set: { completion: null, status: 'open' },
-      })
-
-      await Pledge.deleteMany({ issueId })
-
-      await Applicant.findByIdAndUpdate(acceptedApplicant._id, {
-        status: 'pending',
-        rate: null,
-        completionDeadline: null,
-        startedAt: null,
-        acceptedAt: null,
-      })
+      await Promise.all([
+        Issue.findByIdAndUpdate(issueId, {
+          $push: { previousCompletions: currentCompletion },
+          $set: { completion: null, status: 'open', acceptedApplicantId: null },
+        }),
+        Pledge.deleteMany({ issueId }),
+        Applicant.deleteOne({ _id: acceptedApplicant._id }),
+      ])
 
       const updatedIssue = await Issue.findById(issueId)
         .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })

@@ -44,6 +44,7 @@ export interface IIssue extends Document {
   completion?: ICompletion | null
   previousCompletions?: ICompletion[]
   reports?: IIssueReport[]
+  acceptedApplicantId?: Types.ObjectId | null
 }
 
 export interface Issue {

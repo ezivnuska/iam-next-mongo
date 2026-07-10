@@ -4,6 +4,7 @@
 
 import { Types } from 'mongoose'
 import Applicant from '../../app/lib/models/applicant'
+import Issue from '../../app/lib/models/issue'
 import Pledge from '../../app/lib/models/pledge'
 import { serializeApplicant } from '../../app/lib/mobile/serializers'
 import { selectFundedWinner } from '../../app/lib/mobile/fundingUtils'
@@ -49,11 +50,14 @@ export async function tryAutoAccept(
   const winner = await selectFundedWinner(candidates, allPledges)
   if (!winner) return null
 
-  await Applicant.findByIdAndUpdate(winner._id, {
-    status: 'accepted',
-    acceptedAt: new Date(),
-    completionDeadline: midnightFollowingDay(),
-  })
+  await Promise.all([
+    Applicant.findByIdAndUpdate(winner._id, {
+      status: 'accepted',
+      acceptedAt: new Date(),
+      completionDeadline: midnightFollowingDay(),
+    }),
+    Issue.findByIdAndUpdate(issueId, { acceptedApplicantId: winner._id }),
+  ])
 
   // On the pledge path (no filter), redirect or remove directed pledges from
   // non-winning bidders so funds aren't locked against a losing applicant.

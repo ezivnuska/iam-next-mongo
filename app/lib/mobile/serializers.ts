@@ -91,6 +91,7 @@ export function serializeIssue(n: any) {
     status: n.status ?? 'open',
     pledged: Array.isArray(n.pledged) ? n.pledged.map(serializePledge) : [],
     applicants: Array.isArray(n.applicants) ? n.applicants.map(serializeApplicant) : [],
+    acceptedApplicantId: n.acceptedApplicantId ? n.acceptedApplicantId.toString() : null,
     createdAt: n.createdAt?.toISOString() ?? new Date().toISOString(),
   };
   if (n.location?.latitude != null && n.location?.longitude != null) {
