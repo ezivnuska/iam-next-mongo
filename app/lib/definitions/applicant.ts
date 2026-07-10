@@ -18,5 +18,6 @@ export interface IApplicant extends Document {
   acceptedAt?: Date
   completionDeadline?: Date
   startedAt?: Date
+  startImageId?: Types.ObjectId
   createdAt: Date
 }

@@ -7,7 +7,7 @@ import { Hono } from 'hono'
 import { authMiddleware, TokenPayload } from '../../../middleware/auth'
 import { connectToDatabase } from '../../../../app/lib/mongoose'
 import { serializeIssue, serializeCompletion } from '../../../../app/lib/mobile/serializers'
-import { isValidObjectId, USER_WITH_AVATAR_POPULATE, APPLICANT_USER_POPULATE } from '../../../../app/lib/utils/validation'
+import { isValidObjectId, USER_WITH_AVATAR_POPULATE, APPLICANT_FULL_POPULATE } from '../../../../app/lib/utils/validation'
 import Issue from '../../../../app/lib/models/issue'
 import Pledge from '../../../../app/lib/models/pledge'
 import Applicant from '../../../../app/lib/models/applicant'
@@ -35,7 +35,7 @@ issueById.get('/api/mobile/issues/:id', authMiddleware, async (c) => {
 
     const [pledges, applicants] = await Promise.all([
       Pledge.find({ issueId: id }).populate(USER_WITH_AVATAR_POPULATE).lean(),
-      Applicant.find({ issueId: id }).populate(APPLICANT_USER_POPULATE).lean(),
+      Applicant.find({ issueId: id }).populate(APPLICANT_FULL_POPULATE).lean(),
     ])
     const rawCompletion = (need as any).completion ?? null
     const completionStatus = rawCompletion?.status ?? null
@@ -93,7 +93,7 @@ issueById.patch('/api/mobile/issues/:id', authMiddleware, async (c) => {
     ])
     const [pledges, applicants] = await Promise.all([
       Pledge.find({ issueId: id }).populate(USER_WITH_AVATAR_POPULATE).lean(),
-      Applicant.find({ issueId: id }).populate(APPLICANT_USER_POPULATE).lean(),
+      Applicant.find({ issueId: id }).populate(APPLICANT_FULL_POPULATE).lean(),
     ])
     return c.json({ issue: serializeIssue({ ...need.toObject(), pledged: pledges, applicants }) })
   } catch (err) {

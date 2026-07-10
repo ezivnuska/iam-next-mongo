@@ -3,6 +3,9 @@
 
 import { Hono } from 'hono'
 import mongoose from 'mongoose'
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import { v4 as uuidv4 } from 'uuid'
+import sharp from 'sharp'
 import { authMiddleware, TokenPayload } from '../../../middleware/auth'
 import { connectToDatabase } from '../../../../app/lib/mongoose'
 import {
@@ -11,7 +14,8 @@ import {
   serializeApplicant,
   serializePledge,
 } from '../../../../app/lib/mobile/serializers'
-import { isValidObjectId, USER_WITH_AVATAR_POPULATE, APPLICANT_USER_POPULATE } from '../../../../app/lib/utils/validation'
+import { isValidObjectId, USER_WITH_AVATAR_POPULATE, APPLICANT_USER_POPULATE, APPLICANT_FULL_POPULATE } from '../../../../app/lib/utils/validation'
+import { getS3UrlFromKey } from '../../../../app/lib/utils/images'
 import { calculateApprovalRate } from '../../../../app/lib/utils/ratingUtils'
 import { midnightFollowingDay } from '../../../../app/lib/mobile/deadlines'
 import { settleIssue } from '../../../../app/lib/mobile/settleIssue'
@@ -40,6 +44,29 @@ import stripe from '../../../../app/lib/stripe'
 import { deleteS3File } from '../../../../app/lib/aws/s3'
 import { sendPushToUsers } from '../../../../app/lib/mobile/sendPush'
 import UserModel from '../../../../app/lib/models/user'
+
+let _s3: S3Client | null = null
+function getS3() {
+  if (!_s3) {
+    _s3 = new S3Client({
+      region: process.env.AWS_REGION!,
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+      },
+    })
+  }
+  return _s3
+}
+
+const UPLOAD_MIME: Record<string, string> = {
+  jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp',
+}
+const UPLOAD_VARIANT_DEFS = [
+  { name: 'original', width: null as number | null },
+  { name: 'medium', width: 800 },
+  { name: 'small', width: 300 },
+]
 
 const sub = new Hono<{ Variables: { token: TokenPayload } }>()
 
@@ -330,7 +357,7 @@ sub.post('/api/mobile/issues/:id/reports', authMiddleware, async (c) => {
   }
 })
 
-// ─── Add image to issue ──────────────────────────────────────────────────────
+// ─── Upload image for an issue (author or accepted applicant) ────────────────
 
 sub.post('/api/mobile/issues/:id/images', authMiddleware, async (c) => {
   const token = c.get('token')
@@ -338,31 +365,78 @@ sub.post('/api/mobile/issues/:id/images', authMiddleware, async (c) => {
   if (!isValidObjectId(id)) return c.json({ error: 'Invalid issue ID' }, 400)
 
   try {
-    const { imageId } = await c.req.json()
-    if (!imageId || !isValidObjectId(imageId))
-      return c.json({ error: 'Invalid image ID' }, 400)
+    const formData = await c.req.formData()
+    const file = formData.get('file') as File | null
+    if (!file) return c.json({ error: 'No file provided' }, 400)
+
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    if (!allowedMimeTypes.includes(file.type)) return c.json({ error: 'Invalid file type' }, 400)
+
+    const extension = file.name.split('.').pop()?.toLowerCase()
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp']
+    if (!extension || !allowedExtensions.includes(extension))
+      return c.json({ error: 'Invalid file extension' }, 400)
+
+    if (file.size > 10 * 1024 * 1024) return c.json({ error: 'File exceeds 10MB limit' }, 400)
+
+    const buffer = Buffer.from(await file.arrayBuffer())
+    try {
+      const meta = await sharp(buffer).metadata()
+      if (!meta.format || !['jpeg', 'png', 'gif', 'webp'].includes(meta.format))
+        return c.json({ error: 'Invalid image format' }, 400)
+    } catch {
+      return c.json({ error: 'File is not a valid image' }, 400)
+    }
 
     await connectToDatabase()
-    const issue = await Issue.findById(id)
+    const issue = await Issue.findById(id, { author: 1 }).lean() as any
     if (!issue) return c.json({ error: 'Issue not found' }, 404)
-    if (issue.author.toString() !== token.id) return c.json({ error: 'Forbidden' }, 403)
 
-    ;(issue as any).images.push(imageId)
-    await issue.save()
-    await issue.populate([
-      { path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } },
-      { path: 'images' },
-    ])
+    const isAuthor = issue.author.toString() === token.id
+    if (!isAuthor) {
+      const isAccepted = await Applicant.exists({ issueId: id, userId: token.id, status: 'accepted' })
+      if (!isAccepted) return c.json({ error: 'Forbidden' }, 403)
+    }
 
-    const [pledges, applicants] = await Promise.all([
-      Pledge.find({ issueId: id }).populate(USER_WITH_AVATAR_POPULATE).lean(),
-      Applicant.find({ issueId: id }).populate(APPLICANT_USER_POPULATE).lean(),
-    ])
+    const userDoc = await UserModel.findById(token.id, 'username').lean() as any
+    if (!userDoc) return c.json({ error: 'User not found' }, 404)
+    const username = userDoc.username as string
 
-    return c.json({ issue: serializeIssue({ ...issue.toObject(), pledged: pledges, applicants }) })
+    const baseFilename = uuidv4()
+    const variants: any[] = []
+    for (const { name, width } of UPLOAD_VARIANT_DEFS) {
+      const sharpImg = width
+        ? sharp(buffer).rotate().resize({ width, withoutEnlargement: true })
+        : sharp(buffer).rotate()
+      const outputBuffer = await sharpImg.toBuffer()
+      const meta = await sharp(outputBuffer).metadata()
+      const filename = `${baseFilename}_${name}.${extension}`
+      const key = `users/${username}/${filename}`
+      await getS3().send(new PutObjectCommand({
+        Bucket: process.env.AWS_BUCKET_NAME!,
+        Key: key,
+        Body: outputBuffer,
+        ContentType: UPLOAD_MIME[meta.format ?? ''] ?? 'application/octet-stream',
+      }))
+      variants.push({ size: name, filename, width: meta.width ?? 0, height: meta.height ?? 0, url: getS3UrlFromKey(key) })
+    }
+
+    const newImage = await ImageModel.create({ userId: token.id, username, alt: file.name, variants, likes: [] })
+    return c.json({
+      image: {
+        id: newImage._id.toString(),
+        userId: token.id,
+        username,
+        alt: file.name,
+        variants,
+        likes: [],
+        likedByCurrentUser: false,
+        createdAt: (newImage as any).createdAt?.toISOString() ?? new Date().toISOString(),
+      },
+    }, 201)
   } catch (err) {
     console.error('[mobile/issues/:id/images POST]', err)
-    return c.json({ error: 'Failed to add image' }, 500)
+    return c.json({ error: 'Upload failed' }, 500)
   }
 })
 
@@ -514,12 +588,18 @@ sub.patch('/api/mobile/issues/:id/commission/start', authMiddleware, async (c) =
   if (!isValidObjectId(issueId)) return c.json({ error: 'Invalid issue ID' }, 400)
 
   try {
+    const body = await c.req.json().catch(() => ({}))
+    const imageId = body.imageId && isValidObjectId(body.imageId) ? body.imageId : null
+
     await connectToDatabase()
+    const update: any = { startedAt: new Date() }
+    if (imageId) update.startImageId = imageId
+
     const applicant = await Applicant.findOneAndUpdate(
       { issueId, userId: token.id, status: 'accepted' },
-      { $set: { startedAt: new Date() } },
+      { $set: update },
       { new: true }
-    ).populate(APPLICANT_USER_POPULATE)
+    ).populate(APPLICANT_FULL_POPULATE)
     if (!applicant) return c.json({ error: 'Only the accepted applicant can start work' }, 403)
     const serialized = serializeApplicant(applicant.toObject())
     emitIssueApplicantAccepted({ issueId, applicant: serialized })

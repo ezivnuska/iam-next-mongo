@@ -25,6 +25,7 @@ const applicantSchema = new Schema<IApplicant>(
     acceptedAt: { type: Date },
     completionDeadline: { type: Date },
     startedAt: { type: Date },
+    startImageId: { type: Schema.Types.ObjectId, ref: 'Image' },
   },
   { timestamps: true }
 )

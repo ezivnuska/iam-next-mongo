@@ -46,6 +46,7 @@ export function serializePledge(p: any) {
 
 export function serializeApplicant(a: any) {
   const user = a.userId && typeof a.userId === 'object' ? a.userId : null
+  const startImg = a.startImageId && typeof a.startImageId === 'object' ? a.startImageId : null
   return {
     id: a._id.toString(),
     userId: user ? user._id.toString() : a.userId.toString(),
@@ -58,6 +59,11 @@ export function serializeApplicant(a: any) {
     acceptedAt: a.acceptedAt ? a.acceptedAt.toISOString() : null,
     completionDeadline: a.completionDeadline ? a.completionDeadline.toISOString() : null,
     startedAt: a.startedAt ? a.startedAt.toISOString() : null,
+    startImage: startImg ? {
+      id: startImg._id.toString(),
+      variants: (startImg.variants ?? []).map((v: any) => ({ size: v.size, filename: v.filename, width: v.width, height: v.height, url: v.url })),
+      createdAt: startImg.createdAt?.toISOString() ?? new Date().toISOString(),
+    } : null,
     votes: Array.isArray(a.votes)
       ? a.votes.map((v: any) => ({ userId: v.userId.toString(), vote: v.vote }))
       : [],
