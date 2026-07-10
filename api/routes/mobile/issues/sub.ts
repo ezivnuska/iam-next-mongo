@@ -14,7 +14,7 @@ import {
   serializeApplicant,
   serializePledge,
 } from '../../../../app/lib/mobile/serializers'
-import { isValidObjectId, USER_WITH_AVATAR_POPULATE, APPLICANT_USER_POPULATE, APPLICANT_FULL_POPULATE } from '../../../../app/lib/utils/validation'
+import { isValidObjectId, USER_WITH_AVATAR_POPULATE, APPLICANT_FULL_POPULATE } from '../../../../app/lib/utils/validation'
 import { getS3UrlFromKey } from '../../../../app/lib/utils/images'
 import { calculateApprovalRate } from '../../../../app/lib/utils/ratingUtils'
 import { midnightFollowingDay } from '../../../../app/lib/mobile/deadlines'
@@ -105,7 +105,7 @@ sub.post('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
             applicant._id,
             { status: 'accepted', acceptedAt: new Date(), completionDeadline: midnightFollowingDay() },
             { new: true },
-          ).populate(APPLICANT_USER_POPULATE),
+          ).populate(APPLICANT_FULL_POPULATE),
           Issue.findByIdAndUpdate(id, { acceptedApplicantId: applicant._id }),
         ])
         holdPledges(id).catch((err) => console.error('[acceptPledge] holdPledges failed:', err))
@@ -125,7 +125,7 @@ sub.post('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
       }
     }
 
-    await applicant.populate(APPLICANT_USER_POPULATE)
+    await applicant.populate(APPLICANT_FULL_POPULATE)
     const serialized = serializeApplicant(applicant.toObject())
     emitIssueApplicantAdded({ issueId: id, applicant: serialized })
       .catch((err: any) => console.warn('[socket]', err?.message ?? err))
@@ -162,7 +162,7 @@ sub.patch('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
       return c.json({ applicant: winner })
     }
 
-    await applicant.populate(APPLICANT_USER_POPULATE)
+    await applicant.populate(APPLICANT_FULL_POPULATE)
     const serialized = serializeApplicant(applicant.toObject())
     emitIssueApplicantAdded({ issueId: id, applicant: serialized })
       .catch((err: any) => console.warn('[socket]', err?.message ?? err))
@@ -347,7 +347,7 @@ sub.post('/api/mobile/issues/:id/reports', authMiddleware, async (c) => {
 
     const [pledges, applicants] = await Promise.all([
       Pledge.find({ issueId: id }).populate(USER_WITH_AVATAR_POPULATE).lean(),
-      Applicant.find({ issueId: id }).populate(APPLICANT_USER_POPULATE).lean(),
+      Applicant.find({ issueId: id }).populate(APPLICANT_FULL_POPULATE).lean(),
     ])
 
     return c.json({ issue: serializeIssue({ ...issue.toObject(), pledged: pledges, applicants }) })
@@ -624,7 +624,7 @@ sub.patch('/api/mobile/issues/:id/commission/extend', authMiddleware, async (c) 
     if (issue.author.toString() !== token.id)
       return c.json({ error: 'Only the author can extend the deadline' }, 403)
 
-    const applicant = await Applicant.findOne({ issueId, status: 'accepted' }).populate(APPLICANT_USER_POPULATE)
+    const applicant = await Applicant.findOne({ issueId, status: 'accepted' }).populate(APPLICANT_FULL_POPULATE)
     if (!applicant) return c.json({ error: 'No accepted applicant found' }, 404)
 
     applicant.completionDeadline = midnightFollowingDay()
@@ -677,7 +677,7 @@ sub.post('/api/mobile/issues/:id/commission/cancel', authMiddleware, async (c) =
         winner._id,
         { status: 'accepted', acceptedAt: new Date(), completionDeadline: midnightFollowingDay() },
         { new: true }
-      ).populate(APPLICANT_USER_POPULATE),
+      ).populate(APPLICANT_FULL_POPULATE),
       Issue.findByIdAndUpdate(issueId, { acceptedApplicantId: winner._id }),
     ])
 
@@ -709,7 +709,7 @@ sub.post('/api/mobile/issues/:id/commission/reassign', authMiddleware, async (c)
     if (issue.author.toString() !== token.id)
       return c.json({ error: 'Only the author can reassign the contract' }, 403)
 
-    const current = await Applicant.findOne({ issueId, status: 'accepted' }).populate(APPLICANT_USER_POPULATE)
+    const current = await Applicant.findOne({ issueId, status: 'accepted' }).populate(APPLICANT_FULL_POPULATE)
     if (!current) return c.json({ error: 'No accepted applicant to reassign from' }, 404)
 
     current.status = 'pending'
@@ -742,7 +742,7 @@ sub.post('/api/mobile/issues/:id/commission/reassign', authMiddleware, async (c)
         winner._id,
         { status: 'accepted', acceptedAt: new Date(), completionDeadline: midnightFollowingDay() },
         { new: true }
-      ).populate(APPLICANT_USER_POPULATE),
+      ).populate(APPLICANT_FULL_POPULATE),
       Issue.findByIdAndUpdate(issueId, { acceptedApplicantId: winner._id }),
     ])
 
@@ -868,7 +868,7 @@ sub.post('/api/mobile/issues/:id/commission/rating', authMiddleware, async (c) =
       serializedCompletion = serializeCompletion(updatedIssue.completion, issueId)
       const [p, a] = await Promise.all([
         Pledge.find({ issueId }).populate(USER_WITH_AVATAR_POPULATE).lean(),
-        Applicant.find({ issueId }).populate(APPLICANT_USER_POPULATE).lean(),
+        Applicant.find({ issueId }).populate(APPLICANT_FULL_POPULATE).lean(),
       ])
       serializedNeed = serializeIssue({ ...updatedIssue, pledged: p, applicants: a })
 
@@ -1012,7 +1012,7 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
 
       const [p, a] = await Promise.all([
         Pledge.find({ issueId }).populate(USER_WITH_AVATAR_POPULATE).lean(),
-        Applicant.find({ issueId }).populate(APPLICANT_USER_POPULATE).lean(),
+        Applicant.find({ issueId }).populate(APPLICANT_FULL_POPULATE).lean(),
       ])
       const serializedNeed = serializeIssue({ ...updatedIssue, pledged: p, applicants: a })
       const serializedOldCompletion = serializeCompletion(currentCompletion, issueId)
@@ -1040,7 +1040,7 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
 
       const [p, a] = await Promise.all([
         Pledge.find({ issueId }).populate(USER_WITH_AVATAR_POPULATE).lean(),
-        Applicant.find({ issueId }).populate(APPLICANT_USER_POPULATE).lean(),
+        Applicant.find({ issueId }).populate(APPLICANT_FULL_POPULATE).lean(),
       ])
       const serializedNeed = serializeIssue({ ...updatedIssue, pledged: p, applicants: a })
       const serializedOldCompletion = serializeCompletion(currentCompletion, issueId)
