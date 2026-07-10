@@ -3,8 +3,6 @@
 
 import { Hono } from 'hono'
 import mongoose from 'mongoose'
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
-import { v4 as uuidv4 } from 'uuid'
 import sharp from 'sharp'
 import { authMiddleware, TokenPayload } from '../../../middleware/auth'
 import { connectToDatabase } from '../../../../app/lib/mongoose'
@@ -15,7 +13,6 @@ import {
   serializePledge,
 } from '../../../../app/lib/mobile/serializers'
 import { isValidObjectId, USER_WITH_AVATAR_POPULATE, APPLICANT_FULL_POPULATE } from '../../../../app/lib/utils/validation'
-import { getS3UrlFromKey } from '../../../../app/lib/utils/images'
 import { calculateApprovalRate } from '../../../../app/lib/utils/ratingUtils'
 import { midnightFollowingDay } from '../../../../app/lib/mobile/deadlines'
 import { settleIssue } from '../../../../app/lib/mobile/settleIssue'
@@ -41,32 +38,9 @@ import Rating from '../../../../app/lib/models/rating'
 import Fee from '../../../../app/lib/models/fee'
 import ImageModel from '../../../../app/lib/models/image'
 import stripe from '../../../../app/lib/stripe'
-import { deleteS3File } from '../../../../app/lib/aws/s3'
+import { deleteS3File, uploadImageVariants } from '../../../../app/lib/aws/s3'
 import { sendPushToUsers } from '../../../../app/lib/mobile/sendPush'
 import UserModel from '../../../../app/lib/models/user'
-
-let _s3: S3Client | null = null
-function getS3() {
-  if (!_s3) {
-    _s3 = new S3Client({
-      region: process.env.AWS_REGION!,
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-      },
-    })
-  }
-  return _s3
-}
-
-const UPLOAD_MIME: Record<string, string> = {
-  jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp',
-}
-const UPLOAD_VARIANT_DEFS = [
-  { name: 'original', width: null as number | null },
-  { name: 'medium', width: 800 },
-  { name: 'small', width: 300 },
-]
 
 const sub = new Hono<{ Variables: { token: TokenPayload } }>()
 
@@ -402,25 +376,7 @@ sub.post('/api/mobile/issues/:id/images', authMiddleware, async (c) => {
     if (!userDoc) return c.json({ error: 'User not found' }, 404)
     const username = userDoc.username as string
 
-    const baseFilename = uuidv4()
-    const variants: any[] = []
-    for (const { name, width } of UPLOAD_VARIANT_DEFS) {
-      const sharpImg = width
-        ? sharp(buffer).rotate().resize({ width, withoutEnlargement: true })
-        : sharp(buffer).rotate()
-      const outputBuffer = await sharpImg.toBuffer()
-      const meta = await sharp(outputBuffer).metadata()
-      const filename = `${baseFilename}_${name}.${extension}`
-      const key = `users/${username}/${filename}`
-      await getS3().send(new PutObjectCommand({
-        Bucket: process.env.AWS_BUCKET_NAME!,
-        Key: key,
-        Body: outputBuffer,
-        ContentType: UPLOAD_MIME[meta.format ?? ''] ?? 'application/octet-stream',
-      }))
-      variants.push({ size: name, filename, width: meta.width ?? 0, height: meta.height ?? 0, url: getS3UrlFromKey(key) })
-    }
-
+    const variants = await uploadImageVariants(buffer, extension, username)
     const newImage = await ImageModel.create({ userId: token.id, username, alt: file.name, variants, likes: [] })
     return c.json({
       image: {

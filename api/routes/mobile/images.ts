@@ -5,8 +5,6 @@
 // POST   /api/mobile/images/:id/like  — toggle like
 
 import { Hono } from 'hono'
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
-import { v4 as uuidv4 } from 'uuid'
 import sharp from 'sharp'
 import { Types } from 'mongoose'
 import { authMiddleware, TokenPayload } from '../../middleware/auth'
@@ -15,28 +13,7 @@ import UserModel from '../../../app/lib/models/user'
 import ImageModel from '../../../app/lib/models/image'
 import Comment from '../../../app/lib/models/comment'
 import Post from '../../../app/lib/models/post'
-import { deleteS3File } from '../../../app/lib/aws/s3'
-import { getS3UrlFromKey } from '../../../app/lib/utils/images'
-
-let _s3: S3Client | null = null
-function getS3() {
-  if (!_s3) {
-    _s3 = new S3Client({
-      region: process.env.AWS_REGION!,
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-      },
-    })
-  }
-  return _s3
-}
-
-const VARIANT_DEFINITIONS = [
-  { name: 'original', width: null as number | null },
-  { name: 'medium', width: 800 },
-  { name: 'small', width: 300 },
-]
+import { deleteS3File, uploadImageVariants } from '../../../app/lib/aws/s3'
 
 function serializeImage(img: any, currentUserId?: string) {
   return {
@@ -100,30 +77,7 @@ images.post('/api/mobile/images', authMiddleware, async (c) => {
     if (!userDoc) return c.json({ error: 'User not found' }, 404)
     const username = userDoc.username as string
 
-    const baseFilename = uuidv4()
-    const variants: any[] = []
-
-    const MIME: Record<string, string> = {
-      jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp',
-    }
-
-    for (const { name, width } of VARIANT_DEFINITIONS) {
-      const sharpImg = width
-        ? sharp(buffer).rotate().resize({ width, withoutEnlargement: true })
-        : sharp(buffer).rotate()
-      const outputBuffer = await sharpImg.toBuffer()
-      const meta = await sharp(outputBuffer).metadata()
-      const filename = `${baseFilename}_${name}.${extension}`
-      const key = `users/${username}/${filename}`
-      await getS3().send(new PutObjectCommand({
-        Bucket: process.env.AWS_BUCKET_NAME!,
-        Key: key,
-        Body: outputBuffer,
-        ContentType: MIME[meta.format ?? ''] ?? 'application/octet-stream',
-      }))
-      variants.push({ size: name, filename, width: meta.width ?? 0, height: meta.height ?? 0, url: getS3UrlFromKey(key) })
-    }
-
+    const variants = await uploadImageVariants(buffer, extension, username)
     const newImage = await ImageModel.create({ userId: token.id, username, alt: file.name, variants, likes: [] })
     return c.json({ image: serializeImage(newImage, token.id) }, 201)
   } catch (err) {
