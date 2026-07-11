@@ -922,14 +922,32 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
       const allPledges = await Pledge.find({ issueId, withdrawn: { $ne: true } }).lean() as any[]
       const applicantUser = await UserModel.findById(acceptedApplicant.userId).lean() as any
 
-      // Pledges from deniers who chose "Keep pledge" are preserved on the reopened issue.
-      // Only approved pledges get captured and deleted.
+      // Approved pledges get captured and deleted.
+      // Denied pledges whose holders chose "Keep pledge" are preserved — their old Stripe
+      // hold is cancelled here and stripePaymentIntentId cleared so holdPledges creates
+      // a fresh hold when the next worker is accepted.
       const pledgeIdsToDelete: string[] = []
+      const keptPledgeUpdates: { id: string; clearPi: boolean }[] = []
 
       await Promise.allSettled(allPledges.map(async (pledge: any) => {
         const pledgerIdStr = pledge.userId.toString()
         const isDenied = deniedVoterIds.has(pledgerIdStr)
-        if (isDenied) return // "Keep pledge" — preserve for reopened issue
+
+        if (isDenied) {
+          // Cancel the existing hold so the card is unblocked; will be re-held on next acceptance
+          if (pledge.stripePaymentIntentId) {
+            try {
+              const pi = await stripe.paymentIntents.retrieve(pledge.stripePaymentIntentId)
+              if (pi.status === 'requires_capture') {
+                await stripe.paymentIntents.cancel(pledge.stripePaymentIntentId)
+              }
+            } catch (err: any) {
+              console.error(`[worker-decision] kept pledge PI cancel failed ${pledge._id}:`, err?.message)
+            }
+          }
+          keptPledgeUpdates.push({ id: pledge._id.toString(), clearPi: !!pledge.stripePaymentIntentId })
+          return
+        }
 
         if (!pledge.stripePaymentIntentId) {
           pledgeIdsToDelete.push(pledge._id.toString())
@@ -960,9 +978,8 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
         }
       }))
 
-      const keptPledgeIds = allPledges
-        .filter((p: any) => deniedVoterIds.has(p.userId.toString()))
-        .map((p: any) => p._id)
+      const keptPledgeIds = keptPledgeUpdates.map((u) => u.id)
+      const keptPledgeIdsToResetPi = keptPledgeUpdates.filter((u) => u.clearPi).map((u) => u.id)
 
       // Mark completion as partial payout, revert issue to open
       await Promise.all([
@@ -971,6 +988,7 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
         pledgeIdsToDelete.length > 0 ? Pledge.deleteMany({ _id: { $in: pledgeIdsToDelete } }) : Promise.resolve(),
         Pledge.deleteMany({ issueId, withdrawn: true }),
         keptPledgeIds.length > 0 ? Pledge.updateMany({ _id: { $in: keptPledgeIds } }, { $unset: { applicantId: '' } }) : Promise.resolve(),
+        keptPledgeIdsToResetPi.length > 0 ? Pledge.updateMany({ _id: { $in: keptPledgeIdsToResetPi } }, { $unset: { stripePaymentIntentId: '' } }) : Promise.resolve(),
         Applicant.deleteOne({ _id: acceptedApplicant._id }),
       ])
 
