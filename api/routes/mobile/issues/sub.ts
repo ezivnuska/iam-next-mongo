@@ -922,6 +922,11 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
       const allPledges = await Pledge.find({ issueId, withdrawn: { $ne: true } }).lean() as any[]
       const applicantUser = await UserModel.findById(acceptedApplicant.userId).lean() as any
 
+      const totalPledged = allPledges.reduce((sum: number, p: any) => sum + (p.amount ?? 0), 0)
+      const payoutAmount = allPledges
+        .filter((p: any) => !deniedVoterIds.has(p.userId.toString()))
+        .reduce((sum: number, p: any) => sum + (p.amount ?? 0), 0)
+
       // Approved pledges get captured and deleted.
       // Denied pledges whose holders chose "Keep pledge" are preserved — their old Stripe
       // hold is cancelled here and stripePaymentIntentId cleared so holdPledges creates
@@ -983,7 +988,7 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
 
       // Mark completion as partial payout, revert issue to open
       await Promise.all([
-        Completion.findByIdAndUpdate(activeCompletion._id, { status: 'partial' }),
+        Completion.findByIdAndUpdate(activeCompletion._id, { status: 'partial', payoutAmount, totalPledged }),
         Issue.findByIdAndUpdate(issueId, { $set: { status: 'open', acceptedApplicantId: null, completionStatus: null } }),
         pledgeIdsToDelete.length > 0 ? Pledge.deleteMany({ _id: { $in: pledgeIdsToDelete } }) : Promise.resolve(),
         Pledge.deleteMany({ issueId, withdrawn: true }),

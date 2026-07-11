@@ -18,6 +18,8 @@ const completionSchema = new Schema(
     reviews:      { type: [reviewSchema], default: [] },
     status:       { type: String, enum: ['pending', 'approved', 'denied', 'partial', 'worker_decision'], default: 'pending' },
     autoApproveAt: { type: Date },
+    payoutAmount: { type: Number },
+    totalPledged: { type: Number },
   },
   { timestamps: true }
 )

@@ -88,6 +88,8 @@ export function serializeCompletion(c: any, issueId?: string) {
     createdAt: c.createdAt?.toISOString() ?? new Date().toISOString(),
     completedAt: c.status === 'approved' ? (c.updatedAt?.toISOString() ?? null) : null,
     autoApproveAt: c.autoApproveAt ? c.autoApproveAt.toISOString() : null,
+    payoutAmount: c.payoutAmount ?? null,
+    totalPledged: c.totalPledged ?? null,
   }
 }
 
