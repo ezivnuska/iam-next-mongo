@@ -11,6 +11,7 @@ import {
   serializeCompletion,
   serializeApplicant,
   serializePledge,
+  serializeResource,
 } from '../../../../app/lib/mobile/serializers'
 import { isValidObjectId, USER_WITH_AVATAR_POPULATE, APPLICANT_FULL_POPULATE } from '../../../../app/lib/utils/validation'
 import { calculateApprovalRate } from '../../../../app/lib/utils/ratingUtils'
@@ -41,6 +42,15 @@ import stripe from '../../../../app/lib/stripe'
 import { deleteS3File, uploadImageVariants } from '../../../../app/lib/aws/s3'
 import { sendPushToUsers } from '../../../../app/lib/mobile/sendPush'
 import UserModel from '../../../../app/lib/models/user'
+
+async function getWorkerInfo(userId: string) {
+  const user = await UserModel.findById(userId)
+    .populate({ path: 'avatar', select: '_id variants' }).lean() as any
+  return {
+    workerUsername: user?.username ?? null,
+    workerAvatar: user?.avatar ? serializeResource(user.avatar) : null,
+  }
+}
 
 const sub = new Hono<{ Variables: { token: TokenPayload } }>()
 
@@ -498,7 +508,9 @@ sub.post('/api/mobile/issues/:id/commission', authMiddleware, async (c) => {
     if (!issue) return c.json({ error: 'Issue not found' }, 404)
 
     if ((issue as any).completion?.status === 'denied') {
-      ;(issue as any).previousCompletions = [...((issue as any).previousCompletions ?? []), (issue as any).completion]
+      const workerInfo = await getWorkerInfo(token.id)
+      const archivedCompletion = { ...(issue as any).completion.toObject(), ...workerInfo }
+      ;(issue as any).previousCompletions = [...((issue as any).previousCompletions ?? []), archivedCompletion]
       issue.markModified('previousCompletions')
     }
 
@@ -951,7 +963,8 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
       }
 
       // Archive completion, delete all pledges, revert issue to open
-      const currentCompletion = issue.completion
+      const workerInfo = await getWorkerInfo(acceptedApplicant.userId.toString())
+      const currentCompletion = { ...issue.completion, ...workerInfo }
 
       await Promise.all([
         Issue.findByIdAndUpdate(issueId, {
@@ -980,7 +993,8 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
 
     } else {
       // extend: archive current completion, reset for resubmission
-      const currentCompletion = issue.completion
+      const workerInfo = await getWorkerInfo(acceptedApplicant.userId.toString())
+      const currentCompletion = { ...issue.completion, ...workerInfo }
 
       await Issue.findByIdAndUpdate(issueId, {
         $push: { previousCompletions: currentCompletion },
