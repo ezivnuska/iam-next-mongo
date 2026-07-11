@@ -37,16 +37,19 @@ export async function deleteIssueWithCleanup(issueId: string, force = false): Pr
   // Release Stripe holds on pledges before removing DB records
   await releasePledgeHolds(issueId)
 
-  const completionDocs = await Completion.find({ issueId }).select('images').lean() as any[]
+  const completionDocs  = await Completion.find({ issueId }).select('images').lean() as any[]
+  const applicantDocs   = await Applicant.find({ issueId }).select('startImageId').lean() as any[]
   const completionImageIds = completionDocs.flatMap((c: any) => c.images ?? [])
+  const applicantImageIds  = applicantDocs.map((a: any) => a.startImageId).filter(Boolean)
   const issueImageIds      = issue.images ?? []
   const reportImageIds     = (issue.reports ?? []).map((r: any) => r.imageId).filter(Boolean)
-  const allImageIds        = [...completionImageIds, ...issueImageIds, ...reportImageIds]
+  const allImageIds        = [...completionImageIds, ...applicantImageIds, ...issueImageIds, ...reportImageIds]
 
-  const [completionImages, issueImages, reportImages] = await Promise.all([
+  const [completionImages, applicantImages, issueImages, reportImages] = await Promise.all([
     completionImageIds.length > 0 ? ImageModel.find({ _id: { $in: completionImageIds } }).lean() : Promise.resolve([]),
-    issueImageIds.length     > 0 ? ImageModel.find({ _id: { $in: issueImageIds }     }).lean() : Promise.resolve([]),
-    reportImageIds.length    > 0 ? ImageModel.find({ _id: { $in: reportImageIds }    }).lean() : Promise.resolve([]),
+    applicantImageIds.length  > 0 ? ImageModel.find({ _id: { $in: applicantImageIds }  }).lean() : Promise.resolve([]),
+    issueImageIds.length      > 0 ? ImageModel.find({ _id: { $in: issueImageIds }      }).lean() : Promise.resolve([]),
+    reportImageIds.length     > 0 ? ImageModel.find({ _id: { $in: reportImageIds }     }).lean() : Promise.resolve([]),
   ])
 
   await Promise.all([
@@ -61,6 +64,7 @@ export async function deleteIssueWithCleanup(issueId: string, force = false): Pr
 
   const allImages = [
     ...(completionImages as any[]),
+    ...(applicantImages as any[]),
     ...(issueImages as any[]),
     ...(reportImages as any[]),
   ]
