@@ -41,8 +41,9 @@ issueById.get('/api/mobile/issues/:id', authMiddleware, async (c) => {
     ])
     if (!need) return c.json({ error: 'Issue not found' }, 404)
 
-    const activeCompletion = (completions as any[]).find((c: any) => c.status !== 'denied') ?? null
-    const previousCompletions = (completions as any[]).filter((c: any) => c.status === 'denied')
+    const HISTORICAL_STATUSES = new Set(['denied', 'partial'])
+    const activeCompletion = (completions as any[]).find((c: any) => !HISTORICAL_STATUSES.has(c.status)) ?? null
+    const previousCompletions = (completions as any[]).filter((c: any) => HISTORICAL_STATUSES.has(c.status))
 
     return c.json({
       issue: serializeIssue({ ...need, pledged: pledges, applicants }),

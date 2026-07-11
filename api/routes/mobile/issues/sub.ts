@@ -922,16 +922,23 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
       const allPledges = await Pledge.find({ issueId, withdrawn: { $ne: true } }).lean() as any[]
       const applicantUser = await UserModel.findById(acceptedApplicant.userId).lean() as any
 
-      if (applicantUser?.stripeAccountId) {
-        await Promise.allSettled(allPledges.map(async (pledge: any) => {
-          const pledgerIdStr = pledge.userId.toString()
-          const isDenied = deniedVoterIds.has(pledgerIdStr)
-          const isApproved = approvedVoterIds.has(pledgerIdStr) || !isDenied
+      // Pledges from deniers who chose "Keep pledge" are preserved on the reopened issue.
+      // Only approved pledges get captured and deleted.
+      const pledgeIdsToDelete: string[] = []
 
-          if (!pledge.stripePaymentIntentId) return
-          try {
+      await Promise.allSettled(allPledges.map(async (pledge: any) => {
+        const pledgerIdStr = pledge.userId.toString()
+        const isDenied = deniedVoterIds.has(pledgerIdStr)
+        if (isDenied) return // "Keep pledge" — preserve for reopened issue
+
+        if (!pledge.stripePaymentIntentId) {
+          pledgeIdsToDelete.push(pledge._id.toString())
+          return
+        }
+        try {
+          if (applicantUser?.stripeAccountId) {
             const pi = await stripe.paymentIntents.retrieve(pledge.stripePaymentIntentId)
-            if (isApproved && pi.status === 'requires_capture') {
+            if (pi.status === 'requires_capture') {
               await stripe.paymentIntents.capture(pledge.stripePaymentIntentId)
               const captured = await stripe.paymentIntents.retrieve(pledge.stripePaymentIntentId)
               const chargeId = captured.latest_charge as string
@@ -944,24 +951,26 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
                   description: `Partial payment for issue ${issueId}`,
                 })
               }
-            } else if (isDenied) {
-              if (pi.status === 'requires_capture') {
-                await stripe.paymentIntents.cancel(pledge.stripePaymentIntentId)
-              } else if (pi.status === 'succeeded') {
-                await stripe.refunds.create({ payment_intent: pledge.stripePaymentIntentId })
-              }
             }
-          } catch (err: any) {
-            console.error(`[worker-decision] pledge ${pledge._id} processing failed:`, err?.message)
           }
-        }))
-      }
+          pledgeIdsToDelete.push(pledge._id.toString())
+        } catch (err: any) {
+          console.error(`[worker-decision] pledge ${pledge._id} processing failed:`, err?.message)
+          pledgeIdsToDelete.push(pledge._id.toString())
+        }
+      }))
 
-      // Mark completion as denied, delete all pledges, revert issue to open
+      const keptPledgeIds = allPledges
+        .filter((p: any) => deniedVoterIds.has(p.userId.toString()))
+        .map((p: any) => p._id)
+
+      // Mark completion as partial payout, revert issue to open
       await Promise.all([
-        Completion.findByIdAndUpdate(activeCompletion._id, { status: 'denied' }),
+        Completion.findByIdAndUpdate(activeCompletion._id, { status: 'partial' }),
         Issue.findByIdAndUpdate(issueId, { $set: { status: 'open', acceptedApplicantId: null, completionStatus: null } }),
-        Pledge.deleteMany({ issueId }),
+        pledgeIdsToDelete.length > 0 ? Pledge.deleteMany({ _id: { $in: pledgeIdsToDelete } }) : Promise.resolve(),
+        Pledge.deleteMany({ issueId, withdrawn: true }),
+        keptPledgeIds.length > 0 ? Pledge.updateMany({ _id: { $in: keptPledgeIds } }, { $unset: { applicantId: '' } }) : Promise.resolve(),
         Applicant.deleteOne({ _id: acceptedApplicant._id }),
       ])
 
@@ -975,7 +984,7 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
         Applicant.find({ issueId }).populate(APPLICANT_FULL_POPULATE).lean(),
       ])
 
-      const prevCompletions = await Completion.find({ issueId, status: 'denied' })
+      const prevCompletions = await Completion.find({ issueId, status: { $in: ['denied', 'partial'] } })
         .populate('images')
         .populate({ path: 'workerUserId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
         .sort({ createdAt: 1 }).lean() as any[]
@@ -984,7 +993,7 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
       const serializedOldCompletion = serializeCompletion(activeCompletion, issueId)
       const serializedPrevCompletions = prevCompletions.map((c: any) => serializeCompletion(c, issueId))
 
-      emitIssueCompletionReviewed({ issueId, completion: { ...serializedOldCompletion, status: 'denied' }, issue: serializedNeed, previousCompletions: serializedPrevCompletions })
+      emitIssueCompletionReviewed({ issueId, completion: { ...serializedOldCompletion, status: 'partial' }, issue: serializedNeed, previousCompletions: serializedPrevCompletions })
         .catch((err: any) => console.warn('[socket]', err?.message ?? err))
 
       return c.json({ issue: serializedNeed })
@@ -1007,7 +1016,7 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
         Applicant.find({ issueId }).populate(APPLICANT_FULL_POPULATE).lean(),
       ])
 
-      const prevCompletions = await Completion.find({ issueId, status: 'denied' })
+      const prevCompletions = await Completion.find({ issueId, status: { $in: ['denied', 'partial'] } })
         .populate('images')
         .populate({ path: 'workerUserId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
         .sort({ createdAt: 1 }).lean() as any[]
