@@ -6,6 +6,7 @@
 if (typeof window !== 'undefined') throw new Error('Server-only module')
 
 import Issue from '@/app/lib/models/issue'
+import Completion from '@/app/lib/models/completion'
 import Pledge from '@/app/lib/models/pledge'
 import Fee from '@/app/lib/models/fee'
 import Applicant from '@/app/lib/models/applicant'
@@ -36,7 +37,8 @@ export async function deleteIssueWithCleanup(issueId: string, force = false): Pr
   // Release Stripe holds on pledges before removing DB records
   await releasePledgeHolds(issueId)
 
-  const completionImageIds = issue.completion?.images ?? []
+  const completionDocs = await Completion.find({ issueId }).select('images').lean() as any[]
+  const completionImageIds = completionDocs.flatMap((c: any) => c.images ?? [])
   const issueImageIds      = issue.images ?? []
   const reportImageIds     = (issue.reports ?? []).map((r: any) => r.imageId).filter(Boolean)
   const allImageIds        = [...completionImageIds, ...issueImageIds, ...reportImageIds]
@@ -49,6 +51,7 @@ export async function deleteIssueWithCleanup(issueId: string, force = false): Pr
 
   await Promise.all([
     Issue.findByIdAndDelete(issueId),
+    Completion.deleteMany({ issueId }),
     Pledge.deleteMany({ issueId }),
     Fee.deleteMany({ issueId }),
     Applicant.deleteMany({ issueId }),

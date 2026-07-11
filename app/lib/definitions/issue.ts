@@ -8,16 +8,6 @@ export type IssueStatus = 'open' | 'completed'
 export type IssueType = 'Clean Up' | 'Gardening' | 'Hauling'
 export const ISSUE_TYPES: IssueType[] = ['Clean Up', 'Gardening', 'Hauling']
 
-export interface ICompletion {
-  _id: Types.ObjectId
-  applicantId: Types.ObjectId
-  images: Types.ObjectId[]
-  reviews: { userId: Types.ObjectId; vote: 'approve' | 'deny' }[]
-  status: 'pending' | 'approved' | 'denied' | 'worker_decision'
-  createdAt: Date
-  updatedAt: Date
-}
-
 export interface IIssueReport {
   _id: Types.ObjectId
   userId: Types.ObjectId
@@ -41,8 +31,7 @@ export interface IIssue extends Document {
   flaggedBy?: Types.ObjectId[]
   images?: Types.ObjectId[]
   likes?: Types.ObjectId[]
-  completion?: ICompletion | null
-  previousCompletions?: ICompletion[]
+  completionStatus?: string | null
   reports?: IIssueReport[]
   acceptedApplicantId?: Types.ObjectId | null
 }

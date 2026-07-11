@@ -1,6 +1,5 @@
 // app/lib/mobile/attachIssueData.ts
 // Attaches pledges and applicants to an array of raw Issue documents.
-// completionStatus is read directly from the embedded issue.completion field.
 
 import { USER_WITH_AVATAR_POPULATE, APPLICANT_USER_POPULATE } from '@/app/lib/utils/validation'
 import Pledge from '@/app/lib/models/pledge'
@@ -32,6 +31,6 @@ export async function attachIssueData(issues: any[]) {
     ...n,
     pledged: pledgesByIssue[n._id.toString()] ?? [],
     applicants: applicantsByIssue[n._id.toString()] ?? [],
-    completionStatus: n.completion?.status ?? null,
+    completionStatus: n.completionStatus ?? null,
   }))
 }

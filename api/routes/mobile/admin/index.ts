@@ -7,6 +7,7 @@ import { Hono } from 'hono'
 import { authMiddleware, TokenPayload } from '../../../middleware/auth'
 import { connectToDatabase } from '../../../../app/lib/mongoose'
 import Issue from '../../../../app/lib/models/issue'
+import Completion from '../../../../app/lib/models/completion'
 import Pledge from '../../../../app/lib/models/pledge'
 import Fee from '../../../../app/lib/models/fee'
 import Applicant from '../../../../app/lib/models/applicant'
@@ -131,11 +132,8 @@ admin.post('/api/mobile/admin/reset', authMiddleware, async (c) => {
       })
     )
 
-    const issuesWithCompletion = await Issue.find(
-      { 'completion.images': { $exists: true, $ne: [] } },
-      { 'completion.images': 1 }
-    ).lean() as any[]
-    const completionImageIds = issuesWithCompletion.flatMap((n) => n.completion?.images ?? [])
+    const completionDocs = await Completion.find({}, { images: 1 }).lean() as any[]
+    const completionImageIds = completionDocs.flatMap((c) => c.images ?? [])
 
     const completionImages = completionImageIds.length > 0
       ? await ImageModel.find({ _id: { $in: completionImageIds } }).lean()
@@ -143,6 +141,7 @@ admin.post('/api/mobile/admin/reset', authMiddleware, async (c) => {
 
     const [issueResult, pledgeResult, feeResult, applicantResult, ratingResult] = await Promise.all([
       Issue.deleteMany({}),
+      Completion.deleteMany({}),
       Pledge.deleteMany({}),
       Fee.deleteMany({}),
       Applicant.deleteMany({}),

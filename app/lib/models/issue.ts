@@ -16,27 +16,6 @@ const issueReportSchema = new Schema(
   { _id: true, timestamps: true }
 )
 
-const completionReviewSchema = new Schema(
-  {
-    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    vote:   { type: String, enum: ['approve', 'deny'], required: true },
-  },
-  { _id: false }
-)
-
-const completionSchema = new Schema(
-  {
-    applicantId:    { type: Schema.Types.ObjectId, ref: 'Applicant', required: true },
-    workerUsername: { type: String, default: null },
-    workerAvatar:   { type: Schema.Types.Mixed, default: null },
-    images:         [{ type: Schema.Types.ObjectId, ref: 'Image' }],
-    reviews:        { type: [completionReviewSchema], default: [] },
-    status:         { type: String, enum: ['pending', 'approved', 'denied', 'worker_decision'], default: 'pending' },
-    autoApproveAt:  { type: Date },
-  },
-  { _id: true, timestamps: true }
-)
-
 const issueSchema = new Schema<IIssue>(
   {
     author:          { type: Schema.Types.ObjectId, ref: 'User', required: true },
@@ -52,8 +31,7 @@ const issueSchema = new Schema<IIssue>(
     flaggedBy:       [{ type: Schema.Types.ObjectId, ref: 'User', default: [] }],
     images:          [{ type: Schema.Types.ObjectId, ref: 'Image', default: [] }],
     likes:           [{ type: Schema.Types.ObjectId, ref: 'User', default: [] }],
-    completion:            { type: completionSchema, default: null },
-    previousCompletions:   { type: [completionSchema], default: [] },
+    completionStatus:      { type: String, enum: ['pending', 'approved', 'denied', 'worker_decision'], default: null },
     reports:               { type: [issueReportSchema], default: [] },
     acceptedApplicantId:   { type: Schema.Types.ObjectId, ref: 'Applicant', default: null },
   },
@@ -63,7 +41,6 @@ const issueSchema = new Schema<IIssue>(
 issueSchema.index({ status: 1 })
 issueSchema.index({ author: 1 })
 issueSchema.index({ flagged: 1 })
-issueSchema.index({ 'completion.status': 1, 'completion.autoApproveAt': 1 })
 
 const Issue: Model<IIssue> = mongoose.models.Issue || mongoose.model<IIssue>('Issue', issueSchema)
 export default Issue

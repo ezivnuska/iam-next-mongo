@@ -11,7 +11,6 @@ import {
   serializeCompletion,
   serializeApplicant,
   serializePledge,
-  serializeResource,
 } from '../../../../app/lib/mobile/serializers'
 import { isValidObjectId, USER_WITH_AVATAR_POPULATE, APPLICANT_FULL_POPULATE } from '../../../../app/lib/utils/validation'
 import { calculateApprovalRate } from '../../../../app/lib/utils/ratingUtils'
@@ -33,6 +32,7 @@ import {
   emitIssuePledgeRemoved,
 } from '../../../lib/socketEmit'
 import Issue from '../../../../app/lib/models/issue'
+import Completion from '../../../../app/lib/models/completion'
 import Applicant from '../../../../app/lib/models/applicant'
 import Pledge from '../../../../app/lib/models/pledge'
 import Rating from '../../../../app/lib/models/rating'
@@ -42,15 +42,6 @@ import stripe from '../../../../app/lib/stripe'
 import { deleteS3File, uploadImageVariants } from '../../../../app/lib/aws/s3'
 import { sendPushToUsers } from '../../../../app/lib/mobile/sendPush'
 import UserModel from '../../../../app/lib/models/user'
-
-async function getWorkerInfo(userId: string) {
-  const user = await UserModel.findById(userId)
-    .populate({ path: 'avatar', select: '_id variants' }).lean() as any
-  return {
-    workerUsername: user?.username ?? null,
-    workerAvatar: user?.avatar ? serializeResource(user.avatar) : null,
-  }
-}
 
 const sub = new Hono<{ Variables: { token: TokenPayload } }>()
 
@@ -461,16 +452,16 @@ sub.get('/api/mobile/issues/:id/commission', authMiddleware, async (c) => {
 
   try {
     await connectToDatabase()
-    const issue = await Issue.findById(issueId).populate('completion.images').lean() as any
-    const completion = issue?.completion ?? null
+    const completion = await Completion.findOne({ issueId, status: { $in: ['pending', 'worker_decision'] } })
+      .populate('images')
+      .populate({ path: 'workerUserId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
+      .lean() as any
 
-    let myVote: 'approve' | 'deny' | null = null
     const commissionId = completion?._id ?? null
+    let myVote: 'approve' | 'deny' | null = null
     if (commissionId) {
-      try {
-        const myDoc = await Rating.findOne({ commissionId, raterId: token.id }).lean() as any
-        myVote = myDoc?.vote ?? null
-      } catch {}
+      const myDoc = await Rating.findOne({ commissionId, raterId: token.id }).lean() as any
+      myVote = myDoc?.vote ?? null
     }
 
     return c.json({
@@ -504,37 +495,33 @@ sub.post('/api/mobile/issues/:id/commission', authMiddleware, async (c) => {
     if (ownedImages.length !== imageIds.length)
       return c.json({ error: 'One or more images not found or not owned by you' }, 403)
 
-    const issue = await Issue.findById(issueId)
+    const issue = await Issue.findById(issueId).lean() as any
     if (!issue) return c.json({ error: 'Issue not found' }, 404)
 
-    if ((issue as any).completion?.status === 'denied') {
-      const workerInfo = await getWorkerInfo(token.id)
-      const archivedCompletion = { ...(issue as any).completion.toObject(), ...workerInfo }
-      ;(issue as any).previousCompletions = [...((issue as any).previousCompletions ?? []), archivedCompletion]
-      issue.markModified('previousCompletions')
-    }
-
     const autoApproveAt = new Date(Date.now() + 48 * 60 * 60 * 1000)
-    issue.completion = {
-      applicantId: (applicant as any)._id,
+    const newCompletion = await Completion.create({
+      issueId,
+      workerUserId: token.id,
       images: imageIds,
       reviews: [],
       status: 'pending',
       autoApproveAt,
-    } as any
-    await issue.save()
-    await issue.populate('completion.images')
+    })
+    await Issue.findByIdAndUpdate(issueId, { completionStatus: 'pending' })
 
-    const serialized = serializeCompletion((issue.completion as any).toObject(), issueId)
+    await newCompletion.populate('images')
+    await newCompletion.populate({ path: 'workerUserId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
+
+    const serialized = serializeCompletion(newCompletion.toObject(), issueId)
     emitIssueCompletionSubmitted({ issueId, completion: serialized })
       .catch((err: any) => console.warn('[socket]', err?.message ?? err))
     ;(async () => {
       const pledges = await Pledge.find({ issueId }, { userId: 1 }).lean() as any[]
       const recipientIds = [
-        (issue as any).author.toString(),
+        issue.author.toString(),
         ...pledges.map((p: any) => p.userId.toString()),
       ].filter((uid) => uid !== token.id)
-      const label = (issue as any).title ? `"${(issue as any).title}"` : 'Work'
+      const label = issue.title ? `"${issue.title}"` : 'Work'
       await sendPushToUsers(
         recipientIds,
         'Work submitted for review',
@@ -743,10 +730,12 @@ sub.post('/api/mobile/issues/:id/commission/rating', authMiddleware, async (c) =
 
   try {
     await connectToDatabase()
-    const issue = await Issue.findById(issueId).select('completion author').lean() as any
-    if (!issue?.completion) return c.json({ error: 'No completion found' }, 404)
-    if (issue.completion.status !== 'pending')
-      return c.json({ error: 'Completion is not open for review' }, 400)
+    const issue = await Issue.findById(issueId).select('author completionStatus').lean() as any
+    if (!issue) return c.json({ error: 'Issue not found' }, 404)
+    if (issue.completionStatus !== 'pending') return c.json({ error: 'Completion is not open for review' }, 400)
+
+    const activeCompletion = await Completion.findOne({ issueId, status: 'pending' }).lean() as any
+    if (!activeCompletion) return c.json({ error: 'No completion found' }, 404)
 
     const isAuthor = issue.author.toString() === token.id
     let myPledge: any = null
@@ -758,18 +747,18 @@ sub.post('/api/mobile/issues/:id/commission/rating', authMiddleware, async (c) =
     const acceptedApplicant = await Applicant.findOne({ issueId, status: 'accepted' }).lean() as any
     if (!acceptedApplicant) return c.json({ error: 'No accepted applicant found' }, 404)
 
-    // Upsert Rating and update embedded completion.reviews atomically
-    const commissionId = issue.completion._id
+    // Upsert Rating and update completion.reviews
+    const commissionId = activeCompletion._id
     await Rating.findOneAndUpdate(
       { commissionId, raterId: token.id },
       { issueId, commissionId, raterId: token.id, workerId: acceptedApplicant.userId, vote },
       { upsert: true }
     )
 
-    const existingReview = issue.completion.reviews.find((r: any) => r.userId.toString() === token.id)
+    const existingReview = activeCompletion.reviews.find((r: any) => r.userId.toString() === token.id)
     if (!existingReview) {
-      await Issue.findByIdAndUpdate(issueId, {
-        $push: { 'completion.reviews': { userId: token.id, vote } },
+      await Completion.findByIdAndUpdate(commissionId, {
+        $push: { reviews: { userId: token.id, vote } },
       })
     }
 
@@ -816,24 +805,26 @@ sub.post('/api/mobile/issues/:id/commission/rating', authMiddleware, async (c) =
     let serializedNeed: any = null
 
     if (autoDecision === 'approved') {
-      const claimed = await Issue.findOneAndUpdate(
-        { _id: issueId, 'completion.status': 'pending' },
-        { $set: { 'completion.status': 'approved' } }
+      const claimed = await Completion.findOneAndUpdate(
+        { _id: commissionId, status: 'pending' },
+        { $set: { status: 'approved' } }
       )
       if (claimed) {
-        try {
-          await settleIssue(issueId)
-          await Issue.findByIdAndUpdate(issueId, { $set: { status: 'completed' } })
-        } catch (err) {
+        await Issue.findByIdAndUpdate(issueId, { status: 'completed', completionStatus: 'approved' })
+        try { await settleIssue(issueId) } catch (err) {
           console.error('[commission/rating] settleIssue failed:', err)
         }
       }
 
+      const updatedCompletion = await Completion.findById(commissionId)
+        .populate('images')
+        .populate({ path: 'workerUserId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
+        .lean() as any
       const updatedIssue = await Issue.findById(issueId)
         .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
-        .populate('images').populate('completion.images').lean() as any
+        .populate('images').lean() as any
 
-      serializedCompletion = serializeCompletion(updatedIssue.completion, issueId)
+      serializedCompletion = serializeCompletion(updatedCompletion, issueId)
       const [p, a] = await Promise.all([
         Pledge.find({ issueId }).populate(USER_WITH_AVATAR_POPULATE).lean(),
         Applicant.find({ issueId }).populate(APPLICANT_FULL_POPULATE).lean(),
@@ -853,15 +844,18 @@ sub.post('/api/mobile/issues/:id/commission/rating', authMiddleware, async (c) =
         .catch((err: any) => console.warn('[push]', err?.message ?? err))
 
     } else if (autoDecision === 'worker_decision') {
-      await Issue.findOneAndUpdate(
-        { _id: issueId, 'completion.status': 'pending' },
-        { $set: { 'completion.status': 'worker_decision' } }
+      await Completion.findOneAndUpdate(
+        { _id: commissionId, status: 'pending' },
+        { $set: { status: 'worker_decision' } }
       )
+      await Issue.findByIdAndUpdate(issueId, { completionStatus: 'worker_decision' })
 
-      const updatedIssue = await Issue.findById(issueId)
-        .populate('completion.images').lean() as any
+      const updatedCompletion = await Completion.findById(commissionId)
+        .populate('images')
+        .populate({ path: 'workerUserId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
+        .lean() as any
 
-      serializedCompletion = serializeCompletion(updatedIssue.completion, issueId)
+      serializedCompletion = serializeCompletion(updatedCompletion, issueId)
 
       emitIssueCompletionReviewed({ issueId, completion: serializedCompletion })
         .catch((err: any) => console.warn('[socket]', err?.message ?? err))
@@ -907,19 +901,20 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
     if (acceptedApplicant.userId.toString() !== token.id)
       return c.json({ error: 'Only the worker can make this decision' }, 403)
 
-    const issue = await Issue.findById(issueId).populate('completion.images').lean() as any
-    if (!issue?.completion) return c.json({ error: 'No completion found' }, 404)
-    if (issue.completion.status !== 'worker_decision')
-      return c.json({ error: 'Not awaiting worker decision' }, 400)
+    const activeCompletion = await Completion.findOne({ issueId, status: 'worker_decision' })
+      .populate('images')
+      .populate({ path: 'workerUserId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
+      .lean() as any
+    if (!activeCompletion) return c.json({ error: 'No completion found' }, 404)
 
     if (choice === 'accept_partial') {
       const approvedVoterIds = new Set(
-        issue.completion.reviews
+        activeCompletion.reviews
           .filter((r: any) => r.vote === 'approve')
           .map((r: any) => r.userId.toString())
       )
       const deniedVoterIds = new Set(
-        issue.completion.reviews
+        activeCompletion.reviews
           .filter((r: any) => r.vote === 'deny')
           .map((r: any) => r.userId.toString())
       )
@@ -962,15 +957,10 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
         }))
       }
 
-      // Archive completion, delete all pledges, revert issue to open
-      const workerInfo = await getWorkerInfo(acceptedApplicant.userId.toString())
-      const currentCompletion = { ...issue.completion, ...workerInfo }
-
+      // Mark completion as denied, delete all pledges, revert issue to open
       await Promise.all([
-        Issue.findByIdAndUpdate(issueId, {
-          $push: { previousCompletions: currentCompletion },
-          $set: { completion: null, status: 'open', acceptedApplicantId: null },
-        }),
+        Completion.findByIdAndUpdate(activeCompletion._id, { status: 'denied' }),
+        Issue.findByIdAndUpdate(issueId, { $set: { status: 'open', acceptedApplicantId: null, completionStatus: null } }),
         Pledge.deleteMany({ issueId }),
         Applicant.deleteOne({ _id: acceptedApplicant._id }),
       ])
@@ -978,30 +968,31 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
       const updatedIssue = await Issue.findById(issueId)
         .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
         .populate('images')
-        .populate('previousCompletions.images')
         .lean() as any
 
       const [p, a] = await Promise.all([
         Pledge.find({ issueId }).populate(USER_WITH_AVATAR_POPULATE).lean(),
         Applicant.find({ issueId }).populate(APPLICANT_FULL_POPULATE).lean(),
       ])
-      const serializedNeed = serializeIssue({ ...updatedIssue, pledged: p, applicants: a })
-      const serializedOldCompletion = serializeCompletion(currentCompletion, issueId)
 
-      emitIssueCompletionReviewed({ issueId, completion: { ...serializedOldCompletion, status: 'denied' }, issue: serializedNeed })
+      const prevCompletions = await Completion.find({ issueId, status: 'denied' })
+        .populate('images')
+        .populate({ path: 'workerUserId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
+        .sort({ createdAt: 1 }).lean() as any[]
+
+      const serializedNeed = serializeIssue({ ...updatedIssue, pledged: p, applicants: a })
+      const serializedOldCompletion = serializeCompletion(activeCompletion, issueId)
+      const serializedPrevCompletions = prevCompletions.map((c: any) => serializeCompletion(c, issueId))
+
+      emitIssueCompletionReviewed({ issueId, completion: { ...serializedOldCompletion, status: 'denied' }, issue: serializedNeed, previousCompletions: serializedPrevCompletions })
         .catch((err: any) => console.warn('[socket]', err?.message ?? err))
 
       return c.json({ issue: serializedNeed })
 
     } else {
-      // extend: archive current completion, reset for resubmission
-      const workerInfo = await getWorkerInfo(acceptedApplicant.userId.toString())
-      const currentCompletion = { ...issue.completion, ...workerInfo }
-
-      await Issue.findByIdAndUpdate(issueId, {
-        $push: { previousCompletions: currentCompletion },
-        $set: { completion: null },
-      })
+      // extend: mark current completion as denied, reset for resubmission
+      await Completion.findByIdAndUpdate(activeCompletion._id, { status: 'denied' })
+      await Issue.findByIdAndUpdate(issueId, { completionStatus: null })
 
       const newDeadline = new Date(Date.now() + 24 * 60 * 60 * 1000)
       await Applicant.findByIdAndUpdate(acceptedApplicant._id, { completionDeadline: newDeadline })
@@ -1009,17 +1000,23 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
       const updatedIssue = await Issue.findById(issueId)
         .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
         .populate('images')
-        .populate('previousCompletions.images')
         .lean() as any
 
       const [p, a] = await Promise.all([
         Pledge.find({ issueId }).populate(USER_WITH_AVATAR_POPULATE).lean(),
         Applicant.find({ issueId }).populate(APPLICANT_FULL_POPULATE).lean(),
       ])
-      const serializedNeed = serializeIssue({ ...updatedIssue, pledged: p, applicants: a })
-      const serializedOldCompletion = serializeCompletion(currentCompletion, issueId)
 
-      emitIssueCompletionReviewed({ issueId, completion: { ...serializedOldCompletion, status: 'denied' }, issue: serializedNeed })
+      const prevCompletions = await Completion.find({ issueId, status: 'denied' })
+        .populate('images')
+        .populate({ path: 'workerUserId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
+        .sort({ createdAt: 1 }).lean() as any[]
+
+      const serializedNeed = serializeIssue({ ...updatedIssue, pledged: p, applicants: a })
+      const serializedOldCompletion = serializeCompletion(activeCompletion, issueId)
+      const serializedPrevCompletions = prevCompletions.map((c: any) => serializeCompletion(c, issueId))
+
+      emitIssueCompletionReviewed({ issueId, completion: { ...serializedOldCompletion, status: 'denied' }, issue: serializedNeed, previousCompletions: serializedPrevCompletions })
         .catch((err: any) => console.warn('[socket]', err?.message ?? err))
 
       sendPushToUsers(
@@ -1057,21 +1054,24 @@ sub.patch('/api/mobile/issues/:id/complete', authMiddleware, async (c) => {
     const updatedIssue = await Issue.findById(id)
       .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
       .populate('images')
-      .populate('completion.images')
       .lean() as any
 
-    const [pledges, applicants, acceptedApplicant] = await Promise.all([
+    const [pledges, applicants] = await Promise.all([
       Pledge.find({ issueId: id }).populate(USER_WITH_AVATAR_POPULATE).lean(),
       Applicant.find({ issueId: id }).lean(),
-      Applicant.findOne({ issueId: id, status: 'accepted' }).lean() as any,
     ])
 
     const serializedIssue = serializeIssue({ ...updatedIssue, pledged: pledges, applicants })
 
-    if (updatedIssue?.completion) {
+    const activeCompletion = await Completion.findOne({ issueId: id, status: { $in: ['pending', 'approved', 'worker_decision'] } })
+      .populate('images')
+      .populate({ path: 'workerUserId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
+      .lean() as any
+
+    if (activeCompletion) {
       emitIssueCompletionReviewed({
         issueId: id,
-        completion: serializeCompletion(updatedIssue.completion, id),
+        completion: serializeCompletion(activeCompletion, id),
         issue: serializedIssue,
       }).catch((err: any) => console.warn('[socket]', err?.message ?? err))
 

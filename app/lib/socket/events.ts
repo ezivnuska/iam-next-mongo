@@ -174,13 +174,18 @@ export interface IssueCompletionPayload {
 	completion: {
 		id: string
 		issueId: string
-		applicantId: string
+		workerUserId: string
+		username: string | null
+		avatar: any | null
 		images: any[]
 		reviews: { userId: string; vote: 'approve' | 'deny' }[]
-		status: 'pending' | 'approved' | 'denied'
+		status: 'pending' | 'approved' | 'denied' | 'worker_decision'
 		createdAt: string
+		completedAt: string | null
+		autoApproveAt?: string | null
 	}
 	issue?: any
+	previousCompletions?: any[]
 }
 
 export interface IssueCreatedPayload {

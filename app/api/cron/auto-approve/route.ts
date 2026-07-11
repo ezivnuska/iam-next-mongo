@@ -8,8 +8,9 @@ import { connectToDatabase } from '@/app/lib/mongoose'
 import { serializeCompletion, serializeIssue } from '@/app/lib/mobile/serializers'
 import { settleIssue } from '@/app/lib/mobile/settleIssue'
 import { getIssueAudienceIds, emitIssueCompletionReviewed } from '@/app/lib/socket/emit'
-import { USER_WITH_AVATAR_POPULATE } from '@/app/lib/utils/validation'
+import { USER_WITH_AVATAR_POPULATE, APPLICANT_FULL_POPULATE } from '@/app/lib/utils/validation'
 import Issue from '@/app/lib/models/issue'
+import Completion from '@/app/lib/models/completion'
 import Applicant from '@/app/lib/models/applicant'
 import Pledge from '@/app/lib/models/pledge'
 import '@/app/lib/models/image'
@@ -24,46 +25,51 @@ export const GET = async (req: NextRequest) => {
     await connectToDatabase()
 
     const now = new Date()
-    const expired = await Issue.find({
-      'completion.status': 'pending',
-      'completion.autoApproveAt': { $lte: now },
+    const expired = await Completion.find({
+      status: 'pending',
+      autoApproveAt: { $lte: now },
     }).lean() as any[]
 
     if (expired.length === 0) return NextResponse.json({ approved: 0 })
 
     let approved = 0
 
-    await Promise.allSettled(expired.map(async (issue) => {
-      const issueId = issue._id.toString()
+    await Promise.allSettled(expired.map(async (expiredCompletion) => {
+      const issueId = expiredCompletion.issueId.toString()
       try {
-        const claimed = await Issue.findOneAndUpdate(
-          { _id: issueId, 'completion.status': 'pending' },
-          { $set: { 'completion.status': 'approved', status: 'completed' } }
+        const claimed = await Completion.findOneAndUpdate(
+          { _id: expiredCompletion._id, status: 'pending' },
+          { $set: { status: 'approved' } }
         )
         if (!claimed) return
+
+        await Issue.findByIdAndUpdate(issueId, { status: 'completed', completionStatus: 'approved' })
 
         try { await settleIssue(issueId) } catch (err) {
           console.error('[cron/auto-approve] settleIssue failed:', issueId, err)
         }
 
+        const updatedCompletion = await Completion.findById(expiredCompletion._id)
+          .populate('images')
+          .populate({ path: 'workerUserId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
+          .lean() as any
+
         const updatedIssue = await Issue.findById(issueId)
           .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
-          .populate('image')
-          .populate('completion.images')
+          .populate('images')
           .lean() as any
 
         const [pledges, applicants] = await Promise.all([
           Pledge.find({ issueId }).populate(USER_WITH_AVATAR_POPULATE).lean(),
-          Applicant.find({ issueId }).lean(),
+          Applicant.find({ issueId }).populate(APPLICANT_FULL_POPULATE).lean(),
         ])
 
-        const serializedCompletion = serializeCompletion(updatedIssue.completion, issueId)
+        const serializedCompletion = serializeCompletion(updatedCompletion, issueId)
         const serializedIssue = serializeIssue({ ...updatedIssue, pledged: pledges, applicants })
 
-        const applicant = await Applicant.findOne({ issueId, status: 'accepted' }).lean() as any
-        const applicantUserId = applicant?.userId?.toString()
+        const workerUserId = expiredCompletion.workerUserId?.toString()
 
-        getIssueAudienceIds(issueId, ...(applicantUserId ? [applicantUserId] : [])).then((audience) =>
+        getIssueAudienceIds(issueId, ...(workerUserId ? [workerUserId] : [])).then((audience) =>
           emitIssueCompletionReviewed({ issueId, completion: serializedCompletion, issue: serializedIssue }, audience)
         ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
 

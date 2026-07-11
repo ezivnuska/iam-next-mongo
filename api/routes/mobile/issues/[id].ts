@@ -9,6 +9,7 @@ import { connectToDatabase } from '../../../../app/lib/mongoose'
 import { serializeIssue, serializeCompletion } from '../../../../app/lib/mobile/serializers'
 import { isValidObjectId, USER_WITH_AVATAR_POPULATE, APPLICANT_FULL_POPULATE } from '../../../../app/lib/utils/validation'
 import Issue from '../../../../app/lib/models/issue'
+import Completion from '../../../../app/lib/models/completion'
 import Pledge from '../../../../app/lib/models/pledge'
 import Applicant from '../../../../app/lib/models/applicant'
 import { deleteIssueWithCleanup } from '../../../../app/lib/mobile/deleteIssue'
@@ -23,24 +24,31 @@ issueById.get('/api/mobile/issues/:id', authMiddleware, async (c) => {
 
   try {
     await connectToDatabase()
-    const need = await Issue.findById(id)
-      .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
-      .populate('images')
-      .populate('completion.images')
-      .populate('previousCompletions.images')
-      .populate({ path: 'reports.userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
-      .populate({ path: 'reports.imageId', select: '_id variants' })
-      .lean()
-    if (!need) return c.json({ error: 'Issue not found' }, 404)
-
-    const [pledges, applicants] = await Promise.all([
+    const [need, completions, pledges, applicants] = await Promise.all([
+      Issue.findById(id)
+        .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
+        .populate('images')
+        .populate({ path: 'reports.userId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
+        .populate({ path: 'reports.imageId', select: '_id variants' })
+        .lean(),
+      Completion.find({ issueId: id })
+        .populate('images')
+        .populate({ path: 'workerUserId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
+        .sort({ createdAt: 1 })
+        .lean(),
       Pledge.find({ issueId: id }).populate(USER_WITH_AVATAR_POPULATE).lean(),
       Applicant.find({ issueId: id }).populate(APPLICANT_FULL_POPULATE).lean(),
     ])
-    const rawCompletion = (need as any).completion ?? null
-    const completionStatus = rawCompletion?.status ?? null
-    const completion = rawCompletion ? serializeCompletion(rawCompletion, id) : null
-    return c.json({ issue: serializeIssue({ ...need, pledged: pledges, applicants, completionStatus }), completion })
+    if (!need) return c.json({ error: 'Issue not found' }, 404)
+
+    const activeCompletion = (completions as any[]).find((c: any) => c.status !== 'denied') ?? null
+    const previousCompletions = (completions as any[]).filter((c: any) => c.status === 'denied')
+
+    return c.json({
+      issue: serializeIssue({ ...need, pledged: pledges, applicants }),
+      completion: activeCompletion ? serializeCompletion(activeCompletion, id) : null,
+      previousCompletions: previousCompletions.map((c: any) => serializeCompletion(c, id)),
+    })
   } catch (err) {
     console.error('[mobile/issues GET by id]', err)
     return c.json({ error: 'Failed to fetch issue' }, 500)

@@ -71,12 +71,13 @@ export function serializeApplicant(a: any) {
 }
 
 export function serializeCompletion(c: any, issueId?: string) {
+  const worker = c.workerUserId && typeof c.workerUserId === 'object' ? c.workerUserId : null
   return {
     id: c._id.toString(),
     issueId: issueId ?? c.issueId?.toString(),
-    applicantId: c.applicantId.toString(),
-    username: c.workerUsername ?? null,
-    avatar: c.workerAvatar ?? null,
+    workerUserId: worker ? worker._id.toString() : (c.workerUserId?.toString() ?? null),
+    username: worker?.username ?? null,
+    avatar: worker?.avatar ? serializeResource(worker.avatar) : null,
     images: Array.isArray(c.images)
       ? c.images.map((img: any) => serializeResource(img)).filter(Boolean)
       : [],
@@ -106,12 +107,8 @@ export function serializeIssue(n: any) {
     result.location = { latitude: n.location.latitude, longitude: n.location.longitude };
   }
   result.locationVisible = n.locationVisible === true;
-  const completionStatus = n.completion?.status ?? n.completionStatus ?? null
+  const completionStatus = n.completionStatus ?? null
   if (completionStatus != null) result.completionStatus = completionStatus
-  const rawAutoApproveAt = n.completion?.autoApproveAt
-  if (rawAutoApproveAt) {
-    result.autoApproveAt = rawAutoApproveAt instanceof Date ? rawAutoApproveAt.toISOString() : rawAutoApproveAt
-  }
   if (n.flagged === true) result.flagged = true
   // Support both new `images[]` and legacy `image` field on old documents
   const imageDocs = Array.isArray(n.images) && n.images.length > 0
@@ -121,10 +118,6 @@ export function serializeIssue(n: any) {
   if (serializedImages.length > 0) result.images = serializedImages
   const author = serializeAuthor(n.author);
   if (author) result.author = author;
-  if (Array.isArray(n.previousCompletions) && n.previousCompletions.length > 0) {
-    const issueId = n._id.toString()
-    result.previousCompletions = n.previousCompletions.map((c: any) => serializeCompletion(c, issueId))
-  }
   if (Array.isArray(n.reports) && n.reports.length > 0)
     result.reports = n.reports.map(serializeReport)
   return result;
