@@ -11,6 +11,7 @@ import { ImageVariant } from "@/app/lib/definitions/image";
 export interface ImageDocument extends Document {
     _id: Types.ObjectId;
     userId: Types.ObjectId;
+    issueId?: Types.ObjectId;
     username: string;
     alt?: string;
     variants: ImageVariant[];
