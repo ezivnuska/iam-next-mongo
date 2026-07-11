@@ -35,7 +35,7 @@ images.get('/api/mobile/images', authMiddleware, async (c) => {
   try {
     await connectToDatabase()
     const userId = c.req.query('userId') ?? token.id
-    const imgs = await ImageModel.find({ userId }).sort({ createdAt: -1 }).lean()
+    const imgs = await ImageModel.find({ userId, issueId: { $exists: false } }).sort({ createdAt: -1 }).lean()
     return c.json({ images: imgs.map((img: any) => serializeImage(img, token.id)) })
   } catch (err) {
     console.error('[mobile/images GET]', err)

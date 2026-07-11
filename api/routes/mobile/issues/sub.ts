@@ -378,7 +378,7 @@ sub.post('/api/mobile/issues/:id/images', authMiddleware, async (c) => {
     const username = userDoc.username as string
 
     const variants = await uploadImageVariants(buffer, extension, username)
-    const newImage = await ImageModel.create({ userId: token.id, username, alt: file.name, variants, likes: [] })
+    const newImage = await ImageModel.create({ userId: token.id, issueId: id, username, alt: file.name, variants, likes: [] })
     return c.json({
       image: {
         id: newImage._id.toString(),

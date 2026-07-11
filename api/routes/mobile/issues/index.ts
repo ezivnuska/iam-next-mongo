@@ -13,7 +13,7 @@ import { generateIssueTitle } from '../../../../app/lib/mobile/generateTitle'
 import { isValidObjectId } from '../../../../app/lib/utils/validation'
 import { emitIssueCreated } from '../../../lib/socketEmit'
 import Issue from '../../../../app/lib/models/issue'
-import '../../../../app/lib/models/image'
+import ImageModel from '../../../../app/lib/models/image'
 import '../../../../app/lib/models/user'
 
 const issues = new Hono<{ Variables: { token: TokenPayload } }>()
@@ -80,6 +80,10 @@ issues.post('/api/mobile/issues', authMiddleware, async (c) => {
       locationVisible: locationVisible === true,
       images: imageId ? [imageId] : [],
     })
+
+    if (imageId) {
+      await ImageModel.findByIdAndUpdate(imageId, { issueId: issue._id })
+    }
 
     await issue.populate([
       { path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } },
