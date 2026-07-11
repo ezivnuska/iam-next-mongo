@@ -70,11 +70,18 @@ export function serializeApplicant(a: any) {
   }
 }
 
-export function serializeCompletion(c: any, issueId?: string) {
+export function serializeCompletion(
+  c: any,
+  issueId?: string,
+  workerLookup?: Map<string, { username: string | null; avatar: any }>,
+) {
+  const worker = workerLookup?.get(c.applicantId.toString())
   return {
     id: c._id.toString(),
     issueId: issueId ?? c.issueId?.toString(),
     applicantId: c.applicantId.toString(),
+    username: worker?.username ?? null,
+    avatar: worker?.avatar ?? null,
     images: Array.isArray(c.images)
       ? c.images.map((img: any) => serializeResource(img)).filter(Boolean)
       : [],
@@ -121,7 +128,15 @@ export function serializeIssue(n: any) {
   if (author) result.author = author;
   if (Array.isArray(n.previousCompletions) && n.previousCompletions.length > 0) {
     const issueId = n._id.toString()
-    result.previousCompletions = n.previousCompletions.map((c: any) => serializeCompletion(c, issueId))
+    const workerLookup = new Map<string, { username: string | null; avatar: any }>()
+    for (const a of (n.applicants ?? [])) {
+      const user = a.userId && typeof a.userId === 'object' ? a.userId : null
+      workerLookup.set(a._id.toString(), {
+        username: user?.username ?? null,
+        avatar: user?.avatar ? serializeResource(user.avatar) : null,
+      })
+    }
+    result.previousCompletions = n.previousCompletions.map((c: any) => serializeCompletion(c, issueId, workerLookup))
   }
   if (Array.isArray(n.reports) && n.reports.length > 0)
     result.reports = n.reports.map(serializeReport)
