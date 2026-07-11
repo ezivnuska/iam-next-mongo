@@ -977,7 +977,9 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
 
       const updatedIssue = await Issue.findById(issueId)
         .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
-        .populate('images').lean() as any
+        .populate('images')
+        .populate('previousCompletions.images')
+        .lean() as any
 
       const [p, a] = await Promise.all([
         Pledge.find({ issueId }).populate(USER_WITH_AVATAR_POPULATE).lean(),
@@ -1006,7 +1008,9 @@ sub.post('/api/mobile/issues/:id/commission/worker-decision', authMiddleware, as
 
       const updatedIssue = await Issue.findById(issueId)
         .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
-        .populate('images').lean() as any
+        .populate('images')
+        .populate('previousCompletions.images')
+        .lean() as any
 
       const [p, a] = await Promise.all([
         Pledge.find({ issueId }).populate(USER_WITH_AVATAR_POPULATE).lean(),
