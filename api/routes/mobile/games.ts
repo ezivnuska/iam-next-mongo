@@ -5,7 +5,7 @@ import WordDuelRoomModel from '../../../app/games/word-duel/lib/models/word-duel
 
 const games = new Hono<{ Variables: { token: TokenPayload } }>()
 
-// POST /api/mobile/games — validates that a finished game exists in DB
+// POST /api/mobile/games — validates that a finished multiplayer game exists in DB
 games.post('/api/mobile/games', authMiddleware, async (c) => {
   try {
     const body = await c.req.json()
@@ -25,7 +25,48 @@ games.post('/api/mobile/games', authMiddleware, async (c) => {
   }
 })
 
-// GET /api/mobile/games/leaderboard — top players aggregated from finished games
+// POST /api/mobile/games/ai-result — persist a completed solo/AI game round
+games.post('/api/mobile/games/ai-result', authMiddleware, async (c) => {
+  try {
+    const token = c.get('token')
+    const body = await c.req.json()
+    const { humanUsername, humanScore, cpuScore, winnerId } = body ?? {}
+
+    if (
+      typeof humanScore !== 'number' ||
+      typeof cpuScore !== 'number' ||
+      typeof humanUsername !== 'string'
+    ) {
+      return c.json({ error: 'Invalid payload' }, 400)
+    }
+
+    await connectToDatabase()
+
+    const roomId = `ai-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
+
+    await WordDuelRoomModel.create({
+      roomId,
+      hostId: token.id,
+      hostUsername: humanUsername,
+      players: [
+        { id: token.id, username: humanUsername, score: humanScore, isCpu: false },
+        { id: 'cpu-1', username: 'Computer', score: cpuScore, isCpu: true },
+      ],
+      maxPlayers: 2,
+      status: 'finished',
+      phase: 'game_over',
+      winnerId: winnerId ?? null,
+      roundNumber: 1,
+    })
+
+    return c.json({ ok: true })
+  } catch (err) {
+    console.error('[games POST /ai-result]', err)
+    return c.json({ error: 'Internal server error' }, 500)
+  }
+})
+
+// GET /api/mobile/games/leaderboard — top human players aggregated from finished games
 games.get('/api/mobile/games/leaderboard', authMiddleware, async (c) => {
   try {
     await connectToDatabase()
@@ -33,6 +74,7 @@ games.get('/api/mobile/games/leaderboard', authMiddleware, async (c) => {
     const entries = await WordDuelRoomModel.aggregate([
       { $match: { status: 'finished', phase: 'game_over' } },
       { $unwind: '$players' },
+      { $match: { 'players.isCpu': { $ne: true } } },
       {
         $group: {
           _id: '$players.id',
