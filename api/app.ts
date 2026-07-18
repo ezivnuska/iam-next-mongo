@@ -19,6 +19,7 @@ import issuesList from './routes/mobile/issues/lists'
 import issuesRoot from './routes/mobile/issues/index'
 import issueById from './routes/mobile/issues/[id]'
 import issueSub from './routes/mobile/issues/sub'
+import issueAllocation from './routes/mobile/issues/allocation'
 import stripeRoutes from './routes/mobile/stripe/index'
 import adminRoutes from './routes/mobile/admin/index'
 import games from './routes/mobile/games'
@@ -43,6 +44,7 @@ app.route('/', issuesList)
 app.route('/', issuesRoot)
 app.route('/', issueById)
 app.route('/', issueSub)
+app.route('/', issueAllocation)
 app.route('/', stripeRoutes)
 app.route('/', adminRoutes)
 app.route('/', games)

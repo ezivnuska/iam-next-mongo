@@ -42,7 +42,7 @@
     "@types/react-dom": "19.1.1",
     "autoprefixer": "10.4.20",
     "eslint": "^9.39.1",
-    "eslint-config-next": "15.1.6",
+    "eslint-config-next": "15.5.7",
     "ignore-loader": "^0.1.2",
     "postcss": "8.5.1",
     "tailwindcss": "^4.1.17",
