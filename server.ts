@@ -76,6 +76,7 @@ app.prepare().then(() => {
 
 	// Track online users
 	const onlineUsers = new Map<string, Set<string>>()
+	const onlineUsernames = new Map<string, string>()
 
 	let staleGameCheckInterval: ReturnType<typeof setInterval> | null = null
 
@@ -118,13 +119,17 @@ app.prepare().then(() => {
 					onlineUsers.set(userId, new Set())
 				}
 				onlineUsers.get(userId)!.add(socket.id)
+				onlineUsernames.set(userId, username || userId)
 
 				setImmediate(() => {
-					const currentOnlineUsers = Array.from(onlineUsers.keys())
-					socket.emit('users:online', { userIds: currentOnlineUsers })
+					const onlineList = Array.from(onlineUsers.keys()).map(id => ({
+						id,
+						username: onlineUsernames.get(id) || id,
+					}))
+					socket.emit('users:online', { users: onlineList })
 
 					if (isNewUser) {
-						socket.broadcast.emit('user:online', { userId })
+						socket.broadcast.emit('user:online', { userId, username: username || userId })
 					}
 				})
 
@@ -356,6 +361,15 @@ app.prepare().then(() => {
 			if (issueId) socket.leave(`issue:${issueId}`)
 		})
 
+		socket.on('challenge:send', ({ toUserId, roomId }: { toUserId: string; roomId: string }) => {
+			if (!socket.data.userId) return
+			io.to(`user:${toUserId}`).emit('challenge:received', {
+				fromId: socket.data.userId,
+				fromUsername: socket.data.username || 'Someone',
+				roomId,
+			})
+		})
+
 		socket.on('disconnect', () => {
 			if (socket.data.userId) {
 				const userId = socket.data.userId
@@ -365,6 +379,7 @@ app.prepare().then(() => {
 					userSockets.delete(socket.id)
 					if (userSockets.size === 0) {
 						onlineUsers.delete(userId)
+						onlineUsernames.delete(userId)
 						io.emit('user:offline', { userId })
 					}
 				}
