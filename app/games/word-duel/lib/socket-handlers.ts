@@ -274,9 +274,10 @@ export function registerWordDuelHandlers(io: Server, socket: Socket<any, any, an
         }
 
         if (wordSolved) {
-          room.phase = 'round_over'
-          room.winnerId = socket.data.userId
           const winner = room.players.find(p => p.id === socket.data.userId)
+          room.phase = 'game_over'
+          room.status = 'finished'
+          room.winnerId = socket.data.userId
           room.message = `${winner?.username} solved it!`
         } else {
           room.message = `✓  ${L}  is in the word — keep going!`
@@ -291,7 +292,12 @@ export function registerWordDuelHandlers(io: Server, socket: Socket<any, any, an
 
       room.markModified('players')
       await room.save()
-      io.to(`room:${gameId}`).emit('game:state', { state: toClientGameState(room) })
+
+      if (room.phase === 'game_over') {
+        io.to(`room:${gameId}`).emit('game:over', { state: toClientGameState(room) })
+      } else {
+        io.to(`room:${gameId}`).emit('game:state', { state: toClientGameState(room) })
+      }
     } catch (err) {
       console.error('[WordDuel] game:guess error:', err)
     }
