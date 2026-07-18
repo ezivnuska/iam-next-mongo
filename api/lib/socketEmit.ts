@@ -97,3 +97,11 @@ export async function emitIssuePledgeAdded(payload: any): Promise<void> {
 export async function emitIssuePledgeRemoved(payload: any): Promise<void> {
   await emit('issue:pledge_removed', payload, `issue:${payload.issueId}`, payload.actorId)
 }
+
+export async function emitIssueAllocationUpdated(payload: { issueId: string; totalAllocated: number; generalPoolShare: number }): Promise<void> {
+  await emit('issue:allocation_updated', payload, `issue:${payload.issueId}`)
+}
+
+export async function emitPoolUpdated(payload: { sharePerIssue: number }): Promise<void> {
+  await emit('pool:updated', payload)
+}
