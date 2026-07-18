@@ -21,6 +21,7 @@ import issueById from './routes/mobile/issues/[id]'
 import issueSub from './routes/mobile/issues/sub'
 import stripeRoutes from './routes/mobile/stripe/index'
 import adminRoutes from './routes/mobile/admin/index'
+import games from './routes/mobile/games'
 
 const app = new Hono()
 
@@ -44,5 +45,6 @@ app.route('/', issueById)
 app.route('/', issueSub)
 app.route('/', stripeRoutes)
 app.route('/', adminRoutes)
+app.route('/', games)
 
 export default app

@@ -1,0 +1,20 @@
+// Mirrors the client word bank so both sides draw from the same pool.
+const WORDS: string[] = [
+  'JUNGLE', 'WIZARD', 'PIRATE', 'CASTLE', 'DRAGON', 'FOREST', 'PUZZLE',
+  'GOBLIN', 'ISLAND', 'KNIGHT', 'LANTERN', 'MYSTERY', 'ORACLE', 'RAVEN',
+  'TOWER', 'VALLEY', 'BRIDGE', 'CAVERN', 'DESERT', 'FALCON', 'HARBOR',
+  'JAGUAR', 'MOSAIC', 'NEBULA', 'PEPPER', 'QUARTZ', 'RIPPLE', 'SPHINX',
+  'TUNDRA', 'ANCHOR', 'BISHOP', 'COBALT', 'EMPIRE', 'FABRIC', 'GARDEN',
+  'IMPACT', 'JIGSAW', 'LOCKET', 'MIRROR', 'NOODLE', 'PLANET', 'RIDDLE',
+  'SHADOW', 'TEMPLE', 'VIOLET', 'WISDOM', 'ZIPPER', 'UMBRELLA', 'GLACIER',
+  'WHISPER', 'THUNDER', 'CRYSTAL', 'PHANTOM', 'RAINBOW', 'JOURNEY',
+  'CAPTAIN', 'DIAMOND', 'ELEGANT', 'FURNACE', 'HARVEST', 'CURIOUS',
+  'MONARCH', 'OPINION', 'SILENCE', 'TRIUMPH', 'WITNESS', 'BREEZE',
+  'CANDLE', 'DAGGER', 'EMERALD', 'GRAVEL', 'HELMET', 'INSECT',
+  'KENNEL', 'LAGOON', 'MAGNET', 'NAPKIN', 'OXYGEN', 'PENCIL', 'RABBIT',
+  'SOCKET', 'TABLET', 'UNFOLD', 'VENDOR', 'WALRUS', 'YELLOW', 'ZENITH',
+]
+
+export function pickWord(): string {
+  return WORDS[Math.floor(Math.random() * WORDS.length)]
+}

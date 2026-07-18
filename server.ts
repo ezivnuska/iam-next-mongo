@@ -18,6 +18,7 @@ import { Server, Socket } from 'socket.io'
 import { jwtVerify } from 'jose'
 import { getRequestListener } from '@hono/node-server'
 import honoApp from './api/app'
+import { registerWordDuelHandlers } from './app/games/word-duel/lib/socket-handlers'
 
 interface SocketData {
   userId: string
@@ -344,6 +345,8 @@ app.prepare().then(() => {
 				console.error('[Socket] Error processing winner notification complete:', error)
 			}
 		})
+
+		registerWordDuelHandlers(io, socket)
 
 		socket.on('issue:join', ({ issueId }: { issueId?: string }) => {
 			if (issueId) socket.join(`issue:${issueId}`)
