@@ -77,4 +77,40 @@ notifications.post('/api/mobile/notifications/notify', authMiddleware, async (c)
   }
 })
 
+notifications.post('/api/mobile/notifications/challenge', authMiddleware, async (c) => {
+  const token = c.get('token')
+  try {
+    const { toUserId, roomId } = await c.req.json()
+    if (!toUserId || !isValidObjectId(toUserId))
+      return c.json({ error: 'Invalid toUserId' }, 400)
+    if (!roomId || typeof roomId !== 'string')
+      return c.json({ error: 'Invalid roomId' }, 400)
+
+    await connectToDatabase()
+    const [sender, target] = await Promise.all([
+      UserModel.findById(token.id, { username: 1 }).lean() as any,
+      UserModel.findById(toUserId, { expoPushToken: 1 }).lean() as any,
+    ])
+
+    if (!target?.expoPushToken) return c.json({ ok: true })
+
+    await fetch(EXPO_PUSH_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        to: target.expoPushToken,
+        title: 'Challenge!',
+        body: `${sender?.username ?? 'Someone'} wants to play Word Duel`,
+        sound: 'default',
+        data: { roomId },
+      }),
+    })
+
+    return c.json({ ok: true })
+  } catch (err) {
+    console.error('[notifications/challenge POST]', err)
+    return c.json({ error: 'Failed to send challenge notification' }, 500)
+  }
+})
+
 export default notifications

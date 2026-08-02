@@ -62,7 +62,7 @@ async function getUsername(userId: string): Promise<string> {
 }
 
 async function broadcastRoomsList(io: Server): Promise<void> {
-  const rooms = await WordDuelRoomModel.find({ status: 'waiting' }).sort({ createdAt: -1 }).lean()
+  const rooms = await WordDuelRoomModel.find({ status: 'waiting', 'players.0': { $exists: true } }).sort({ createdAt: -1 }).lean()
   io.emit('rooms:list', { rooms: rooms.map(r => toClientRoom(r as unknown as WordDuelRoomDocument)) })
 }
 
@@ -189,11 +189,21 @@ export function registerWordDuelHandlers(io: Server, socket: Socket<any, any, an
         room.message = remaining ? `${remaining.username} wins!` : 'Game over'
         await room.save()
         socket.to(`room:${roomId}`).emit('game:over', { state: toClientGameState(room) })
+      } else if (room.status === 'finished') {
+        // Post-game leave: dismiss remaining players
+        socket.to(`room:${roomId}`).emit('room:closed')
       } else {
+        // Waiting lobby: remove player and update
         room.players = room.players.filter(p => p.id !== socket.data.userId) as typeof room.players
         if (room.players.length === 0) {
-          room.status = 'finished'
-          await room.save()
+          if (room.challengedUserId) {
+            // Keep the room alive — the challenged user may still join via push notification
+            room.markModified('players')
+            await room.save()
+          } else {
+            room.status = 'finished'
+            await room.save()
+          }
         } else {
           if (room.hostId === socket.data.userId) {
             room.hostId = room.players[0].id

@@ -14,6 +14,7 @@ export interface WordDuelRoomDocument extends Document {
   players: WDPlayer[]
   maxPlayers: number
   status: 'waiting' | 'playing' | 'finished'
+  challengedUserId: string | null
   // Game state — null until game starts
   word: string | null
   revealedLetters: string[]
@@ -45,6 +46,7 @@ const wordDuelRoomSchema = new Schema<WordDuelRoomDocument>(
     players:         { type: [playerSchema], default: [] },
     maxPlayers:      { type: Number, default: 2 },
     status:          { type: String, enum: ['waiting', 'playing', 'finished'], default: 'waiting' },
+    challengedUserId: { type: String, default: null },
     word:            { type: String, default: null },
     revealedLetters: { type: [String], default: [] },
     guessedLetters:  { type: [String], default: [] },
