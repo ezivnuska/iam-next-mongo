@@ -81,7 +81,7 @@ function startGame(room: WordDuelRoomDocument): void {
 // ─── Handler registration ─────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function registerWordDuelHandlers(io: Server, socket: Socket<any, any, any, { userId: string }>): void {
+export function registerWordDuelHandlers(io: Server, socket: Socket<any, any, any, { userId: string; username?: string }>): void {
 
   // ── rooms:list ──────────────────────────────────────────────────────────────
   socket.on('rooms:list', async () => {
