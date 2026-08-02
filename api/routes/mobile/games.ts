@@ -3,6 +3,7 @@ import { authMiddleware, TokenPayload } from '../../middleware/auth'
 import { connectToDatabase } from '../../../app/lib/mongoose'
 import WordDuelRoomModel from '../../../app/games/word-duel/lib/models/word-duel-room'
 import TileScoreModel from '../../../app/games/tiles/lib/models/tile-score'
+import UserModel from '../../../app/lib/models/user'
 
 const games = new Hono<{ Variables: { token: TokenPayload } }>()
 
@@ -126,9 +127,25 @@ games.get('/api/mobile/games/leaderboard', authMiddleware, async (c) => {
       ]),
     ])
 
+    const allUserIds = [...new Set([
+      ...wordDuelEntries.map((e: any) => e.userId),
+      ...tileEntries.map((e: any) => e.userId),
+    ])]
+
+    const users = await UserModel.find({ _id: { $in: allUserIds } })
+      .populate('avatar')
+      .lean() as any[]
+
+    const avatarMap = new Map(
+      users.map(u => [
+        u._id.toString(),
+        u.avatar ? { id: u.avatar._id.toString(), variants: u.avatar.variants ?? [] } : null,
+      ])
+    )
+
     return c.json({
-      entries:     wordDuelEntries.map((e, i) => ({ ...e, rank: i + 1 })),
-      tileEntries: tileEntries.map((e, i) => ({ ...e, rank: i + 1 })),
+      entries:     wordDuelEntries.map((e: any, i: number) => ({ ...e, rank: i + 1, avatar: avatarMap.get(e.userId) ?? null })),
+      tileEntries: tileEntries.map((e: any, i: number) => ({ ...e, rank: i + 1, avatar: avatarMap.get(e.userId) ?? null })),
     })
   } catch (err) {
     console.error('[games GET /leaderboard]', err)
