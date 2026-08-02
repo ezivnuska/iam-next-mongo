@@ -339,6 +339,22 @@ export function registerWordDuelHandlers(io: Server, socket: Socket<any, any, an
     }
   })
 
+  // ── challenge:send ──────────────────────────────────────────────────────────
+  socket.on('challenge:send', async ({ toUserId, roomId }: { toUserId: string; roomId: string }) => {
+    if (!socket.data.userId) return
+    io.to(`user:${toUserId}`).emit('challenge:received', {
+      fromId: socket.data.userId,
+      fromUsername: socket.data.username || 'Someone',
+      roomId,
+    })
+    try {
+      await connectToDatabase()
+      await WordDuelRoomModel.updateOne({ roomId, status: 'waiting' }, { challengedUserId: toUserId })
+    } catch (err) {
+      console.error('[WordDuel] challenge:send error:', err)
+    }
+  })
+
   // ── game:end ────────────────────────────────────────────────────────────────
   socket.on('game:end', async ({ gameId }: { gameId: string }) => {
     if (!socket.data.userId || !gameId) return

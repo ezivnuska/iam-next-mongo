@@ -94,13 +94,14 @@ notifications.post('/api/mobile/notifications/challenge', authMiddleware, async 
 
     if (!target?.expoPushToken) return c.json({ ok: true })
 
+    const username = STRIP_TAGS(sender?.username ?? 'Someone')
     await fetch(EXPO_PUSH_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({
         to: target.expoPushToken,
         title: 'Challenge!',
-        body: `${sender?.username ?? 'Someone'} wants to play Word Duel`,
+        body: `${username} wants to play Word Duel`,
         sound: 'default',
         data: { roomId },
       }),

@@ -19,8 +19,6 @@ import { jwtVerify } from 'jose'
 import { getRequestListener } from '@hono/node-server'
 import honoApp from './api/app'
 import { registerWordDuelHandlers } from './app/games/word-duel/lib/socket-handlers'
-import { connectToDatabase } from './app/lib/mongoose'
-import WordDuelRoomModel from './app/games/word-duel/lib/models/word-duel-room'
 
 interface SocketData {
   userId: string
@@ -363,22 +361,7 @@ app.prepare().then(() => {
 			if (issueId) socket.leave(`issue:${issueId}`)
 		})
 
-		socket.on('challenge:send', async ({ toUserId, roomId }: { toUserId: string; roomId: string }) => {
-			if (!socket.data.userId) return
-			io.to(`user:${toUserId}`).emit('challenge:received', {
-				fromId: socket.data.userId,
-				fromUsername: socket.data.username || 'Someone',
-				roomId,
-			})
-			try {
-				await connectToDatabase()
-				await WordDuelRoomModel.updateOne({ roomId, status: 'waiting' }, { challengedUserId: toUserId })
-			} catch (err) {
-				console.error('[challenge:send] Failed to mark challengedUserId:', err)
-			}
-		})
-
-		socket.on('disconnect', () => {
+socket.on('disconnect', () => {
 			if (socket.data.userId) {
 				const userId = socket.data.userId
 				const userSockets = onlineUsers.get(userId)
