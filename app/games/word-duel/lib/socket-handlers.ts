@@ -34,6 +34,7 @@ function toClientGameState(room: WordDuelRoomDocument) {
     winnerId: room.winnerId,
     message: room.message,
     roundNumber: room.roundNumber,
+    currentStreak: room.currentStreak ?? 0,
   }
 }
 
@@ -76,6 +77,7 @@ function startGame(room: WordDuelRoomDocument): void {
   room.winnerId = null
   room.message = null
   room.roundNumber = 1
+  room.currentStreak = 0
 }
 
 // ─── Handler registration ─────────────────────────────────────────────────────
@@ -275,12 +277,13 @@ export function registerWordDuelHandlers(io: Server, socket: Socket<any, any, an
       room.guessedLetters.push(L)
 
       if (inWord) {
+        room.currentStreak = (room.currentStreak ?? 0) + 1
         room.revealedLetters.push(L)
         const wordSolved = room.word!.split('').every(l => room.revealedLetters.includes(l))
         const playerIdx = room.players.findIndex(p => p.id === socket.data.userId)
 
         if (playerIdx !== -1) {
-          room.players[playerIdx].score += 1 + (wordSolved ? 3 : 0)
+          room.players[playerIdx].score += room.currentStreak + (wordSolved ? 3 : 0)
         }
 
         if (wordSolved) {
@@ -293,6 +296,7 @@ export function registerWordDuelHandlers(io: Server, socket: Socket<any, any, an
           room.message = `✓  ${L}  is in the word — keep going!`
         }
       } else {
+        room.currentStreak = 0
         const currentIdx = room.players.findIndex(p => p.id === socket.data.userId)
         const nextIdx = (currentIdx + 1) % room.players.length
         const next = room.players[nextIdx]
@@ -331,6 +335,7 @@ export function registerWordDuelHandlers(io: Server, socket: Socket<any, any, an
       room.winnerId = null
       room.message = null
       room.roundNumber += 1
+      room.currentStreak = 0
 
       await room.save()
       io.to(`room:${gameId}`).emit('game:state', { state: toClientGameState(room) })

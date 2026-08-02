@@ -24,6 +24,7 @@ export interface WordDuelRoomDocument extends Document {
   winnerId: string | null
   message: string | null
   roundNumber: number
+  currentStreak: number
   createdAt: Date
   updatedAt: Date
 }
@@ -55,6 +56,7 @@ const wordDuelRoomSchema = new Schema<WordDuelRoomDocument>(
     winnerId:        { type: String, default: null },
     message:         { type: String, default: null },
     roundNumber:     { type: Number, default: 1 },
+    currentStreak:   { type: Number, default: 0 },
   },
   { timestamps: true }
 )
