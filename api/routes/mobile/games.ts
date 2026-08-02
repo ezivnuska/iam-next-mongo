@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { authMiddleware, TokenPayload } from '../../middleware/auth'
 import { connectToDatabase } from '../../../app/lib/mongoose'
 import WordDuelRoomModel from '../../../app/games/word-duel/lib/models/word-duel-room'
+import TileScoreModel from '../../../app/games/tiles/lib/models/tile-score'
 
 const games = new Hono<{ Variables: { token: TokenPayload } }>()
 
@@ -71,37 +72,64 @@ games.get('/api/mobile/games/leaderboard', authMiddleware, async (c) => {
   try {
     await connectToDatabase()
 
-    const entries = await WordDuelRoomModel.aggregate([
-      { $match: { status: 'finished', phase: 'game_over' } },
-      { $unwind: '$players' },
-      { $match: { 'players.isCpu': { $ne: true } } },
-      {
-        $group: {
-          _id: '$players.id',
-          username:    { $last: '$players.username' },
-          totalScore:  { $sum: '$players.score' },
-          gamesPlayed: { $sum: 1 },
-          wins: {
-            $sum: { $cond: [{ $eq: ['$winnerId', '$players.id'] }, 1, 0] },
+    const [wordDuelEntries, tileEntries] = await Promise.all([
+      WordDuelRoomModel.aggregate([
+        { $match: { status: 'finished', phase: 'game_over' } },
+        { $unwind: '$players' },
+        { $match: { 'players.isCpu': { $ne: true } } },
+        {
+          $group: {
+            _id: '$players.id',
+            username:    { $last: '$players.username' },
+            totalScore:  { $sum: '$players.score' },
+            gamesPlayed: { $sum: 1 },
+            wins: {
+              $sum: { $cond: [{ $eq: ['$winnerId', '$players.id'] }, 1, 0] },
+            },
           },
         },
-      },
-      { $sort: { totalScore: -1 } },
-      { $limit: 20 },
-      {
-        $project: {
-          _id: 0,
-          userId:      '$_id',
-          username:    1,
-          score:       '$totalScore',
-          wins:        1,
-          gamesPlayed: 1,
+        { $sort: { totalScore: -1 } },
+        { $limit: 20 },
+        {
+          $project: {
+            _id: 0,
+            userId:      '$_id',
+            username:    1,
+            score:       '$totalScore',
+            wins:        1,
+            gamesPlayed: 1,
+            game:        { $literal: 'word-duel' },
+          },
         },
-      },
+      ]),
+      TileScoreModel.aggregate([
+        {
+          $group: {
+            _id:         '$userId',
+            username:    { $last: '$username' },
+            bestTime:    { $min: '$score' },
+            timesPlayed: { $sum: 1 },
+          },
+        },
+        { $sort: { bestTime: 1 } },
+        { $limit: 20 },
+        {
+          $project: {
+            _id: 0,
+            userId:      '$_id',
+            username:    1,
+            bestTime:    1,
+            timesPlayed: 1,
+            game:        { $literal: 'tile-puzzle' },
+          },
+        },
+      ]),
     ])
 
-    const ranked = entries.map((e, i) => ({ ...e, rank: i + 1 }))
-    return c.json({ entries: ranked })
+    return c.json({
+      entries:     wordDuelEntries.map((e, i) => ({ ...e, rank: i + 1 })),
+      tileEntries: tileEntries.map((e, i) => ({ ...e, rank: i + 1 })),
+    })
   } catch (err) {
     console.error('[games GET /leaderboard]', err)
     return c.json({ error: 'Internal server error' }, 500)
