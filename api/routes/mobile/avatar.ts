@@ -91,7 +91,8 @@ avatar.post('/api/mobile/avatar', authMiddleware, async (c) => {
     return c.json({ avatar: serializeAvatar(newImage) })
   } catch (err) {
     console.error('[mobile/avatar POST]', err)
-    return c.json({ error: 'Upload failed' }, 500)
+    const message = process.env.NODE_ENV !== 'production' && err instanceof Error ? err.message : 'Upload failed'
+    return c.json({ error: message }, 500)
   }
 })
 
