@@ -15,10 +15,25 @@ scores.get('/api/mobile/scores', authMiddleware, async (c) => {
   try {
     await connectToDatabase()
     const docs = await TileScoreModel.find().sort({ score: 1 }).limit(50).lean()
+
+    const userIds = [...new Set(docs.map(d => d.userId))]
+    const users = await UserModel.find({ _id: { $in: userIds } })
+      .populate('avatar')
+      .lean() as any[]
+
+    const avatarMap = new Map(
+      users.map(u => [
+        u._id.toString(),
+        u.avatar
+          ? { id: u.avatar._id.toString(), variants: u.avatar.variants ?? [] }
+          : null,
+      ])
+    )
+
     return c.json(docs.map(d => ({
       _id: (d._id as any).toString(),
       score: d.score,
-      user: { id: d.userId, username: d.username },
+      user: { id: d.userId, username: d.username, avatar: avatarMap.get(d.userId) ?? null },
       createdAt: d.createdAt,
     })))
   } catch (err) {
