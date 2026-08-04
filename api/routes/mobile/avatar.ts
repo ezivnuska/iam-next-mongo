@@ -12,13 +12,17 @@ import UserModel from '../../../app/lib/models/user'
 import ImageModel from '../../../app/lib/models/image'
 import { getS3UrlFromKey } from '../../../app/lib/utils/images'
 
-const s3 = new S3Client({
-  region: process.env.AWS_REGION!,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-})
+let _s3: S3Client | null = null
+function getS3() {
+  if (!_s3) _s3 = new S3Client({
+    region: process.env.AWS_REGION!,
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    },
+  })
+  return _s3
+}
 
 const VARIANT_DEFINITIONS = [
   { name: 'original', width: null as number | null },
@@ -77,7 +81,7 @@ avatar.post('/api/mobile/avatar', authMiddleware, async (c) => {
       const meta = await sharp(outputBuffer).metadata()
       const filename = `${baseFilename}_${name}.${extension}`
       const key = `users/${username}/${filename}`
-      await s3.send(new PutObjectCommand({
+      await getS3().send(new PutObjectCommand({
         Bucket: process.env.AWS_BUCKET_NAME!,
         Key: key,
         Body: outputBuffer,
