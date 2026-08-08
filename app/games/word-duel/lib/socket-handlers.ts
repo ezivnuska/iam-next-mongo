@@ -2,7 +2,21 @@ import type { Server, Socket } from 'socket.io'
 import { connectToDatabase } from '../../../lib/mongoose'
 import UserModel from '../../../lib/models/user'
 import WordDuelRoomModel, { WordDuelRoomDocument } from './models/word-duel-room'
+import WordDuelScoreModel from './models/word-duel-score'
 import { pickWord } from './word-bank'
+
+async function persistScores(room: WordDuelRoomDocument) {
+  const humans = room.players.filter(p => !p.isCpu)
+  if (!humans.length) return
+  await WordDuelScoreModel.insertMany(
+    humans.map(p => ({
+      userId:   p.id,
+      username: p.username,
+      score:    p.score,
+      won:      room.winnerId === p.id,
+    }))
+  ).catch(err => console.error('[WordDuel] persistScores error:', err))
+}
 
 // ─── Serialisers ──────────────────────────────────────────────────────────────
 
@@ -190,6 +204,7 @@ export function registerWordDuelHandlers(io: Server, socket: Socket<any, any, an
         room.winnerId = remaining?.id ?? null
         room.message = remaining ? `${remaining.username} wins!` : 'Game over'
         await room.save()
+        await persistScores(room)
         socket.to(`room:${roomId}`).emit('game:over', { state: toClientGameState(room) })
       } else if (room.status === 'finished') {
         // Post-game leave: dismiss remaining players
@@ -308,6 +323,7 @@ export function registerWordDuelHandlers(io: Server, socket: Socket<any, any, an
       await room.save()
 
       if (room.phase === 'game_over') {
+        await persistScores(room)
         io.to(`room:${gameId}`).emit('game:over', { state: toClientGameState(room) })
       } else {
         io.to(`room:${gameId}`).emit('game:state', { state: toClientGameState(room) })
@@ -378,6 +394,7 @@ export function registerWordDuelHandlers(io: Server, socket: Socket<any, any, an
       room.message = isTie ? "It's a tie!" : `${sorted[0].username} wins!`
 
       await room.save()
+      await persistScores(room)
       io.to(`room:${gameId}`).emit('game:over', { state: toClientGameState(room) })
     } catch (err) {
       console.error('[WordDuel] game:end error:', err)

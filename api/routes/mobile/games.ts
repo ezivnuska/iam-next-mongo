@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { authMiddleware, TokenPayload } from '../../middleware/auth'
 import { connectToDatabase } from '../../../app/lib/mongoose'
 import WordDuelRoomModel from '../../../app/games/word-duel/lib/models/word-duel-room'
+import WordDuelScoreModel from '../../../app/games/word-duel/lib/models/word-duel-score'
 import TileScoreModel from '../../../app/games/tiles/lib/models/tile-score'
 import UserModel from '../../../app/lib/models/user'
 
@@ -46,20 +47,28 @@ games.post('/api/mobile/games/ai-result', authMiddleware, async (c) => {
 
     const roomId = `ai-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
 
-    await WordDuelRoomModel.create({
-      roomId,
-      hostId: token.id,
-      hostUsername: humanUsername,
-      players: [
-        { id: token.id, username: humanUsername, score: humanScore, isCpu: false },
-        { id: 'cpu-1', username: 'Computer', score: cpuScore, isCpu: true },
-      ],
-      maxPlayers: 2,
-      status: 'finished',
-      phase: 'game_over',
-      winnerId: winnerId ?? null,
-      roundNumber: 1,
-    })
+    await Promise.all([
+      WordDuelRoomModel.create({
+        roomId,
+        hostId: token.id,
+        hostUsername: humanUsername,
+        players: [
+          { id: token.id, username: humanUsername, score: humanScore, isCpu: false },
+          { id: 'cpu-1', username: 'Computer', score: cpuScore, isCpu: true },
+        ],
+        maxPlayers: 2,
+        status: 'finished',
+        phase: 'game_over',
+        winnerId: winnerId ?? null,
+        roundNumber: 1,
+      }),
+      WordDuelScoreModel.create({
+        userId: token.id,
+        username: humanUsername,
+        score: humanScore,
+        won: winnerId === token.id,
+      }),
+    ])
 
     return c.json({ ok: true })
   } catch (err) {
@@ -74,19 +83,14 @@ games.get('/api/mobile/games/leaderboard', authMiddleware, async (c) => {
     await connectToDatabase()
 
     const [wordDuelEntries, tileEntries] = await Promise.all([
-      WordDuelRoomModel.aggregate([
-        { $match: { status: 'finished', phase: 'game_over' } },
-        { $unwind: '$players' },
-        { $match: { 'players.isCpu': { $ne: true } } },
+      WordDuelScoreModel.aggregate([
         {
           $group: {
-            _id: '$players.id',
-            username:    { $last: '$players.username' },
-            totalScore:  { $sum: '$players.score' },
+            _id:         '$userId',
+            username:    { $last: '$username' },
+            totalScore:  { $sum: '$score' },
             gamesPlayed: { $sum: 1 },
-            wins: {
-              $sum: { $cond: [{ $eq: ['$winnerId', '$players.id'] }, 1, 0] },
-            },
+            wins:        { $sum: { $cond: ['$won', 1, 0] } },
           },
         },
         { $sort: { totalScore: -1 } },
