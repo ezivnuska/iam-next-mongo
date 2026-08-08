@@ -1,4 +1,4 @@
-// GET  /api/mobile/tetris-scores — top scores, highest first
+// GET  /api/mobile/tetris-scores — best score per user, highest first
 // POST /api/mobile/tetris-scores — save a score for the authed user
 
 import { Hono } from 'hono'
@@ -12,9 +12,20 @@ const tetrisScores = new Hono<{ Variables: { token: TokenPayload } }>()
 tetrisScores.get('/api/mobile/tetris-scores', authMiddleware, async (c) => {
   try {
     await connectToDatabase()
-    const docs = await TetrisScoreModel.find().sort({ score: -1 }).limit(50).lean()
 
-    const userIds = [...new Set(docs.map(d => d.userId))]
+    const docs = await TetrisScoreModel.aggregate([
+      {
+        $group: {
+          _id:      '$userId',
+          username: { $last: '$username' },
+          score:    { $max: '$score' },
+        },
+      },
+      { $sort: { score: -1 } },
+      { $limit: 50 },
+    ])
+
+    const userIds = docs.map((d: any) => d._id)
     const users = await UserModel.find({ _id: { $in: userIds } })
       .populate('avatar')
       .lean() as any[]
@@ -28,11 +39,11 @@ tetrisScores.get('/api/mobile/tetris-scores', authMiddleware, async (c) => {
       ])
     )
 
-    return c.json(docs.map(d => ({
-      _id: (d._id as any).toString(),
-      score: d.score,
-      user: { id: d.userId, username: d.username, avatar: avatarMap.get(d.userId) ?? null },
-      createdAt: d.createdAt,
+    return c.json(docs.map((d: any) => ({
+      _id:       d._id,
+      score:     d.score,
+      user:      { id: d._id, username: d.username, avatar: avatarMap.get(d._id) ?? null },
+      createdAt: '',
     })))
   } catch (err) {
     console.error('[tetris-scores GET]', err)
@@ -44,8 +55,8 @@ tetrisScores.post('/api/mobile/tetris-scores', authMiddleware, async (c) => {
   const token = c.get('token')
   try {
     const { score } = await c.req.json()
-    if (typeof score !== 'number' || !Number.isInteger(score) || score < 0)
-      return c.json({ error: 'score must be a non-negative integer' }, 400)
+    if (typeof score !== 'number' || !Number.isInteger(score) || score < 0 || score > 1_000_000)
+      return c.json({ error: 'score must be a non-negative integer no greater than 1,000,000' }, 400)
 
     await connectToDatabase()
     const user = await UserModel.findById(token.id, { username: 1 }).lean() as any
@@ -53,9 +64,9 @@ tetrisScores.post('/api/mobile/tetris-scores', authMiddleware, async (c) => {
 
     const doc = await TetrisScoreModel.create({ userId: token.id, username: user.username, score })
     return c.json({
-      _id: (doc._id as any).toString(),
-      score: doc.score,
-      user: { id: doc.userId, username: doc.username, avatar: null },
+      _id:       (doc._id as any).toString(),
+      score:     doc.score,
+      user:      { id: doc.userId, username: doc.username, avatar: null },
       createdAt: doc.createdAt,
     })
   } catch (err) {
