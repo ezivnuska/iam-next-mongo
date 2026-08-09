@@ -55,8 +55,8 @@ tetrisScores.post('/api/mobile/tetris-scores', authMiddleware, async (c) => {
   const token = c.get('token')
   try {
     const { score } = await c.req.json()
-    if (typeof score !== 'number' || !Number.isInteger(score) || score < 0 || score > 1_000_000)
-      return c.json({ error: 'score must be a non-negative integer no greater than 1,000,000' }, 400)
+    if (typeof score !== 'number' || !Number.isInteger(score) || score < 0 || score > 10_000_000)
+      return c.json({ error: 'score must be a non-negative integer no greater than 10,000,000' }, 400)
 
     await connectToDatabase()
     const user = await UserModel.findById(token.id, { username: 1 }).lean() as any
