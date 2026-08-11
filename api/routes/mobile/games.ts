@@ -5,6 +5,7 @@ import WordDuelRoomModel from '../../../app/games/word-duel/lib/models/word-duel
 import WordDuelScoreModel from '../../../app/games/word-duel/lib/models/word-duel-score'
 import TileScoreModel from '../../../app/games/tiles/lib/models/tile-score'
 import TetrisScoreModel from '../../../app/games/tetris/lib/models/tetris-score'
+import LetrisScoreModel from '../../../app/games/letris/lib/models/letris-score'
 import UserModel from '../../../app/lib/models/user'
 
 const games = new Hono<{ Variables: { token: TokenPayload } }>()
@@ -83,7 +84,7 @@ games.get('/api/mobile/games/leaderboard', authMiddleware, async (c) => {
   try {
     await connectToDatabase()
 
-    const [wordDuelEntries, tileEntries, tetrisEntries] = await Promise.all([
+    const [wordDuelEntries, tileEntries, tetrisEntries, letrisEntries] = await Promise.all([
       WordDuelScoreModel.aggregate([
         {
           $group: {
@@ -152,12 +153,35 @@ games.get('/api/mobile/games/leaderboard', authMiddleware, async (c) => {
           },
         },
       ]),
+      LetrisScoreModel.aggregate([
+        {
+          $group: {
+            _id:         '$userId',
+            username:    { $last: '$username' },
+            bestScore:   { $max: '$score' },
+            gamesPlayed: { $sum: 1 },
+          },
+        },
+        { $sort: { bestScore: -1 } },
+        { $limit: 20 },
+        {
+          $project: {
+            _id: 0,
+            userId:      '$_id',
+            username:    1,
+            bestScore:   1,
+            gamesPlayed: 1,
+            game:        { $literal: 'letris' },
+          },
+        },
+      ]),
     ])
 
     const allUserIds = [...new Set([
       ...wordDuelEntries.map((e: any) => e.userId),
       ...tileEntries.map((e: any) => e.userId),
       ...tetrisEntries.map((e: any) => e.userId),
+      ...letrisEntries.map((e: any) => e.userId),
     ])]
 
     const users = await UserModel.find({ _id: { $in: allUserIds } })
@@ -175,6 +199,7 @@ games.get('/api/mobile/games/leaderboard', authMiddleware, async (c) => {
       entries:       wordDuelEntries.map((e: any, i: number) => ({ ...e, rank: i + 1, avatar: avatarMap.get(e.userId) ?? null })),
       tileEntries:   tileEntries.map((e: any, i: number) => ({ ...e, rank: i + 1, avatar: avatarMap.get(e.userId) ?? null })),
       tetrisEntries: tetrisEntries.map((e: any, i: number) => ({ ...e, rank: i + 1, avatar: avatarMap.get(e.userId) ?? null })),
+      letrisEntries: letrisEntries.map((e: any, i: number) => ({ ...e, rank: i + 1, avatar: avatarMap.get(e.userId) ?? null })),
     })
   } catch (err) {
     console.error('[games GET /leaderboard]', err)

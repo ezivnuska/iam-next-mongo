@@ -17,6 +17,7 @@ import commissions from './routes/mobile/commissions'
 import notifications from './routes/mobile/notifications'
 import scores from './routes/mobile/scores'
 import tetrisScores from './routes/mobile/tetris-scores'
+import letrisScores from './routes/mobile/letris-scores'
 import issuesList from './routes/mobile/issues/lists'
 import issuesRoot from './routes/mobile/issues/index'
 import issueById from './routes/mobile/issues/[id]'
@@ -44,6 +45,7 @@ app.route('/', commissions)
 app.route('/', notifications)
 app.route('/', scores)
 app.route('/', tetrisScores)
+app.route('/', letrisScores)
 app.route('/', issuesList)
 app.route('/', issuesRoot)
 app.route('/', issueById)
