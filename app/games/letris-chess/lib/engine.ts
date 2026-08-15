@@ -124,13 +124,17 @@ export function getValidMoves(board: Board, from: Position, owner: CellOwner): P
   if (!cell || cell.owner !== owner) return []
 
   const { row, col } = from
-  return DIRS
-    .map(([dr, dc]) => ({ row: row + dr, col: col + dc }))
-    .filter(p =>
-      p.row >= 0 && p.row < BOARD_ROWS &&
-      p.col >= 0 && p.col < BOARD_COLS &&
-      board[p.row][p.col] === null
-    )
+  const moves: Position[] = []
+  for (const [dr, dc] of DIRS) {
+    let r = row + dr
+    let c = col + dc
+    while (r >= 0 && r < BOARD_ROWS && c >= 0 && c < BOARD_COLS && board[r][c] === null) {
+      moves.push({ row: r, col: c })
+      r += dr
+      c += dc
+    }
+  }
+  return moves
 }
 
 export function hasAnyValidMove(board: Board, owner: CellOwner): boolean {
