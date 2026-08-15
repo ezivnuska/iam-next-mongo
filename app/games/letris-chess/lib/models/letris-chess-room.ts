@@ -8,7 +8,7 @@ export interface LCPlayer {
 
 export interface LCBoardCell {
   letter: string
-  owner: 'p1' | 'p2'
+  owner: 'p1' | 'p2' | 'shared'
 }
 
 export interface LCPosition { row: number; col: number }
@@ -16,7 +16,6 @@ export interface LCPosition { row: number; col: number }
 export interface LCWordResult {
   word: string
   positions: LCPosition[]
-  captures: LCPosition[]
   scoreGain: number
 }
 
@@ -33,6 +32,7 @@ export interface LetrisChessRoomDocument extends Document {
   phase: 'playing' | 'game_over' | null
   winnerId: string | null
   turn: number
+  chainTurn: boolean
   lastMove: { from: LCPosition; to: LCPosition } | null
   lastWords: LCWordResult[]
   createdAt: Date
@@ -50,19 +50,20 @@ const playerSchema = new Schema<LCPlayer>(
 
 const letrisChessRoomSchema = new Schema<LetrisChessRoomDocument>(
   {
-    roomId:          { type: String, required: true, unique: true, index: true },
-    hostId:          { type: String, required: true },
-    players:         { type: [playerSchema], default: [] },
-    maxPlayers:      { type: Number, default: 2 },
-    status:          { type: String, enum: ['waiting', 'playing', 'finished'], default: 'waiting' },
+    roomId:           { type: String, required: true, unique: true, index: true },
+    hostId:           { type: String, required: true },
+    players:          { type: [playerSchema], default: [] },
+    maxPlayers:       { type: Number, default: 2 },
+    status:           { type: String, enum: ['waiting', 'playing', 'finished'], default: 'waiting' },
     challengedUserId: { type: String, default: null },
-    board:           { type: Schema.Types.Mixed, default: null },
-    currentPlayerId: { type: String, default: null },
-    phase:           { type: String, default: null },
-    winnerId:        { type: String, default: null },
-    turn:            { type: Number, default: 0 },
-    lastMove:        { type: Schema.Types.Mixed, default: null },
-    lastWords:       { type: Schema.Types.Mixed, default: [] },
+    board:            { type: Schema.Types.Mixed, default: null },
+    currentPlayerId:  { type: String, default: null },
+    phase:            { type: String, default: null },
+    winnerId:         { type: String, default: null },
+    turn:             { type: Number, default: 0 },
+    chainTurn:        { type: Boolean, default: false },
+    lastMove:         { type: Schema.Types.Mixed, default: null },
+    lastWords:        { type: Schema.Types.Mixed, default: [] },
   },
   { timestamps: true }
 )

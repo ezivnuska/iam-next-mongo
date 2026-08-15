@@ -4,14 +4,11 @@ import UserModel from '../../../lib/models/user'
 import LetrisChessRoomModel, { LetrisChessRoomDocument } from './models/letris-chess-room'
 import LetrisChessScoreModel from './models/letris-chess-score'
 import {
-  generateStartingLetters,
-  createInitialBoard,
-  isLegalMove,
-  applyMove,
-  findWordsAfterMove,
-  applyCaptures,
-  calcScoreGain,
-  isGameOver,
+  generateStartingLetters, generateSharedLetters,
+  createInitialBoard, isLegalMove, applyMove,
+  findWordsAfterMove, applyWordRemovals,
+  countOwnRemovedTiles, spawnTiles,
+  calcScoreGain, isWinningMove, hasAnyValidMove,
   type Board,
   type CellOwner,
   type Position,
@@ -80,6 +77,7 @@ function toClientGameState(room: LetrisChessRoomDocument) {
     lastMove:        room.lastMove ?? null,
     lastWords:       room.lastWords ?? [],
     turn:            room.turn,
+    chainTurn:       room.chainTurn ?? false,
   }
 }
 
@@ -158,9 +156,10 @@ export function registerLetrisChessHandlers(io: Server, socket: Socket<any, any,
 
       const gameStarted = room.players.length >= room.maxPlayers
       if (gameStarted) {
-        const p1Letters = generateStartingLetters()
-        const p2Letters = generateStartingLetters()
-        const board = createInitialBoard(p1Letters, p2Letters)
+        const p1Letters    = generateStartingLetters()
+        const p2Letters    = generateStartingLetters()
+        const sharedLetters = generateSharedLetters()
+        const board        = createInitialBoard(p1Letters, p2Letters, sharedLetters)
 
         room.status            = 'playing'
         room.board             = board as unknown as typeof room.board
@@ -168,6 +167,7 @@ export function registerLetrisChessHandlers(io: Server, socket: Socket<any, any,
         room.phase             = 'playing'
         room.winnerId          = null
         room.turn              = 1
+        room.chainTurn         = false
         room.lastMove          = null
         room.lastWords         = []
         room.markModified('board')
@@ -280,7 +280,7 @@ export function registerLetrisChessHandlers(io: Server, socket: Socket<any, any,
     if (!socket.data.userId || !gameId) return
     if (
       typeof from?.row !== 'number' || typeof from?.col !== 'number' ||
-      typeof to?.row !== 'number'   || typeof to?.col !== 'number'
+      typeof to?.row   !== 'number' || typeof to?.col   !== 'number'
     ) return
 
     try {
@@ -300,40 +300,69 @@ export function registerLetrisChessHandlers(io: Server, socket: Socket<any, any,
         return
       }
 
-      const movedBoard   = applyMove(board, from, to)
-      const words        = findWordsAfterMove(movedBoard, owner)
-      const captureBoard = applyCaptures(movedBoard, words, owner)
-      const scoreGain    = calcScoreGain(words)
+      const movedBoard = applyMove(board, from, to)
+      const words      = findWordsAfterMove(movedBoard)
 
+      let finalBoard = words.length ? applyWordRemovals(movedBoard, words) : movedBoard
+      if (words.length) {
+        const ownRemoved = countOwnRemovedTiles(movedBoard, words, owner)
+        finalBoard = spawnTiles(finalBoard, owner, ownRemoved)
+      }
+
+      const scoreGain = calcScoreGain(words)
       room.players[playerIdx].score += scoreGain
-
-      const nextPlayerIdx  = (playerIdx + 1) % room.players.length
-      room.currentPlayerId = room.players[nextPlayerIdx].id
-      room.board           = captureBoard as unknown as typeof room.board
-      room.lastMove        = { from, to }
-      room.lastWords       = words
-      room.turn           += 1
+      room.board     = finalBoard as unknown as typeof room.board
+      room.lastMove  = { from, to }
+      room.lastWords = words
+      room.turn     += 1
 
       room.markModified('board')
       room.markModified('players')
       room.markModified('lastWords')
 
-      const over = isGameOver(captureBoard)
-
-      if (over) {
-        const sorted  = [...room.players].sort((a, b) => b.score - a.score)
-        const isTie   = sorted.length > 1 && sorted[0].score === sorted[1].score
-        room.phase    = 'game_over'
-        room.status   = 'finished'
-        room.winnerId = isTie ? null : sorted[0].id
-
+      // Win condition: landed on opponent's back row and formed a word
+      if (isWinningMove(to, owner, words)) {
+        room.phase     = 'game_over'
+        room.status    = 'finished'
+        room.winnerId  = room.players[playerIdx].id
+        room.chainTurn = false
         await room.save()
         await persistScores(room)
         io.to(`${LC}${gameId}`).emit('game:over', { state: toClientGameState(room) })
-      } else {
-        await room.save()
-        io.to(`${LC}${gameId}`).emit('game:state', { state: toClientGameState(room) })
+        return
       }
+
+      if (words.length > 0) {
+        // Chain turn: current player keeps moving
+        room.chainTurn = true
+      } else {
+        // No words: try to pass to the other player
+        const nextOwner: CellOwner = owner === 'p1' ? 'p2' : 'p1'
+        if (!hasAnyValidMove(finalBoard, nextOwner)) {
+          if (!hasAnyValidMove(finalBoard, owner)) {
+            // Both stuck — end by score
+            const sorted = [...room.players].sort((a, b) => b.score - a.score)
+            const isTie  = sorted.length > 1 && sorted[0].score === sorted[1].score
+            room.phase     = 'game_over'
+            room.status    = 'finished'
+            room.winnerId  = isTie ? null : sorted[0].id
+            room.chainTurn = false
+            await room.save()
+            await persistScores(room)
+            io.to(`${LC}${gameId}`).emit('game:over', { state: toClientGameState(room) })
+            return
+          }
+          // Next player stuck but current can still move — keep current player
+          room.chainTurn = false
+        } else {
+          // Normal turn switch
+          room.currentPlayerId = room.players[(playerIdx + 1) % room.players.length].id
+          room.chainTurn       = false
+        }
+      }
+
+      await room.save()
+      io.to(`${LC}${gameId}`).emit('game:state', { state: toClientGameState(room) })
     } catch (err) {
       console.error('[LetrisChess] game:move error:', err)
     }
