@@ -3,15 +3,12 @@ import { WORD_SET } from './word-list'
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const BOARD_ROWS = 12
-const BOARD_COLS = 8
+const BOARD_COLS = 9
 
-const P1_START_ROW = 9
-const P2_START_ROW = 0
+const CUE_BALL_ROW = 10
+const CUE_BALL_COL = 4
 
-const STARTING_LETTERS_COUNT = 8
-const SHARED_TILE_COUNT = 0
-const REACTIVE_TILE_COUNT = 20
-const SHARED_ROWS = [3, 4, 5, 6, 7]
+const P2_START_ROW = 0   // P1 wins by reaching row 0
 
 const SCORE_PER_TILE = 10
 
@@ -64,58 +61,24 @@ function randomLetter(): string {
   return LETTER_POOL[Math.floor(Math.random() * LETTER_POOL.length)]
 }
 
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
-
-export function generateStartingLetters(): string[] {
-  return Array.from({ length: STARTING_LETTERS_COUNT }, randomLetter)
-}
-
-export function generateSharedLetters(): string[] {
-  return Array.from({ length: SHARED_TILE_COUNT }, randomLetter)
-}
-
 export function generateReactiveLetters(): string[] {
-  return Array.from({ length: REACTIVE_TILE_COUNT }, randomLetter)
+  return Array.from({ length: 13 }, randomLetter)
 }
 
 // ─── Board creation ───────────────────────────────────────────────────────────
 
-export function createInitialBoard(
-  p1Letters: string[],
-  p2Letters: string[],
-  sharedLetters: string[],
-  reactiveLetters: string[],
-): Board {
+export function createInitialBoard(): Board {
   const board: Board = Array.from({ length: BOARD_ROWS }, () => Array(BOARD_COLS).fill(null))
 
-  for (let col = 0; col < BOARD_COLS; col++) {
-    board[P1_START_ROW][col] = { letter: p1Letters[col], owner: 'p1' }
-  }
-  for (let col = 0; col < BOARD_COLS; col++) {
-    board[P2_START_ROW][col] = { letter: p2Letters[col], owner: 'p2' }
-  }
+  // Cue ball — starts owned by P1 (initiating player)
+  board[CUE_BALL_ROW][CUE_BALL_COL] = { letter: '', owner: 'p1' }
 
-  const candidateCells: Position[] = []
-  for (const row of SHARED_ROWS) {
-    for (let col = 0; col < BOARD_COLS; col++) {
-      candidateCells.push({ row, col })
-    }
-  }
-  const shuffled = shuffle(candidateCells)
-
-  shuffled.slice(0, SHARED_TILE_COUNT).forEach((pos, i) => {
-    board[pos.row][pos.col] = { letter: sharedLetters[i], owner: 'shared' }
-  })
-  shuffled.slice(SHARED_TILE_COUNT, SHARED_TILE_COUNT + REACTIVE_TILE_COUNT).forEach((pos, i) => {
-    board[pos.row][pos.col] = { letter: reactiveLetters[i], owner: 'reactive' }
-  })
+  // Triangle of 13 reactive tiles (downward-pointing, centered on col 4)
+  const letters = generateReactiveLetters()
+  let li = 0
+  for (let col = 1; col <= 7; col++) board[2][col] = { letter: letters[li++], owner: 'reactive' }
+  for (let col = 2; col <= 6; col++) board[3][col] = { letter: letters[li++], owner: 'reactive' }
+  board[4][4] = { letter: letters[li++], owner: 'reactive' }
 
   return board
 }
@@ -164,6 +127,24 @@ export function applyMove(board: Board, from: Position, to: Position): Board {
   next[from.row][from.col] = null
   return next
 }
+
+// ─── Cue ball ownership ───────────────────────────────────────────────────────
+
+export function updateCueBallOwner(board: Board, newOwner: 'p1' | 'p2'): Board {
+  const next = board.map(r => [...r]) as Board
+  for (let row = 0; row < BOARD_ROWS; row++) {
+    for (let col = 0; col < BOARD_COLS; col++) {
+      const cell = next[row][col]
+      if (cell && (cell.owner === 'p1' || cell.owner === 'p2')) {
+        next[row][col] = { ...cell, owner: newOwner }
+        return next
+      }
+    }
+  }
+  return next
+}
+
+// ─── Reactive tile slides ─────────────────────────────────────────────────────
 
 function slideWithBounce(
   board: Board,
@@ -255,9 +236,9 @@ function findWordsInSpec(spec: LineSpec): { positions: Position[]; word: string 
   let i = 0
 
   while (i < cells.length) {
-    if (cells[i] === null) { i++; continue }
+    if (cells[i] === null || cells[i]!.letter === '') { i++; continue }
     const runStart = i
-    while (i < cells.length && cells[i] !== null) i++
+    while (i < cells.length && cells[i] !== null && cells[i]!.letter !== '') i++
     const runEnd = i
     if (runEnd - runStart < MIN_WORD_LEN) continue
 
@@ -304,7 +285,6 @@ function buildLineSpecs(board: Board): LineSpec[] {
     })
   }
 
-  // NW-SE diagonals (row - col = k)
   for (let k = -(BOARD_ROWS - 1); k <= BOARD_ROWS - 1; k++) {
     const positions: Position[] = []
     for (let row = 0; row < BOARD_ROWS; row++) {
@@ -316,7 +296,6 @@ function buildLineSpecs(board: Board): LineSpec[] {
     }
   }
 
-  // NE-SW diagonals (row + col = s)
   for (let s = 0; s <= (BOARD_ROWS - 1) + (BOARD_COLS - 1); s++) {
     const positions: Position[] = []
     for (let row = 0; row < BOARD_ROWS; row++) {
@@ -371,45 +350,11 @@ export function calcScoreGain(words: WordResult[]): number {
   return unique.size * SCORE_PER_TILE
 }
 
-export function countOwnRemovedTiles(preRemovalBoard: Board, words: WordResult[], owner: CellOwner): number {
-  const seen = new Set<string>()
-  let count = 0
-  for (const w of words) {
-    for (const p of w.positions) {
-      const key = `${p.row},${p.col}`
-      if (!seen.has(key)) {
-        seen.add(key)
-        if (preRemovalBoard[p.row][p.col]?.owner === owner) count++
-      }
-    }
-  }
-  return count
-}
-
-export function spawnTiles(board: Board, owner: CellOwner, count: number): { board: Board; spawned: Position[] } {
-  if (!owner || owner === 'shared' || owner === 'reactive' || count <= 0) return { board, spawned: [] }
-  const startRow = owner === 'p1' ? P1_START_ROW : P2_START_ROW
-
-  const emptyCols: number[] = []
-  for (let col = 0; col < BOARD_COLS; col++) {
-    if (board[startRow][col] === null) emptyCols.push(col)
-  }
-
-  const chosen = shuffle(emptyCols).slice(0, count)
-  const next = board.map(r => [...r]) as Board
-  const spawned: Position[] = []
-  for (const col of chosen) {
-    next[startRow][col] = { letter: randomLetter(), owner }
-    spawned.push({ row: startRow, col })
-  }
-  return { board: next, spawned }
-}
-
 // ─── Win condition ────────────────────────────────────────────────────────────
 
 export function isWinningMove(to: Position, owner: CellOwner, words: WordResult[]): boolean {
   if (!words.length) return false
-  if (owner === 'p1') return to.row === P2_START_ROW
-  if (owner === 'p2') return to.row === P1_START_ROW
+  if (owner === 'p1') return to.row === P2_START_ROW    // row 0
+  if (owner === 'p2') return to.row === BOARD_ROWS - 1  // row 11
   return false
 }

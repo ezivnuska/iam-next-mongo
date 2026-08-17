@@ -4,6 +4,7 @@ export interface LCPlayer {
   id: string
   username: string
   score: number
+  avatar?: object | null
 }
 
 export interface LCBoardCell {
@@ -35,7 +36,6 @@ export interface LetrisChessRoomDocument extends Document {
   chainTurn: boolean
   lastMove: { from: LCPosition; to: LCPosition } | null
   lastWords: LCWordResult[]
-  spawnedPositions: LCPosition[]
   reactiveSlides: { from: LCPosition; to: LCPosition }[]
   createdAt: Date
   updatedAt: Date
@@ -46,6 +46,7 @@ const playerSchema = new Schema<LCPlayer>(
     id:       { type: String, required: true },
     username: { type: String, required: true },
     score:    { type: Number, default: 0 },
+    avatar:   { type: Schema.Types.Mixed, default: null },
   },
   { _id: false }
 )
@@ -66,8 +67,7 @@ const letrisChessRoomSchema = new Schema<LetrisChessRoomDocument>(
     chainTurn:        { type: Boolean, default: false },
     lastMove:         { type: Schema.Types.Mixed, default: null },
     lastWords:        { type: Schema.Types.Mixed, default: [] },
-    spawnedPositions: { type: Schema.Types.Mixed, default: [] },
-    reactiveSlides:   { type: Schema.Types.Mixed, default: [] },
+    reactiveSlides: { type: Schema.Types.Mixed, default: [] },
   },
   { timestamps: true }
 )

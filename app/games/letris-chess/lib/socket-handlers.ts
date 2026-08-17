@@ -4,10 +4,8 @@ import UserModel from '../../../lib/models/user'
 import LetrisChessRoomModel, { LetrisChessRoomDocument } from './models/letris-chess-room'
 import LetrisChessScoreModel from './models/letris-chess-score'
 import {
-  generateStartingLetters, generateSharedLetters, generateReactiveLetters,
   createInitialBoard, isLegalMove, applyMove, applyReactiveSlides,
-  findWordsAfterMove, applyWordRemovals,
-  countOwnRemovedTiles, spawnTiles,
+  findWordsAfterMove, applyWordRemovals, updateCueBallOwner,
   calcScoreGain, isWinningMove, hasAnyValidMove,
   type Board,
   type CellOwner,
@@ -39,9 +37,9 @@ async function generateUniqueRoomId(): Promise<string> {
   return id
 }
 
-async function getUsername(userId: string): Promise<string> {
-  const user = await UserModel.findById(userId, { username: 1 }).lean() as { username?: string } | null
-  return user?.username ?? 'Player'
+async function getUserInfo(userId: string): Promise<{ username: string; avatar: object | null }> {
+  const user = await UserModel.findById(userId, { username: 1, avatar: 1 }).lean() as { username?: string; avatar?: object } | null
+  return { username: user?.username ?? 'Player', avatar: user?.avatar ?? null }
 }
 
 async function persistScores(room: LetrisChessRoomDocument): Promise<void> {
@@ -70,16 +68,15 @@ function toClientGameState(room: LetrisChessRoomDocument) {
   return {
     id:              room.roomId,
     board:           room.board,
-    players:         room.players.map(p => ({ id: p.id, username: p.username, score: p.score })),
+    players:         room.players.map(p => ({ id: p.id, username: p.username, score: p.score, avatar: p.avatar ?? null })),
     currentPlayerId: room.currentPlayerId ?? '',
     phase:           (room.phase ?? 'playing') as 'playing' | 'game_over',
     winnerId:        room.winnerId ?? null,
     lastMove:        room.lastMove ?? null,
-    lastWords:        room.lastWords ?? [],
-    spawnedPositions: room.spawnedPositions ?? [],
-    reactiveSlides:   room.reactiveSlides ?? [],
-    turn:             room.turn,
-    chainTurn:        room.chainTurn ?? false,
+    lastWords:       room.lastWords ?? [],
+    reactiveSlides:  room.reactiveSlides ?? [],
+    turn:            room.turn,
+    chainTurn:       room.chainTurn ?? false,
   }
 }
 
@@ -102,13 +99,13 @@ export function registerLetrisChessHandlers(io: Server, socket: Socket<any, any,
     if (!socket.data.userId) return
     try {
       await connectToDatabase()
-      const username = await getUsername(socket.data.userId)
+      const { username, avatar } = await getUserInfo(socket.data.userId)
       const roomId = await generateUniqueRoomId()
 
       const room = await LetrisChessRoomModel.create({
         roomId,
         hostId:    socket.data.userId,
-        players:   [{ id: socket.data.userId, username, score: 0 }],
+        players:   [{ id: socket.data.userId, username, avatar, score: 0 }],
         maxPlayers: 2,
         status:    'waiting',
       })
@@ -153,28 +150,23 @@ export function registerLetrisChessHandlers(io: Server, socket: Socket<any, any,
         return
       }
 
-      const username = await getUsername(socket.data.userId)
-      room.players.push({ id: socket.data.userId, username, score: 0 })
+      const { username, avatar } = await getUserInfo(socket.data.userId)
+      room.players.push({ id: socket.data.userId, username, avatar, score: 0 })
 
       const gameStarted = room.players.length >= room.maxPlayers
       if (gameStarted) {
-        const p1Letters       = generateStartingLetters()
-        const p2Letters       = generateStartingLetters()
-        const sharedLetters   = generateSharedLetters()
-        const reactiveLetters = generateReactiveLetters()
-        const board           = createInitialBoard(p1Letters, p2Letters, sharedLetters, reactiveLetters)
+        const board = createInitialBoard()
 
-        room.status            = 'playing'
-        room.board             = board as unknown as typeof room.board
-        room.currentPlayerId   = room.players[0].id
-        room.phase             = 'playing'
-        room.winnerId          = null
-        room.turn              = 1
-        room.chainTurn         = false
-        room.lastMove          = null
-        room.lastWords         = []
-        room.spawnedPositions  = []
-        room.reactiveSlides    = []
+        room.status          = 'playing'
+        room.board           = board as unknown as typeof room.board
+        room.currentPlayerId = room.players[0].id
+        room.phase           = 'playing'
+        room.winnerId        = null
+        room.turn            = 1
+        room.chainTurn       = false
+        room.lastMove        = null
+        room.lastWords       = []
+        room.reactiveSlides  = []
         room.markModified('board')
       }
 
@@ -308,24 +300,15 @@ export function registerLetrisChessHandlers(io: Server, socket: Socket<any, any,
       const movedBoard = applyMove(board, from, to)
       const { board: reactedBoard, slides: reactiveSlides } = applyReactiveSlides(movedBoard, to)
       const words      = findWordsAfterMove(reactedBoard)
-
-      let finalBoard = words.length ? applyWordRemovals(reactedBoard, words) : reactedBoard
-      let spawnedPositions: Position[] = []
-      if (words.length) {
-        const ownRemoved = countOwnRemovedTiles(reactedBoard, words, owner)
-        const result = spawnTiles(finalBoard, owner, ownRemoved)
-        finalBoard = result.board
-        spawnedPositions = result.spawned
-      }
+      const finalBoard = words.length ? applyWordRemovals(reactedBoard, words) : reactedBoard
 
       const scoreGain = calcScoreGain(words)
       room.players[playerIdx].score += scoreGain
-      room.board             = finalBoard as unknown as typeof room.board
-      room.lastMove          = { from, to }
-      room.lastWords         = words
-      room.spawnedPositions  = spawnedPositions
-      room.reactiveSlides    = reactiveSlides
-      room.turn             += 1
+      room.board          = finalBoard as unknown as typeof room.board
+      room.lastMove       = { from, to }
+      room.lastWords      = words
+      room.reactiveSlides = reactiveSlides
+      room.turn          += 1
 
       room.markModified('board')
       room.markModified('players')
@@ -347,11 +330,13 @@ export function registerLetrisChessHandlers(io: Server, socket: Socket<any, any,
         // Chain turn: current player keeps moving
         room.chainTurn = true
       } else {
-        // No words: try to pass to the other player
+        // No words: flip cue ball ownership and pass turn
         const nextOwner: CellOwner = owner === 'p1' ? 'p2' : 'p1'
-        if (!hasAnyValidMove(finalBoard, nextOwner)) {
-          if (!hasAnyValidMove(finalBoard, owner)) {
-            // Both stuck — end by score
+        const boardWithCue = updateCueBallOwner(finalBoard, nextOwner as 'p1' | 'p2')
+        room.board = boardWithCue as unknown as typeof room.board
+
+        if (!hasAnyValidMove(boardWithCue, nextOwner)) {
+          if (!hasAnyValidMove(boardWithCue, owner)) {
             const sorted = [...room.players].sort((a, b) => b.score - a.score)
             const isTie  = sorted.length > 1 && sorted[0].score === sorted[1].score
             room.phase     = 'game_over'
@@ -363,10 +348,8 @@ export function registerLetrisChessHandlers(io: Server, socket: Socket<any, any,
             io.to(`${LC}${gameId}`).emit('game:over', { state: toClientGameState(room) })
             return
           }
-          // Next player stuck but current can still move — keep current player
           room.chainTurn = false
         } else {
-          // Normal turn switch
           room.currentPlayerId = room.players[(playerIdx + 1) % room.players.length].id
           room.chainTurn       = false
         }
