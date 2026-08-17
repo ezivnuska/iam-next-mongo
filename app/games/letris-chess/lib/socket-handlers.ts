@@ -4,8 +4,8 @@ import UserModel from '../../../lib/models/user'
 import LetrisChessRoomModel, { LetrisChessRoomDocument } from './models/letris-chess-room'
 import LetrisChessScoreModel from './models/letris-chess-score'
 import {
-  generateStartingLetters, generateSharedLetters,
-  createInitialBoard, isLegalMove, applyMove,
+  generateStartingLetters, generateSharedLetters, generateReactiveLetters,
+  createInitialBoard, isLegalMove, applyMove, applyReactiveSlides,
   findWordsAfterMove, applyWordRemovals,
   countOwnRemovedTiles, spawnTiles,
   calcScoreGain, isWinningMove, hasAnyValidMove,
@@ -75,9 +75,11 @@ function toClientGameState(room: LetrisChessRoomDocument) {
     phase:           (room.phase ?? 'playing') as 'playing' | 'game_over',
     winnerId:        room.winnerId ?? null,
     lastMove:        room.lastMove ?? null,
-    lastWords:       room.lastWords ?? [],
-    turn:            room.turn,
-    chainTurn:       room.chainTurn ?? false,
+    lastWords:        room.lastWords ?? [],
+    spawnedPositions: room.spawnedPositions ?? [],
+    reactiveSlides:   room.reactiveSlides ?? [],
+    turn:             room.turn,
+    chainTurn:        room.chainTurn ?? false,
   }
 }
 
@@ -156,10 +158,11 @@ export function registerLetrisChessHandlers(io: Server, socket: Socket<any, any,
 
       const gameStarted = room.players.length >= room.maxPlayers
       if (gameStarted) {
-        const p1Letters    = generateStartingLetters()
-        const p2Letters    = generateStartingLetters()
-        const sharedLetters = generateSharedLetters()
-        const board        = createInitialBoard(p1Letters, p2Letters, sharedLetters)
+        const p1Letters       = generateStartingLetters()
+        const p2Letters       = generateStartingLetters()
+        const sharedLetters   = generateSharedLetters()
+        const reactiveLetters = generateReactiveLetters()
+        const board           = createInitialBoard(p1Letters, p2Letters, sharedLetters, reactiveLetters)
 
         room.status            = 'playing'
         room.board             = board as unknown as typeof room.board
@@ -170,6 +173,8 @@ export function registerLetrisChessHandlers(io: Server, socket: Socket<any, any,
         room.chainTurn         = false
         room.lastMove          = null
         room.lastWords         = []
+        room.spawnedPositions  = []
+        room.reactiveSlides    = []
         room.markModified('board')
       }
 
@@ -301,20 +306,26 @@ export function registerLetrisChessHandlers(io: Server, socket: Socket<any, any,
       }
 
       const movedBoard = applyMove(board, from, to)
-      const words      = findWordsAfterMove(movedBoard)
+      const { board: reactedBoard, slides: reactiveSlides } = applyReactiveSlides(movedBoard, to)
+      const words      = findWordsAfterMove(reactedBoard)
 
-      let finalBoard = words.length ? applyWordRemovals(movedBoard, words) : movedBoard
+      let finalBoard = words.length ? applyWordRemovals(reactedBoard, words) : reactedBoard
+      let spawnedPositions: Position[] = []
       if (words.length) {
-        const ownRemoved = countOwnRemovedTiles(movedBoard, words, owner)
-        finalBoard = spawnTiles(finalBoard, owner, ownRemoved)
+        const ownRemoved = countOwnRemovedTiles(reactedBoard, words, owner)
+        const result = spawnTiles(finalBoard, owner, ownRemoved)
+        finalBoard = result.board
+        spawnedPositions = result.spawned
       }
 
       const scoreGain = calcScoreGain(words)
       room.players[playerIdx].score += scoreGain
-      room.board     = finalBoard as unknown as typeof room.board
-      room.lastMove  = { from, to }
-      room.lastWords = words
-      room.turn     += 1
+      room.board             = finalBoard as unknown as typeof room.board
+      room.lastMove          = { from, to }
+      room.lastWords         = words
+      room.spawnedPositions  = spawnedPositions
+      room.reactiveSlides    = reactiveSlides
+      room.turn             += 1
 
       room.markModified('board')
       room.markModified('players')

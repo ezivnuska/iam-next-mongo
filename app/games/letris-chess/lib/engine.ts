@@ -2,15 +2,16 @@ import { WORD_SET } from './word-list'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const BOARD_ROWS = 10
-const BOARD_COLS = 10
+const BOARD_ROWS = 12
+const BOARD_COLS = 8
 
 const P1_START_ROW = 9
 const P2_START_ROW = 0
 
-const STARTING_LETTERS_COUNT = 10
-const SHARED_TILE_COUNT = 20
-const SHARED_ROWS = [4, 5, 6]
+const STARTING_LETTERS_COUNT = 8
+const SHARED_TILE_COUNT = 0
+const REACTIVE_TILE_COUNT = 20
+const SHARED_ROWS = [3, 4, 5, 6, 7]
 
 const SCORE_PER_TILE = 10
 
@@ -39,7 +40,7 @@ const RARE_LETTERS = ['Q', 'X', 'Z']
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type CellOwner = 'p1' | 'p2' | 'shared' | null
+export type CellOwner = 'p1' | 'p2' | 'shared' | 'reactive' | null
 
 export interface BoardCell {
   letter: string
@@ -80,12 +81,17 @@ export function generateSharedLetters(): string[] {
   return Array.from({ length: SHARED_TILE_COUNT }, randomLetter)
 }
 
+export function generateReactiveLetters(): string[] {
+  return Array.from({ length: REACTIVE_TILE_COUNT }, randomLetter)
+}
+
 // ─── Board creation ───────────────────────────────────────────────────────────
 
 export function createInitialBoard(
   p1Letters: string[],
   p2Letters: string[],
   sharedLetters: string[],
+  reactiveLetters: string[],
 ): Board {
   const board: Board = Array.from({ length: BOARD_ROWS }, () => Array(BOARD_COLS).fill(null))
 
@@ -102,9 +108,13 @@ export function createInitialBoard(
       candidateCells.push({ row, col })
     }
   }
-  const chosen = shuffle(candidateCells).slice(0, SHARED_TILE_COUNT)
-  chosen.forEach((pos, i) => {
+  const shuffled = shuffle(candidateCells)
+
+  shuffled.slice(0, SHARED_TILE_COUNT).forEach((pos, i) => {
     board[pos.row][pos.col] = { letter: sharedLetters[i], owner: 'shared' }
+  })
+  shuffled.slice(SHARED_TILE_COUNT, SHARED_TILE_COUNT + REACTIVE_TILE_COUNT).forEach((pos, i) => {
+    board[pos.row][pos.col] = { letter: reactiveLetters[i], owner: 'reactive' }
   })
 
   return board
@@ -119,7 +129,7 @@ const DIRS: [number, number][] = [
 ]
 
 export function getValidMoves(board: Board, from: Position, owner: CellOwner): Position[] {
-  if (!owner || owner === 'shared') return []
+  if (!owner || owner === 'shared' || owner === 'reactive') return []
   const cell = board[from.row]?.[from.col]
   if (!cell || cell.owner !== owner) return []
 
@@ -153,6 +163,78 @@ export function applyMove(board: Board, from: Position, to: Position): Board {
   next[to.row][to.col] = next[from.row][from.col]
   next[from.row][from.col] = null
   return next
+}
+
+function slideWithBounce(
+  board: Board,
+  startRow: number,
+  startCol: number,
+  initDr: number,
+  initDc: number,
+): Position | null {
+  let row = startRow, col = startCol
+  let dr = initDr, dc = initDc
+  const maxSteps = (BOARD_ROWS + BOARD_COLS) * 4
+
+  for (let step = 0; step < maxSteps; step++) {
+    let nextRow = row + dr
+    let nextCol = col + dc
+
+    if (nextRow < 0 || nextRow >= BOARD_ROWS) { dr = -dr; nextRow = row + dr }
+    if (nextCol < 0 || nextCol >= BOARD_COLS) { dc = -dc; nextCol = col + dc }
+
+    if (board[nextRow][nextCol] !== null) break
+    row = nextRow
+    col = nextCol
+  }
+
+  if (row === startRow && col === startCol) return null
+  return { row, col }
+}
+
+export function applyReactiveSlides(
+  board: Board,
+  trigger: Position,
+): { board: Board; slides: { from: Position; to: Position }[] } {
+  const current = board.map(r => [...r]) as Board
+  const slides: { from: Position; to: Position }[] = []
+  const movedFrom = new Set<string>()
+
+  const queue: Position[] = [trigger]
+  const queuedSources = new Set<string>([`${trigger.row},${trigger.col}`])
+
+  while (queue.length > 0) {
+    const source = queue.shift()!
+
+    for (const [dr, dc] of DIRS) {
+      const adjRow = source.row + dr
+      const adjCol = source.col + dc
+      if (adjRow < 0 || adjRow >= BOARD_ROWS || adjCol < 0 || adjCol >= BOARD_COLS) continue
+
+      const adjKey = `${adjRow},${adjCol}`
+      if (movedFrom.has(adjKey)) continue
+
+      const cell = current[adjRow][adjCol]
+      if (cell?.owner !== 'reactive') continue
+
+      movedFrom.add(adjKey)
+
+      const dest = slideWithBounce(current, adjRow, adjCol, dr, dc)
+      if (!dest) continue
+
+      current[dest.row][dest.col] = current[adjRow][adjCol]
+      current[adjRow][adjCol] = null
+      slides.push({ from: { row: adjRow, col: adjCol }, to: dest })
+
+      const toKey = `${dest.row},${dest.col}`
+      if (!queuedSources.has(toKey)) {
+        queuedSources.add(toKey)
+        queue.push(dest)
+      }
+    }
+  }
+
+  return { board: current, slides }
 }
 
 export function isLegalMove(board: Board, from: Position, to: Position, owner: CellOwner): boolean {
@@ -304,8 +386,8 @@ export function countOwnRemovedTiles(preRemovalBoard: Board, words: WordResult[]
   return count
 }
 
-export function spawnTiles(board: Board, owner: CellOwner, count: number): Board {
-  if (!owner || owner === 'shared' || count <= 0) return board
+export function spawnTiles(board: Board, owner: CellOwner, count: number): { board: Board; spawned: Position[] } {
+  if (!owner || owner === 'shared' || owner === 'reactive' || count <= 0) return { board, spawned: [] }
   const startRow = owner === 'p1' ? P1_START_ROW : P2_START_ROW
 
   const emptyCols: number[] = []
@@ -315,10 +397,12 @@ export function spawnTiles(board: Board, owner: CellOwner, count: number): Board
 
   const chosen = shuffle(emptyCols).slice(0, count)
   const next = board.map(r => [...r]) as Board
+  const spawned: Position[] = []
   for (const col of chosen) {
     next[startRow][col] = { letter: randomLetter(), owner }
+    spawned.push({ row: startRow, col })
   }
-  return next
+  return { board: next, spawned }
 }
 
 // ─── Win condition ────────────────────────────────────────────────────────────

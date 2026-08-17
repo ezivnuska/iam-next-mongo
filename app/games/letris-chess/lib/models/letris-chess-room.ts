@@ -8,7 +8,7 @@ export interface LCPlayer {
 
 export interface LCBoardCell {
   letter: string
-  owner: 'p1' | 'p2' | 'shared'
+  owner: 'p1' | 'p2' | 'shared' | 'reactive'
 }
 
 export interface LCPosition { row: number; col: number }
@@ -35,6 +35,8 @@ export interface LetrisChessRoomDocument extends Document {
   chainTurn: boolean
   lastMove: { from: LCPosition; to: LCPosition } | null
   lastWords: LCWordResult[]
+  spawnedPositions: LCPosition[]
+  reactiveSlides: { from: LCPosition; to: LCPosition }[]
   createdAt: Date
   updatedAt: Date
 }
@@ -64,6 +66,8 @@ const letrisChessRoomSchema = new Schema<LetrisChessRoomDocument>(
     chainTurn:        { type: Boolean, default: false },
     lastMove:         { type: Schema.Types.Mixed, default: null },
     lastWords:        { type: Schema.Types.Mixed, default: [] },
+    spawnedPositions: { type: Schema.Types.Mixed, default: [] },
+    reactiveSlides:   { type: Schema.Types.Mixed, default: [] },
   },
   { timestamps: true }
 )
