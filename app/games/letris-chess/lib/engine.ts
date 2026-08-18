@@ -8,9 +8,10 @@ const BOARD_COLS = 9
 const CUE_BALL_ROW = 10
 const CUE_BALL_COL = 4
 
-const P2_START_ROW = 0   // P1 wins by reaching row 0
+const REACTIVE_SPAWN_ROWS = [5, 6, 7]
 
 const SCORE_PER_TILE = 10
+const WIN_SCORE_THRESHOLD = 200
 
 const MIN_WORD_LEN = 3
 const MAX_WORD_LEN = 8
@@ -37,7 +38,7 @@ const RARE_LETTERS = ['Q', 'X', 'Z']
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type CellOwner = 'p1' | 'p2' | 'shared' | 'reactive' | null
+export type CellOwner = 'p1' | 'p2' | 'reactive' | null
 
 export interface BoardCell {
   letter: string
@@ -61,7 +62,7 @@ function randomLetter(): string {
   return LETTER_POOL[Math.floor(Math.random() * LETTER_POOL.length)]
 }
 
-export function generateReactiveLetters(): string[] {
+function generateReactiveLetters(): string[] {
   return Array.from({ length: 13 }, randomLetter)
 }
 
@@ -73,12 +74,12 @@ export function createInitialBoard(): Board {
   // Cue ball — starts owned by P1 (initiating player)
   board[CUE_BALL_ROW][CUE_BALL_COL] = { letter: '', owner: 'p1' }
 
-  // Triangle of 13 reactive tiles (downward-pointing, centered on col 4)
+  // Triangle of 13 reactive tiles (downward-pointing, centered on col 4, rows 5–7)
   const letters = generateReactiveLetters()
   let li = 0
-  for (let col = 1; col <= 7; col++) board[2][col] = { letter: letters[li++], owner: 'reactive' }
-  for (let col = 2; col <= 6; col++) board[3][col] = { letter: letters[li++], owner: 'reactive' }
-  board[4][4] = { letter: letters[li++], owner: 'reactive' }
+  for (let col = 1; col <= 7; col++) board[REACTIVE_SPAWN_ROWS[0]][col] = { letter: letters[li++], owner: 'reactive' }
+  for (let col = 2; col <= 6; col++) board[REACTIVE_SPAWN_ROWS[1]][col] = { letter: letters[li++], owner: 'reactive' }
+  board[REACTIVE_SPAWN_ROWS[2]][4] = { letter: letters[li++], owner: 'reactive' }
 
   return board
 }
@@ -92,7 +93,7 @@ const DIRS: [number, number][] = [
 ]
 
 export function getValidMoves(board: Board, from: Position, owner: CellOwner): Position[] {
-  if (!owner || owner === 'shared' || owner === 'reactive') return []
+  if (!owner || owner === 'reactive') return []
   const cell = board[from.row]?.[from.col]
   if (!cell || cell.owner !== owner) return []
 
@@ -144,78 +145,73 @@ export function updateCueBallOwner(board: Board, newOwner: 'p1' | 'p2'): Board {
   return next
 }
 
-// ─── Reactive tile slides ─────────────────────────────────────────────────────
-
-function slideWithBounce(
-  board: Board,
-  startRow: number,
-  startCol: number,
-  initDr: number,
-  initDc: number,
-): Position | null {
-  let row = startRow, col = startCol
-  let dr = initDr, dc = initDc
-  const maxSteps = (BOARD_ROWS + BOARD_COLS) * 4
-
-  for (let step = 0; step < maxSteps; step++) {
-    let nextRow = row + dr
-    let nextCol = col + dc
-
-    if (nextRow < 0 || nextRow >= BOARD_ROWS) { dr = -dr; nextRow = row + dr }
-    if (nextCol < 0 || nextCol >= BOARD_COLS) { dc = -dc; nextCol = col + dc }
-
-    if (board[nextRow][nextCol] !== null) break
-    row = nextRow
-    col = nextCol
-  }
-
-  if (row === startRow && col === startCol) return null
-  return { row, col }
-}
+// ─── Reactive tile slides — billiard physics ──────────────────────────────────
+//
+// Tiles slide away from the cue ball with wall reflections (angle in = angle
+// out). When a moving tile hits another reactive tile, momentum transfers: the
+// moving tile stops and the struck tile continues in the same direction.
+// Each tile is triggered at most once per turn.
 
 export function applyReactiveSlides(
   board: Board,
   trigger: Position,
 ): { board: Board; slides: { from: Position; to: Position }[] } {
   const current = board.map(r => [...r]) as Board
-  const slides: { from: Position; to: Position }[] = []
-  const movedFrom = new Set<string>()
+  const allSlides: { from: Position; to: Position }[] = []
+  const triggered = new Set<string>([`${trigger.row},${trigger.col}`])
 
-  const queue: Position[] = [trigger]
-  const queuedSources = new Set<string>([`${trigger.row},${trigger.col}`])
+  interface Task { row: number; col: number; dr: number; dc: number }
+  const queue: Task[] = []
 
-  while (queue.length > 0) {
-    const source = queue.shift()!
-
-    for (const [dr, dc] of DIRS) {
-      const adjRow = source.row + dr
-      const adjCol = source.col + dc
-      if (adjRow < 0 || adjRow >= BOARD_ROWS || adjCol < 0 || adjCol >= BOARD_COLS) continue
-
-      const adjKey = `${adjRow},${adjCol}`
-      if (movedFrom.has(adjKey)) continue
-
-      const cell = current[adjRow][adjCol]
-      if (cell?.owner !== 'reactive') continue
-
-      movedFrom.add(adjKey)
-
-      const dest = slideWithBounce(current, adjRow, adjCol, dr, dc)
-      if (!dest) continue
-
-      current[dest.row][dest.col] = current[adjRow][adjCol]
-      current[adjRow][adjCol] = null
-      slides.push({ from: { row: adjRow, col: adjCol }, to: dest })
-
-      const toKey = `${dest.row},${dest.col}`
-      if (!queuedSources.has(toKey)) {
-        queuedSources.add(toKey)
-        queue.push(dest)
-      }
+  for (const [dr, dc] of DIRS) {
+    const r = trigger.row + dr
+    const c = trigger.col + dc
+    if (r < 0 || r >= BOARD_ROWS || c < 0 || c >= BOARD_COLS) continue
+    if (current[r][c]?.owner !== 'reactive') continue
+    const key = `${r},${c}`
+    if (!triggered.has(key)) {
+      triggered.add(key)
+      queue.push({ row: r, col: c, dr, dc })
     }
   }
 
-  return { board: current, slides }
+  while (queue.length > 0) {
+    const { row: startRow, col: startCol, dr: initDr, dc: initDc } = queue.shift()!
+
+    let row = startRow, col = startCol
+    let dr = initDr, dc = initDc
+
+    for (let step = 0; step < 500; step++) {
+      let nextRow = row + dr
+      let nextCol = col + dc
+
+      if (nextRow < 0 || nextRow >= BOARD_ROWS) { dr = -dr; nextRow = row + dr }
+      if (nextCol < 0 || nextCol >= BOARD_COLS) { dc = -dc; nextCol = col + dc }
+
+      const nextCell = current[nextRow][nextCol]
+      if (nextCell !== null) {
+        if (nextCell.owner === 'reactive') {
+          const nextKey = `${nextRow},${nextCol}`
+          if (!triggered.has(nextKey)) {
+            triggered.add(nextKey)
+            queue.push({ row: nextRow, col: nextCol, dr, dc })
+          }
+        }
+        break
+      }
+
+      row = nextRow
+      col = nextCol
+    }
+
+    if (row !== startRow || col !== startCol) {
+      current[row][col] = current[startRow][startCol]
+      current[startRow][startCol] = null
+      allSlides.push({ from: { row: startRow, col: startCol }, to: { row, col } })
+    }
+  }
+
+  return { board: current, slides: allSlides }
 }
 
 export function isLegalMove(board: Board, from: Position, to: Position, owner: CellOwner): boolean {
@@ -352,9 +348,26 @@ export function calcScoreGain(words: WordResult[]): number {
 
 // ─── Win condition ────────────────────────────────────────────────────────────
 
-export function isWinningMove(to: Position, owner: CellOwner, words: WordResult[]): boolean {
-  if (!words.length) return false
-  if (owner === 'p1') return to.row === P2_START_ROW    // row 0
-  if (owner === 'p2') return to.row === BOARD_ROWS - 1  // row 11
-  return false
+export function isWinningMove(playerScore: number): boolean {
+  return playerScore >= WIN_SCORE_THRESHOLD
+}
+
+// ─── Tile replenishment ───────────────────────────────────────────────────────
+
+export function spawnReactiveTiles(board: Board, count: number): Board {
+  const next = board.map(r => [...r]) as Board
+  const emptyCells: Position[] = []
+  for (const row of REACTIVE_SPAWN_ROWS) {
+    for (let col = 0; col < BOARD_COLS; col++) {
+      if (next[row][col] === null) emptyCells.push({ row, col })
+    }
+  }
+  for (let i = emptyCells.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[emptyCells[i], emptyCells[j]] = [emptyCells[j], emptyCells[i]]
+  }
+  for (const pos of emptyCells.slice(0, count)) {
+    next[pos.row][pos.col] = { letter: randomLetter(), owner: 'reactive' }
+  }
+  return next
 }

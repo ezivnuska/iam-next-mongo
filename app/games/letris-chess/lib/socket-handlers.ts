@@ -5,7 +5,7 @@ import LetrisChessRoomModel, { LetrisChessRoomDocument } from './models/letris-c
 import LetrisChessScoreModel from './models/letris-chess-score'
 import {
   createInitialBoard, isLegalMove, applyMove, applyReactiveSlides,
-  findWordsAfterMove, applyWordRemovals, updateCueBallOwner,
+  findWordsAfterMove, applyWordRemovals, spawnReactiveTiles, updateCueBallOwner,
   calcScoreGain, isWinningMove, hasAnyValidMove,
   type Board,
   type CellOwner,
@@ -299,12 +299,15 @@ export function registerLetrisChessHandlers(io: Server, socket: Socket<any, any,
 
       const movedBoard = applyMove(board, from, to)
       const { board: reactedBoard, slides: reactiveSlides } = applyReactiveSlides(movedBoard, to)
-      const words      = findWordsAfterMove(reactedBoard)
-      const finalBoard = words.length ? applyWordRemovals(reactedBoard, words) : reactedBoard
+      const words         = findWordsAfterMove(reactedBoard)
+      const scoreGain     = calcScoreGain(words)
+      const removedCount  = Math.round(scoreGain / 10)
+      let afterRemoval    = words.length ? applyWordRemovals(reactedBoard, words) : reactedBoard
+      if (removedCount > 0) afterRemoval = spawnReactiveTiles(afterRemoval, removedCount)
 
-      const scoreGain = calcScoreGain(words)
       room.players[playerIdx].score += scoreGain
-      room.board          = finalBoard as unknown as typeof room.board
+      const newScore = room.players[playerIdx].score
+      room.board          = afterRemoval as unknown as typeof room.board
       room.lastMove       = { from, to }
       room.lastWords      = words
       room.reactiveSlides = reactiveSlides
@@ -313,9 +316,11 @@ export function registerLetrisChessHandlers(io: Server, socket: Socket<any, any,
       room.markModified('board')
       room.markModified('players')
       room.markModified('lastWords')
+      room.markModified('lastMove')
+      room.markModified('reactiveSlides')
 
-      // Win condition: landed on opponent's back row and formed a word
-      if (isWinningMove(to, owner, words)) {
+      // Win condition: first to WIN_SCORE_THRESHOLD points
+      if (isWinningMove(newScore)) {
         room.phase     = 'game_over'
         room.status    = 'finished'
         room.winnerId  = room.players[playerIdx].id
@@ -330,13 +335,13 @@ export function registerLetrisChessHandlers(io: Server, socket: Socket<any, any,
         // Chain turn: current player keeps moving
         room.chainTurn = true
       } else {
-        // No words: flip cue ball ownership and pass turn
-        const nextOwner: CellOwner = owner === 'p1' ? 'p2' : 'p1'
-        const boardWithCue = updateCueBallOwner(finalBoard, nextOwner as 'p1' | 'p2')
-        room.board = boardWithCue as unknown as typeof room.board
+        // No words: check if next player can move (must flip cue ball to test)
+        const nextOwner = (owner === 'p1' ? 'p2' : 'p1') as 'p1' | 'p2'
+        const boardForNext = updateCueBallOwner(afterRemoval, nextOwner)
 
-        if (!hasAnyValidMove(boardWithCue, nextOwner)) {
-          if (!hasAnyValidMove(boardWithCue, owner)) {
+        if (!hasAnyValidMove(boardForNext, nextOwner)) {
+          if (!hasAnyValidMove(afterRemoval, owner)) {
+            // Both stuck — end by score
             const sorted = [...room.players].sort((a, b) => b.score - a.score)
             const isTie  = sorted.length > 1 && sorted[0].score === sorted[1].score
             room.phase     = 'game_over'
@@ -348,8 +353,11 @@ export function registerLetrisChessHandlers(io: Server, socket: Socket<any, any,
             io.to(`${LC}${gameId}`).emit('game:over', { state: toClientGameState(room) })
             return
           }
+          // Next stuck, current keeps turn
           room.chainTurn = false
         } else {
+          // Normal pass — flip cue ball to next player
+          room.board           = boardForNext as unknown as typeof room.board
           room.currentPlayerId = room.players[(playerIdx + 1) % room.players.length].id
           room.chainTurn       = false
         }

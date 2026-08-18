@@ -9,7 +9,7 @@ export interface LCPlayer {
 
 export interface LCBoardCell {
   letter: string
-  owner: 'p1' | 'p2' | 'shared' | 'reactive'
+  owner: 'p1' | 'p2' | 'reactive'
 }
 
 export interface LCPosition { row: number; col: number }
