@@ -19,6 +19,7 @@ import { jwtVerify } from 'jose'
 import { getRequestListener } from '@hono/node-server'
 import honoApp from './api/app'
 import { registerWordDuelHandlers } from './app/games/word-duel/lib/socket-handlers'
+import { registerToggleHandlers } from './app/games/toggle/lib/socket-handlers'
 
 interface SocketData {
   userId: string
@@ -352,6 +353,7 @@ app.prepare().then(() => {
 		})
 
 		registerWordDuelHandlers(io, socket)
+		registerToggleHandlers(io, socket)
 
 		socket.on('issue:join', ({ issueId }: { issueId?: string }) => {
 			if (issueId) socket.join(`issue:${issueId}`)
