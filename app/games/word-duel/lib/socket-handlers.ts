@@ -4,13 +4,6 @@ import UserModel from '../../../lib/models/user'
 import WordDuelRoomModel, { WordDuelRoomDocument } from './models/word-duel-room'
 import WordDuelScoreModel from './models/word-duel-score'
 import { pickWord } from './word-bank'
-import {
-  handleToggleRoomCreate,
-  handleToggleRoomJoin,
-  handleToggleRoomLeave,
-  handleToggleRoomRejoin,
-  getToggleRoomGame,
-} from '../../../games/toggle/lib/socket-handlers'
 
 async function persistScores(room: WordDuelRoomDocument) {
   const humans = room.players.filter(p => !p.isCpu)
@@ -120,10 +113,6 @@ export function registerWordDuelHandlers(io: Server, socket: Socket<any, any, an
   // ── room:create ─────────────────────────────────────────────────────────────
   socket.on('room:create', async ({ game }: { game?: string } = {}) => {
     if (!socket.data.userId) return
-    if (game === 'toggle') {
-      handleToggleRoomCreate(io, socket)
-      return
-    }
     try {
       await connectToDatabase()
       const username = await getUsername(socket.data.userId)
@@ -150,7 +139,6 @@ export function registerWordDuelHandlers(io: Server, socket: Socket<any, any, an
   // ── room:join ───────────────────────────────────────────────────────────────
   socket.on('room:join', async ({ roomId }: { roomId: string }) => {
     if (!socket.data.userId || !roomId) return
-    if (handleToggleRoomJoin(io, socket, roomId)) return
     try {
       await connectToDatabase()
 
@@ -203,7 +191,6 @@ export function registerWordDuelHandlers(io: Server, socket: Socket<any, any, an
   // ── room:leave ──────────────────────────────────────────────────────────────
   socket.on('room:leave', async ({ roomId }: { roomId: string }) => {
     if (!socket.data.userId || !roomId) return
-    if (handleToggleRoomLeave(io, socket, roomId)) return
     try {
       await connectToDatabase()
       const room = await WordDuelRoomModel.findOne({ roomId })
@@ -256,7 +243,6 @@ export function registerWordDuelHandlers(io: Server, socket: Socket<any, any, an
   // ── room:rejoin ─────────────────────────────────────────────────────────────
   socket.on('room:rejoin', async ({ roomId }: { roomId: string }) => {
     if (!socket.data.userId || !roomId) return
-    if (handleToggleRoomRejoin(io, socket, roomId)) return
     try {
       await connectToDatabase()
       const room = await WordDuelRoomModel.findOne({ roomId, status: { $ne: 'finished' } })
@@ -377,12 +363,11 @@ export function registerWordDuelHandlers(io: Server, socket: Socket<any, any, an
   // ── challenge:send ──────────────────────────────────────────────────────────
   socket.on('challenge:send', async ({ toUserId, roomId }: { toUserId: string; roomId: string }) => {
     if (!socket.data.userId) return
-    const game = getToggleRoomGame(roomId) ?? 'word-duel'
     io.to(`user:${toUserId}`).emit('challenge:received', {
       fromId: socket.data.userId,
       fromUsername: socket.data.username || 'Someone',
       roomId,
-      game,
+      game: 'word-duel',
     })
     try {
       await connectToDatabase()
