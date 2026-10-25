@@ -5,6 +5,7 @@ echo "Starting deployment..."
 cd /var/www/iameric.me/html/iam-next-mongo
 
 echo "Pulling latest code..."
+git checkout -- pnpm-lock.yaml 2>/dev/null || true
 git pull origin main
 
 echo "Installing dependencies..."
