@@ -5,74 +5,54 @@
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
 import bcrypt from "bcrypt";
-import { signIn } from "@/app/lib/auth";
-import { AuthError } from "next-auth";
+import crypto from "crypto";
+import { sendVerificationEmail } from "@/app/lib/email";
 
-export async function register(formData: FormData): Promise<string | undefined> {
+export type RegisterResult = { error: string } | { success: true } | undefined;
+
+export async function register(formData: FormData): Promise<RegisterResult> {
   try {
     const email = formData.get("email")?.toString().trim();
     const password = formData.get("password")?.toString();
     const username = formData.get("username")?.toString().trim();
-    const redirectTo = (formData.get("redirectTo") as string) || "/";
 
-    // Validation
-    if (!email || !password) {
-      return "Email and password are required";
-    }
-
-    if (!username) {
-      return "Username is required";
-    }
-
-    if (username.length < 2 || username.length > 20) {
-      return "Username must be between 2 and 20 characters";
-    }
+    if (!email || !password) return { error: "Email and password are required" };
+    if (!username) return { error: "Username is required" };
+    if (username.length < 2 || username.length > 20) return { error: "Username must be between 2 and 20 characters" };
 
     await connectToDatabase();
 
-    // Check if email already exists
     const existingEmail = await UserModel.findOne({ email });
-    if (existingEmail) {
-      return "Email is already registered";
-    }
+    if (existingEmail) return { error: "Email is already registered" };
 
-    // Check if username already exists
     const existingUsername = await UserModel.findOne({ username });
-    if (existingUsername) {
-      return "Username is already taken";
-    }
+    if (existingUsername) return { error: "Username is already taken" };
 
-    // Hash password and create user
     const hashedPassword = await bcrypt.hash(password, 10);
+    const verifyToken = crypto.randomBytes(32).toString("hex");
+    const verifyTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     const newUser = new UserModel({
       email,
       password: hashedPassword,
       username,
       role: "user",
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      verified: false,
+      verifyToken,
+      verifyTokenExpires,
     });
 
     await newUser.save();
 
-    // Auto-login after successful registration
     try {
-      await signIn("credentials", {
-        email,
-        password,
-        redirectTo,
-      });
-    } catch (error) {
-      if (error instanceof AuthError) {
-        return "Registration successful, but auto-login failed. Please sign in manually.";
-      }
-      throw error;
+      await sendVerificationEmail(email, verifyToken, username);
+    } catch (emailErr) {
+      console.error("Verification email failed to send:", emailErr);
     }
 
-    return undefined; // success
+    return { success: true };
   } catch (err) {
     console.error("Registration error:", err);
-    return "Failed to register. Please try again later.";
+    return { error: "Failed to register. Please try again later." };
   }
 }

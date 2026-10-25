@@ -1,9 +1,9 @@
-// app/api/register/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
+import { sendVerificationEmail } from "@/app/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -40,17 +40,26 @@ export async function POST(req: NextRequest) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const verifyToken = crypto.randomBytes(32).toString("hex");
+    const verifyTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     const newUser = new UserModel({
       email,
       password: hashedPassword,
       username,
       role: "user",
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      verified: false,
+      verifyToken,
+      verifyTokenExpires,
     });
 
     await newUser.save();
+
+    try {
+      await sendVerificationEmail(email, verifyToken, newUser.username);
+    } catch (emailErr) {
+      console.error("Verification email failed to send:", emailErr);
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {

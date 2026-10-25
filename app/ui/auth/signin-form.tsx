@@ -5,7 +5,7 @@
 import { ubuntu } from '@/app/ui/fonts';
 import { AtSymbolIcon, KeyIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/app/ui/button';
-import { useActionState } from 'react';
+import { useActionState, useState, useRef } from 'react';
 import { authenticate } from '@/app/lib/actions/authenticate';
 import { useSearchParams } from 'next/navigation';
 
@@ -17,20 +17,34 @@ interface SigninFormProps {
 export default function SigninForm({ onToggleMode, callbackUrl: propCallbackUrl }: SigninFormProps = {}) {
   const searchParams = useSearchParams();
   const callbackUrl = propCallbackUrl || searchParams.get('callbackUrl') || '/';
+  const emailRef = useRef<HTMLInputElement>(null);
+  const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
 
-  // 🔹 Fully type useActionState
-  // state = string | undefined (error message)
-  // payload = FormData
   const [errorMessage, formAction, isPending] = useActionState<
     string | undefined,
     FormData
   >(
     async (_prevState, formData) => {
-      // formData is guaranteed to be FormData
+      setResendStatus('idle');
       return await authenticate(formData);
     },
     undefined
   );
+
+  const isVerifyError = !!errorMessage?.startsWith('verify:');
+  const displayError = isVerifyError ? errorMessage!.slice(7) : errorMessage;
+
+  async function handleResend() {
+    const email = emailRef.current?.value;
+    if (!email) return;
+    setResendStatus('sending');
+    await fetch('/api/resend-verification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    setResendStatus('sent');
+  }
 
   return (
     <form action={formAction} className='space-y-3'>
@@ -48,6 +62,7 @@ export default function SigninForm({ onToggleMode, callbackUrl: propCallbackUrl 
           </label>
           <div className='relative'>
             <input
+              ref={emailRef}
               id='email'
               name='email'
               type='email'
@@ -84,16 +99,34 @@ export default function SigninForm({ onToggleMode, callbackUrl: propCallbackUrl 
           Sign in
         </Button>
 
-        {errorMessage && (
-          <div className='flex h-8 items-end space-x-1'>
-            <ExclamationCircleIcon className='h-5 w-5 text-red-500' />
-            <p className='text-sm text-red-500'>{errorMessage}</p>
+        {displayError && (
+          <div className='mt-2 space-y-1'>
+            <div className='flex h-8 items-end space-x-1'>
+              <ExclamationCircleIcon className='h-5 w-5 text-red-500' />
+              <p className='text-sm text-red-500'>{displayError}</p>
+            </div>
+            {isVerifyError && (
+              <div className='text-xs text-gray-500 dark:text-gray-400'>
+                {resendStatus === 'sent' ? (
+                  <span>Verification email sent. Check your inbox.</span>
+                ) : (
+                  <button
+                    type='button'
+                    onClick={handleResend}
+                    disabled={resendStatus === 'sending'}
+                    className='text-blue-600 dark:text-blue-400 underline disabled:opacity-50'
+                  >
+                    {resendStatus === 'sending' ? 'Sending...' : 'Resend verification email'}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
 
         {onToggleMode && (
           <div className='mt-4 text-center text-sm text-gray-600 dark:text-gray-400'>
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <button
               type='button'
               onClick={onToggleMode}

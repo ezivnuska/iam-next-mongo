@@ -1,21 +1,25 @@
-// app/lib/actions/authenticate.ts
-
 "use server";
 
 import { signIn } from "@/app/lib/auth";
 import { AuthError } from "next-auth";
+import { connectToDatabase } from "@/app/lib/mongoose";
+import UserModel from "@/app/lib/models/user";
+
+const VERIFICATION_CUTOFF = new Date("2026-10-24T00:00:00.000Z");
 
 export async function authenticate(formData: FormData): Promise<string | undefined> {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const redirectTo = (formData.get("redirectTo") as string) || "/";
 
+  await connectToDatabase();
+  const user = await UserModel.findOne({ email }).select("verified createdAt");
+  if (user && user.createdAt >= VERIFICATION_CUTOFF && !user.verified) {
+    return "verify:Please verify your email before signing in.";
+  }
+
   try {
-    await signIn("credentials", {
-      email,
-      password,
-      redirectTo,
-    });
+    await signIn("credentials", { email, password, redirectTo });
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.type) {

@@ -49,6 +49,9 @@ export const authOptions: NextAuthConfig = {
         const isValid = await bcrypt.compare(password, userDoc.password);
         if (!isValid) return null;
 
+        const VERIFICATION_CUTOFF = new Date("2026-10-24T00:00:00.000Z");
+        if (userDoc.createdAt >= VERIFICATION_CUTOFF && !userDoc.verified) return null;
+
         return {
           id: userDoc._id.toString(),
           username: userDoc.username,

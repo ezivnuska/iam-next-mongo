@@ -7,7 +7,7 @@ import { AtSymbolIcon, KeyIcon, ExclamationCircleIcon, UserIcon } from '@heroico
 import { Button } from '@/app/ui/button';
 import { useActionState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { register } from '@/app/lib/actions/register';
+import { register, type RegisterResult } from '@/app/lib/actions/register';
 import { useState, useEffect } from 'react';
 
 interface SignupFormProps {
@@ -23,21 +23,16 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState<string | undefined>();
 
-  const [errorMessage, formAction, isPending] = useActionState<
-    string | undefined,
-    FormData
-  >(
+  const [state, formAction, isPending] = useActionState<RegisterResult, FormData>(
     async (_prevState, formData) => {
       if (password !== confirmPassword) {
-        return 'Passwords do not match';
+        return { error: 'Passwords do not match' };
       }
-
       return await register(formData);
     },
     undefined
   );
 
-  // Live password match check
   useEffect(() => {
     if (confirmPassword && password !== confirmPassword) {
       setPasswordError('Passwords do not match');
@@ -45,6 +40,35 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
       setPasswordError(undefined);
     }
   }, [password, confirmPassword]);
+
+  if (state && 'success' in state) {
+    return (
+      <div className='flex-1 rounded-lg bg-gray-50 dark:bg-gray-800 px-4 py-6'>
+        <h1 className={`${ubuntu.className} mb-3 text-2xl text-gray-900 dark:text-white`}>
+          Check your email
+        </h1>
+        <p className='text-sm text-gray-700 dark:text-gray-300'>
+          We sent a verification link to your email address. Click the link to activate your account, then sign in.
+        </p>
+        <p className='mt-3 text-xs text-gray-500 dark:text-gray-400'>
+          The link expires in 24 hours. Check your spam folder if you don&apos;t see it.
+        </p>
+        {onToggleMode && (
+          <div className='mt-4 text-center text-sm text-gray-600 dark:text-gray-400'>
+            <button
+              type='button'
+              onClick={onToggleMode}
+              className='text-blue-600 dark:text-blue-400 hover:text-blue-500 font-medium underline'
+            >
+              Back to sign in
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const errorMessage = state && 'error' in state ? state.error : undefined;
 
   return (
     <form action={formAction} className='space-y-3'>
@@ -134,7 +158,6 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
             <KeyIcon className='pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 dark:text-gray-400 peer-focus:text-gray-900 dark:peer-focus:text-white' />
           </div>
 
-          {/* Live password mismatch error */}
           {passwordError && (
             <div className='flex h-8 items-end space-x-1 mt-1'>
               <ExclamationCircleIcon className='h-5 w-5 text-red-500' />
@@ -152,7 +175,6 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
           Sign up
         </Button>
 
-        {/* Server-side error */}
         {errorMessage && (
           <div className='flex h-8 items-end space-x-1 mt-2'>
             <ExclamationCircleIcon className='h-5 w-5 text-red-500' />
