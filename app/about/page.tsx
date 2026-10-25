@@ -2,7 +2,7 @@
 
 import PageHeader from '@/app/ui/layout/page-header';
 import Link from 'next/link';
-import { PuzzlePieceIcon } from '@heroicons/react/24/solid';
+import { PuzzlePieceIcon, ClockIcon } from '@heroicons/react/24/solid';
 import { Metadata } from 'next';
 import PageContent from '@/app/ui/layout/page/page-content';
 import PokerChipIcon from '@/app/ui/icons/poker-chip-icon';
@@ -24,6 +24,12 @@ const pages = [
         description: 'Work Experience',
         href: '/about/work',
         icon: PokerChipIcon,
+    },
+    {
+        title: 'Timeline',
+        description: 'Career History & Projects',
+        href: '/about/timeline',
+        icon: ClockIcon,
     },
 ];
 

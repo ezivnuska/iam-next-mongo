@@ -1,5 +1,6 @@
 // app/api/poker/singleton/route.ts
 
+import { NextResponse } from 'next/server';
 import { getOrCreateSingletonGame } from '@/app/games/poker/lib/server/game/singleton-game';
 import { serializeGame } from '@/app/lib/utils/game-serialization';
 
@@ -17,7 +18,7 @@ export async function GET() {
     const serialized = serializeGame(game);
 
     // Return serialized game directly to match PokerStateUpdatePayload format
-    return Response.json({
+    return NextResponse.json({
       game: serialized,
     });
   } catch (error) {
@@ -26,9 +27,9 @@ export async function GET() {
       console.error('Error stack:', error.stack);
     }
     if (error instanceof Error && error.message === "Unauthorized") {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    return Response.json({
+    return NextResponse.json({
       error: error instanceof Error ? error.message : 'Failed to fetch game'
     }, { status: 500 });
   }

@@ -100,13 +100,17 @@ app.prepare().then(() => {
 		socket.on('register', async (data: unknown) => {
 			if (!data || typeof data !== 'object') return
 			const { userId, token, username } = data as Record<string, string | undefined>
-			if (!userId || !token) return
+			if (!userId) return
 
-			try {
-				const { payload } = await jwtVerify(token, getJwtSecret())
-				if (payload.id !== userId) return
-			} catch {
-				return
+			// Guest users (guest-* IDs) bypass JWT verification
+			if (!userId.startsWith('guest-')) {
+				if (!token) return
+				try {
+					const { payload } = await jwtVerify(token, getJwtSecret())
+					if (payload.id !== userId) return
+				} catch {
+					return
+				}
 			}
 
 			if (userId) {
