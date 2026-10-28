@@ -10,6 +10,9 @@ import path from 'path'
 const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development'
 expand(config({ path: path.resolve(process.cwd(), envFile) }))
 config({ path: path.resolve(process.cwd(), '.env') })
+if (process.env.NODE_ENV !== 'production') {
+  config({ path: path.resolve(process.cwd(), '.env.local'), override: true })
+}
 
 import { createServer } from 'http'
 import { parse } from 'url'

@@ -5,7 +5,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export async function sendVerificationEmail(email: string, token: string, username: string) {
   const verifyUrl = `${process.env.NEXTAUTH_URL}/verify?token=${token}`;
 
-  await resend.emails.send({
+  const { error } = await resend.emails.send({
     from: process.env.EMAIL_FROM!,
     to: email,
     subject: "Verify your email address",
@@ -17,4 +17,6 @@ export async function sendVerificationEmail(email: string, token: string, userna
       <p>If you didn't create an account, you can ignore this email.</p>
     `,
   });
+
+  if (error) throw new Error(error.message);
 }
