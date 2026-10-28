@@ -84,7 +84,7 @@ function VerifyLayout({
           <p className="text-sm text-gray-700">{message}</p>
           {showSignIn && (
             <Link
-              href="/signin"
+              href="/"
               className="mt-4 inline-block text-sm text-blue-600 underline"
             >
               Go to sign in
