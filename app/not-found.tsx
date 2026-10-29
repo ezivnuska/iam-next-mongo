@@ -26,11 +26,6 @@ export default function NotFound() {
                             Go Home
                         </Button>
                     </Link>
-                    <Link href='/games'>
-                        <Button variant='secondary'>
-                            Play Games
-                        </Button>
-                    </Link>
                 </div>
             </div>
         </PageContent>

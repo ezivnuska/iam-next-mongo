@@ -4,22 +4,17 @@
 
 import {
     AcademicCapIcon,
-    PuzzlePieceIcon,
     UserCircleIcon,
-    UserGroupIcon,
     UsersIcon,
     NewspaperIcon,
-    Squares2X2Icon,
     PhotoIcon,
     XCircleIcon,
     XMarkIcon,
 } from '@heroicons/react/24/solid';
 import { useUser } from '@/app/lib/providers/user-provider';
 import { ReactNode, useState, useEffect } from 'react';
-import PokerChipIcon from '@/app/ui/icons/poker-chip-icon';
 import NavLinkCardAnimated from '@/app/ui/header/nav-link-card-animated';
 import clsx from 'clsx';
-import T3Icon from '../icons/t3-icon';
 
 export interface NavLink {
     href: string;
@@ -75,34 +70,6 @@ const defaultLinks: NavLink[] = [
         requiresAuth: true,
     },
     {
-        href: '/games',
-        title: 'Games',
-        subtitle: 'Game Projects',
-        icon: <PuzzlePieceIcon className='w-10 h-10' />,
-        requiresAuth: false,
-        subLinks: [{
-            href: '/games/tiles',
-            title: 'Tiles',
-            subtitle: 'Puzzle Game',
-            icon: <Squares2X2Icon className='w-10 h-10' />,
-            requiresAuth: false,
-        },
-        {
-            href: '/games/poker',
-            title: 'Poker',
-            subtitle: `Texas Hold'em`,
-            icon: <PokerChipIcon className='w-10 h-10' />,
-            requiresAuth: false,
-        },
-        {
-            href: '/games/t3',
-            title: 'T3',
-            subtitle: `Tic Tac Toe`,
-            icon: <T3Icon className='w-10 h-10' />,
-            requiresAuth: false,
-        }],
-    },
-    {
         href: '/about',
         title: 'Who is Eric?',
         subtitle: 'About Me',
@@ -144,7 +111,6 @@ export default function NavLinkListAnimated({
                 'about': '/about',
                 'eric': '/about',
                 'us': '/us',
-                'games': '/games',
                 'profile': '/profile',
                 'you': '/profile',
             };
