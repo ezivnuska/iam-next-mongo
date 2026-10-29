@@ -25,8 +25,8 @@ async function emitToUsers(event: string, data: any, userIds: string[]): Promise
 
 export async function getIssueAudienceIds(issueId: string, ...extra: string[]): Promise<string[]> {
 	const [issue, pledgerIds] = await Promise.all([
-		(Issue as any).findById(issueId, { author: 1 }).lean(),
-		(Pledge as any).find({ issueId }).distinct('userId'),
+		Issue.findById(issueId, { author: 1 }).lean(),
+		Pledge.find({ issueId }).distinct('userId'),
 	])
 	const ids = new Set<string>(extra.filter(Boolean))
 	if (issue?.author) ids.add(issue.author.toString())

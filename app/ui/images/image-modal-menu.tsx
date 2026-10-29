@@ -89,10 +89,9 @@ const ImageModalMenu = forwardRef<ImageModalMenuHandle, ImageModalMenuProps>(({
 
 	return (
 		<div
-			className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-lg shadow-2xl transition-all duration-300 ease-in-out ${
+			className={`absolute bottom-0 left-0 right-0 flex flex-col bg-white rounded-t-lg shadow-2xl transition-all duration-300 ease-in-out ${
 				isExpanded ? 'h-[60vh]' : 'h-auto'
 			}`}
-			style={{ display: 'flex', flexDirection: 'column' }}
 			onClick={(e) => e.stopPropagation()}
 		>
 			{/* Header Bar */}

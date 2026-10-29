@@ -51,8 +51,8 @@ export default function CreatePostForm({ onSuccess, onClose, editItem }: CreateP
 
       const newPost = await response.json();
       onSuccess(newPost);
-    } catch (err: any) {
-      setError(err.message || "Failed to create post");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create post");
     } finally {
       setLoading(false);
     }

@@ -2,7 +2,6 @@
 
 "use client";
 
-import React from 'react'
 import { useUser } from '@/app/lib/providers/user-provider'
 import type { Score } from '@/app/lib/definitions/tiles'
 import UserAvatar from '@/app/ui/user/user-avatar'
@@ -28,7 +27,6 @@ export default function Leaderboard({ scores, clearScores }: LeaderboardProps) {
                         <UserAvatar
                             username={item.user.username}
                             avatar={item.user.avatar}
-                            // size={32}
                         />
                     </div>
                     <span className="text-sm">{item.user.username}</span>

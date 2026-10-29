@@ -1,18 +1,15 @@
 // app/lib/utils/game-serialization.ts
 
-import type { PokerGameDocument } from '@/app/games/poker/lib/models/poker-game';
+import type { PokerGameDocument, Card, Bet, GameStageProps, WinnerInfo, SerializedActionTimer, Player } from '@/app/games/poker/lib/definitions/poker';
 import type { SerializedGameActionHistory } from '@/app/games/poker/lib/definitions/action-history';
 
-/**
- * Serialized game state for API responses
- */
 export interface SerializedGame {
   _id: string;
   code: string;
-  players: any[];
-  deck: any[];
-  communalCards: any[];
-  pot: any[];
+  players: Player[];
+  deck: Card[];
+  communalCards: Card[];
+  pot: Bet[];
   stage: number;
   locked: boolean;
   lockTime?: string;
@@ -20,48 +17,41 @@ export interface SerializedGame {
   dealerButtonPosition?: number;
   currentBet: number;
   playerBets: number[];
-  stages: any[];
+  stages: GameStageProps[];
   actionHistory: SerializedGameActionHistory[];
-  winner?: any;
-  actionTimer?: any;
+  winner?: WinnerInfo;
+  actionTimer?: SerializedActionTimer;
   createdAt: string;
   updatedAt: string;
 }
 
-/**
- * Convert a Mongoose game document to a serialized format safe for API responses
- *
- * @param game - The game document or plain object
- * @returns Serialized game object with converted dates and IDs
- */
-export function serializeGame(game: PokerGameDocument | any): SerializedGame {
-  const obj = typeof game.toObject === 'function' ? game.toObject() : game;
+type RawGame = PokerGameDocument & { toObject?: () => Record<string, unknown> };
+
+export function serializeGame(game: RawGame): SerializedGame {
+  const obj: Record<string, unknown> = typeof game.toObject === 'function'
+    ? game.toObject()
+    : (game as unknown as Record<string, unknown>);
 
   return {
     ...obj,
-    _id: obj._id.toString(),
-    lockTime: obj.lockTime ? obj.lockTime.toISOString() : undefined,
-    createdAt: obj.createdAt?.toISOString?.() || obj.createdAt,
-    updatedAt: obj.updatedAt?.toISOString?.() || obj.updatedAt,
-    actionHistory: obj.actionHistory?.map((action: any) => ({
+    _id: (obj._id as { toString(): string }).toString(),
+    lockTime: obj.lockTime ? (obj.lockTime as Date).toISOString() : undefined,
+    createdAt: (obj.createdAt as Date)?.toISOString?.() ?? (obj.createdAt as string),
+    updatedAt: (obj.updatedAt as Date)?.toISOString?.() ?? (obj.updatedAt as string),
+    actionHistory: ((obj.actionHistory as Array<{ timestamp?: Date } & Record<string, unknown>>) ?? []).map((action) => ({
       ...action,
-      timestamp: action.timestamp?.toISOString?.() || action.timestamp,
-    })) || [],
+      timestamp: action.timestamp?.toISOString?.() ?? action.timestamp,
+    })),
     actionTimer: obj.actionTimer
       ? {
-          ...obj.actionTimer,
-          startTime: obj.actionTimer.startTime?.toISOString?.() || obj.actionTimer.startTime,
+          ...(obj.actionTimer as Record<string, unknown>),
+          startTime: (obj.actionTimer as { startTime?: Date }).startTime?.toISOString?.()
+            ?? (obj.actionTimer as { startTime?: string }).startTime,
         }
       : undefined,
-  };
+  } as SerializedGame;
 }
 
-/**
- * Serialize multiple games
- *
- * @param games - Array of game documents
- * @returns Array of serialized games
- */
-export function serializeGames(games: (PokerGameDocument | any)[]): SerializedGame[] {
+export function serializeGames(games: RawGame[]): SerializedGame[] {
   return games.map(serializeGame);
 }

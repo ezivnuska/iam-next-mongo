@@ -79,7 +79,7 @@ export default function FriendshipButton({ userId, username, isCurrentUser }: Fr
 			const result = await handleSendRequest(userId)
 			setStatus('pending_sent')
 			setFriendshipId(result.friendshipId)
-		} catch (error: any) {
+		} catch (error) {
 			showError(error, 'Failed to send friend request')
 		}
 	}
@@ -89,7 +89,7 @@ export default function FriendshipButton({ userId, username, isCurrentUser }: Fr
 		try {
 			await handleAcceptRequest(friendshipId)
 			setStatus('accepted')
-		} catch (error: any) {
+		} catch (error) {
 			showError(error, 'Failed to accept friend request')
 		}
 	}
@@ -100,7 +100,7 @@ export default function FriendshipButton({ userId, username, isCurrentUser }: Fr
 			await handleRejectRequest(friendshipId)
 			setStatus('none')
 			setFriendshipId(undefined)
-		} catch (error: any) {
+		} catch (error) {
 			showError(error, 'Failed to reject friend request')
 		}
 	}

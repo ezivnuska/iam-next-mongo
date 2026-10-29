@@ -2,12 +2,13 @@
 
 'use client';
 
-import { memo, useState, useEffect, useRef } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { usePlayers, useGameState, usePokerActions, useProcessing } from '@/app/games/poker/lib/providers/poker-provider';
 import { useUser } from '@/app/lib/providers/user-provider';
 import { Button } from '@/app/ui/button';
 import clsx from 'clsx';
 import { UnifiedBetControl } from './unified-bet-control';
+import { useTimerActionSync } from '@/app/games/poker/lib/hooks/use-timer-action-sync';
 
 interface PlayerControlsProps {
   onActionTaken?: () => void;
@@ -49,13 +50,9 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
   const initialBetAmount = canCheck ? 0 : minBetAmount;
   const [betAmount, setBetAmount] = useState(initialBetAmount);
 
-  // Debounce ref for action changes
-  const actionChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
   // Update selected action and bet amount when bet state or stage changes
   useEffect(() => {
     if (!timerActive) {
-      // Default to 0 if can check, otherwise minimum bet or call amount
       const newBetAmount = canCheck ? 0 : (hasBetToCall ? Math.min(currentBet, playerChipCount) : 0);
       setSelectedAction(canCheck ? 'check' : (hasBetToCall ? 'call' : 'bet'));
       setBetAmount(newBetAmount);
@@ -64,68 +61,17 @@ function PlayerControls({ onActionTaken }: PlayerControlsProps = {}) {
 
   // Always reset to default action and amount when stage changes (new betting round)
   useEffect(() => {
-    const defaultAction = canCheck ? 'check' : (hasBetToCall ? 'call' : 'bet');
-    // Default to 0 if can check, otherwise minimum bet or call amount
     const newBetAmount = canCheck ? 0 : (hasBetToCall ? Math.min(currentBet, playerChipCount) : 0);
-    setSelectedAction(defaultAction);
+    setSelectedAction(canCheck ? 'check' : (hasBetToCall ? 'call' : 'bet'));
     setBetAmount(newBetAmount);
   }, [stage, canCheck, hasBetToCall, currentBet, playerChipCount]);
 
-  // Sync timer state with actionTimer
+  // Sync timer active state
   useEffect(() => {
-    if (actionTimer && actionTimer.targetPlayerId === user?.id) {
-      setTimerActive(true);
-    } else {
-      setTimerActive(false);
-    }
+    setTimerActive(!!(actionTimer && actionTimer.targetPlayerId === user?.id));
   }, [actionTimer, user?.id]);
 
-  // Single consolidated effect to update timer action
-  // This replaces the previous separate effects to prevent race conditions
-  useEffect(() => {
-    // Only update if timer is active
-    if (!timerActive) {
-      return;
-    }
-
-    // Determine the actual action type to send to server
-    let actionToSet: 'bet' | 'call' | 'raise' | 'fold' | 'check';
-    if (selectedAction === 'bet' || selectedAction === 'raise') {
-      if (hasBetToCall) {
-        // If betAmount equals currentBet, it's a call; otherwise it's a raise
-        actionToSet = betAmount === currentBet ? 'call' : 'raise';
-      } else {
-        actionToSet = 'bet';
-      }
-    } else {
-      actionToSet = selectedAction;
-    }
-
-    // Clear any pending timeout to prevent race conditions
-    if (actionChangeTimeoutRef.current) {
-      clearTimeout(actionChangeTimeoutRef.current);
-    }
-
-    // Debounce the update to avoid concurrent requests
-    actionChangeTimeoutRef.current = setTimeout(async () => {
-      try {
-        // Send with bet amount if applicable
-        if (actionToSet === 'bet' || actionToSet === 'raise' || actionToSet === 'call') {
-          await setTurnTimerAction(actionToSet, betAmount);
-        } else {
-          await setTurnTimerAction(actionToSet);
-        }
-      } catch (err) {
-        console.error('Error updating timer action:', err);
-      }
-    }, 300); // Increased debounce to 300ms for better reliability
-
-    return () => {
-      if (actionChangeTimeoutRef.current) {
-        clearTimeout(actionChangeTimeoutRef.current);
-      }
-    };
-  }, [timerActive, selectedAction, hasBetToCall, betAmount, currentBet, playerChipCount, setTurnTimerAction]);
+  useTimerActionSync({ timerActive, selectedAction, betAmount, currentBet, hasBetToCall, setTurnTimerAction });
 
   // Helper to check if a specific action is processing
   const isProcessing = (actionType: 'bet' | 'call' | 'raise' | 'fold' | 'check') => {

@@ -69,8 +69,8 @@ export default function CreateMemoryForm({ onSuccess, onClose, editItem }: Creat
 
             const newMemory = await response.json();
             onSuccess(newMemory);
-        } catch (err: any) {
-            setError(err.message || "Failed to create memory");
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to create memory");
         } finally {
             setLoading(false);
         }

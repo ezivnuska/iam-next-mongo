@@ -4,8 +4,6 @@
 import { clsx } from 'clsx';
 import Link from 'next/link';
 import { ubuntu } from '@/app/ui/fonts';
-import { useHorizontalLayout } from '@/app/lib/hooks/use-horizontal-layout';
-import { useIsDark } from '@/app/lib/hooks/use-is-dark';
 import { ChevronLeftIcon } from '@/app/ui/icons';
 import { useRouter } from 'next/navigation';
 import { Button } from '../button';
@@ -21,11 +19,8 @@ export default function Breadcrumbs({
 }: {
   breadcrumbs: Breadcrumb[];
 }) {
-  const horizontalLayout = useHorizontalLayout();
-  const isDark = useIsDark();
   const router = useRouter();
 
-  // Find the previous breadcrumb (the one before the active one)
   const activeIndex = breadcrumbs.findIndex(b => b.active);
   const previousBreadcrumb = activeIndex > 0 ? breadcrumbs[activeIndex - 1] : null;
 
@@ -38,16 +33,13 @@ export default function Breadcrumbs({
   };
 
   return (
-    <nav aria-label='Breadcrumb' className={clsx('block', {
-        // 'py-4': horizontalLayout,
-    })}>
+    <nav aria-label='Breadcrumb' className='block'>
       <ol className={clsx(ubuntu.className, 'flex items-center text-xl md:text-xl')}>
         <li className='mr-2'>
           <Button
             onClick={handleBack}
-            className='flex items-center justify-center p-1 hover:text-blue-300 transition-colors'
+            className='flex items-center justify-center p-1 transition-colors text-blue-600 dark:text-blue-300 hover:text-blue-300'
             aria-label='Go back'
-            style={{ color: isDark ? '#93c5fd' : '#2563eb' }}
             variant='ghost'
           >
             <ChevronLeftIcon className='w-6 h-6' strokeWidth={2.5} />
@@ -57,15 +49,14 @@ export default function Breadcrumbs({
           <li
             key={breadcrumb.href}
             aria-current={breadcrumb.active}
-            style={{
-              color: breadcrumb.active
-                ? (isDark ? '#ffffff' : '#000000')
-                : (isDark ? '#93c5fd' : '#2563eb')
-            }}
+            className={breadcrumb.active
+              ? 'text-gray-900 dark:text-white'
+              : 'text-blue-600 dark:text-blue-300'
+            }
           >
             <Link href={breadcrumb.href} className='leading-none'>{breadcrumb.label}</Link>
             {index < breadcrumbs.length - 1 ? (
-              <span className='mx-3 inline-block' style={{ color: isDark ? '#6b7280' : '#9ca3af' }}>/</span>
+              <span className='mx-3 inline-block text-gray-400 dark:text-gray-500'>/</span>
             ) : null}
           </li>
         ))}

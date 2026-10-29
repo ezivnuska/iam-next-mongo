@@ -9,17 +9,14 @@ import type { Post } from '@/app/lib/definitions/post';
 import type { Image } from '@/app/lib/definitions/image';
 import { Button } from '@/app/ui/button';
 import ContentItemCard from '@/app/ui/content-item-card';
-import UserContentItemCard from '@/app/ui/user-content-item-card';
 import Modal from '@/app/ui/modal';
 import CreateMemoryForm from '@/app/ui/memories/create-memory-form';
 import CreatePostForm from '@/app/ui/posts/create-post-form';
 import { useUser } from '@/app/lib/providers/user-provider';
-import { useTheme } from '@/app/lib/hooks/use-theme';
 import { useSocket } from '@/app/lib/providers/socket-provider';
-import { SOCKET_EVENTS } from '@/app/lib/socket/events';
-import type { CommentPayload } from '@/app/lib/socket/events';
 import { getCommentCountsForItems } from '@/app/lib/actions/comments';
 import { filterCommentableContent, isImage } from '@/app/lib/utils/content-helpers';
+import { useCommentCountSocket } from '@/app/lib/hooks/use-comment-count-socket';
 
 interface UserContentFeedProps {
     initialContent: ContentItem[];
@@ -30,7 +27,6 @@ type ModalType = 'memory' | 'post' | 'image' | null;
 
 export default function UserContentFeed({ initialContent, editable = false }: UserContentFeedProps) {
     const { user } = useUser();
-    const { resolvedTheme } = useTheme();
     const { socket } = useSocket();
     const [content, setContent] = useState<ContentItem[]>(initialContent);
     const [modalType, setModalType] = useState<ModalType>(null);
@@ -110,44 +106,7 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
         fetchCommentCounts();
     }, []); // Only run on mount
 
-    // Listen for socket events to update comment counts
-    useEffect(() => {
-        if (!socket) return;
-
-        const handleCommentAdded = (payload: CommentPayload) => {
-            setContent(prev => prev.map(item => {
-                // Check if this item matches the commented content
-                if (item.id === payload.refId) {
-                    return {
-                        ...item,
-                        commentCount: (item.commentCount || 0) + 1
-                    };
-                }
-                return item;
-            }));
-        };
-
-        const handleCommentDeleted = (payload: CommentPayload) => {
-            setContent(prev => prev.map(item => {
-                // Check if this item matches the commented content
-                if (item.id === payload.refId) {
-                    return {
-                        ...item,
-                        commentCount: Math.max(0, (item.commentCount || 0) - 1)
-                    };
-                }
-                return item;
-            }));
-        };
-
-        socket.on(SOCKET_EVENTS.COMMENT_ADDED, handleCommentAdded);
-        socket.on(SOCKET_EVENTS.COMMENT_DELETED, handleCommentDeleted);
-
-        return () => {
-            socket.off(SOCKET_EVENTS.COMMENT_ADDED, handleCommentAdded);
-            socket.off(SOCKET_EVENTS.COMMENT_DELETED, handleCommentDeleted);
-        };
-    }, [socket]);
+    useCommentCountSocket(socket, setContent);
 
     // Show only memories and posts (exclude standalone images)
     const filteredContent = filterCommentableContent(content);
@@ -179,11 +138,12 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                 ) : (
                     filteredContent.map((item) =>
                         isCurrentUserAuthor(item) ? (
-                            <UserContentItemCard
+                            <ContentItemCard
                                 key={`${item.contentType}-${item.id}`}
                                 item={item}
+                                editable={true}
                                 onDeleted={handleDeleted}
-                                onEdit={handleEdit}
+                                onEdit={handleEdit as (item: Memory | Post) => void}
                                 onFlag={handleFlag}
                             />
                         ) : (
@@ -200,7 +160,7 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
             {modalType === 'memory' && (
                 <Modal isOpen={true} onClose={handleCloseModal}>
                     <div className='flex flex-row items-center justify-between mb-4'>
-                        <h1 className='text-2xl font-semibold' style={{ color: resolvedTheme === 'dark' ? '#ffffff' : '#111827' }}>
+                        <h1 className='text-2xl font-semibold text-gray-900 dark:text-white'>
                             {editingItem ? 'Edit Memory' : 'Create Memory'}
                         </h1>
                         <button
@@ -223,7 +183,7 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
             {modalType === 'post' && (
                 <Modal isOpen={true} onClose={handleCloseModal}>
                     <div className='flex flex-row items-center justify-between mb-4'>
-                        <h1 className='text-2xl font-semibold' style={{ color: resolvedTheme === 'dark' ? '#ffffff' : '#111827' }}>
+                        <h1 className='text-2xl font-semibold text-gray-900 dark:text-white'>
                             {editingItem ? 'Edit Post' : 'Create Post'}
                         </h1>
                         <button

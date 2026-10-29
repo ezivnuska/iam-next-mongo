@@ -71,10 +71,7 @@ export default function MemoryPolaroid({
           mt-2
           ${className}
         `}
-        style={{
-          transform: 'rotate(-0.5deg)',
-          maxWidth: '100%',
-        }}
+        style={{ transform: 'rotate(-0.5deg)' }}
       >
         {/* Image container */}
         <div className="bg-gray-200 dark:bg-gray-300 aspect-square mb-3 overflow-hidden">
