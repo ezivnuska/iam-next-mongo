@@ -22,7 +22,7 @@ done
 # Select ecosystem config and app name based on environment
 if [ "$ENV" = "staging" ]; then
   ECOSYSTEM="ecosystem.staging.config.js"
-  APP_NAME="iam-app-staging"
+  APP_NAME="iam-staging"
 else
   ECOSYSTEM="ecosystem.config.js"
   APP_NAME="iam-app"
