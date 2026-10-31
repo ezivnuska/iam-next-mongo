@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-    transpilePackages: ['@iam/shared-types'],
+    transpilePackages: ['@iam/shared-types', '@iam/db'],
     serverExternalPackages: ['mongoose', 'bcrypt'],
     // Add headers to force cache revalidation
     async headers() {

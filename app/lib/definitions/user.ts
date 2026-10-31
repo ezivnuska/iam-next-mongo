@@ -12,30 +12,5 @@ export {
   type RefreshTokenResponse,
 } from '@iam/shared-types'
 
-import type { Document, Types } from 'mongoose'
-import type { ImageDocument } from './image'
-import type { UserRole } from '@iam/shared-types'
-
-// DB-level document (server only — never sent to clients)
-export interface UserDocument extends Document {
-  _id: Types.ObjectId;
-  username: string;
-  email: string;
-  role: UserRole;
-  bio: string;
-  avatar?: Types.ObjectId | ImageDocument | null;
-  password: string;
-  verified: boolean;
-  verifyToken?: string;
-  verifyTokenExpires?: Date;
-  resetPasswordToken?: string;
-  resetPasswordExpires?: Date;
-  stripeCustomerId?: string;
-  stripeDefaultPaymentMethodId?: string;
-  stripeAccountId?: string;
-  stripeAccountEnabled?: boolean;
-  expoPushToken?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  emailVerified?: Date | null;
-}
+// DB-level document lives in @iam/db — re-export for server-side callers.
+export type { UserDocument } from '@iam/db'

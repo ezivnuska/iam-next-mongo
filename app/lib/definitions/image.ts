@@ -10,16 +10,5 @@ export {
   type GalleryImage,
 } from '@iam/shared-types'
 
-import type { Types } from 'mongoose'
-import type { ImageVariant } from '@iam/shared-types'
-
-// DB-level document (server only — never sent to clients)
-export interface ImageDocument {
-  _id: Types.ObjectId;
-  userId: Types.ObjectId;
-  username: string;
-  alt?: string;
-  variants: ImageVariant[];
-  createdAt: string;
-  updatedAt: Date;
-}
+// DB-level document lives in @iam/db — re-export for server-side callers.
+export type { ImageDocument } from '@iam/db'
