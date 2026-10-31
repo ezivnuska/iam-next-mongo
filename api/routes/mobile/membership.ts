@@ -3,9 +3,11 @@
 // POST /api/mobile/membership {tier}  — set membership tier (free | basic | pro)
 
 import { Hono } from 'hono'
+import { ZodError } from 'zod'
 import { authMiddleware, TokenPayload } from '../../middleware/auth'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import MembershipModel from '@/app/lib/models/membership'
+import { setMembershipRequestSchema } from '../../lib/schemas/membership'
 
 const TIER_CREDITS: Record<'basic' | 'pro', number> = {
   basic: 500,   // $5 in cents
@@ -58,10 +60,7 @@ membershipRoutes.get('/api/mobile/membership', authMiddleware, async (c) => {
 membershipRoutes.post('/api/mobile/membership', authMiddleware, async (c) => {
   const token = c.get('token')
   try {
-    const { tier } = await c.req.json() as { tier: string }
-    if (!tier || !['free', 'basic', 'pro'].includes(tier))
-      return c.json({ error: 'tier must be free, basic, or pro' }, 400)
-
+    const { tier } = setMembershipRequestSchema.parse(await c.req.json())
     await connectToDatabase()
 
     if (tier === 'free') {
@@ -91,6 +90,8 @@ membershipRoutes.post('/api/mobile/membership', authMiddleware, async (c) => {
 
     return c.json(serializeMembership(membership!))
   } catch (err) {
+    if (err instanceof ZodError)
+      return c.json({ error: err.errors[0].message }, 400)
     console.error('[membership POST]', err)
     return c.json({ error: 'Failed to update membership' }, 500)
   }

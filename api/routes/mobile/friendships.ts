@@ -4,6 +4,7 @@
 // DELETE /api/mobile/friendships/:id  — remove or cancel
 
 import { Hono } from 'hono'
+import { ZodError } from 'zod'
 import { authMiddleware, TokenPayload } from '../../middleware/auth'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import FriendshipModel from '@/app/lib/models/friendship'
@@ -14,6 +15,7 @@ import {
   emitFriendRequestRejected,
   emitFriendshipRemoved,
 } from '../../lib/socketEmit'
+import { createFriendshipRequestSchema, patchFriendshipRequestSchema } from '../../lib/schemas/friendship'
 
 const friendships = new Hono<{ Variables: { token: TokenPayload } }>()
 
@@ -37,12 +39,8 @@ async function emitFriendRequestSent(friendshipId: string, requesterId: string, 
 friendships.post('/api/mobile/friendships', authMiddleware, async (c) => {
   const token = c.get('token')
   try {
-    const { recipientId } = await c.req.json()
+    const { recipientId } = createFriendshipRequestSchema.parse(await c.req.json())
 
-    if (!recipientId || typeof recipientId !== 'string')
-      return c.json({ error: 'recipientId is required' }, 400)
-    if (!/^[a-f\d]{24}$/i.test(recipientId))
-      return c.json({ error: 'Invalid recipientId' }, 400)
     if (recipientId === token.id)
       return c.json({ error: 'Cannot send friend request to yourself' }, 400)
 
@@ -73,6 +71,8 @@ friendships.post('/api/mobile/friendships', authMiddleware, async (c) => {
     await emitFriendRequestSent((friendship as any)._id.toString(), token.id, recipientId)
     return c.json({ friendship: { id: (friendship as any)._id.toString(), status: 'pending_sent' } }, 201)
   } catch (err) {
+    if (err instanceof ZodError)
+      return c.json({ error: err.errors[0].message }, 400)
     console.error('[mobile/friendships POST]', err)
     return c.json({ error: 'Failed to send friend request' }, 500)
   }
@@ -82,10 +82,7 @@ friendships.patch('/api/mobile/friendships/:id', authMiddleware, async (c) => {
   const token = c.get('token')
   const id = c.req.param('id')
   try {
-    const { action } = await c.req.json()
-    if (action !== 'accept' && action !== 'reject')
-      return c.json({ error: "action must be 'accept' or 'reject'" }, 400)
-
+    const { action } = patchFriendshipRequestSchema.parse(await c.req.json())
     await connectToDatabase()
     const friendship = await FriendshipModel.findById(id)
     if (!friendship) return c.json({ error: 'Friendship not found' }, 404)
@@ -110,6 +107,8 @@ friendships.patch('/api/mobile/friendships/:id', authMiddleware, async (c) => {
 
     return c.json({ friendship: { id: (friendship as any)._id.toString(), status: action === 'accept' ? 'accepted' : 'none' } })
   } catch (err) {
+    if (err instanceof ZodError)
+      return c.json({ error: err.errors[0].message }, 400)
     console.error('[mobile/friendships PATCH]', err)
     return c.json({ error: 'Failed to update friendship' }, 500)
   }

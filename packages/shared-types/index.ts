@@ -1,6 +1,36 @@
 // @iam/shared-types
 // Wire-format types shared between iam-next-mongo and iam-games.
 // No mongoose, no Next.js — pure TypeScript interfaces safe for any runtime.
+//
+// API contract types (inferred from Zod schemas in api/lib/schemas/) are
+// re-exported here so iam-games can import them without pulling in Zod.
+export type {
+  MeResponse,
+  TokenResponse,
+} from '../../api/lib/schemas/auth'
+
+export type {
+  PublicUser,
+  UserDetail,
+  UsersListResponse,
+  UserDetailResponse,
+} from '../../api/lib/schemas/user'
+
+export type {
+  TileScoreEntry,
+  TetrisScoreEntry,
+  TileScoreRequest,
+  TetrisScoreRequest,
+} from '../../api/lib/schemas/score'
+
+export type {
+  LeaderboardResponse,
+  WordDuelEntry,
+  TilePuzzleEntry,
+  TetrisEntry,
+} from '../../api/lib/schemas/game'
+
+export type { MembershipResponse } from '../../api/lib/schemas/membership'
 
 // ---------------------------------------------------------------------------
 // Image
