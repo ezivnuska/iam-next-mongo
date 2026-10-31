@@ -13,6 +13,11 @@ config({ path: path.resolve(process.cwd(), '.env') })
 if (process.env.NODE_ENV !== 'production') {
   config({ path: path.resolve(process.cwd(), '.env.local'), override: true })
 }
+// Staging overrides: loaded last so .env.staging values beat .env.production.
+// APP_ENV=staging is set by ecosystem.staging.config.js.
+if (process.env.APP_ENV === 'staging') {
+  config({ path: path.resolve(process.cwd(), '.env.staging'), override: true })
+}
 
 import { createServer } from 'http'
 import { parse } from 'url'

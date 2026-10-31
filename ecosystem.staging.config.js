@@ -11,10 +11,12 @@ module.exports = {
         },
         env_staging: {
           NODE_ENV: 'production',
+          APP_ENV: 'staging',
           PORT: 3001,
         },
         env_production: {
           NODE_ENV: 'production',
+          APP_ENV: 'staging',
           PORT: 3001,
         },
         max_memory_restart: '512M',
