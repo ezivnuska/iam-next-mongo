@@ -11,6 +11,7 @@ import UserButton from '@/app/ui/header/user-button';
 import ThemeToggle from '@/app/ui/theme/theme-toggle';
 import LoadingSpinner from '@/app/ui/loading-spinner';
 import AuthRedirectHandler from '@/app/ui/auth/auth-redirect-handler';
+import SiteSwitcher from '@/app/ui/site-switcher';
 
 interface SimpleScreenProps {
     children: React.ReactNode;
@@ -28,6 +29,7 @@ export default function SimpleScreen({
         <div className={clsx(
             'w-screen h-screen flex overflow-hidden'
         )}>
+            <SiteSwitcher />
             <div className={clsx('flex w-full', {
                 'flex-col': !horizontalLayout,
                 'flex-row': horizontalLayout,
