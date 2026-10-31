@@ -2,35 +2,143 @@
 // Wire-format types shared between iam-next-mongo and iam-games.
 // No mongoose, no Next.js — pure TypeScript interfaces safe for any runtime.
 //
-// API contract types (inferred from Zod schemas in api/lib/schemas/) are
-// re-exported here so iam-games can import them without pulling in Zod.
-export type {
-  MeResponse,
-  TokenResponse,
-} from '../../api/lib/schemas/auth'
+// These are hand-written interfaces that mirror the shapes produced by the
+// Zod schemas in api/lib/schemas/. Keep them in sync when schemas change.
 
-export type {
-  PublicUser,
-  UserDetail,
-  UsersListResponse,
-  UserDetailResponse,
-} from '../../api/lib/schemas/user'
+// ---------------------------------------------------------------------------
+// API contract — auth
+// ---------------------------------------------------------------------------
 
-export type {
-  TileScoreEntry,
-  TetrisScoreEntry,
-  TileScoreRequest,
-  TetrisScoreRequest,
-} from '../../api/lib/schemas/score'
+export interface TokenResponse {
+  token: string;
+}
 
-export type {
-  LeaderboardResponse,
-  WordDuelEntry,
-  TilePuzzleEntry,
-  TetrisEntry,
-} from '../../api/lib/schemas/game'
+export interface MeResponse {
+  id: string;
+  username: string;
+  email: string;
+  role: string;
+  bio?: string;
+  avatar: ApiAvatar | null;
+  reputation: { approved: number; total: number } | null;
+}
 
-export type { MembershipResponse } from '../../api/lib/schemas/membership'
+// ---------------------------------------------------------------------------
+// API contract — users
+// ---------------------------------------------------------------------------
+
+export interface UserFriendship {
+  id: string;
+  status: 'accepted' | 'pending_sent' | 'pending_received';
+}
+
+export interface PublicUser {
+  id: string;
+  username: string;
+  bio: string;
+  avatar: ApiAvatar | null;
+  friendship: UserFriendship | null;
+}
+
+export interface UserDetail extends PublicUser {
+  reputation: { approved: number; total: number } | null;
+}
+
+export interface UsersListResponse { users: PublicUser[]; }
+export interface UserDetailResponse { user: UserDetail; }
+
+// ---------------------------------------------------------------------------
+// API contract — scores
+// ---------------------------------------------------------------------------
+
+export interface TileScoreRequest { score: string; }
+export interface TetrisScoreRequest { score: number; }
+
+export interface TileScoreEntry {
+  _id: string;
+  score: string;
+  user: { id: string; username: string; avatar: ApiAvatar | null };
+  createdAt: string | Date;
+}
+
+export interface TetrisScoreEntry {
+  _id: string;
+  score: number;
+  user: { id: string; username: string; avatar: ApiAvatar | null };
+  createdAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// API contract — leaderboard
+// ---------------------------------------------------------------------------
+
+export interface WordDuelEntry {
+  userId: string;
+  username: string;
+  score: number;
+  wins: number;
+  gamesPlayed: number;
+  game: 'word-duel';
+  rank: number;
+  avatar: ApiAvatar | null;
+}
+
+export interface TilePuzzleEntry {
+  userId: string;
+  username: string;
+  bestTime: string;
+  timesPlayed: number;
+  game: 'tile-puzzle';
+  rank: number;
+  avatar: ApiAvatar | null;
+}
+
+export interface TetrisEntry {
+  userId: string;
+  username: string;
+  bestScore: number;
+  gamesPlayed: number;
+  game: 'tetris';
+  rank: number;
+  avatar: ApiAvatar | null;
+}
+
+export interface LeaderboardResponse {
+  entries: WordDuelEntry[];
+  tileEntries: TilePuzzleEntry[];
+  tetrisEntries: TetrisEntry[];
+}
+
+// ---------------------------------------------------------------------------
+// API contract — membership
+// ---------------------------------------------------------------------------
+
+export type MembershipTier = 'free' | 'basic' | 'pro';
+
+export interface MembershipResponse {
+  tier: MembershipTier;
+  creditsTotal: number;
+  creditsAllocated: number;
+  creditsRemaining: number;
+  renewalDate: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Shared primitive — avatar (used by several API contract types above)
+// ---------------------------------------------------------------------------
+
+export interface ApiVariant {
+  size: string;
+  filename: string;
+  width: number;
+  height: number;
+  url: string;
+}
+
+export interface ApiAvatar {
+  id: string;
+  variants: ApiVariant[];
+}
 
 // ---------------------------------------------------------------------------
 // Image
