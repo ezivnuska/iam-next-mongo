@@ -1,5 +1,6 @@
 // api/routes/mobile/me.ts
-// PATCH /api/mobile/profile/bio — update bio
+// GET  /api/mobile/me               — fetch full authenticated user
+// PATCH /api/mobile/profile/bio     — update bio
 
 import { Hono } from 'hono'
 import { ZodError } from 'zod'
@@ -10,6 +11,46 @@ import '@/app/lib/models/image'
 import { updateBioRequestSchema } from '../../lib/schemas/user'
 
 const me = new Hono<{ Variables: { token: TokenPayload } }>()
+
+me.get('/api/mobile/me', authMiddleware, async (c) => {
+  const token = c.get('token')
+  try {
+    await connectToDatabase()
+    const userDoc = await UserModel.findById(token.id).populate('avatar', '_id userId username alt variants').lean() as any
+    if (!userDoc) return c.json({ error: 'User not found' }, 404)
+
+    const avatarDoc = userDoc.avatar
+    const avatar = avatarDoc && typeof avatarDoc === 'object' && avatarDoc._id
+      ? {
+          id: avatarDoc._id.toString(),
+          userId: avatarDoc.userId?.toString() ?? null,
+          username: avatarDoc.username ?? null,
+          alt: avatarDoc.alt ?? '',
+          variants: (avatarDoc.variants ?? []).map((v: any) => ({
+            size: v.size, filename: v.filename, width: v.width, height: v.height, url: v.url,
+          })),
+        }
+      : null
+
+    return c.json({
+      user: {
+        id: userDoc._id.toString(),
+        username: userDoc.username,
+        email: userDoc.email,
+        role: userDoc.role,
+        bio: userDoc.bio ?? '',
+        avatar,
+        verified: userDoc.verified ?? false,
+        createdAt: userDoc.createdAt?.toISOString() ?? null,
+        updatedAt: userDoc.updatedAt?.toISOString() ?? null,
+        emailVerified: userDoc.emailVerified?.toISOString() ?? null,
+      },
+    })
+  } catch (err) {
+    console.error('[mobile/me GET]', err)
+    return c.json({ error: 'Failed to fetch user' }, 500)
+  }
+})
 
 me.patch('/api/mobile/profile/bio', authMiddleware, async (c) => {
   const token = c.get('token')
