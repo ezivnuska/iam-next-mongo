@@ -1,0 +1,24 @@
+// ecosystem.staging.config.js
+// PM2 process definition for the staging environment (staging.iameric.me).
+// Deploy with: ./deploy.sh --branch staging --env staging
+// Runs on PORT=3001 so it does not conflict with production (PORT=3000).
+
+module.exports = {
+  apps: [
+    {
+      name: 'iam-app-staging',
+      script: 'npx',
+      args: 'tsx server.ts',
+      interpreter: 'none',
+      env: {
+        NODE_ENV: 'development',
+        PORT: 3001,
+      },
+      env_staging: {
+        NODE_ENV: 'production',
+        PORT: 3001,
+      },
+      max_memory_restart: '512M',
+    },
+  ],
+}
