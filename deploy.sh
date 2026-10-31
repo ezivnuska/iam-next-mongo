@@ -2,7 +2,7 @@
 set -e
 echo "Starting staging deployment..."
 
-cd /var/www/staging.iameric.me/iam-next-mongo
+cd /var/www/iam-next-mongo-staging
 
 echo "Pulling latest code..."
 git checkout -- pnpm-lock.yaml 2>/dev/null || true
