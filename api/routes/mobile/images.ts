@@ -8,12 +8,12 @@ import { Hono } from 'hono'
 import sharp from 'sharp'
 import { Types } from 'mongoose'
 import { authMiddleware, TokenPayload } from '../../middleware/auth'
-import { connectToDatabase } from '../../../app/lib/mongoose'
-import UserModel from '../../../app/lib/models/user'
-import ImageModel from '../../../app/lib/models/image'
-import Comment from '../../../app/lib/models/comment'
-import Post from '../../../app/lib/models/post'
-import { deleteS3File, uploadImageVariants } from '../../../app/lib/aws/s3'
+import { connectToDatabase } from '@/app/lib/mongoose'
+import UserModel from '@/app/lib/models/user'
+import ImageModel from '@/app/lib/models/image'
+import Comment from '@/app/lib/models/comment'
+import Post from '@/app/lib/models/post'
+import { deleteS3File, uploadImageVariants } from '@/app/lib/aws/s3'
 
 function serializeImage(img: any, currentUserId?: string) {
   return {

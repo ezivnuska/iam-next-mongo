@@ -4,12 +4,12 @@
 
 import { Hono } from 'hono'
 import { authMiddleware, TokenPayload } from '../../middleware/auth'
-import { connectToDatabase } from '../../../app/lib/mongoose'
-import { serializeResource, serializeFriendshipEntry, serializeFriendship } from '../../../app/lib/mobile/serializers'
-import UserModel from '../../../app/lib/models/user'
-import FriendshipModel from '../../../app/lib/models/friendship'
-import Rating from '../../../app/lib/models/rating'
-import '../../../app/lib/models/image'
+import { connectToDatabase } from '@/app/lib/mongoose'
+import { serializeResource, serializeFriendshipEntry, serializeFriendship } from '@/app/lib/mobile/serializers'
+import UserModel from '@/app/lib/models/user'
+import FriendshipModel from '@/app/lib/models/friendship'
+import Rating from '@/app/lib/models/rating'
+import '@/app/lib/models/image'
 
 const users = new Hono<{ Variables: { token: TokenPayload } }>()
 

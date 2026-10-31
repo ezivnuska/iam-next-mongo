@@ -3,9 +3,9 @@
 
 import { Hono } from 'hono'
 import { authMiddleware, TokenPayload } from '../../middleware/auth'
-import { connectToDatabase } from '../../../app/lib/mongoose'
-import UserModel from '../../../app/lib/models/user'
-import '../../../app/lib/models/image'
+import { connectToDatabase } from '@/app/lib/mongoose'
+import UserModel from '@/app/lib/models/user'
+import '@/app/lib/models/image'
 
 const me = new Hono<{ Variables: { token: TokenPayload } }>()
 

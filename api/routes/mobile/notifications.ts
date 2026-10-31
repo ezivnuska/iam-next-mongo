@@ -5,9 +5,9 @@
 
 import { Hono } from 'hono'
 import { authMiddleware, TokenPayload } from '../../middleware/auth'
-import { connectToDatabase } from '../../../app/lib/mongoose'
-import { isValidObjectId } from '../../../app/lib/utils/validation'
-import UserModel from '../../../app/lib/models/user'
+import { connectToDatabase } from '@/app/lib/mongoose'
+import { isValidObjectId } from '@/app/lib/utils/validation'
+import UserModel from '@/app/lib/models/user'
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send'
 

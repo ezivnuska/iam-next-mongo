@@ -5,15 +5,15 @@
 
 import { Hono } from 'hono'
 import { authMiddleware, TokenPayload } from '../../../middleware/auth'
-import { connectToDatabase } from '../../../../app/lib/mongoose'
-import { serializeIssue, serializeCompletion } from '../../../../app/lib/mobile/serializers'
-import { isValidObjectId, USER_WITH_AVATAR_POPULATE, APPLICANT_FULL_POPULATE } from '../../../../app/lib/utils/validation'
-import Issue from '../../../../app/lib/models/issue'
-import Completion from '../../../../app/lib/models/completion'
-import Pledge from '../../../../app/lib/models/pledge'
-import Applicant from '../../../../app/lib/models/applicant'
-import { deleteIssueWithCleanup } from '../../../../app/lib/mobile/deleteIssue'
-import '../../../../app/lib/models/user'
+import { connectToDatabase } from '@/app/lib/mongoose'
+import { serializeIssue, serializeCompletion } from '@/app/lib/mobile/serializers'
+import { isValidObjectId, USER_WITH_AVATAR_POPULATE, APPLICANT_FULL_POPULATE } from '@/app/lib/utils/validation'
+import Issue from '@/app/lib/models/issue'
+import Completion from '@/app/lib/models/completion'
+import Pledge from '@/app/lib/models/pledge'
+import Applicant from '@/app/lib/models/applicant'
+import { deleteIssueWithCleanup } from '@/app/lib/mobile/deleteIssue'
+import '@/app/lib/models/user'
 
 const issueById = new Hono<{ Variables: { token: TokenPayload } }>()
 

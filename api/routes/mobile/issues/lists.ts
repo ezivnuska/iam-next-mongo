@@ -9,14 +9,14 @@
 import { Hono } from 'hono'
 import mongoose from 'mongoose'
 import { authMiddleware, TokenPayload } from '../../../middleware/auth'
-import { connectToDatabase } from '../../../../app/lib/mongoose'
-import { serializeIssue } from '../../../../app/lib/mobile/serializers'
-import { attachIssueData } from '../../../../app/lib/mobile/attachIssueData'
-import Issue from '../../../../app/lib/models/issue'
-import Applicant from '../../../../app/lib/models/applicant'
-import Pledge from '../../../../app/lib/models/pledge'
-import '../../../../app/lib/models/image'
-import '../../../../app/lib/models/user'
+import { connectToDatabase } from '@/app/lib/mongoose'
+import { serializeIssue } from '@/app/lib/mobile/serializers'
+import { attachIssueData } from '@/app/lib/mobile/attachIssueData'
+import Issue from '@/app/lib/models/issue'
+import Applicant from '@/app/lib/models/applicant'
+import Pledge from '@/app/lib/models/pledge'
+import '@/app/lib/models/image'
+import '@/app/lib/models/user'
 
 function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371000

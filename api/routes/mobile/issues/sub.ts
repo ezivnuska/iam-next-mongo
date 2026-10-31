@@ -5,22 +5,22 @@ import { Hono } from 'hono'
 import mongoose from 'mongoose'
 import sharp from 'sharp'
 import { authMiddleware, TokenPayload } from '../../../middleware/auth'
-import { connectToDatabase } from '../../../../app/lib/mongoose'
+import { connectToDatabase } from '@/app/lib/mongoose'
 import {
   serializeIssue,
   serializeCompletion,
   serializeApplicant,
   serializePledge,
-} from '../../../../app/lib/mobile/serializers'
-import { isValidObjectId, USER_WITH_AVATAR_POPULATE, APPLICANT_FULL_POPULATE } from '../../../../app/lib/utils/validation'
-import { calculateApprovalRate } from '../../../../app/lib/utils/ratingUtils'
-import { midnightFollowingDay } from '../../../../app/lib/mobile/deadlines'
-import { settleIssue } from '../../../../app/lib/mobile/settleIssue'
-import { createPledgeWithPaymentIntent } from '../../../../app/lib/mobile/createPledge'
-import { deleteIssueWithCleanup } from '../../../../app/lib/mobile/deleteIssue'
-import { releasePledgeHolds } from '../../../../app/lib/mobile/pledgePayments'
+} from '@/app/lib/mobile/serializers'
+import { isValidObjectId, USER_WITH_AVATAR_POPULATE, APPLICANT_FULL_POPULATE } from '@/app/lib/utils/validation'
+import { calculateApprovalRate } from '@/app/lib/utils/ratingUtils'
+import { midnightFollowingDay } from '@/app/lib/mobile/deadlines'
+import { settleIssue } from '@/app/lib/mobile/settleIssue'
+import { createPledgeWithPaymentIntent } from '@/app/lib/mobile/createPledge'
+import { deleteIssueWithCleanup } from '@/app/lib/mobile/deleteIssue'
+import { releasePledgeHolds } from '@/app/lib/mobile/pledgePayments'
 import { tryAutoAccept } from '../../../lib/autoAccept'
-import { holdPledges } from '../../../../app/lib/mobile/pledgePayments'
+import { holdPledges } from '@/app/lib/mobile/pledgePayments'
 import {
   emitIssueApplicantAdded,
   emitIssueApplicantRemoved,
@@ -31,17 +31,17 @@ import {
   emitIssuePledgeAdded,
   emitIssuePledgeRemoved,
 } from '../../../lib/socketEmit'
-import Issue from '../../../../app/lib/models/issue'
-import Completion from '../../../../app/lib/models/completion'
-import Applicant from '../../../../app/lib/models/applicant'
-import Pledge from '../../../../app/lib/models/pledge'
-import Rating from '../../../../app/lib/models/rating'
-import Fee from '../../../../app/lib/models/fee'
-import ImageModel from '../../../../app/lib/models/image'
-import stripe from '../../../../app/lib/stripe'
-import { deleteS3File, uploadImageVariants } from '../../../../app/lib/aws/s3'
-import { sendPushToUsers } from '../../../../app/lib/mobile/sendPush'
-import UserModel from '../../../../app/lib/models/user'
+import Issue from '@/app/lib/models/issue'
+import Completion from '@/app/lib/models/completion'
+import Applicant from '@/app/lib/models/applicant'
+import Pledge from '@/app/lib/models/pledge'
+import Rating from '@/app/lib/models/rating'
+import Fee from '@/app/lib/models/fee'
+import ImageModel from '@/app/lib/models/image'
+import stripe from '@/app/lib/stripe'
+import { deleteS3File, uploadImageVariants } from '@/app/lib/aws/s3'
+import { sendPushToUsers } from '@/app/lib/mobile/sendPush'
+import UserModel from '@/app/lib/models/user'
 
 const sub = new Hono<{ Variables: { token: TokenPayload } }>()
 
@@ -616,7 +616,7 @@ sub.post('/api/mobile/issues/:id/commission/cancel', authMiddleware, async (c) =
         .sort({ createdAt: 1 }).lean() as Promise<any[]>,
     ])
 
-    const { selectFundedWinner } = await import('../../../../app/lib/mobile/fundingUtils')
+    const { selectFundedWinner } = await import('@/app/lib/mobile/fundingUtils')
     const winner = await selectFundedWinner(candidates, allPledges)
 
     if (!winner) {
@@ -682,7 +682,7 @@ sub.post('/api/mobile/issues/:id/commission/reassign', authMiddleware, async (c)
 
     // Re-use selectFundedWinner directly here since we've already fetched the
     // candidate list and pledges — avoids a second round-trip inside tryAutoAccept.
-    const { selectFundedWinner } = await import('../../../../app/lib/mobile/fundingUtils')
+    const { selectFundedWinner } = await import('@/app/lib/mobile/fundingUtils')
     const winner = await selectFundedWinner(candidates, allPledges)
 
     if (!winner) {

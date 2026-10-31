@@ -4,8 +4,8 @@
 
 import { Hono } from 'hono'
 import { authMiddleware, TokenPayload } from '../../middleware/auth'
-import { connectToDatabase } from '../../../app/lib/mongoose'
-import MembershipModel from '../../../app/lib/models/membership'
+import { connectToDatabase } from '@/app/lib/mongoose'
+import MembershipModel from '@/app/lib/models/membership'
 
 const TIER_CREDITS: Record<'basic' | 'pro', number> = {
   basic: 500,   // $5 in cents

@@ -5,9 +5,9 @@
 
 import { Hono } from 'hono'
 import { authMiddleware, TokenPayload } from '../../middleware/auth'
-import { connectToDatabase } from '../../../app/lib/mongoose'
-import FriendshipModel from '../../../app/lib/models/friendship'
-import UserModel from '../../../app/lib/models/user'
+import { connectToDatabase } from '@/app/lib/mongoose'
+import FriendshipModel from '@/app/lib/models/friendship'
+import UserModel from '@/app/lib/models/user'
 import {
   emitFriendRequest,
   emitFriendRequestAccepted,

@@ -8,12 +8,12 @@
 import { Hono } from 'hono'
 import { getConnInfo } from '@hono/node-server/conninfo'
 import { authMiddleware, TokenPayload } from '../../../middleware/auth'
-import { connectToDatabase } from '../../../../app/lib/mongoose'
-import stripeClient from '../../../../app/lib/stripe'
-import UserModel from '../../../../app/lib/models/user'
-import Pledge from '../../../../app/lib/models/pledge'
-import Applicant from '../../../../app/lib/models/applicant'
-import '../../../../app/lib/models/issue'
+import { connectToDatabase } from '@/app/lib/mongoose'
+import stripeClient from '@/app/lib/stripe'
+import UserModel from '@/app/lib/models/user'
+import Pledge from '@/app/lib/models/pledge'
+import Applicant from '@/app/lib/models/applicant'
+import '@/app/lib/models/issue'
 
 // Keep in sync with node_modules/stripe/cjs/apiVersion.js
 const STRIPE_API_VERSION = '2026-04-22.dahlia'

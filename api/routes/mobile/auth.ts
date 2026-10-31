@@ -6,10 +6,10 @@
 import { Hono } from 'hono'
 import { SignJWT, jwtVerify } from 'jose'
 import bcrypt from 'bcrypt'
-import { connectToDatabase } from '../../../app/lib/mongoose'
-import UserModel from '../../../app/lib/models/user'
-import '../../../app/lib/models/image'
-import Rating from '../../../app/lib/models/rating'
+import { connectToDatabase } from '@/app/lib/mongoose'
+import UserModel from '@/app/lib/models/user'
+import '@/app/lib/models/image'
+import Rating from '@/app/lib/models/rating'
 import { loginRateLimit } from '../../middleware/rate-limit'
 
 function getSecret(): Uint8Array {
