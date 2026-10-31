@@ -31,7 +31,8 @@
     "tailwind-merge": "^3.4.0",
     "use-debounce": "^10.0.6",
     "uuid": "^13.0.0",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "@iam/shared-types": "file:./packages/shared-types"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.10",

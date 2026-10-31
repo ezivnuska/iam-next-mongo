@@ -1,0 +1,8 @@
+{
+  "name": "@iam/shared-types",
+  "version": "1.0.0",
+  "description": "Shared wire-format TypeScript types — no mongoose, no Next.js",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "private": true
+}
