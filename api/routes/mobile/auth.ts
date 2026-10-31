@@ -4,18 +4,13 @@
 // GET  /api/mobile/me       — return current user from JWT
 
 import { Hono } from 'hono'
-import { SignJWT, jwtVerify } from 'jose'
 import bcrypt from 'bcrypt'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import UserModel from '@/app/lib/models/user'
 import '@/app/lib/models/image'
 import Rating from '@/app/lib/models/rating'
 import { loginRateLimit } from '../../middleware/rate-limit'
-
-function getSecret(): Uint8Array {
-  if (!process.env.NEXTAUTH_SECRET) throw new Error('NEXTAUTH_SECRET is not set')
-  return new TextEncoder().encode(process.env.NEXTAUTH_SECRET)
-}
+import { signMobileToken, verifyMobileToken } from '@/app/lib/jwt'
 
 const auth = new Hono()
 
@@ -38,15 +33,12 @@ auth.post('/api/mobile/login', loginRateLimit, async (c) => {
     if (!isValid)
       return c.json({ error: 'Invalid email or password' }, 401)
 
-    const token = await new SignJWT({
+    const token = await signMobileToken({
       id: userDoc._id.toString(),
       username: userDoc.username,
       email: userDoc.email,
       role: userDoc.role,
     })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setExpirationTime('7d')
-      .sign(getSecret())
 
     return c.json({ token })
   } catch (err) {
@@ -93,15 +85,12 @@ auth.post('/api/mobile/register', async (c) => {
     })
     await newUser.save()
 
-    const token = await new SignJWT({
+    const token = await signMobileToken({
       id: newUser._id.toString(),
       username: newUser.username,
       email: newUser.email,
       role: newUser.role,
     })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setExpirationTime('7d')
-      .sign(getSecret())
 
     return c.json({ token }, 201)
   } catch (err) {
@@ -116,7 +105,7 @@ auth.get('/api/mobile/me', async (c) => {
     if (!authHeader?.startsWith('Bearer '))
       return c.json({ error: 'Unauthorized' }, 401)
 
-    const { payload } = await jwtVerify(authHeader.slice(7), getSecret())
+    const payload = await verifyMobileToken(authHeader.slice(7))
 
     await connectToDatabase()
     const userDoc = await UserModel.findById(payload.id as string).populate('avatar', '_id variants')

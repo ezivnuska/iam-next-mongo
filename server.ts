@@ -18,9 +18,9 @@ import { createServer } from 'http'
 import { parse } from 'url'
 import next from 'next'
 import { Server, Socket } from 'socket.io'
-import { jwtVerify } from 'jose'
 import { getRequestListener } from '@hono/node-server'
 import honoApp from './api/app'
+import { verifyMobileToken } from './app/lib/jwt'
 
 interface SocketData {
   userId: string
@@ -66,11 +66,6 @@ app.prepare().then(() => {
 	// Expose io to Hono routes via global (same process, no HTTP bridge needed)
 	global.io = io
 
-	const getJwtSecret = () => {
-		if (!process.env.NEXTAUTH_SECRET) throw new Error('NEXTAUTH_SECRET is not set')
-		return new TextEncoder().encode(process.env.NEXTAUTH_SECRET)
-	}
-
 	// Track online users
 	const onlineUsers = new Map<string, Set<string>>()
 	const onlineUsernames = new Map<string, string>()
@@ -84,7 +79,7 @@ app.prepare().then(() => {
 			if (!userId.startsWith('guest-')) {
 				if (!token) return
 				try {
-					const { payload } = await jwtVerify(token, getJwtSecret())
+					const payload = await verifyMobileToken(token)
 					if (payload.id !== userId) return
 				} catch {
 					return
