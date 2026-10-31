@@ -17,6 +17,12 @@ importers:
       '@hono/node-server':
         specifier: ^1.14.0
         version: 1.19.14(hono@4.12.22)
+      '@iam/db':
+        specifier: file:./packages/db
+        version: file:packages/db(@iam/shared-types@file:packages/shared-types)(mongoose@8.20.2)
+      '@iam/shared-types':
+        specifier: file:./packages/shared-types
+        version: file:packages/shared-types
       bcrypt:
         specifier: ^5.1.1
         version: 5.1.1
@@ -532,6 +538,15 @@ packages:
   '@humanwhocodes/retry@0.4.3':
     resolution: {integrity: sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==}
     engines: {node: '>=18.18'}
+
+  '@iam/db@file:packages/db':
+    resolution: {directory: packages/db, type: directory}
+    peerDependencies:
+      '@iam/shared-types': '*'
+      mongoose: '>=7'
+
+  '@iam/shared-types@file:packages/shared-types':
+    resolution: {directory: packages/shared-types, type: directory}
 
   '@img/colour@1.0.0':
     resolution: {integrity: sha512-A5P/LfWGFSl6nsckYtjw9da+19jB8hkJ6ACTGcDfEJ0aE+l2n2El7dsVM7UVHZQ9s2lmYMWlrS21YLy2IR1LUw==}
@@ -3650,6 +3665,13 @@ snapshots:
   '@humanwhocodes/module-importer@1.0.1': {}
 
   '@humanwhocodes/retry@0.4.3': {}
+
+  '@iam/db@file:packages/db(@iam/shared-types@file:packages/shared-types)(mongoose@8.20.2)':
+    dependencies:
+      '@iam/shared-types': file:packages/shared-types
+      mongoose: 8.20.2
+
+  '@iam/shared-types@file:packages/shared-types': {}
 
   '@img/colour@1.0.0': {}
 

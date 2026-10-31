@@ -31,6 +31,9 @@ module.exports = {
         animation: {
           "fade-in": "fade-in 0.6s ease-out",
         },
+        maxWidth: {
+          'content': '600px',
+        },
         screens: {
           'portrait': { 'raw': '(orientation: portrait)' },
           'landscape': { 'raw': '(orientation: landscape)' },

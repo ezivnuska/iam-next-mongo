@@ -13,15 +13,19 @@ config({ path: path.resolve(process.cwd(), '.env') })
 if (process.env.NODE_ENV !== 'production') {
   config({ path: path.resolve(process.cwd(), '.env.local'), override: true })
 }
+// Staging overrides: loaded last so .env.staging values beat .env.production.
+// APP_ENV=staging is set by ecosystem.staging.config.js.
+if (process.env.APP_ENV === 'staging') {
+  config({ path: path.resolve(process.cwd(), '.env.staging'), override: true })
+}
 
 import { createServer } from 'http'
 import { parse } from 'url'
 import next from 'next'
 import { Server, Socket } from 'socket.io'
-import { jwtVerify } from 'jose'
 import { getRequestListener } from '@hono/node-server'
 import honoApp from './api/app'
-import { registerWordDuelHandlers } from './app/games/word-duel/lib/socket-handlers'
+import { verifyMobileToken } from './app/lib/jwt'
 
 interface SocketData {
   userId: string
@@ -67,37 +71,9 @@ app.prepare().then(() => {
 	// Expose io to Hono routes via global (same process, no HTTP bridge needed)
 	global.io = io
 
-	const internalHeaders: Record<string, string> = {
-		'Content-Type': 'application/json',
-		'x-internal-secret': process.env.INTERNAL_SECRET ?? '',
-	}
-
-	const getJwtSecret = () => {
-		if (!process.env.NEXTAUTH_SECRET) throw new Error('NEXTAUTH_SECRET is not set')
-		return new TextEncoder().encode(process.env.NEXTAUTH_SECRET)
-	}
-
 	// Track online users
 	const onlineUsers = new Map<string, Set<string>>()
 	const onlineUsernames = new Map<string, string>()
-
-	let staleGameCheckInterval: ReturnType<typeof setInterval> | null = null
-
-	function startStaleGameCheck() {
-		if (!staleGameCheckInterval) {
-			console.log('[Stale Check] Starting continuous health check')
-			staleGameCheckInterval = setInterval(async () => {
-				try {
-					await fetch(`http://localhost:${port}/api/poker/check-stale`, {
-						method: 'POST',
-						headers: internalHeaders,
-					})
-				} catch {
-					// Silently fail
-				}
-			}, 30000)
-		}
-	}
 
 	io.on('connection', (socket: AppSocket) => {
 		socket.on('register', async (data: unknown) => {
@@ -105,11 +81,10 @@ app.prepare().then(() => {
 			const { userId, token, username } = data as Record<string, string | undefined>
 			if (!userId) return
 
-			// Guest users (guest-* IDs) bypass JWT verification
 			if (!userId.startsWith('guest-')) {
 				if (!token) return
 				try {
-					const { payload } = await jwtVerify(token, getJwtSecret())
+					const payload = await verifyMobileToken(token)
 					if (payload.id !== userId) return
 				} catch {
 					return
@@ -139,226 +114,8 @@ app.prepare().then(() => {
 						socket.broadcast.emit('user:online', { userId, username: username || userId })
 					}
 				})
-
-				try {
-					const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
-						method: 'POST',
-						headers: internalHeaders,
-						body: JSON.stringify({
-							signal: 'poker:player_reconnected',
-							userId,
-							username,
-						}),
-					})
-					if (!response.ok) {
-						console.log('[Socket] Player reconnection check completed (no active game)')
-					}
-				} catch (error: unknown) {
-					console.error('[Socket] Error checking poker game on reconnect:', error instanceof Error ? error.message : error)
-				}
 			}
 		})
-
-		socket.on('poker:join_game', async ({ gameId, username }: { gameId: string; username?: string }) => {
-			console.log('[Socket] Received poker:join_game for game:', gameId, 'user:', socket.data.userId)
-			try {
-				if (!socket.data.userId) {
-					socket.emit('poker:join_error', { error: 'Not authenticated - register first' })
-					return
-				}
-				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
-					method: 'POST',
-					headers: internalHeaders,
-					body: JSON.stringify({
-						signal: 'poker:join_game',
-						gameId,
-						userId: socket.data.userId,
-						username: username || 'Guest',
-					}),
-				})
-				const result = await response.json()
-				if (!response.ok) {
-					console.error('[Socket] Join failed:', result.error)
-					socket.emit('poker:join_error', { error: result.error })
-				} else {
-					socket.emit('poker:join_success', {
-						gameState: result.gameState,
-						userId: result.userId,
-						username: result.username,
-					})
-				}
-			} catch (error: unknown) {
-				console.error('[Socket] Error processing join_game:', error)
-				socket.emit('poker:join_error', { error: error instanceof Error ? error.message : 'Failed to join game' })
-			}
-		})
-
-		socket.on('poker:leave_game', async ({ gameId }: { gameId: string }) => {
-			console.log('[Socket] Received poker:leave_game for game:', gameId, 'user:', socket.data.userId)
-			try {
-				if (!socket.data.userId) {
-					socket.emit('poker:leave_error', { error: 'Not authenticated - register first' })
-					return
-				}
-				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
-					method: 'POST',
-					headers: internalHeaders,
-					body: JSON.stringify({ signal: 'poker:leave_game', gameId, userId: socket.data.userId }),
-				})
-				const result = await response.json()
-				if (!response.ok) {
-					console.error('[Socket] Leave failed:', result.error)
-					socket.emit('poker:leave_error', { error: result.error })
-				} else {
-					socket.emit('poker:leave_success', { gameState: result.gameState })
-				}
-			} catch (error: unknown) {
-				console.error('[Socket] Error processing leave_game:', error)
-				socket.emit('poker:leave_error', { error: error instanceof Error ? error.message : 'Failed to leave game' })
-			}
-		})
-
-		socket.on('poker:ready_for_next_turn', async ({ gameId }: { gameId: string }) => {
-			console.log('[Socket] Received poker:ready_for_next_turn for game:', gameId)
-			try {
-				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
-					method: 'POST',
-					headers: internalHeaders,
-					body: JSON.stringify({ signal: 'poker:ready_for_next_turn', gameId }),
-				})
-				if (!response.ok) {
-					console.error('[Socket] API call failed:', await response.text())
-				}
-			} catch (error: unknown) {
-				console.error('[Socket] Error processing ready_for_next_turn:', error)
-			}
-		})
-
-		socket.on('poker:bet', async ({ gameId, chipCount }: { gameId: string; chipCount: number }) => {
-			console.log('[Socket] Received poker:bet for game:', gameId, 'user:', socket.data.userId, 'chips:', chipCount)
-			try {
-				if (!socket.data.userId) {
-					socket.emit('poker:bet_error', { error: 'Not authenticated - register first' })
-					return
-				}
-				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
-					method: 'POST',
-					headers: internalHeaders,
-					body: JSON.stringify({ signal: 'poker:bet', gameId, userId: socket.data.userId, chipCount }),
-				})
-				const result = await response.json()
-				if (!response.ok) {
-					console.error('[Socket] Bet failed:', result.error)
-					socket.emit('poker:bet_error', { error: result.error })
-				} else {
-					socket.emit('poker:bet_success', { success: true })
-				}
-			} catch (error: unknown) {
-				console.error('[Socket] Error processing bet:', error)
-				socket.emit('poker:bet_error', { error: error instanceof Error ? error.message : 'Failed to place bet' })
-			}
-		})
-
-		socket.on('poker:fold', async ({ gameId }: { gameId: string }) => {
-			console.log('[Socket] Received poker:fold for game:', gameId, 'user:', socket.data.userId)
-			try {
-				if (!socket.data.userId) {
-					socket.emit('poker:fold_error', { error: 'Not authenticated - register first' })
-					return
-				}
-				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
-					method: 'POST',
-					headers: internalHeaders,
-					body: JSON.stringify({ signal: 'poker:fold', gameId, userId: socket.data.userId }),
-				})
-				const result = await response.json()
-				if (!response.ok) {
-					console.error('[Socket] Fold failed:', result.error)
-					socket.emit('poker:fold_error', { error: result.error })
-				} else {
-					socket.emit('poker:fold_success', { success: true })
-				}
-			} catch (error: unknown) {
-				console.error('[Socket] Error processing fold:', error)
-				socket.emit('poker:fold_error', { error: error instanceof Error ? error.message : 'Failed to fold' })
-			}
-		})
-
-		socket.on('poker:set_timer_action', async ({ gameId, timerAction, betAmount }: { gameId: string; timerAction: string; betAmount?: number }) => {
-			console.log('[Socket] Received poker:set_timer_action for game:', gameId, 'user:', socket.data.userId, 'action:', timerAction)
-			try {
-				if (!socket.data.userId) {
-					socket.emit('poker:timer_error', { error: 'Not authenticated - register first' })
-					return
-				}
-				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
-					method: 'POST',
-					headers: internalHeaders,
-					body: JSON.stringify({
-						signal: 'poker:set_timer_action',
-						gameId,
-						userId: socket.data.userId,
-						timerAction,
-						betAmount,
-					}),
-				})
-				const result = await response.json()
-				if (!response.ok) {
-					console.error('[Socket] Set timer action failed:', result.error)
-					socket.emit('poker:timer_error', { error: result.error })
-				} else {
-					socket.emit('poker:timer_success', { success: true })
-				}
-			} catch (error: unknown) {
-				console.error('[Socket] Error setting timer action:', error)
-				socket.emit('poker:timer_error', { error: error instanceof Error ? error.message : 'Failed to set timer action' })
-			}
-		})
-
-		socket.on('poker:set_presence', async ({ gameId, isAway }: { gameId: string; isAway: boolean }) => {
-			console.log('[Socket] Received poker:set_presence for game:', gameId, 'user:', socket.data.userId, 'isAway:', isAway)
-			try {
-				if (!socket.data.userId) {
-					console.error('[Socket] Set presence failed - not authenticated')
-					return
-				}
-				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
-					method: 'POST',
-					headers: internalHeaders,
-					body: JSON.stringify({
-						signal: 'poker:set_presence',
-						gameId,
-						userId: socket.data.userId,
-						isAway,
-					}),
-				})
-				const result = await response.json()
-				if (!response.ok) {
-					console.error('[Socket] Set presence failed:', result.error)
-				}
-			} catch (error: unknown) {
-				console.error('[Socket] Error setting presence:', error)
-			}
-		})
-
-		socket.on('poker:winner_notification_complete', async ({ gameId }: { gameId: string }) => {
-			console.log('[Socket] Received poker:winner_notification_complete for game:', gameId)
-			try {
-				const response = await fetch(`http://localhost:${port}/api/socket/emit`, {
-					method: 'POST',
-					headers: internalHeaders,
-					body: JSON.stringify({ signal: 'poker:winner_notification_complete', gameId }),
-				})
-				if (!response.ok) {
-					const result = await response.json()
-					console.error('[Socket] Winner notification complete handler failed:', result.error)
-				}
-			} catch (error: unknown) {
-				console.error('[Socket] Error processing winner notification complete:', error)
-			}
-		})
-
-		registerWordDuelHandlers(io, socket)
 
 		socket.on('issue:join', ({ issueId }: { issueId?: string }) => {
 			if (issueId) socket.join(`issue:${issueId}`)
@@ -368,7 +125,7 @@ app.prepare().then(() => {
 			if (issueId) socket.leave(`issue:${issueId}`)
 		})
 
-socket.on('disconnect', () => {
+		socket.on('disconnect', () => {
 			if (socket.data.userId) {
 				const userId = socket.data.userId
 				const userSockets = onlineUsers.get(userId)
@@ -394,8 +151,5 @@ socket.on('disconnect', () => {
 			console.log(`> Ready on http://${hostname}:${port}`)
 			console.log(`> Socket.IO server running on path: /api/socket/io`)
 			console.log(`> Mobile API handled by Hono at /api/mobile/**`)
-			console.log(`> Stale game health check: Continuous (runs every 30 seconds)`)
-
-			startStaleGameCheck()
 		})
 })

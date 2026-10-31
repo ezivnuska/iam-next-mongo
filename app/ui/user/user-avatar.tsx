@@ -62,7 +62,7 @@ export default function UserAvatar({
 	return (
 		<div className={`flex flex-row items-center justify-center w-full h-full rounded-full bg-gray-400 dark:bg-gray-600 text-gray-600 dark:text-gray-300 font-semibold border-2 border-white dark:border-gray-700 ${className}`}>
 			{isAI
-                ? <ComputerDesktopIcon className="text-white dark:text-gray-300" style={{ width: 16, height: 16 }} />
+                ? <ComputerDesktopIcon className="w-4 h-4 text-white dark:text-gray-300" />
 			    : validImageUrl
                     ? (
                         <Image

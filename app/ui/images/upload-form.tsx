@@ -32,8 +32,8 @@ export default function UploadForm({ onUploadSuccess, onClose }: UploadFormProps
           onUploadSuccess?.(uploaded);
           onClose?.();
           setFile(null);
-        } catch (err: any) {
-          setError(err.message || "Upload failed");
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Upload failed");
         } finally {
           setIsUploading(false);
         }

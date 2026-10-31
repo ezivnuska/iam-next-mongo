@@ -3,18 +3,18 @@
 // POST /api/mobile/issues       — create a new issue
 
 import { Hono } from 'hono'
-import { ISSUE_TYPES } from '../../../../app/lib/definitions/issue'
+import { ISSUE_TYPES } from '@/app/lib/definitions/issue'
 import { authMiddleware, TokenPayload } from '../../../middleware/auth'
-import { connectToDatabase } from '../../../../app/lib/mongoose'
-import { serializeIssue } from '../../../../app/lib/mobile/serializers'
-import { attachIssueData } from '../../../../app/lib/mobile/attachIssueData'
-import { createIssueFee } from '../../../../app/lib/mobile/createFee'
-import { generateIssueTitle } from '../../../../app/lib/mobile/generateTitle'
-import { isValidObjectId } from '../../../../app/lib/utils/validation'
+import { connectToDatabase } from '@/app/lib/mongoose'
+import { serializeIssue } from '@/app/lib/mobile/serializers'
+import { attachIssueData } from '@/app/lib/mobile/attachIssueData'
+import { createIssueFee } from '@/app/lib/mobile/createFee'
+import { generateIssueTitle } from '@/app/lib/mobile/generateTitle'
+import { isValidObjectId } from '@/app/lib/utils/validation'
 import { emitIssueCreated } from '../../../lib/socketEmit'
-import Issue from '../../../../app/lib/models/issue'
-import ImageModel from '../../../../app/lib/models/image'
-import '../../../../app/lib/models/user'
+import Issue from '@/app/lib/models/issue'
+import ImageModel from '@/app/lib/models/image'
+import '@/app/lib/models/user'
 
 const issues = new Hono<{ Variables: { token: TokenPayload } }>()
 

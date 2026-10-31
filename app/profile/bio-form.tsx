@@ -5,8 +5,6 @@
 import { useState } from 'react';
 import { updateBio } from '@/app/lib/actions/profile';
 import { useUser } from '@/app/lib/providers/user-provider';
-import { getTextColor } from '@/app/lib/utils/theme-colors';
-import { useIsDark } from '@/app/lib/hooks/use-is-dark';
 import { PencilSquareIcon } from '@heroicons/react/24/solid';
 
 export default function BioForm() {
@@ -15,7 +13,6 @@ export default function BioForm() {
     const [isEditing, setIsEditing] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const isDark = useIsDark();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -24,7 +21,6 @@ export default function BioForm() {
 
         try {
             const result = await updateBio(bio);
-
             if (result.success && result.user) {
                 setUser(result.user);
                 setIsEditing(false);
@@ -50,7 +46,6 @@ export default function BioForm() {
                 onClick={() => setIsEditing(true)}
                 className='text-sm text-blue-300 hover:text-blue-800'
             >
-                {/* Edit */}
                 <PencilSquareIcon className='w-6 h-6' />
             </button>
         );
@@ -63,16 +58,13 @@ export default function BioForm() {
                 <textarea
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                    style={{ color: getTextColor(isDark) }}
+                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white'
                     rows={4}
                     maxLength={500}
                     placeholder='Tell us about yourself...'
                 />
                 <div className='flex items-center justify-between mt-2'>
-                    <span className='text-sm text-gray-500'>
-                        {bio.length}/500
-                    </span>
+                    <span className='text-sm text-gray-500'>{bio.length}/500</span>
                     <div className='flex gap-2'>
                         <button
                             type='submit'
@@ -91,9 +83,7 @@ export default function BioForm() {
                         </button>
                     </div>
                 </div>
-                {error && (
-                    <p className='mt-2 text-sm text-red-600'>{error}</p>
-                )}
+                {error && <p className='mt-2 text-sm text-red-600'>{error}</p>}
             </form>
         </div>
     );

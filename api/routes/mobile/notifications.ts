@@ -4,10 +4,16 @@
 // POST   /api/mobile/notifications/notify — send push notification to a user
 
 import { Hono } from 'hono'
+import { ZodError } from 'zod'
 import { authMiddleware, TokenPayload } from '../../middleware/auth'
-import { connectToDatabase } from '../../../app/lib/mongoose'
-import { isValidObjectId } from '../../../app/lib/utils/validation'
-import UserModel from '../../../app/lib/models/user'
+import { connectToDatabase } from '@/app/lib/mongoose'
+import { isValidObjectId } from '@/app/lib/utils/validation'
+import UserModel from '@/app/lib/models/user'
+import {
+  registerPushTokenRequestSchema,
+  sendNotificationRequestSchema,
+  challengeNotificationRequestSchema,
+} from '../../lib/schemas/notification'
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send'
 
@@ -16,14 +22,14 @@ const notifications = new Hono<{ Variables: { token: TokenPayload } }>()
 notifications.post('/api/mobile/notifications/token', authMiddleware, async (c) => {
   const token = c.get('token')
   try {
-    const { token: pushToken } = await c.req.json()
-    if (typeof pushToken !== 'string' || !pushToken.startsWith('ExponentPushToken'))
-      return c.json({ error: 'Invalid push token' }, 400)
+    const { token: pushToken } = registerPushTokenRequestSchema.parse(await c.req.json())
 
     await connectToDatabase()
     await UserModel.findByIdAndUpdate(token.id, { expoPushToken: pushToken })
     return c.json({ ok: true })
   } catch (err) {
+    if (err instanceof ZodError)
+      return c.json({ error: err.errors[0].message }, 400)
     console.error('[notifications/token POST]', err)
     return c.json({ error: 'Failed to register token' }, 500)
   }
@@ -45,15 +51,7 @@ const STRIP_TAGS = (s: string) => s.replace(/<[^>]*>/g, '').trim()
 
 notifications.post('/api/mobile/notifications/notify', authMiddleware, async (c) => {
   try {
-    const { userId, title, body } = await c.req.json()
-    if (!userId || !title || !body)
-      return c.json({ error: 'userId, title, and body are required' }, 400)
-    if (!isValidObjectId(userId))
-      return c.json({ error: 'Invalid userId' }, 400)
-    if (typeof title !== 'string' || title.length > 100)
-      return c.json({ error: 'title must be a string under 100 characters' }, 400)
-    if (typeof body !== 'string' || body.length > 500)
-      return c.json({ error: 'body must be a string under 500 characters' }, 400)
+    const { userId, title, body } = sendNotificationRequestSchema.parse(await c.req.json())
 
     const safeTitle = STRIP_TAGS(title)
     const safeBody = STRIP_TAGS(body)
@@ -72,6 +70,8 @@ notifications.post('/api/mobile/notifications/notify', authMiddleware, async (c)
 
     return c.json({ ok: true })
   } catch (err) {
+    if (err instanceof ZodError)
+      return c.json({ error: err.errors[0].message }, 400)
     console.error('[notifications/notify POST]', err)
     return c.json({ error: 'Failed to send notification' }, 500)
   }
@@ -80,11 +80,7 @@ notifications.post('/api/mobile/notifications/notify', authMiddleware, async (c)
 notifications.post('/api/mobile/notifications/challenge', authMiddleware, async (c) => {
   const token = c.get('token')
   try {
-    const { toUserId, roomId } = await c.req.json()
-    if (!toUserId || !isValidObjectId(toUserId))
-      return c.json({ error: 'Invalid toUserId' }, 400)
-    if (!roomId || typeof roomId !== 'string')
-      return c.json({ error: 'Invalid roomId' }, 400)
+    const { toUserId, roomId } = challengeNotificationRequestSchema.parse(await c.req.json())
 
     await connectToDatabase()
     const [sender, target] = await Promise.all([
@@ -109,6 +105,8 @@ notifications.post('/api/mobile/notifications/challenge', authMiddleware, async 
 
     return c.json({ ok: true })
   } catch (err) {
+    if (err instanceof ZodError)
+      return c.json({ error: err.errors[0].message }, 400)
     console.error('[notifications/challenge POST]', err)
     return c.json({ error: 'Failed to send challenge notification' }, 500)
   }

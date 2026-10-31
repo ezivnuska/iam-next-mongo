@@ -15,8 +15,10 @@ import friendships from './routes/mobile/friendships'
 import ratings from './routes/mobile/ratings'
 import commissions from './routes/mobile/commissions'
 import notifications from './routes/mobile/notifications'
+import membership from './routes/mobile/membership'
 import scores from './routes/mobile/scores'
 import tetrisScores from './routes/mobile/tetris-scores'
+import games from './routes/mobile/games'
 import issuesList from './routes/mobile/issues/lists'
 import issuesRoot from './routes/mobile/issues/index'
 import issueById from './routes/mobile/issues/[id]'
@@ -24,7 +26,6 @@ import issueSub from './routes/mobile/issues/sub'
 import issueAllocation from './routes/mobile/issues/allocation'
 import stripeRoutes from './routes/mobile/stripe/index'
 import adminRoutes from './routes/mobile/admin/index'
-import games from './routes/mobile/games'
 
 const app = new Hono()
 
@@ -42,8 +43,11 @@ app.route('/', friendships)
 app.route('/', ratings)
 app.route('/', commissions)
 app.route('/', notifications)
+app.route('/', membership)
 app.route('/', scores)
 app.route('/', tetrisScores)
+// Order matters: /games/leaderboard and /games/ai-result before generic /games
+app.route('/', games)
 app.route('/', issuesList)
 app.route('/', issuesRoot)
 app.route('/', issueById)
@@ -51,6 +55,5 @@ app.route('/', issueSub)
 app.route('/', issueAllocation)
 app.route('/', stripeRoutes)
 app.route('/', adminRoutes)
-app.route('/', games)
 
 export default app

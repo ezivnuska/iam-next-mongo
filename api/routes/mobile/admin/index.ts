@@ -5,17 +5,17 @@
 
 import { Hono } from 'hono'
 import { authMiddleware, TokenPayload } from '../../../middleware/auth'
-import { connectToDatabase } from '../../../../app/lib/mongoose'
-import Issue from '../../../../app/lib/models/issue'
-import Completion from '../../../../app/lib/models/completion'
-import Pledge from '../../../../app/lib/models/pledge'
-import Fee from '../../../../app/lib/models/fee'
-import Applicant from '../../../../app/lib/models/applicant'
-import Rating from '../../../../app/lib/models/rating'
-import ImageModel from '../../../../app/lib/models/image'
-import stripeClient from '../../../../app/lib/stripe'
-import { deleteS3File } from '../../../../app/lib/aws/s3'
-import '../../../../app/lib/models/user'
+import { connectToDatabase } from '@/app/lib/mongoose'
+import Issue from '@/app/lib/models/issue'
+import Completion from '@/app/lib/models/completion'
+import Pledge from '@/app/lib/models/pledge'
+import Fee from '@/app/lib/models/fee'
+import Applicant from '@/app/lib/models/applicant'
+import Rating from '@/app/lib/models/rating'
+import ImageModel from '@/app/lib/models/image'
+import stripeClient from '@/app/lib/stripe'
+import { deleteS3File } from '@/app/lib/aws/s3'
+import '@/app/lib/models/user'
 
 const admin = new Hono<{ Variables: { token: TokenPayload } }>()
 

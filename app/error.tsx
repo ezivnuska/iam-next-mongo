@@ -22,7 +22,7 @@ export default function GlobalError({
   return (
     <html>
       <body>
-        <div style={{ padding: 32, fontFamily: 'sans-serif' }}>
+        <div className='p-8 font-sans'>
           <h2>Something went wrong</h2>
           <button onClick={reset}>Try again</button>
         </div>

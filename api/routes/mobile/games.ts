@@ -1,22 +1,23 @@
+// POST /api/mobile/games            — validate a finished multiplayer game
+// POST /api/mobile/games/ai-result  — persist a completed solo/AI game round
+// GET  /api/mobile/games/leaderboard — top players aggregated from all games
+
 import { Hono } from 'hono'
+import { ZodError } from 'zod'
 import { authMiddleware, TokenPayload } from '../../middleware/auth'
-import { connectToDatabase } from '../../../app/lib/mongoose'
-import WordDuelRoomModel from '../../../app/games/word-duel/lib/models/word-duel-room'
-import WordDuelScoreModel from '../../../app/games/word-duel/lib/models/word-duel-score'
-import TileScoreModel from '../../../app/games/tiles/lib/models/tile-score'
-import TetrisScoreModel from '../../../app/games/tetris/lib/models/tetris-score'
-import UserModel from '../../../app/lib/models/user'
+import { connectToDatabase } from '@/app/lib/mongoose'
+import WordDuelRoomModel from '@/app/games/word-duel/lib/models/word-duel-room'
+import WordDuelScoreModel from '@/app/games/word-duel/lib/models/word-duel-score'
+import TileScoreModel from '@/app/games/tiles/lib/models/tile-score'
+import TetrisScoreModel from '@/app/games/tetris/lib/models/tetris-score'
+import UserModel from '@/app/lib/models/user'
+import { joinGameRequestSchema, aiResultRequestSchema } from '../../lib/schemas/game'
 
 const games = new Hono<{ Variables: { token: TokenPayload } }>()
 
-// POST /api/mobile/games — validates that a finished multiplayer game exists in DB
 games.post('/api/mobile/games', authMiddleware, async (c) => {
   try {
-    const body = await c.req.json()
-    const { gameId } = body ?? {}
-    if (!gameId || typeof gameId !== 'string') {
-      return c.json({ error: 'gameId is required' }, 400)
-    }
+    const { gameId } = joinGameRequestSchema.parse(await c.req.json())
 
     await connectToDatabase()
     const room = await WordDuelRoomModel.findOne({ roomId: gameId }).lean()
@@ -24,25 +25,17 @@ games.post('/api/mobile/games', authMiddleware, async (c) => {
 
     return c.json({ ok: true })
   } catch (err) {
+    if (err instanceof ZodError)
+      return c.json({ error: err.errors[0].message }, 400)
     console.error('[games POST]', err)
     return c.json({ error: 'Internal server error' }, 500)
   }
 })
 
-// POST /api/mobile/games/ai-result — persist a completed solo/AI game round
 games.post('/api/mobile/games/ai-result', authMiddleware, async (c) => {
+  const token = c.get('token')
   try {
-    const token = c.get('token')
-    const body = await c.req.json()
-    const { humanUsername, humanScore, cpuScore, winnerId } = body ?? {}
-
-    if (
-      typeof humanScore !== 'number' ||
-      typeof cpuScore !== 'number' ||
-      typeof humanUsername !== 'string'
-    ) {
-      return c.json({ error: 'Invalid payload' }, 400)
-    }
+    const { humanUsername, humanScore, cpuScore, winnerId } = aiResultRequestSchema.parse(await c.req.json())
 
     await connectToDatabase()
 
@@ -73,12 +66,13 @@ games.post('/api/mobile/games/ai-result', authMiddleware, async (c) => {
 
     return c.json({ ok: true })
   } catch (err) {
+    if (err instanceof ZodError)
+      return c.json({ error: err.errors[0].message }, 400)
     console.error('[games POST /ai-result]', err)
     return c.json({ error: 'Internal server error' }, 500)
   }
 })
 
-// GET /api/mobile/games/leaderboard — top human players aggregated from finished games
 games.get('/api/mobile/games/leaderboard', authMiddleware, async (c) => {
   try {
     await connectToDatabase()
@@ -87,11 +81,11 @@ games.get('/api/mobile/games/leaderboard', authMiddleware, async (c) => {
       WordDuelScoreModel.aggregate([
         {
           $group: {
-            _id:         '$userId',
-            username:    { $last: '$username' },
-            totalScore:  { $sum: '$score' },
+            _id: '$userId',
+            username: { $last: '$username' },
+            totalScore: { $sum: '$score' },
             gamesPlayed: { $sum: 1 },
-            wins:        { $sum: { $cond: ['$won', 1, 0] } },
+            wins: { $sum: { $cond: ['$won', 1, 0] } },
           },
         },
         { $sort: { totalScore: -1 } },
@@ -99,21 +93,21 @@ games.get('/api/mobile/games/leaderboard', authMiddleware, async (c) => {
         {
           $project: {
             _id: 0,
-            userId:      '$_id',
-            username:    1,
-            score:       '$totalScore',
-            wins:        1,
+            userId: '$_id',
+            username: 1,
+            score: '$totalScore',
+            wins: 1,
             gamesPlayed: 1,
-            game:        { $literal: 'word-duel' },
+            game: { $literal: 'word-duel' },
           },
         },
       ]),
       TileScoreModel.aggregate([
         {
           $group: {
-            _id:         '$userId',
-            username:    { $last: '$username' },
-            bestTime:    { $min: '$score' },
+            _id: '$userId',
+            username: { $last: '$username' },
+            bestTime: { $min: '$score' },
             timesPlayed: { $sum: 1 },
           },
         },
@@ -122,20 +116,20 @@ games.get('/api/mobile/games/leaderboard', authMiddleware, async (c) => {
         {
           $project: {
             _id: 0,
-            userId:      '$_id',
-            username:    1,
-            bestTime:    1,
+            userId: '$_id',
+            username: 1,
+            bestTime: 1,
             timesPlayed: 1,
-            game:        { $literal: 'tile-puzzle' },
+            game: { $literal: 'tile-puzzle' },
           },
         },
       ]),
       TetrisScoreModel.aggregate([
         {
           $group: {
-            _id:         '$userId',
-            username:    { $last: '$username' },
-            bestScore:   { $max: '$score' },
+            _id: '$userId',
+            username: { $last: '$username' },
+            bestScore: { $max: '$score' },
             gamesPlayed: { $sum: 1 },
           },
         },
@@ -144,11 +138,11 @@ games.get('/api/mobile/games/leaderboard', authMiddleware, async (c) => {
         {
           $project: {
             _id: 0,
-            userId:      '$_id',
-            username:    1,
-            bestScore:   1,
+            userId: '$_id',
+            username: 1,
+            bestScore: 1,
             gamesPlayed: 1,
-            game:        { $literal: 'tetris' },
+            game: { $literal: 'tetris' },
           },
         },
       ]),
@@ -172,9 +166,9 @@ games.get('/api/mobile/games/leaderboard', authMiddleware, async (c) => {
     )
 
     return c.json({
-      entries:            wordDuelEntries.map((e: any, i: number) => ({ ...e, rank: i + 1, avatar: avatarMap.get(e.userId) ?? null })),
-      tileEntries:        tileEntries.map((e: any, i: number) => ({ ...e, rank: i + 1, avatar: avatarMap.get(e.userId) ?? null })),
-      tetrisEntries:      tetrisEntries.map((e: any, i: number) => ({ ...e, rank: i + 1, avatar: avatarMap.get(e.userId) ?? null })),
+      entries: wordDuelEntries.map((e: any, i: number) => ({ ...e, rank: i + 1, avatar: avatarMap.get(e.userId) ?? null })),
+      tileEntries: tileEntries.map((e: any, i: number) => ({ ...e, rank: i + 1, avatar: avatarMap.get(e.userId) ?? null })),
+      tetrisEntries: tetrisEntries.map((e: any, i: number) => ({ ...e, rank: i + 1, avatar: avatarMap.get(e.userId) ?? null })),
     })
   } catch (err) {
     console.error('[games GET /leaderboard]', err)

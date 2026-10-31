@@ -7,10 +7,10 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { v4 as uuidv4 } from 'uuid'
 import sharp from 'sharp'
 import { authMiddleware, TokenPayload } from '../../middleware/auth'
-import { connectToDatabase } from '../../../app/lib/mongoose'
-import UserModel from '../../../app/lib/models/user'
-import ImageModel from '../../../app/lib/models/image'
-import { getS3UrlFromKey } from '../../../app/lib/utils/images'
+import { connectToDatabase } from '@/app/lib/mongoose'
+import UserModel from '@/app/lib/models/user'
+import ImageModel from '@/app/lib/models/image'
+import { getS3UrlFromKey } from '@/app/lib/utils/images'
 
 let _s3: S3Client | null = null
 function getS3() {

@@ -4,8 +4,6 @@
 
 import { formatRelativeTime } from '@/app/lib/utils/format-date';
 import { useUserNavigation } from '@/app/lib/hooks/use-user-navigation';
-import { useIsDark } from '@/app/lib/hooks/use-is-dark';
-import { getTextColor, getSecondaryTextColor } from '@/app/lib/utils/theme-colors';
 import FlagContentButton from '../flag-content-button';
 import UserAvatar from './user-avatar';
 import DeleteButtonWithConfirm from '../delete-button-with-confirm';
@@ -61,7 +59,6 @@ export default function UnifiedUserHeader({
   className = '',
 }: UnifiedUserHeaderProps) {
   const { navigateToUser } = useUserNavigation();
-  const isDark = useIsDark();
 
   const handleUsernameClick = () => {
     if (clickable) {
@@ -74,29 +71,21 @@ export default function UnifiedUserHeader({
   };
 
   const getSecondaryText = () => {
-    if (timestamp) {
-      return formatRelativeTime(timestamp);
-    }
-    if (subtitle) {
-      return subtitle;
-    }
-    if (bio) {
-      return bio;
-    }
+    if (timestamp) return formatRelativeTime(timestamp);
+    if (subtitle) return subtitle;
+    if (bio) return bio;
     return null;
   };
 
   const secondaryText = getSecondaryText();
 
-  const usernameClasses = `font-semibold text-md ${
+  const usernameClasses = `font-semibold text-md text-gray-900 dark:text-white ${
     clickable ? 'cursor-pointer hover:underline' : ''
   } ${variant === 'compact' ? 'text-sm leading-tight' : ''}`;
 
-  const secondaryClasses = `text-xs ${
-    variant === 'card' ? 'text-gray-500 dark:text-gray-400' : ''
-  } ${variant === 'compact' ? 'leading-tight' : ''} ${
-    bio ? 'truncate' : ''
-  }`;
+  const secondaryClasses = `text-xs text-gray-500 dark:text-gray-400 ${
+    variant === 'compact' ? 'leading-tight' : ''
+  } ${bio ? 'truncate' : ''}`;
 
   const containerClasses = {
     compact: 'flex flex-row items-center gap-3 shrink-0',
@@ -161,40 +150,22 @@ export default function UnifiedUserHeader({
         {variant === 'default' ? (
           <div className='flex flex-row items-center justify-between'>
             <div className='flex flex-col flex-1 gap-1'>
-              <p
-                className={usernameClasses}
-                onClick={handleUsernameClick}
-                style={{ color: getTextColor(isDark) }}
-              >
+              <p className={usernameClasses} onClick={handleUsernameClick}>
                 {user.username}
               </p>
               {secondaryText && (
-                <span
-                  className={secondaryClasses}
-                  style={{ color: getSecondaryTextColor(isDark) }}
-                >
-                  {secondaryText}
-                </span>
+                <span className={secondaryClasses}>{secondaryText}</span>
               )}
             </div>
             {renderActions()}
           </div>
         ) : (
           <div className='flex flex-col flex-1 gap-1'>
-            <p
-              className={usernameClasses}
-              onClick={handleUsernameClick}
-              style={{ color: getTextColor(isDark) }}
-            >
+            <p className={usernameClasses} onClick={handleUsernameClick}>
               {user.username}
             </p>
             {secondaryText && (
-              <span
-                className={secondaryClasses}
-                style={{ color: getSecondaryTextColor(isDark) }}
-              >
-                {secondaryText}
-              </span>
+              <span className={secondaryClasses}>{secondaryText}</span>
             )}
           </div>
         )}

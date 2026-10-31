@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useScreenOrientation } from '@/app/games/poker/lib/hooks/use-screen-orientation';
+import { useScreenOrientation } from '@/app/lib/hooks/use-screen-orientation';
 
 /**
  * Hook to determine if the UI should use horizontal layout

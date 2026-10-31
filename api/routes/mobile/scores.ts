@@ -1,13 +1,14 @@
-// api/routes/mobile/scores.ts
-// GET    /api/mobile/scores  — all scores sorted fastest first (for in-game display)
+// GET    /api/mobile/scores  — all scores sorted fastest first
 // POST   /api/mobile/scores  — save a completion time for the authed user
 // DELETE /api/mobile/scores  — clear all scores for the authed user
 
 import { Hono } from 'hono'
+import { ZodError } from 'zod'
 import { authMiddleware, TokenPayload } from '../../middleware/auth'
-import { connectToDatabase } from '../../../app/lib/mongoose'
-import UserModel from '../../../app/lib/models/user'
-import TileScoreModel from '../../../app/games/tiles/lib/models/tile-score'
+import { connectToDatabase } from '@/app/lib/mongoose'
+import UserModel from '@/app/lib/models/user'
+import TileScoreModel from '@/app/games/tiles/lib/models/tile-score'
+import { tileScoreRequestSchema } from '../../lib/schemas/score'
 
 const scores = new Hono<{ Variables: { token: TokenPayload } }>()
 
@@ -24,9 +25,7 @@ scores.get('/api/mobile/scores', authMiddleware, async (c) => {
     const avatarMap = new Map(
       users.map(u => [
         u._id.toString(),
-        u.avatar
-          ? { id: u.avatar._id.toString(), variants: u.avatar.variants ?? [] }
-          : null,
+        u.avatar ? { id: u.avatar._id.toString(), variants: u.avatar.variants ?? [] } : null,
       ])
     )
 
@@ -45,9 +44,7 @@ scores.get('/api/mobile/scores', authMiddleware, async (c) => {
 scores.post('/api/mobile/scores', authMiddleware, async (c) => {
   const token = c.get('token')
   try {
-    const { score } = await c.req.json()
-    if (typeof score !== 'string' || !/^\d{2}:\d{2}$/.test(score))
-      return c.json({ error: 'score must be a "mm:ss" string' }, 400)
+    const { score } = tileScoreRequestSchema.parse(await c.req.json())
 
     await connectToDatabase()
     const user = await UserModel.findById(token.id, { username: 1 }).lean() as any
@@ -61,6 +58,8 @@ scores.post('/api/mobile/scores', authMiddleware, async (c) => {
       createdAt: doc.createdAt,
     })
   } catch (err) {
+    if (err instanceof ZodError)
+      return c.json({ error: err.errors[0].message }, 400)
     console.error('[scores POST]', err)
     return c.json({ error: 'Failed to save score' }, 500)
   }

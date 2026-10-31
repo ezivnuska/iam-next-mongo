@@ -2,10 +2,12 @@
 // POST /api/mobile/tetris-scores — save a score for the authed user
 
 import { Hono } from 'hono'
+import { ZodError } from 'zod'
 import { authMiddleware, TokenPayload } from '../../middleware/auth'
-import { connectToDatabase } from '../../../app/lib/mongoose'
-import UserModel from '../../../app/lib/models/user'
-import TetrisScoreModel from '../../../app/games/tetris/lib/models/tetris-score'
+import { connectToDatabase } from '@/app/lib/mongoose'
+import UserModel from '@/app/lib/models/user'
+import TetrisScoreModel from '@/app/games/tetris/lib/models/tetris-score'
+import { tetrisScoreRequestSchema } from '../../lib/schemas/score'
 
 const tetrisScores = new Hono<{ Variables: { token: TokenPayload } }>()
 
@@ -14,13 +16,7 @@ tetrisScores.get('/api/mobile/tetris-scores', authMiddleware, async (c) => {
     await connectToDatabase()
 
     const docs = await TetrisScoreModel.aggregate([
-      {
-        $group: {
-          _id:      '$userId',
-          username: { $last: '$username' },
-          score:    { $max: '$score' },
-        },
-      },
+      { $group: { _id: '$userId', username: { $last: '$username' }, score: { $max: '$score' } } },
       { $sort: { score: -1 } },
       { $limit: 50 },
     ])
@@ -33,16 +29,14 @@ tetrisScores.get('/api/mobile/tetris-scores', authMiddleware, async (c) => {
     const avatarMap = new Map(
       users.map(u => [
         u._id.toString(),
-        u.avatar
-          ? { id: u.avatar._id.toString(), variants: u.avatar.variants ?? [] }
-          : null,
+        u.avatar ? { id: u.avatar._id.toString(), variants: u.avatar.variants ?? [] } : null,
       ])
     )
 
     return c.json(docs.map((d: any) => ({
-      _id:       d._id,
-      score:     d.score,
-      user:      { id: d._id, username: d.username, avatar: avatarMap.get(d._id) ?? null },
+      _id: d._id,
+      score: d.score,
+      user: { id: d._id, username: d.username, avatar: avatarMap.get(d._id) ?? null },
       createdAt: '',
     })))
   } catch (err) {
@@ -54,9 +48,7 @@ tetrisScores.get('/api/mobile/tetris-scores', authMiddleware, async (c) => {
 tetrisScores.post('/api/mobile/tetris-scores', authMiddleware, async (c) => {
   const token = c.get('token')
   try {
-    const { score } = await c.req.json()
-    if (typeof score !== 'number' || !Number.isInteger(score) || score < 0 || score > 10_000_000)
-      return c.json({ error: 'score must be a non-negative integer no greater than 10,000,000' }, 400)
+    const { score } = tetrisScoreRequestSchema.parse(await c.req.json())
 
     await connectToDatabase()
     const user = await UserModel.findById(token.id, { username: 1 }).lean() as any
@@ -64,12 +56,14 @@ tetrisScores.post('/api/mobile/tetris-scores', authMiddleware, async (c) => {
 
     const doc = await TetrisScoreModel.create({ userId: token.id, username: user.username, score })
     return c.json({
-      _id:       (doc._id as any).toString(),
-      score:     doc.score,
-      user:      { id: doc.userId, username: doc.username, avatar: null },
+      _id: (doc._id as any).toString(),
+      score: doc.score,
+      user: { id: doc.userId, username: doc.username, avatar: null },
       createdAt: doc.createdAt,
     })
   } catch (err) {
+    if (err instanceof ZodError)
+      return c.json({ error: err.errors[0].message }, 400)
     console.error('[tetris-scores POST]', err)
     return c.json({ error: 'Failed to save score' }, 500)
   }

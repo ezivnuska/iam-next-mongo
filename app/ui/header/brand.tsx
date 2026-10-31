@@ -19,14 +19,12 @@ export default function Brand() {
         >
             <span
                 className='text-[30px] leading-none md:text-[32px] lg:text-[40px] font-bold text-gray-900 dark:text-white'
-                style={{ color: 'var(--text-primary)' }}
-            >
+                >
                 iam
             </span>
             <span
                 className='text-[30px] leading-none md:text-[32px] lg:text-[40px] font-bold text-gray-900 dark:text-white'
-                style={{ color: 'var(--text-primary)' }}
-            >
+                >
                 eric
             </span>
         </Link>

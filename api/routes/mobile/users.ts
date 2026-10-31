@@ -4,12 +4,12 @@
 
 import { Hono } from 'hono'
 import { authMiddleware, TokenPayload } from '../../middleware/auth'
-import { connectToDatabase } from '../../../app/lib/mongoose'
-import { serializeResource, serializeFriendshipEntry, serializeFriendship } from '../../../app/lib/mobile/serializers'
-import UserModel from '../../../app/lib/models/user'
-import FriendshipModel from '../../../app/lib/models/friendship'
-import Rating from '../../../app/lib/models/rating'
-import '../../../app/lib/models/image'
+import { connectToDatabase } from '@/app/lib/mongoose'
+import { serializeResource, serializeFriendshipEntry, serializeFriendship } from '@/app/lib/mobile/serializers'
+import UserModel from '@/app/lib/models/user'
+import FriendshipModel from '@/app/lib/models/friendship'
+import Rating from '@/app/lib/models/rating'
+import '@/app/lib/models/image'
 
 const users = new Hono<{ Variables: { token: TokenPayload } }>()
 
@@ -46,6 +46,40 @@ users.get('/api/mobile/users', authMiddleware, async (c) => {
   } catch (err) {
     console.error('[mobile/users GET]', err)
     return c.json({ error: 'Failed to fetch users' }, 500)
+  }
+})
+
+users.get('/api/mobile/users/by-username/:username', async (c) => {
+  const username = c.req.param('username')
+  try {
+    await connectToDatabase()
+    const userDoc = await UserModel.findOne({ username }).populate('avatar', '_id userId username alt variants').lean() as any
+    if (!userDoc) return c.json({ error: 'User not found' }, 404)
+
+    const avatarDoc = userDoc.avatar
+    const avatar = avatarDoc && typeof avatarDoc === 'object' && avatarDoc._id
+      ? {
+          id: avatarDoc._id.toString(),
+          userId: avatarDoc.userId?.toString() ?? null,
+          username: avatarDoc.username ?? null,
+          alt: avatarDoc.alt ?? '',
+          variants: (avatarDoc.variants ?? []).map((v: any) => ({
+            size: v.size, filename: v.filename, width: v.width, height: v.height, url: v.url,
+          })),
+        }
+      : null
+
+    return c.json({
+      user: {
+        id: userDoc._id.toString(),
+        username: userDoc.username,
+        bio: userDoc.bio ?? '',
+        avatar,
+      },
+    })
+  } catch (err) {
+    console.error('[mobile/users/by-username GET]', err)
+    return c.json({ error: 'Failed to fetch user' }, 500)
   }
 })
 

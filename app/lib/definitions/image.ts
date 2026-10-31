@@ -1,81 +1,14 @@
 // app/lib/definitions/image.ts
 
-import type { Types } from "mongoose";
+// Wire-format types live in @iam/shared-types — re-export so existing imports work.
+export {
+  type ImageVariant,
+  type Image,
+  type UploadedImage,
+  type SanitizedImage,
+  type SocketImage,
+  type GalleryImage,
+} from '@iam/shared-types'
 
-// Each variant (original, small, medium, etc.)
-export interface ImageVariant {
-  size: string;
-  filename: string;
-  width: number;
-  height: number;
-  url: string;
-}
-
-// DB document representation
-export interface ImageDocument {
-  _id: Types.ObjectId;
-  userId: Types.ObjectId;
-  username: string;
-  alt?: string;
-  variants: ImageVariant[];
-  createdAt: string;
-  updatedAt: Date;
-}
-
-// Client-facing image object
-export interface Image {
-  id: string;
-  userId: string;
-  username: string;
-  alt?: string;
-  variants: {
-    url: string;
-    size: string;
-    width: number;
-    height: number;
-  }[];
-  createdAt?: string;
-  likes?: string[];
-  likedByCurrentUser?: boolean;
-  commentCount?: number;
-}
-
-export interface UploadedImage {
-    id: string;
-    userId: string;
-    username: string;
-    alt: string;
-    variants: {
-      url: string;
-      size: string;
-      width: number;
-      height: number;
-    }[]
-    createdAt: string;
-    updatedAt: string;
-}  
-
-// Optional smaller types for API responses or sockets
-export type SanitizedImage = {
-  id: string;
-  userId: string;
-  username: string;
-  variants: ImageVariant[];
-  url: string;
-  alt?: string;
-};
-
-export type SocketImage = {
-  id: string;
-  userId: string;
-  username: string;
-  variants: ImageVariant[];
-  alt?: string;
-};
-
-export interface GalleryImage {
-    id: string;
-    url: string;
-    title?: string;
-    createdAt?: string;
-}
+// DB-level document lives in @iam/db — re-export for server-side callers.
+export type { ImageDocument } from '@iam/db'

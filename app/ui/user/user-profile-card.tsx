@@ -7,9 +7,6 @@ import { useUser } from '@/app/lib/providers/user-provider';
 import UserAvatar from '@/app/ui/user/user-avatar';
 import BioForm from '@/app/profile/bio-form';
 import type { User } from '@/app/lib/definitions';
-import { useIsDark } from '@/app/lib/hooks/use-is-dark';
-import { getTextColor, getTertiaryTextColor } from '@/app/lib/utils/theme-colors';
-import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 
 interface UserProfileCardProps {
   username?: string;
@@ -17,16 +14,13 @@ interface UserProfileCardProps {
 
 export default function UserProfileCard({ username }: UserProfileCardProps) {
     const { user: currentUser, fetchUserByUsername } = useUser();
-    const isDark = useIsDark();
     const [profileUser, setProfileUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(false);
 
-    // Determine if we're showing the current user's profile or another user's
     const isCurrentUser = !username || username === currentUser?.username;
     const displayUser = isCurrentUser ? currentUser : profileUser;
 
     useEffect(() => {
-        // If showing current user, no need to fetch
         if (isCurrentUser) return;
 
         let mounted = true;
@@ -64,13 +58,12 @@ export default function UserProfileCard({ username }: UserProfileCardProps) {
             </div>
             <div className='flex flex-1 flex-col gap-2'>
                 <div className='flex flex-1 flex-row items-center gap-4 pr-1'>
-                    <h1 className='flex-1 text-2xl font-bold' style={{ color: getTextColor(isDark) }}>
+                    <h1 className='flex-1 text-2xl font-bold text-gray-900 dark:text-white'>
                         {displayUser.username}
                     </h1>
-                    {/* <Cog6ToothIcon className='w-7 h-7' style={{ color: getTextColor(isDark) }} /> */}
                 </div>
                 <div className='flex flex-1 flex-row items-start gap-4 pr-1'>
-                    <p className='flex flex-1' style={{ color: getTertiaryTextColor(isDark) }}>
+                    <p className='flex flex-1 text-gray-600 dark:text-gray-300'>
                         {displayUser.bio || ''}
                     </p>
                     {isCurrentUser && <BioForm />}

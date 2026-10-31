@@ -4,13 +4,13 @@
 import { Hono } from 'hono'
 import mongoose from 'mongoose'
 import { authMiddleware, TokenPayload } from '../../middleware/auth'
-import { connectToDatabase } from '../../../app/lib/mongoose'
-import { serializeIssue } from '../../../app/lib/mobile/serializers'
-import { attachIssueData } from '../../../app/lib/mobile/attachIssueData'
-import Applicant from '../../../app/lib/models/applicant'
-import Issue from '../../../app/lib/models/issue'
-import '../../../app/lib/models/image'
-import '../../../app/lib/models/user'
+import { connectToDatabase } from '@/app/lib/mongoose'
+import { serializeIssue } from '@/app/lib/mobile/serializers'
+import { attachIssueData } from '@/app/lib/mobile/attachIssueData'
+import Applicant from '@/app/lib/models/applicant'
+import Issue from '@/app/lib/models/issue'
+import '@/app/lib/models/image'
+import '@/app/lib/models/user'
 
 const commissions = new Hono<{ Variables: { token: TokenPayload } }>()
 
