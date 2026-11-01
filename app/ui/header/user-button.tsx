@@ -9,7 +9,7 @@ import UserAvatar from '@/app/ui/user/user-avatar';
 import SignOutButton from '../auth/signout-button';
 import SigninButton from '../auth/signin-button';
 import clsx from 'clsx';
-import { useHorizontalLayout } from '@/app/lib/hooks/use-horizontal-layout';
+import { useHorizontalLayout } from '@iam/ui';
 
 export default function UserButton() {
 
