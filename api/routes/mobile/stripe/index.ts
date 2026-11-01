@@ -197,7 +197,7 @@ stripeRoutes.post('/api/mobile/stripe/connect', authMiddleware, async (c) => {
     return c.json({ url: accountLink.url })
   } catch (err: any) {
     console.error('[stripe/connect POST]', err)
-    return c.json({ error: err?.message ?? 'Failed to create Connect onboarding' }, 500)
+    return c.json({ error: 'Failed to create Connect onboarding' }, 500)
   }
 })
 
@@ -212,7 +212,7 @@ stripeRoutes.patch('/api/mobile/stripe/connect', authMiddleware, async (c) => {
     return c.json({ url: loginLink.url })
   } catch (err: any) {
     console.error('[stripe/connect PATCH]', err)
-    return c.json({ error: err?.message ?? 'Failed to generate login link' }, 500)
+    return c.json({ error: 'Failed to generate login link' }, 500)
   }
 })
 
@@ -232,7 +232,7 @@ stripeRoutes.delete('/api/mobile/stripe/connect', authMiddleware, async (c) => {
     return c.json({ ok: true })
   } catch (err: any) {
     console.error('[stripe/connect DELETE]', err)
-    return c.json({ error: err?.message ?? 'Failed to unlink account' }, 500)
+    return c.json({ error: 'Failed to unlink account' }, 500)
   }
 })
 
@@ -394,7 +394,7 @@ stripeRoutes.delete('/api/mobile/stripe/payout-card', authMiddleware, async (c) 
     return c.json({ ok: true })
   } catch (err: any) {
     console.error('[stripe/payout-card DELETE]', err)
-    return c.json({ error: err?.message ?? 'Failed to remove payout card' }, 500)
+    return c.json({ error: 'Failed to remove payout card' }, 500)
   }
 })
 
@@ -465,7 +465,7 @@ stripeRoutes.get('/api/mobile/stripe/dashboard', authMiddleware, async (c) => {
     return c.json({ pledges, connect })
   } catch (err: any) {
     console.error('[stripe/dashboard GET]', err)
-    return c.json({ error: err?.message ?? 'Failed to load dashboard' }, 500)
+    return c.json({ error: 'Failed to load dashboard' }, 500)
   }
 })
 
