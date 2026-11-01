@@ -291,12 +291,11 @@ stripeRoutes.post('/api/mobile/stripe/payout-card', authMiddleware, async (c) =>
       }
       const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') && process.env.NODE_ENV !== 'production'
       const BASE = process.env.NEXT_PUBLIC_APP_URL ?? 'https://iameric.me'
-      let clientIp: string
-      try {
-        clientIp = getConnInfo(c).remote.address ?? '0.0.0.0'
-      } catch {
-        clientIp = '0.0.0.0'
-      }
+      let clientIp: string | null = null
+      try { clientIp = getConnInfo(c).remote.address ?? null } catch {}
+      if (!clientIp) clientIp = c.req.header('x-forwarded-for')?.split(',')[0].trim() ?? null
+      if (!clientIp) clientIp = c.req.header('x-real-ip') ?? null
+      if (!clientIp) return c.json({ error: 'Could not determine client IP for Stripe ToS acceptance' }, 500)
       const account = await stripeClient.accounts.create({
         type: 'custom',
         country: 'US',
