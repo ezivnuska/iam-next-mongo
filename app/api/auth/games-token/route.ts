@@ -22,7 +22,8 @@ export async function GET(req: NextRequest): Promise<Response> {
     return NextResponse.redirect(new URL('/signin', req.url))
   }
 
-  const redirect = req.nextUrl.searchParams.get('redirect') ?? '/'
+  const raw = req.nextUrl.searchParams.get('redirect') ?? '/'
+  const redirect = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/'
 
   const token = await signGamesToken({
     id: session.user.id,
