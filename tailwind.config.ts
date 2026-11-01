@@ -3,7 +3,7 @@ module.exports = {
     content: [
       "./app/**/*.{js,ts,jsx,tsx,mdx}",
       "./components/**/*.{js,ts,jsx,tsx,mdx}",
-      "./node_modules/@iam/ui/**/*.{ts,tsx}",
+      "./packages/ui/**/*.{ts,tsx}",
     ],
     darkMode: 'class',
     theme: {
