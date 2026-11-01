@@ -355,3 +355,278 @@ export interface Score {
   score: string;
   createdAt: string;
 }
+
+// ---------------------------------------------------------------------------
+// Image utilities
+// ---------------------------------------------------------------------------
+
+export function getBestVariant(
+  image: Image | null | undefined,
+  desiredWidth: number
+): { url: string; width: number; height: number } | null {
+  if (!image?.variants?.length) return null;
+  return image.variants.reduce((closest, current) => {
+    if (!current.width) return closest;
+    return Math.abs(current.width - desiredWidth) < Math.abs((closest.width ?? 0) - desiredWidth)
+      ? current
+      : closest;
+  }, image.variants[0]);
+}
+
+export function getVariantBySize(
+  image: Image | null | undefined,
+  sizeName: string
+): { url: string; width: number; height: number; size?: string } | null {
+  if (!image?.variants?.length) return null;
+  return image.variants.find(v => v.size === sizeName) || image.variants[0];
+}
+
+export const IMAGE_SIZES = {
+  AVATAR_SMALL: 40,
+  AVATAR_MEDIUM: 80,
+  AVATAR_LARGE: 120,
+  THUMBNAIL: 200,
+  CARD: 400,
+  CONTENT: 800,
+  FULL: 1200,
+} as const;
+
+// ---------------------------------------------------------------------------
+// Poker socket payloads
+// ---------------------------------------------------------------------------
+
+export interface PokerStateUpdatePayload {
+	_id?: string
+	players: any[]
+	deck: any[]
+	communalCards: any[]
+	pot: any[]
+	stage: number
+	locked: boolean
+	lockTime?: string
+	currentPlayerIndex: number
+	dealerButtonPosition?: number
+	playerBets: number[]
+	winner?: {
+		winnerId: string
+		winnerName: string
+		handRank: string
+		isTie: boolean
+		tiedPlayers?: string[]
+	}
+}
+
+export interface PokerGameDeletedPayload {
+	gameId: string
+}
+
+// Player management event payloads
+export interface PokerJoinGamePayload {
+	gameId: string
+	username?: string
+}
+
+export interface PokerJoinSuccessPayload {
+	gameState: any
+}
+
+export interface PokerJoinErrorPayload {
+	error: string
+}
+
+export interface PokerPlayerJoinedPayload {
+	player: {
+		id: string
+		username: string
+		chips: any[]
+		hand: any[]
+	}
+	players: any[] // Full updated players array
+	playerCount: number
+}
+
+export interface PokerPlayerLeftPayload {
+	playerId: string
+	players: any[] // Full updated players array
+	playerCount: number
+	gameReset?: boolean // True if game was reset due to only 1 player remaining
+}
+
+export interface PokerSetPresencePayload {
+	gameId: string
+	isAway: boolean
+}
+
+export interface PokerPlayerPresenceUpdatedPayload {
+	playerId: string
+	isAway: boolean
+}
+
+export interface PokerGameLockedPayload {
+	locked: true
+	stage: number
+	players: any[] // Players with dealt cards
+	currentPlayerIndex: number
+	lockTime?: string
+}
+
+// Granular event payloads
+export interface PokerBetPlacedPayload {
+	playerIndex: number
+	chipCount: number
+	pot: any[]
+	playerBets: number[]
+	currentPlayerIndex: number
+}
+
+export interface PokerCardsDealtPayload {
+	stage: number
+	communalCards: any[]
+	deckCount: number
+}
+
+export interface PokerRoundCompletePayload {
+	winner: {
+		winnerId: string
+		winnerName: string
+		handRank: string
+		isTie: boolean
+		tiedPlayers?: string[]
+	}
+	players: any[] // Updated with chips awarded
+}
+
+// Timer event payloads
+export interface PokerActionTimerStartedPayload {
+	startTime: string          // ISO timestamp when action started
+	duration: number           // Duration in seconds
+	currentActionIndex: number
+	totalActions: number
+	actionType: string         // e.g., 'PLAYER_BET', 'DEAL_CARDS'
+	targetPlayerId?: string    // Player whose turn it is
+}
+
+export interface PokerActionTimerPausedPayload {
+	pausedAt: string           // ISO timestamp when paused
+	remainingSeconds: number   // How many seconds were left
+}
+
+export interface PokerActionTimerResumedPayload {
+	resumedAt: string          // ISO timestamp when resumed
+	duration: number           // New duration from this point
+	currentActionIndex: number
+	totalActions: number
+	actionType: string
+	targetPlayerId?: string
+}
+
+export interface PokerActionTimerActionSetPayload {
+	playerId: string           // Player who set the action
+	action: 'fold' | 'call' | 'check' | 'bet' | 'raise'  // Selected action
+}
+
+// Game action payloads (Client -> Server)
+export interface PokerBetPayload {
+	gameId: string
+	chipCount: number
+}
+
+export interface PokerFoldPayload {
+	gameId: string
+}
+
+export interface PokerSetTimerActionPayload {
+	gameId: string
+	timerAction: 'fold' | 'call' | 'check' | 'bet' | 'raise'
+	betAmount?: number
+}
+
+// Game action success payloads (Server -> Client)
+export interface PokerBetSuccessPayload {
+	success: true
+}
+
+export interface PokerFoldSuccessPayload {
+	success: true
+}
+
+export interface PokerTimerSuccessPayload {
+	success: true
+}
+
+// Game action error payloads (Server -> Client)
+export interface PokerBetErrorPayload {
+	error: string
+}
+
+export interface PokerFoldErrorPayload {
+	error: string
+}
+
+export interface PokerTimerErrorPayload {
+	error: string
+}
+
+export interface PokerGameNotificationPayload {
+	message: string
+	type: 'blind' | 'deal' | 'action' | 'info'
+	duration?: number  // Duration in milliseconds (default 2000)
+}
+
+/**
+ * New event-based notification system
+ * Notifications are typed events with specific payloads
+ */
+export type PokerNotificationType =
+	| 'player_bet'
+	| 'player_raise'
+	| 'player_call'
+	| 'player_check'
+	| 'player_fold'
+	| 'player_all_in'
+	| 'player_thinking'
+	| 'player_queued'
+	| 'blind_posted'
+	| 'cards_dealt'
+	| 'winner_determined'
+	| 'game_tied'
+	| 'stage_advanced'
+	| 'player_joined'
+	| 'game_starting'
+	| 'game_shuffling';
+
+export interface PokerNotificationPayload {
+	notificationType: PokerNotificationType;
+	category: 'action' | 'info' | 'blind' | 'stage' | 'deal';
+
+	// Player action notifications
+	playerId?: string;
+	playerName?: string;
+	chipAmount?: number;
+	isAI?: boolean;  // Indicates if the action was taken by an AI player
+	timerTriggered?: boolean;  // Indicates if the action was triggered by timer expiration
+
+	// Blind notifications
+	blindType?: 'small' | 'big';
+
+	// Winner notifications
+	winnerId?: string;
+	winnerName?: string;
+	handRank?: string;
+
+	// Tie notifications
+	isTie?: boolean;
+	tiedPlayers?: string[];
+
+	// Stage notifications
+	stage?: number;
+	stageName?: string;
+
+	// Game starting countdown
+	countdownSeconds?: number;
+
+	// Pot synchronization data (included with betting actions and blinds)
+	pot?: any[];
+	playerBets?: number[];
+	currentPlayerIndex?: number;
+}
