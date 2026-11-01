@@ -25,6 +25,7 @@ export const authOptions: NextAuthConfig = {
         sameSite: 'lax',
         path: '/',
         secure: isProduction,
+        domain: isProduction ? '.iameric.me' : undefined,
       }
     }
   },
