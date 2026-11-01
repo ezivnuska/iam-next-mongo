@@ -360,6 +360,18 @@ export interface Score {
 // Image utilities
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Validation utilities
+// ---------------------------------------------------------------------------
+
+export function isValidObjectId(id: string): boolean {
+  return /^[a-f\d]{24}$/i.test(id)
+}
+
+// ---------------------------------------------------------------------------
+// Image utilities
+// ---------------------------------------------------------------------------
+
 export function getBestVariant(
   image: Image | null | undefined,
   desiredWidth: number
