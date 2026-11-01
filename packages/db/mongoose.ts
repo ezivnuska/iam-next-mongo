@@ -14,10 +14,9 @@ const cached: MongooseCache = global.mongoose ?? { conn: null, promise: null }
 global.mongoose = cached
 
 export async function connectToDatabase() {
-  if (!process.env.MONGO_URI)
-    throw new Error('Invalid/Missing environment variable: "MONGO_URI"')
-
-  const uri: string = process.env.MONGO_URI
+  const uri = process.env.MONGODB_URI || process.env.MONGO_URI
+  if (!uri)
+    throw new Error('Invalid/Missing environment variable: "MONGODB_URI"')
 
   if (cached.conn) return cached.conn
 
