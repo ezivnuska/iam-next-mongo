@@ -23,6 +23,9 @@ importers:
       '@iam/shared-types':
         specifier: file:./packages/shared-types
         version: file:packages/shared-types
+      '@iam/ui':
+        specifier: file:./packages/ui
+        version: file:packages/ui
       bcrypt:
         specifier: ^5.1.1
         version: 5.1.1
@@ -547,6 +550,9 @@ packages:
 
   '@iam/shared-types@file:packages/shared-types':
     resolution: {directory: packages/shared-types, type: directory}
+
+  '@iam/ui@file:packages/ui':
+    resolution: {directory: packages/ui, type: directory}
 
   '@img/colour@1.0.0':
     resolution: {integrity: sha512-A5P/LfWGFSl6nsckYtjw9da+19jB8hkJ6ACTGcDfEJ0aE+l2n2El7dsVM7UVHZQ9s2lmYMWlrS21YLy2IR1LUw==}
@@ -3672,6 +3678,8 @@ snapshots:
       mongoose: 8.20.2
 
   '@iam/shared-types@file:packages/shared-types': {}
+
+  '@iam/ui@file:packages/ui': {}
 
   '@img/colour@1.0.0': {}
 

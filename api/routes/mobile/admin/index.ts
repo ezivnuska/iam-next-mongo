@@ -139,7 +139,7 @@ admin.post('/api/mobile/admin/reset', authMiddleware, async (c) => {
       ? await ImageModel.find({ _id: { $in: completionImageIds } }).lean()
       : []
 
-    const [issueResult, pledgeResult, feeResult, applicantResult, ratingResult] = await Promise.all([
+    const [issueResult, completionResult, pledgeResult, feeResult, applicantResult, ratingResult] = await Promise.all([
       Issue.deleteMany({}),
       Completion.deleteMany({}),
       Pledge.deleteMany({}),
@@ -163,6 +163,7 @@ admin.post('/api/mobile/admin/reset', authMiddleware, async (c) => {
     return c.json({
       deleted: {
         issues: issueResult.deletedCount,
+        completions: completionResult.deletedCount,
         pledges: pledgeResult.deletedCount,
         fees: feeResult.deletedCount,
         applicants: applicantResult.deletedCount,

@@ -33,7 +33,8 @@
     "uuid": "^13.0.0",
     "zod": "^3.25.76",
     "@iam/shared-types": "file:./packages/shared-types",
-    "@iam/db": "file:./packages/db"
+    "@iam/db": "file:./packages/db",
+    "@iam/ui": "file:./packages/ui"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.10",
