@@ -1,17 +1,14 @@
 // api/routes/mobile/auth.ts
 // POST /api/mobile/login    — exchange email/password for JWT
 // POST /api/mobile/register — create account + return JWT
-// GET  /api/mobile/me       — return current user from JWT
 
 import { Hono } from 'hono'
 import { ZodError } from 'zod'
 import bcrypt from 'bcrypt'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import UserModel from '@/app/lib/models/user'
-import '@/app/lib/models/image'
-import Rating from '@/app/lib/models/rating'
 import { loginRateLimit } from '../../middleware/rate-limit'
-import { signMobileToken, verifyMobileToken } from '@/app/lib/jwt'
+import { signMobileToken } from '@/app/lib/jwt'
 import { loginRequestSchema, registerRequestSchema } from '../../lib/schemas/auth'
 
 const auth = new Hono()
@@ -83,49 +80,6 @@ auth.post('/api/mobile/register', async (c) => {
       return c.json({ error: err.errors[0].message }, 400)
     console.error('[mobile/register POST]', err)
     return c.json({ error: 'Failed to register' }, 500)
-  }
-})
-
-auth.get('/api/mobile/me', async (c) => {
-  try {
-    const authHeader = c.req.header('authorization')
-    if (!authHeader?.startsWith('Bearer '))
-      return c.json({ error: 'Unauthorized' }, 401)
-
-    const payload = await verifyMobileToken(authHeader.slice(7))
-
-    await connectToDatabase()
-    const userDoc = await UserModel.findById(payload.id as string).populate('avatar', '_id variants')
-    if (!userDoc)
-      return c.json({ error: 'User not found' }, 404)
-
-    const avatar = userDoc.avatar
-      ? { id: (userDoc.avatar as any)._id.toString(), variants: (userDoc.avatar as any).variants ?? [] }
-      : null
-
-    let reputation: { approved: number; total: number } | null = null
-    try {
-      const ratings = await Rating.find({ workerId: userDoc._id }).sort({ createdAt: -1 }).lean() as any[]
-      const window = ratings.slice(0, 100)
-      if (window.length > 0) {
-        reputation = {
-          approved: window.filter((r) => r.vote === 'approve').length,
-          total: window.length,
-        }
-      }
-    } catch {}
-
-    return c.json({
-      id: userDoc._id.toString(),
-      username: userDoc.username,
-      email: userDoc.email,
-      role: userDoc.role,
-      bio: userDoc.bio,
-      avatar,
-      reputation,
-    })
-  } catch {
-    return c.json({ error: 'Invalid or expired token' }, 401)
   }
 })
 
