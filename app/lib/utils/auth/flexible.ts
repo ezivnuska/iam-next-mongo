@@ -3,17 +3,13 @@
 
 import { jwtVerify } from 'jose'
 import { auth } from '@/app/lib/auth'
-
-function getSecret(): Uint8Array {
-  if (!process.env.NEXTAUTH_SECRET) throw new Error('NEXTAUTH_SECRET is not set')
-  return new TextEncoder().encode(process.env.NEXTAUTH_SECRET)
-}
+import { getMobileSecret } from '@/app/lib/jwt'
 
 export async function requireAuthFlexible(req: Request): Promise<{ id: string; role?: string }> {
   const authHeader = req.headers.get('authorization')
   if (authHeader?.startsWith('Bearer ')) {
     try {
-      const { payload } = await jwtVerify(authHeader.slice(7), getSecret())
+      const { payload } = await jwtVerify(authHeader.slice(7), getMobileSecret())
       if (typeof payload.id === 'string') {
         return { id: payload.id, role: payload.role as string | undefined }
       }
