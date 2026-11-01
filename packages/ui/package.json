@@ -1,0 +1,8 @@
+{
+  "name": "@iam/ui",
+  "version": "1.0.0",
+  "description": "Shared UI components and hooks for iam apps",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "private": true
+}
