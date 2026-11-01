@@ -4,7 +4,11 @@ import clsx from 'clsx';
 import Link from 'next/link';
 import { useHorizontalLayout } from '../hooks/use-horizontal-layout';
 
-export default function Brand() {
+interface BrandProps {
+    lines?: [string, string];
+}
+
+export default function Brand({ lines = ['iam', 'eric'] }: BrandProps) {
     const horizontalLayout = useHorizontalLayout();
     return (
         <Link
@@ -15,10 +19,10 @@ export default function Brand() {
             style={{ color: 'inherit' }}
         >
             <span className='text-[30px] leading-none md:text-[32px] lg:text-[40px] font-bold text-gray-900 dark:text-white'>
-                iam
+                {lines[0]}
             </span>
             <span className='text-[30px] leading-none md:text-[32px] lg:text-[40px] font-bold text-gray-900 dark:text-white'>
-                eric
+                {lines[1]}
             </span>
         </Link>
     );
