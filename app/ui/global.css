@@ -24,11 +24,6 @@ html {
     --text-primary: #111827;
 }
 
-html.dark {
-    background-color: #000000;
-    --text-primary: #ffffff;
-}
-
 body {
     background-color: inherit;
 }

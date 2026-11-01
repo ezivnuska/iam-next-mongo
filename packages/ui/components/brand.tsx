@@ -18,10 +18,10 @@ export default function Brand({ href = '/' }: BrandProps) {
             })}
             style={{ color: 'inherit' }}
         >
-            <span className='text-[30px] leading-none md:text-[32px] lg:text-[40px] font-bold text-gray-900 dark:text-white'>
+            <span className='text-[30px] leading-none md:text-[32px] lg:text-[40px] font-bold text-gray-900'>
                 iam
             </span>
-            <span className='text-[30px] leading-none md:text-[32px] lg:text-[40px] font-bold text-gray-900 dark:text-white'>
+            <span className='text-[30px] leading-none md:text-[32px] lg:text-[40px] font-bold text-gray-900'>
                 eric
             </span>
         </Link>

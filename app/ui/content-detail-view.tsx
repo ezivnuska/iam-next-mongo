@@ -89,9 +89,9 @@ export default function ContentDetailView({ item }: ContentDetailViewProps) {
         return (
             <div className='flex flex-1 flex-col gap-2'>
                 <div className='flex flex-1 flex-col gap-2'>
-                    <p className='text-lg font-bold text-gray-900 dark:text-white'>{memoryDate}</p>
+                    <p className='text-lg font-bold text-gray-900'>{memoryDate}</p>
                     {memory.title && (
-                        <p className='text-lg font-light text-gray-600 dark:text-gray-400'>{memory.title}</p>
+                        <p className='text-lg font-light text-gray-600'>{memory.title}</p>
                     )}
                 </div>
                 <ContentImage
@@ -101,7 +101,7 @@ export default function ContentDetailView({ item }: ContentDetailViewProps) {
                     onClick={memory.image ? () => handleImageClick(memory.image) : undefined}
                 />
                 {memory.content && (
-                    <p className='whitespace-pre-wrap text-gray-900 dark:text-white'>{memory.content}</p>
+                    <p className='whitespace-pre-wrap text-gray-900'>{memory.content}</p>
                 )}
             </div>
         );
@@ -120,7 +120,7 @@ export default function ContentDetailView({ item }: ContentDetailViewProps) {
                     onClick={post.image ? () => handleImageClick(post.image) : undefined}
                 />
                 {post.content && (
-                    <div className='text-gray-900 dark:text-white'>
+                    <div className='text-gray-900'>
                         <p>{post.content}</p>
                         {post.linkUrl && (
                             <a href={post.linkUrl} target='_blank' className='text-blue-500 underline mt-2 block'>

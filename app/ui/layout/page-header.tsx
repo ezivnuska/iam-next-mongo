@@ -31,13 +31,13 @@ export default function PageHeader({
             {useBreadcrumbs && breadcrumbs ? (
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             ) : title ? (
-                <h1 className='leading-none text-xl font-bold md:text-xl text-gray-900 dark:text-white'>
+                <h1 className='leading-none text-xl font-bold md:text-xl text-gray-900'>
                     {title}
                 </h1>
             ) : null}
 
             {subtitle && (
-                <p className='mt-0.5 text-lg md:text-lg px-2 text-gray-600 dark:text-gray-300'>
+                <p className='mt-0.5 text-lg md:text-lg px-2 text-gray-600'>
                     {subtitle}
                 </p>
             )}

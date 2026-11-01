@@ -96,7 +96,7 @@ export default function ContentItemCard({
         {post.content && (
           <div className='flex flex-row gap-2'>
             <div className='flex flex-1 py-1'>
-              <div className='flex flex-col gap-1 text-gray-900 dark:text-white'>
+              <div className='flex flex-col gap-1 text-gray-900'>
                 <p>{post.content}</p>
                 {post.linkUrl && (
                   <a href={post.linkUrl} target='_blank' className='text-blue-500 underline'>

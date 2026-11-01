@@ -28,7 +28,7 @@ export default function CommentSection({
 }: CommentSectionProps) {
   if (loading) {
     return (
-      <div className={`text-center py-4 text-gray-500 dark:text-gray-400 ${className}`}>
+      <div className={`text-center py-4 text-gray-500 ${className}`}>
         {loadingMessage}
       </div>
     )
@@ -36,7 +36,7 @@ export default function CommentSection({
 
   if (comments.length === 0) {
     return (
-      <div className={`text-center py-4 text-gray-500 dark:text-gray-400 ${className}`}>
+      <div className={`text-center py-4 text-gray-500 ${className}`}>
         {emptyMessage}
       </div>
     )

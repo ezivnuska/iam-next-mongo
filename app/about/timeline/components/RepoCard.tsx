@@ -14,16 +14,16 @@ export function RepoCard({ repo }: { repo: Repo }) {
   const link = repo.homepage || repo.html_url;
 
   return (
-    <div className='rounded-2xl border-2 border-gray-700 bg-gray-800 overflow-hidden'>
+    <div className='rounded-2xl border-2 border-gray-200 bg-white overflow-hidden'>
       <button
         type='button'
         onClick={() => setExpanded(e => !e)}
-        className='w-full flex items-start gap-3 p-4 text-left hover:bg-gray-700 transition-colors'
+        className='w-full flex items-start gap-3 p-4 text-left hover:bg-gray-50 transition-colors'
       >
-        <CodeBracketIcon className='w-5 h-5 text-gray-500 shrink-0 mt-0.5' />
+        <CodeBracketIcon className='w-5 h-5 text-gray-400 shrink-0 mt-0.5' />
         <div className='flex-1 min-w-0'>
-          <span className='text-white font-medium truncate block'>{repo.name}</span>
-          <div className='text-gray-500 text-xs mt-0.5'>
+          <span className='text-gray-900 font-medium truncate block'>{repo.name}</span>
+          <div className='text-gray-400 text-xs mt-0.5'>
             {formatIsoDate(repo.first_commit_at)} – {formatIsoDate(repo.pushed_at)}
             {repo.language && <span> · {repo.language}</span>}
           </div>
@@ -42,12 +42,12 @@ export function RepoCard({ repo }: { repo: Repo }) {
       <div className={`overflow-hidden transition-all duration-300 ${expanded ? 'max-h-[400px]' : 'max-h-0'}`}>
         <div className='px-4 pb-4 space-y-2'>
           {repo.description && (
-            <p className='text-sm text-gray-300'>{repo.description}</p>
+            <p className='text-sm text-gray-600'>{repo.description}</p>
           )}
           {repo.topics.length > 0 && (
             <div className='flex flex-wrap gap-1.5'>
               {repo.topics.map(topic => (
-                <span key={topic} className='text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-400'>
+                <span key={topic} className='text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600'>
                   {topic}
                 </span>
               ))}
@@ -57,7 +57,7 @@ export function RepoCard({ repo }: { repo: Repo }) {
             href={link}
             target='_blank'
             rel='noopener noreferrer'
-            className='inline-block text-xs text-blue-400 hover:text-blue-300 underline'
+            className='inline-block text-xs text-blue-600 hover:text-blue-500 underline'
             onClick={e => e.stopPropagation()}
           >
             {repo.homepage ? 'Visit site' : 'View on GitHub'}

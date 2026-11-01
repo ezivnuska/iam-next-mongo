@@ -62,7 +62,7 @@ export default function MemoryPolaroid({
       {/* Polaroid container */}
       <div
         className={`
-          bg-white dark:bg-gray-100
+          bg-white
           p-3 pb-6
           shadow-lg
           hover:shadow-xl
@@ -74,7 +74,7 @@ export default function MemoryPolaroid({
         style={{ transform: 'rotate(-0.5deg)' }}
       >
         {/* Image container */}
-        <div className="bg-gray-200 dark:bg-gray-300 aspect-square mb-3 overflow-hidden">
+        <div className="bg-gray-200 aspect-square mb-3 overflow-hidden">
           {memory.image ? (
             <ContentImage
               image={memory.image}
@@ -92,11 +92,11 @@ export default function MemoryPolaroid({
         {/* Caption area - polaroid style */}
         <div className="text-center space-y-1 px-2">
           {memory.title && (
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-800">
+            <p className="text-sm font-semibold text-gray-900">
               {memory.title}
             </p>
           )}
-          <p className="text-xs text-gray-700 dark:text-gray-600">
+          <p className="text-xs text-gray-700">
             {memoryDate}
           </p>
         </div>
@@ -105,7 +105,7 @@ export default function MemoryPolaroid({
       {/* Content text with edit button */}
       {memory.content && (
         <div className='flex flex-row gap-2 mt-2'>
-          <p className='flex-1 whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-200'>
+          <p className='flex-1 whitespace-pre-wrap text-sm text-gray-800'>
             {memory.content}
           </p>
           {editable && canEdit && onEdit && <EditContentButton onEdit={onEdit} />}

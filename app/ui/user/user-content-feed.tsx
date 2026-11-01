@@ -134,7 +134,7 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
             {/* Content List */}
             <div className='w-full max-w-[600px] mt-4 space-y-4'>
                 {filteredContent.length === 0 ? (
-                    <p className='text-gray-500 dark:text-gray-400'>No content to display</p>
+                    <p className='text-gray-500'>No content to display</p>
                 ) : (
                     filteredContent.map((item) =>
                         isCurrentUserAuthor(item) ? (
@@ -160,11 +160,11 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
             {modalType === 'memory' && (
                 <Modal isOpen={true} onClose={handleCloseModal}>
                     <div className='flex flex-row items-center justify-between mb-4'>
-                        <h1 className='text-2xl font-semibold text-gray-900 dark:text-white'>
+                        <h1 className='text-2xl font-semibold text-gray-900'>
                             {editingItem ? 'Edit Memory' : 'Create Memory'}
                         </h1>
                         <button
-                            className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl leading-none cursor-pointer'
+                            className='text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer'
                             onClick={handleCloseModal}
                             aria-label='Close'
                         >
@@ -183,11 +183,11 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
             {modalType === 'post' && (
                 <Modal isOpen={true} onClose={handleCloseModal}>
                     <div className='flex flex-row items-center justify-between mb-4'>
-                        <h1 className='text-2xl font-semibold text-gray-900 dark:text-white'>
+                        <h1 className='text-2xl font-semibold text-gray-900'>
                             {editingItem ? 'Edit Post' : 'Create Post'}
                         </h1>
                         <button
-                            className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl leading-none cursor-pointer'
+                            className='text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer'
                             onClick={handleCloseModal}
                             aria-label='Close'
                         >

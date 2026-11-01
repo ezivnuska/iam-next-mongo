@@ -43,40 +43,40 @@ export default function NavLinkCardAnimated({
       // Default active
       'p-6 rounded-2xl': isDefault && isActive,
       // Default inactive
-      'p-6 rounded-2xl border-2 border-gray-300 dark:border-gray-700 hover:border-blue-500 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700': isDefault && !isActive,
+      'p-6 rounded-2xl border-2 border-gray-300 hover:border-blue-500 bg-gray-100 hover:bg-gray-200': isDefault && !isActive,
       // Compact active
-      'p-4 rounded-lg border border-blue-400 dark:border-blue-300': isCompact && isActive,
+      'p-4 rounded-lg border border-blue-400': isCompact && isActive,
       // Compact inactive
-      'p-4 rounded-lg border border-gray-300 dark:border-gray-700 hover:border-blue-500 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800': isCompact && !isActive,
+      'p-4 rounded-lg border border-gray-300 hover:border-blue-500 bg-gray-50 hover:bg-gray-100': isCompact && !isActive,
     }
   );
 
   const iconClasses = clsx('shrink-0 transition-colors', {
     '[&>*]:w-10 [&>*]:h-10': isDefault,
     '[&>*]:w-6 [&>*]:h-6': isCompact,
-    'text-blue-500 dark:text-blue-400': isActive,
-    'text-gray-600 dark:text-gray-400 group-hover:text-blue-500': !isActive,
+    'text-blue-500': isActive,
+    'text-gray-600 group-hover:text-blue-500': !isActive,
   });
 
   const titleClasses = clsx('font-bold transition-colors', {
     'text-xl': isDefault,
     'text-lg': isCompact,
-    'text-blue-600 dark:text-blue-400': isActive,
-    'text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400': !isActive,
+    'text-blue-600': isActive,
+    'text-gray-900 group-hover:text-blue-600': !isActive,
   });
 
   const subtitleClasses = clsx('transition-colors', {
     'mt-1': isDefault,
     'mt-0.5 text-xs': isCompact,
-    'text-blue-500 dark:text-blue-300': isActive,
-    'text-gray-600 dark:text-gray-400': !isActive,
+    'text-blue-500': isActive,
+    'text-gray-600': !isActive,
   });
 
   const arrowClasses = clsx('shrink-0 transition-colors', {
     'w-6 h-6': isDefault,
     'w-5 h-5': isCompact,
-    'text-blue-500 dark:text-blue-400': isActive,
-    'text-gray-400 dark:text-gray-600 group-hover:text-blue-500': !isActive,
+    'text-blue-500': isActive,
+    'text-gray-400 group-hover:text-blue-500': !isActive,
   });
 
   const content = (

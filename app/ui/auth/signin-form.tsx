@@ -48,14 +48,14 @@ export default function SigninForm({ onToggleMode, callbackUrl: propCallbackUrl 
 
   return (
     <form action={formAction} className='space-y-3'>
-      <div className='flex-1 rounded-lg bg-gray-50 dark:bg-gray-800 px-4 py-2'>
-        <h1 className={`${ubuntu.className} mb-1 text-2xl text-gray-900 dark:text-white`}>
+      <div className='flex-1 rounded-lg bg-gray-50 px-4 py-2'>
+        <h1 className={`${ubuntu.className} mb-1 text-2xl text-gray-900`}>
           Please log in to continue.
         </h1>
 
         <div className='w-full'>
           <label
-            className='mb-2 mt-3 block text-s font-medium text-gray-900 dark:text-gray-200'
+            className='mb-2 mt-3 block text-s font-medium text-gray-900'
             htmlFor='email'
           >
             Email
@@ -68,13 +68,13 @@ export default function SigninForm({ onToggleMode, callbackUrl: propCallbackUrl 
               type='email'
               placeholder='Enter your email address'
               required
-              className='peer block w-full rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500 dark:placeholder:text-gray-400'
+              className='peer block w-full rounded-md border border-gray-200 bg-white text-gray-900 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500'
             />
-            <AtSymbolIcon className='pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 dark:text-gray-400 peer-focus:text-gray-900 dark:peer-focus:text-white' />
+            <AtSymbolIcon className='pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900' />
           </div>
 
           <label
-            className='mb-2 mt-3 block text-s font-medium text-gray-900 dark:text-gray-200'
+            className='mb-2 mt-3 block text-s font-medium text-gray-900'
             htmlFor='password'
           >
             Password
@@ -87,9 +87,9 @@ export default function SigninForm({ onToggleMode, callbackUrl: propCallbackUrl 
               placeholder='Enter password'
               required
               minLength={6}
-              className='peer block w-full rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500 dark:placeholder:text-gray-400'
+              className='peer block w-full rounded-md border border-gray-200 bg-white text-gray-900 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500'
             />
-            <KeyIcon className='pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 dark:text-gray-400 peer-focus:text-gray-900 dark:peer-focus:text-white' />
+            <KeyIcon className='pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900' />
           </div>
         </div>
 
@@ -106,7 +106,7 @@ export default function SigninForm({ onToggleMode, callbackUrl: propCallbackUrl 
               <p className='text-sm text-red-500'>{displayError}</p>
             </div>
             {isVerifyError && (
-              <div className='text-xs text-gray-500 dark:text-gray-400'>
+              <div className='text-xs text-gray-500'>
                 {resendStatus === 'sent' ? (
                   <span>Verification email sent. Check your inbox.</span>
                 ) : (
@@ -114,7 +114,7 @@ export default function SigninForm({ onToggleMode, callbackUrl: propCallbackUrl 
                     type='button'
                     onClick={handleResend}
                     disabled={resendStatus === 'sending'}
-                    className='text-blue-600 dark:text-blue-400 underline disabled:opacity-50'
+                    className='text-blue-600 underline disabled:opacity-50'
                   >
                     {resendStatus === 'sending' ? 'Sending...' : 'Resend verification email'}
                   </button>
@@ -125,12 +125,12 @@ export default function SigninForm({ onToggleMode, callbackUrl: propCallbackUrl 
         )}
 
         {onToggleMode && (
-          <div className='mt-4 text-center text-sm text-gray-600 dark:text-gray-400'>
+          <div className='mt-4 text-center text-sm text-gray-600'>
             Don&apos;t have an account?{' '}
             <button
               type='button'
               onClick={onToggleMode}
-              className='text-blue-600 dark:text-blue-400 hover:text-blue-500 font-medium underline'
+              className='text-blue-600 hover:text-blue-500 font-medium underline'
             >
               Sign up
             </button>

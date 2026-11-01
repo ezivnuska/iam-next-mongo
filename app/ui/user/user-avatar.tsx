@@ -60,9 +60,9 @@ export default function UserAvatar({
 	const validImageUrl = imageUrl && imageUrl !== 'null' && imageUrl !== 'undefined' ? imageUrl : null;
 
 	return (
-		<div className={`flex flex-row items-center justify-center w-full h-full rounded-full bg-gray-400 dark:bg-gray-600 text-gray-600 dark:text-gray-300 font-semibold border-2 border-white dark:border-gray-700 ${className}`}>
+		<div className={`flex flex-row items-center justify-center w-full h-full rounded-full bg-gray-400 text-gray-600 font-semibold border-2 border-white ${className}`}>
 			{isAI
-                ? <ComputerDesktopIcon className="w-4 h-4 text-white dark:text-gray-300" />
+                ? <ComputerDesktopIcon className="w-4 h-4 text-white" />
 			    : validImageUrl
                     ? (
                         <Image
@@ -73,7 +73,7 @@ export default function UserAvatar({
                             className="w-full h-full object-cover rounded-full overflow-hidden"
                         />
                     )
-                    : <p className={`text-[16px] text-white dark:text-gray-300`}>{username?.[0]?.toUpperCase() || '?'}</p>
+                    : <p className={`text-[16px] text-white`}>{username?.[0]?.toUpperCase() || '?'}</p>
             }
 		</div>
 	)

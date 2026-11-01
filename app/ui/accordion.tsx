@@ -16,18 +16,18 @@ export function AccordionItem({ title, children, defaultOpen = false }: Accordio
     const [isOpen, setIsOpen] = useState(defaultOpen);
 
     return (
-        <div className='border-b border-gray-300 dark:border-gray-700'>
+        <div className='border-b border-gray-300'>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className='w-full flex items-center justify-between px-6 py-4 text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/50'
+                className='w-full flex items-center justify-between px-6 py-4 text-left transition-colors hover:bg-gray-100'
                 aria-expanded={isOpen}
             >
-                <h3 className='text-xl font-semibold text-gray-900 dark:text-white'>
+                <h3 className='text-xl font-semibold text-gray-900'>
                     {title}
                 </h3>
                 {isOpen
-                    ? <ChevronUpIcon className='w-6 h-6 text-gray-500 dark:text-gray-400' />
-                    : <ChevronDownIcon className='w-6 h-6 text-gray-500 dark:text-gray-400' />
+                    ? <ChevronUpIcon className='w-6 h-6 text-gray-500' />
+                    : <ChevronDownIcon className='w-6 h-6 text-gray-500' />
                 }
             </button>
 
@@ -38,7 +38,7 @@ export function AccordionItem({ title, children, defaultOpen = false }: Accordio
                     'max-h-[2000px] opacity-100': isOpen,
                 }
             )}>
-                <div className='px-6 py-6 space-y-6 text-gray-500 dark:text-gray-400'>
+                <div className='px-6 py-6 space-y-6 text-gray-500'>
                     {children}
                 </div>
             </div>
@@ -53,7 +53,7 @@ interface AccordionProps {
 
 export function Accordion({ children, className }: AccordionProps) {
     return (
-        <div className={clsx('rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-900', className)}>
+        <div className={clsx('rounded-lg overflow-hidden bg-gray-50', className)}>
             {children}
         </div>
     );

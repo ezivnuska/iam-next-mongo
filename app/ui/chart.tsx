@@ -16,7 +16,7 @@ export default function Chart({ cols, direction = 'col', justification = 'defaul
     return (
         <div
             className={clsx(
-                'flex flex-1 justify-center h-full w-full border-2 border-gray-400 dark:border-gray-400',
+                'flex flex-1 justify-center h-full w-full border-2 border-gray-400',
                 direction === 'col' ? 'flex-row px-2' : 'flex-col py-2',
                 justification === 'center' ? 'items-center' : direction === 'col' ? 'items-end' : '',
                 className

@@ -21,7 +21,7 @@ export default function ThemeToggle() {
     return (
         <button
             onClick={cycleTheme}
-            className='flex items-center justify-center h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-blue-500'
+            className='flex items-center justify-center h-10 w-10 rounded-full bg-gray-200 text-gray-900 hover:bg-gray-300 transition-colors focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-blue-500'
             aria-label={`Current theme: ${label}. Click to cycle themes.`}
             title={label}
         >

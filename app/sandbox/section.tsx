@@ -16,7 +16,7 @@ export function Section({ children, title, className = '' }: SectionProps) {
             },
             className
         )}>
-            {title && <span className='text-2xl font-medium text-black dark:text-white px-2 my-2'>{title}</span>}
+            {title && <span className='text-2xl font-medium text-black px-2 my-2'>{title}</span>}
             <div className='flex flex-1 w-full'>
                 {children}
             </div>

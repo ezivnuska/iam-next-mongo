@@ -30,7 +30,7 @@ export default function SiteSwitcher() {
                     <a
                         key={href}
                         href={href}
-                        className='text-xs px-2 py-1 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900 hover:text-blue-700 dark:hover:text-blue-300 transition-colors'
+                        className='text-xs px-2 py-1 rounded-full bg-gray-200 text-gray-600 hover:bg-blue-100 hover:text-blue-700 transition-colors'
                     >
                         {label}
                     </a>

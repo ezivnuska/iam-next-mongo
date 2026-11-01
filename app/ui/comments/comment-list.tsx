@@ -30,14 +30,14 @@ export default function CommentList({ comments, currentUserId, currentUserRole, 
 						</div>
 						<div className='flex-1 min-w-0'>
 							<div className='flex items-center gap-2 mb-1'>
-								<span className='font-semibold text-sm text-gray-900 dark:text-white'>
+								<span className='font-semibold text-sm text-gray-900'>
 									{comment.author.username}
 								</span>
-								<span className='text-xs text-gray-500 dark:text-gray-400'>
+								<span className='text-xs text-gray-500'>
 									{formatRelativeTime(comment.createdAt)}
 								</span>
 							</div>
-							<p className='text-sm whitespace-pre-wrap wrap-break-word text-gray-900 dark:text-white'>
+							<p className='text-sm whitespace-pre-wrap wrap-break-word text-gray-900'>
 								{comment.content}
 							</p>
 						</div>

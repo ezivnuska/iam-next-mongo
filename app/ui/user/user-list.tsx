@@ -17,7 +17,7 @@ export default function UserList({ users }: UserListProps) {
 	const { onlineUsers } = useSocket()
 
 	if (!users || users.length === 0) {
-		return <p className='text-gray-500 dark:text-gray-400'>No users found</p>
+		return <p className='text-gray-500'>No users found</p>
 	}
 
 	return (

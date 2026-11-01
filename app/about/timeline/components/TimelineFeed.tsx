@@ -63,7 +63,7 @@ export function TimelineFeed() {
           return (
             <div key={`marker-${item.data.label}-${i}`} className='flex items-center gap-3 py-1'>
               <span className='text-sm font-bold text-gray-500'>{item.data.label}</span>
-              <div className='flex-1 h-px bg-gray-700' />
+              <div className='flex-1 h-px bg-gray-200' />
             </div>
           );
         }

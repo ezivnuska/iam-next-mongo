@@ -79,11 +79,11 @@ export default function UnifiedUserHeader({
 
   const secondaryText = getSecondaryText();
 
-  const usernameClasses = `font-semibold text-md text-gray-900 dark:text-white ${
+  const usernameClasses = `font-semibold text-md text-gray-900 ${
     clickable ? 'cursor-pointer hover:underline' : ''
   } ${variant === 'compact' ? 'text-sm leading-tight' : ''}`;
 
-  const secondaryClasses = `text-xs text-gray-500 dark:text-gray-400 ${
+  const secondaryClasses = `text-xs text-gray-500 ${
     variant === 'compact' ? 'leading-tight' : ''
   } ${bio ? 'truncate' : ''}`;
 
