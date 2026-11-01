@@ -13,7 +13,7 @@ interface ScreenProps {
     headerRight?: React.ReactNode;
     extras?: React.ReactNode;
     showLoading?: boolean;
-    brandLines?: [string, string];
+    brandHref?: string;
 }
 
 export default function Screen({
@@ -21,7 +21,7 @@ export default function Screen({
     headerRight,
     extras,
     showLoading = true,
-    brandLines,
+    brandHref,
 }: ScreenProps) {
     const horizontalLayout = useHorizontalLayout();
     const isContentLoaded = useContentLoaded();
@@ -39,7 +39,7 @@ export default function Screen({
                     'flex-row w-full justify-between': !horizontalLayout,
                     'flex-col py-4 px-4': horizontalLayout,
                 })}>
-                    <Brand lines={brandLines} />
+                    <Brand href={brandHref} />
                     {headerRight && (
                         <div className={clsx('flex items-center gap-6', {
                             'flex-col-reverse': horizontalLayout,
