@@ -7,7 +7,7 @@ import { ZodError } from 'zod'
 import { authMiddleware, TokenPayload } from '../../middleware/auth'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import UserModel from '@/app/lib/models/user'
-import TileScoreModel from '@/app/games/tiles/lib/models/tile-score'
+import TileScoreModel from '@/api/models/tile-score'
 import { tileScoreRequestSchema } from '../../lib/schemas/score'
 
 const scores = new Hono<{ Variables: { token: TokenPayload } }>()

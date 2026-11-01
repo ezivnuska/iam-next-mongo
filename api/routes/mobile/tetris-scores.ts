@@ -6,7 +6,7 @@ import { ZodError } from 'zod'
 import { authMiddleware, TokenPayload } from '../../middleware/auth'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import UserModel from '@/app/lib/models/user'
-import TetrisScoreModel from '@/app/games/tetris/lib/models/tetris-score'
+import TetrisScoreModel from '@/api/models/tetris-score'
 import { tetrisScoreRequestSchema } from '../../lib/schemas/score'
 
 const tetrisScores = new Hono<{ Variables: { token: TokenPayload } }>()
