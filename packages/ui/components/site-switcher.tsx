@@ -16,7 +16,7 @@ export default function SiteSwitcher() {
     }, []);
 
     return (
-        <div className='fixed bottom-3 right-3 flex items-center gap-1.5 z-50'>
+        <div style={{ position: 'fixed', bottom: '0.75rem', right: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.375rem', zIndex: 50 }}>
             {SITES.map(({ label, hostname: siteHostname, href }) => {
                 const isCurrent = hostname === siteHostname;
                 return isCurrent ? (
