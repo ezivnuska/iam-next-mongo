@@ -1,6 +1,29 @@
 import type { Image, ImageVariant, PartialUser } from '@iam/shared-types';
 
-export function transformImageVariant(variant: any): ImageVariant {
+type RawVariant = {
+  size: string
+  filename: string
+  width: number
+  height: number
+  url: string
+}
+
+type RawImageDoc = {
+  _id: { toString(): string }
+  userId: { toString(): string }
+  username: string
+  alt?: string
+  variants?: RawVariant[]
+}
+
+// avatar may be an unpopulated ObjectId or a full populated document
+type RawAuthorDoc = {
+  _id: { toString(): string }
+  username: string
+  avatar?: unknown
+} | null | undefined
+
+export function transformImageVariant(variant: RawVariant): ImageVariant {
   return {
     size: variant.size,
     filename: variant.filename,
@@ -10,24 +33,28 @@ export function transformImageVariant(variant: any): ImageVariant {
   };
 }
 
-export function transformPopulatedImage(image: any): Image | undefined {
-  if (!image) return undefined;
+export function transformPopulatedImage(image: unknown): Image | undefined {
+  if (!image || typeof image !== 'object') return undefined;
+  const doc = image as RawImageDoc;
+  if (!('username' in doc)) return undefined;
   return {
-    id: image._id.toString(),
-    userId: image.userId.toString(),
-    username: image.username,
-    alt: image.alt ?? '',
-    variants: (image.variants || []).map(transformImageVariant),
+    id: doc._id.toString(),
+    userId: doc.userId.toString(),
+    username: doc.username,
+    alt: doc.alt ?? '',
+    variants: (doc.variants || []).map(transformImageVariant),
   };
 }
 
-export function transformPopulatedAuthor(author: any): PartialUser {
+export function transformPopulatedAuthor(author: RawAuthorDoc): PartialUser {
   if (!author) return { id: 'unknown', username: 'Deleted User' };
-  return {
+  const result: PartialUser = {
     id: author._id.toString(),
     username: author.username,
-    ...(author.avatar && typeof author.avatar === 'object' && 'userId' in author.avatar && {
-      avatar: transformPopulatedImage(author.avatar),
-    }),
   };
+  const av = author.avatar;
+  if (av) {
+    result.avatar = transformPopulatedImage(av);
+  }
+  return result;
 }

@@ -9,22 +9,27 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing token" }, { status: 400 });
   }
 
-  await connectToDatabase();
+  try {
+    await connectToDatabase();
 
-  const user = await UserModel.findOne({
-    verifyToken: token,
-    verifyTokenExpires: { $gt: new Date() },
-  });
+    const user = await UserModel.findOne({
+      verifyToken: token,
+      verifyTokenExpires: { $gt: new Date() },
+    });
 
-  if (!user) {
-    return NextResponse.json({ error: "Invalid or expired verification link" }, { status: 400 });
+    if (!user) {
+      return NextResponse.json({ error: "Invalid or expired verification link" }, { status: 400 });
+    }
+
+    user.verified = true;
+    user.emailVerified = new Date();
+    user.verifyToken = undefined;
+    user.verifyTokenExpires = undefined;
+    await user.save();
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("[verify] Database error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  user.verified = true;
-  user.emailVerified = new Date();
-  user.verifyToken = undefined;
-  user.verifyTokenExpires = undefined;
-  await user.save();
-
-  return NextResponse.json({ success: true });
 }

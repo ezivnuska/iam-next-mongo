@@ -9,13 +9,16 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.946.0",
-    "@hono/node-server": "^1.14.0",
-    "hono": "^4.7.0",
     "@heroicons/react": "^2.2.0",
+    "@hono/node-server": "^1.14.0",
+    "@iam/db": "file:./packages/db",
+    "@iam/shared-types": "file:./packages/shared-types",
+    "@iam/ui": "file:./packages/ui",
     "bcrypt": "^5.1.1",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.3",
     "dotenv-expand": "^12.0.3",
+    "hono": "^4.7.0",
     "jose": "^6.2.1",
     "mongodb": "^6.21.0",
     "mongoose": "^8.20.2",
@@ -29,18 +32,13 @@
     "socket.io-client": "^4.8.1",
     "stripe": "^22.1.0",
     "tailwind-merge": "^3.4.0",
-    "use-debounce": "^10.0.6",
-    "uuid": "^13.0.0",
-    "zod": "^3.25.76",
-    "@iam/shared-types": "file:./packages/shared-types",
-    "@iam/db": "file:./packages/db",
-    "@iam/ui": "file:./packages/ui"
+    "uuid": "^14.0.3",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/postcss": "^4.1.17",
     "@types/bcrypt": "^5.0.2",
-    "tsx": "^4.19.0",
     "@types/node": "^24.10.1",
     "@types/react": "19.1.1",
     "@types/react-dom": "19.1.1",
@@ -50,6 +48,7 @@
     "ignore-loader": "^0.1.2",
     "postcss": "8.5.1",
     "tailwindcss": "^4.1.17",
+    "tsx": "^4.19.0",
     "typescript": "5.9.2"
   }
 }
