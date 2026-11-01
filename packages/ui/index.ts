@@ -1,6 +1,5 @@
 export { default as Brand } from './components/brand';
 export { default as LoadingSpinner } from './components/loading-spinner';
-export { default as SiteSwitcher } from './components/site-switcher';
 export { default as Screen } from './components/screen';
 export { default as ThemeToggle } from './components/theme-toggle';
 export { Button } from './components/button';

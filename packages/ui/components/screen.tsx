@@ -6,7 +6,6 @@ import { useHorizontalLayout } from '../hooks/use-horizontal-layout';
 import { useContentLoaded } from '../hooks/use-content-loaded';
 import Brand from './brand';
 import LoadingSpinner from './loading-spinner';
-import SiteSwitcher from './site-switcher';
 
 interface ScreenProps {
     children: React.ReactNode;
@@ -28,7 +27,6 @@ export default function Screen({
 
     return (
         <div className='w-screen h-screen flex overflow-hidden'>
-            <SiteSwitcher />
             <div className={clsx('flex w-full', {
                 'flex-col': !horizontalLayout,
                 'flex-row': horizontalLayout,
