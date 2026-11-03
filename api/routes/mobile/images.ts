@@ -12,7 +12,7 @@ import { connectToDatabase } from '@/app/lib/mongoose'
 import UserModel from '@/app/lib/models/user'
 import ImageModel from '@/app/lib/models/image'
 import Comment from '@/app/lib/models/comment'
-import Post from '@/app/lib/models/post'
+import EntryModel from '@/app/lib/models/entry'
 import { deleteS3File, uploadImageVariants } from '@/app/lib/aws/s3'
 
 function serializeImage(img: any, currentUserId?: string) {
@@ -111,13 +111,13 @@ images.delete('/api/mobile/images/:id', authMiddleware, async (c) => {
       await user!.save()
     }
 
-    const postsWithImage = await Post.find({ image: objectId })
+    const postsWithImage = await EntryModel.find({ image: objectId })
     const postsToDelete = postsWithImage.filter((p) => !p.content?.trim())
     if (postsToDelete.length > 0)
-      await Post.deleteMany({ _id: { $in: postsToDelete.map((p) => p._id) } })
+      await EntryModel.deleteMany({ _id: { $in: postsToDelete.map((p) => p._id) } })
     const postsToUpdate = postsWithImage.filter((p) => p.content?.trim())
     if (postsToUpdate.length > 0)
-      await Post.updateMany({ _id: { $in: postsToUpdate.map((p) => p._id) } }, { $unset: { image: '' } })
+      await EntryModel.updateMany({ _id: { $in: postsToUpdate.map((p) => p._id) } }, { $unset: { image: '' } })
 
     for (const v of image.variants) {
       if (v.url) {

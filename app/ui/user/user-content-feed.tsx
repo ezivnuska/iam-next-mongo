@@ -4,8 +4,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { ContentItem } from '@/app/lib/definitions/content';
-import type { Memory } from '@/app/lib/definitions/memory';
-import type { Post } from '@/app/lib/definitions/post';
+import type { Entry } from '@/app/lib/definitions/entry';
 import type { Image } from '@/app/lib/definitions/image';
 import NextImage from 'next/image';
 import { Button } from '@/app/ui/button';
@@ -25,24 +24,20 @@ interface UserContentFeedProps {
     editable?: boolean;
 }
 
-type ModalType = 'memory' | 'post' | 'image' | null;
+type ModalType = 'memory' | 'post' | null;
 
 export default function UserContentFeed({ initialContent, editable = false }: UserContentFeedProps) {
     const { user } = useUser();
     const { socket } = useSocket();
     const [content, setContent] = useState<ContentItem[]>(initialContent);
     const [modalType, setModalType] = useState<ModalType>(null);
-    const [editingItem, setEditingItem] = useState<Memory | Post | undefined>(undefined);
+    const [editingItem, setEditingItem] = useState<Entry | undefined>(undefined);
     const [selectedImage, setSelectedImage] = useState<Image | null>(null);
     const [openWithComments, setOpenWithComments] = useState(false);
 
-    // Check if current user is the author of an item
     const isCurrentUserAuthor = (item: ContentItem): boolean => {
         if (!user?.id) return false;
-
-        if (isImage(item)) {
-            return item.userId === user.id;
-        }
+        if (isImage(item)) return item.userId === user.id;
         return item.author.id === user.id;
     };
 
@@ -50,13 +45,12 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
         setContent(prev => prev.filter(item => item.id !== id));
     };
 
-    const handleEdit = (item: ContentItem) => {
-        if (isImage(item)) return; // Images don't support editing yet
+    const handleEdit = (item: Entry) => {
         setEditingItem(item);
         setModalType(item.contentType);
     };
 
-    const handleFlag = (item: Memory | Post) => {
+    const handleFlag = (item: Entry) => {
         // TODO: Implement flag functionality
     };
 
@@ -65,50 +59,31 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
         setEditingItem(undefined);
     };
 
-    const handleMemorySuccess = (memory: Memory) => {
+    const handleEntrySuccess = (entry: Entry) => {
         if (editingItem) {
-            setContent((prev) => prev.map(item => item.id === memory.id ? { ...memory, contentType: 'memory' as const } : item));
+            setContent(prev => prev.map(item => item.id === entry.id ? entry : item));
         } else {
-            setContent((prev) => [{ ...memory, contentType: 'memory' as const }, ...prev]);
+            setContent(prev => [entry, ...prev]);
         }
         handleCloseModal();
     };
 
-    const handlePostSuccess = (post: Post) => {
-        if (editingItem) {
-            setContent((prev) => prev.map(item => item.id === post.id ? { ...post, contentType: 'post' as const } : item));
-        } else {
-            setContent((prev) => [{ ...post, contentType: 'post' as const }, ...prev]);
-        }
-        handleCloseModal();
-    };
-
-    const handleImageSuccess = (image: Image) => {
-        setContent((prev) => [{ ...image, contentType: 'image' as const }, ...prev]);
-        handleCloseModal();
-    };
-
-    // Fetch fresh comment counts on mount to ensure accuracy
     useEffect(() => {
         const fetchCommentCounts = async () => {
-            const itemIds = filterCommentableContent(initialContent)
-                .map(item => item.id);
-
+            const itemIds = filterCommentableContent(initialContent).map(item => item.id);
             if (itemIds.length === 0) return;
-
             try {
                 const counts = await getCommentCountsForItems(itemIds);
                 setContent(prev => prev.map(item => ({
                     ...item,
-                    commentCount: counts[item.id] || 0
+                    commentCount: counts[item.id] || 0,
                 })));
             } catch (error) {
                 console.error('Failed to fetch comment counts:', error);
             }
         };
-
         fetchCommentCounts();
-    }, []); // Only run on mount
+    }, []);
 
     const handleCloseLightbox = useCallback(() => {
         setSelectedImage(null);
@@ -139,30 +114,17 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
 
     useCommentCountSocket(socket, setContent);
 
-    // Show only memories and posts (exclude standalone images)
     const filteredContent = filterCommentableContent(content);
 
     return (
         <div className='w-full max-w-[600px] pb-4'>
-            {/* Add Buttons - only show when editable */}
             {editable && (
                 <div className='flex justify-between gap-2 mb-4'>
-                    <Button
-                        size='sm'
-                        onClick={() => setModalType('memory')}
-                    >
-                        + Memory
-                    </Button>
-                    <Button
-                        size='sm'
-                        onClick={() => setModalType('post')}
-                    >
-                        + Post
-                    </Button>
+                    <Button size='sm' onClick={() => setModalType('memory')}>+ Memory</Button>
+                    <Button size='sm' onClick={() => setModalType('post')}>+ Post</Button>
                 </div>
             )}
 
-            {/* Content List */}
             <div className='w-full max-w-[600px] mt-4 space-y-4'>
                 {filteredContent.length === 0 ? (
                     <p className='text-gray-500'>No content to display</p>
@@ -174,7 +136,7 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                                 item={item}
                                 editable={true}
                                 onDeleted={handleDeleted}
-                                onEdit={handleEdit as (item: Memory | Post) => void}
+                                onEdit={handleEdit}
                                 onFlag={handleFlag}
                                 onImageClick={setSelectedImage}
                                 onCommentImageClick={handleCommentImageClick}
@@ -191,7 +153,6 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                 )}
             </div>
 
-            {/* Memory Modal */}
             {modalType === 'memory' && (
                 <Modal isOpen={true} onClose={handleCloseModal}>
                     <div className='flex flex-row items-center justify-between mb-4'>
@@ -202,19 +163,16 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                             className='text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer'
                             onClick={handleCloseModal}
                             aria-label='Close'
-                        >
-                            ✕
-                        </button>
+                        >✕</button>
                     </div>
                     <CreateMemoryForm
-                        onSuccess={handleMemorySuccess}
+                        onSuccess={handleEntrySuccess}
                         onClose={handleCloseModal}
-                        editItem={editingItem as Memory | undefined}
+                        editItem={editingItem}
                     />
                 </Modal>
             )}
 
-            {/* Image Lightbox */}
             {selectedImage && (
                 <div
                     className='fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50'
@@ -235,9 +193,7 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                         <button
                             className='absolute top-4 right-4 bg-white rounded-full px-3 py-1 shadow text-black z-10'
                             onClick={handleCloseLightbox}
-                        >
-                            ✕
-                        </button>
+                        >✕</button>
                         <ImageModalMenu
                             imageId={selectedImage.id}
                             currentUserId={user?.id}
@@ -255,7 +211,6 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                 </div>
             )}
 
-            {/* Post Modal */}
             {modalType === 'post' && (
                 <Modal isOpen={true} onClose={handleCloseModal}>
                     <div className='flex flex-row items-center justify-between mb-4'>
@@ -266,14 +221,12 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                             className='text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer'
                             onClick={handleCloseModal}
                             aria-label='Close'
-                        >
-                            ✕
-                        </button>
+                        >✕</button>
                     </div>
                     <CreatePostForm
-                        onSuccess={handlePostSuccess}
+                        onSuccess={handleEntrySuccess}
                         onClose={handleCloseModal}
-                        editItem={editingItem as Post | undefined}
+                        editItem={editingItem}
                     />
                 </Modal>
             )}

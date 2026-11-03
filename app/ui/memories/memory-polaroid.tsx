@@ -2,18 +2,16 @@
 
 'use client';
 
-import type { Memory } from '@/app/lib/definitions/memory';
-import type { Image as ImageType } from '@/app/lib/definitions/image';
+import type { Entry } from '@/app/lib/definitions/entry';
 import ContentImage from '@/app/ui/content-image';
 import ContentInteractions from '@/app/ui/content-interactions';
 import UnifiedUserHeader from '@/app/ui/user/unified-user-header';
 import EditContentButton from '@/app/ui/edit-content-button';
 
 interface MemoryPolaroidProps {
-  memory: Memory;
+  entry: Entry;
   onImageClick?: () => void;
   className?: string;
-  // Content card functionality
   actions?: {
     onDelete?: () => Promise<void>;
     onFlag?: () => void;
@@ -32,7 +30,7 @@ interface MemoryPolaroidProps {
 }
 
 export default function MemoryPolaroid({
-  memory,
+  entry,
   onImageClick,
   className = '',
   actions,
@@ -41,18 +39,19 @@ export default function MemoryPolaroid({
   canEdit = false,
   onEdit,
 }: MemoryPolaroidProps) {
-  const memoryDate = new Date(memory.date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+  const memoryDate = entry.date
+    ? new Date(entry.date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : '';
 
   return (
     <div className='flex flex-col w-full'>
-      {/* User header */}
       <UnifiedUserHeader
-        user={memory.author}
-        avatar={memory.author.avatar}
+        user={entry.author}
+        avatar={entry.author.avatar}
         onFlag={actions?.onFlag}
         onDelete={actions?.onDelete}
         canDelete={actions?.canDelete}
@@ -60,7 +59,6 @@ export default function MemoryPolaroid({
         clickable
       />
 
-      {/* Polaroid container */}
       <div
         className={`
           bg-white
@@ -74,12 +72,11 @@ export default function MemoryPolaroid({
         `}
         style={{ transform: 'rotate(-0.5deg)' }}
       >
-        {/* Image container */}
         <div className="bg-gray-200 aspect-square mb-3 overflow-hidden">
-          {memory.image ? (
+          {entry.image ? (
             <ContentImage
-              image={memory.image}
-              alt={memory.title || 'Memory image'}
+              image={entry.image}
+              alt={entry.title || 'Memory image'}
               className="w-full h-full object-cover cursor-pointer"
               onClick={onImageClick}
             />
@@ -90,34 +87,25 @@ export default function MemoryPolaroid({
           )}
         </div>
 
-        {/* Caption area - polaroid style */}
         <div className="text-center space-y-1 px-2">
-          {memory.title && (
-            <p className="text-sm font-semibold text-gray-900">
-              {memory.title}
-            </p>
+          {entry.title && (
+            <p className="text-sm font-semibold text-gray-900">{entry.title}</p>
           )}
-          <p className="text-xs text-gray-700">
-            {memoryDate}
-          </p>
+          <p className="text-xs text-gray-700">{memoryDate}</p>
         </div>
       </div>
 
-      {/* Content text with edit button */}
-      {memory.content && (
+      {entry.content && (
         <div className='flex flex-row gap-2 mt-2'>
-          <p className='flex-1 whitespace-pre-wrap text-sm text-gray-800'>
-            {memory.content}
-          </p>
+          <p className='flex-1 whitespace-pre-wrap text-sm text-gray-800'>{entry.content}</p>
           {editable && canEdit && onEdit && <EditContentButton onEdit={onEdit} />}
         </div>
       )}
 
-      {/* Footer Interactions */}
       {interactions && (
         <div className='mt-2'>
           <ContentInteractions
-            itemId={memory.id}
+            itemId={entry.id}
             itemType='Memory'
             initialLiked={interactions.initialLiked}
             initialLikeCount={interactions.initialLikeCount || 0}

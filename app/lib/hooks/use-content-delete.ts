@@ -5,7 +5,7 @@
 import { useCallback } from 'react';
 
 export function useContentDelete(
-  contentType: 'posts' | 'memories' | 'images',
+  contentType: 'posts' | 'memories' | 'images' | 'entries',
   onDeleted: (id: string) => void
 ) {
   return useCallback(

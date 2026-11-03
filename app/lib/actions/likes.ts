@@ -4,137 +4,76 @@
 
 import { connectToDatabase } from "@/app/lib/mongoose";
 import ImageModel from "@/app/lib/models/image";
-import Post from "@/app/lib/models/post";
-import Memory from "@/app/lib/models/memory";
+import EntryModel from "@/app/lib/models/entry";
 import { logActivity } from "@/app/lib/utils/activity-logger";
 import { emitLikeAdded, emitLikeRemoved } from "@/app/lib/socket/emit";
 import { requireAuth } from "@/app/lib/utils/auth";
 
 type LikeableType = 'Image' | 'Post' | 'Memory';
 
-export async function toggleLike(itemId: string, itemType: LikeableType) {
-  const user = await requireAuth();
-  const userId = user.id;
+async function resolveEntryModel(itemId: string) {
+	return EntryModel.findById(itemId).select('likes').lean();
+}
 
-  await connectToDatabase();
+export async function toggleLike(itemId: string, itemType: LikeableType) {
+	const user = await requireAuth();
+	const userId = user.id;
+
+	await connectToDatabase();
 	let item: any;
 	let updated: any;
 	let likePayload: any;
 
-	// Handle each type separately to avoid TypeScript union issues
 	switch (itemType) {
 		case 'Image': {
 			item = await ImageModel.findById(itemId).select('likes').lean();
-			if (!item) throw new Error(`${itemType} not found`);
+			if (!item) throw new Error('Image not found');
 
-			const isLikedImage = (item.likes || []).some((id: any) => id.toString() === userId);
+			const isLiked = (item.likes || []).some((id: any) => id.toString() === userId);
 			updated = await ImageModel.findByIdAndUpdate(
 				itemId,
-				isLikedImage ? { $pull: { likes: userId } } : { $addToSet: { likes: userId } },
+				isLiked ? { $pull: { likes: userId } } : { $addToSet: { likes: userId } },
 				{ new: true, select: 'likes' }
 			);
 
-			// Log activity
 			await logActivity({
 				userId,
-				action: isLikedImage ? 'delete' : 'create',
+				action: isLiked ? 'delete' : 'create',
 				entityType: 'like',
 				entityId: itemId,
-				entityData: {
-					itemType: 'Image',
-					isUnlike: isLikedImage
-				}
+				entityData: { itemType: 'Image', isUnlike: isLiked },
 			});
 
-			// Emit socket event
-			likePayload = {
-				itemId,
-				itemType: 'Image' as const,
-				userId,
-				username: user.name || user.email || 'Unknown'
-			};
-			await (isLikedImage ? emitLikeRemoved(likePayload) : emitLikeAdded(likePayload));
+			likePayload = { itemId, itemType: 'Image' as const, userId, username: user.name || user.email || 'Unknown' };
+			await (isLiked ? emitLikeRemoved(likePayload) : emitLikeAdded(likePayload));
 
-			return {
-				liked: !isLikedImage,
-				likeCount: updated?.likes?.length || 0
-			};
+			return { liked: !isLiked, likeCount: updated?.likes?.length || 0 };
 		}
 
-		case 'Post': {
-			item = await Post.findById(itemId).select('likes').lean();
-			if (!item) throw new Error(`${itemType} not found`);
-
-			const isLikedPost = (item.likes || []).some((id: any) => id.toString() === userId);
-			updated = await Post.findByIdAndUpdate(
-				itemId,
-				isLikedPost ? { $pull: { likes: userId } } : { $addToSet: { likes: userId } },
-				{ new: true, select: 'likes' }
-			);
-
-			// Log activity
-			await logActivity({
-				userId,
-				action: isLikedPost ? 'delete' : 'create',
-				entityType: 'like',
-				entityId: itemId,
-				entityData: {
-					itemType: 'Post',
-					isUnlike: isLikedPost
-				}
-			});
-
-			// Emit socket event
-			likePayload = {
-				itemId,
-				itemType: 'Post' as const,
-				userId,
-				username: user.name || user.email || 'Unknown'
-			};
-			await (isLikedPost ? emitLikeRemoved(likePayload) : emitLikeAdded(likePayload));
-
-			return {
-				liked: !isLikedPost,
-				likeCount: updated?.likes?.length || 0
-			};
-		}
-
+		case 'Post':
 		case 'Memory': {
-			item = await Memory.findById(itemId).select('likes').lean();
+			item = await resolveEntryModel(itemId);
 			if (!item) throw new Error(`${itemType} not found`);
 
-			const isLikedMemory = (item.likes || []).some((id: any) => id.toString() === userId);
-			updated = await Memory.findByIdAndUpdate(
+			const isLiked = (item.likes || []).some((id: any) => id.toString() === userId);
+			updated = await EntryModel.findByIdAndUpdate(
 				itemId,
-				isLikedMemory ? { $pull: { likes: userId } } : { $addToSet: { likes: userId } },
+				isLiked ? { $pull: { likes: userId } } : { $addToSet: { likes: userId } },
 				{ new: true, select: 'likes' }
 			);
 
-			// Log activity
 			await logActivity({
 				userId,
-				action: isLikedMemory ? 'delete' : 'create',
+				action: isLiked ? 'delete' : 'create',
 				entityType: 'like',
 				entityId: itemId,
-				entityData: {
-					itemType: 'Memory',
-					isUnlike: isLikedMemory
-				}
+				entityData: { itemType, isUnlike: isLiked },
 			});
 
-			// Emit socket event
-			likePayload = {
-				itemId,
-				itemType: 'Memory' as const,
-				userId,
-				username: user.name || user.email || 'Unknown'
-			};
-			await (isLikedMemory ? emitLikeRemoved(likePayload) : emitLikeAdded(likePayload));
+			likePayload = { itemId, itemType: itemType as 'Post' | 'Memory', userId, username: user.name || user.email || 'Unknown' };
+			await (isLiked ? emitLikeRemoved(likePayload) : emitLikeAdded(likePayload));
 
-			return {
-				liked: !isLikedMemory,
-				likeCount: updated?.likes?.length || 0
-			};
+			return { liked: !isLiked, likeCount: updated?.likes?.length || 0 };
 		}
 
 		default:
@@ -147,30 +86,23 @@ export async function getLikeStatus(itemId: string, itemType: LikeableType, user
 
 	let item: any;
 
-	// Handle each type separately to avoid TypeScript union issues
 	switch (itemType) {
 		case 'Image':
 			item = await ImageModel.findById(itemId).select('likes').lean();
 			break;
 		case 'Post':
-			item = await Post.findById(itemId).select('likes').lean();
-			break;
 		case 'Memory':
-			item = await Memory.findById(itemId).select('likes').lean();
+			item = await EntryModel.findById(itemId).select('likes').lean();
 			break;
 		default:
 			throw new Error('Invalid likeable type');
 	}
 
-	if (!item) {
-		return { liked: false, likeCount: 0 };
-	}
+	if (!item) return { liked: false, likeCount: 0 };
 
 	const likes = item.likes || [];
-	const liked = userId ? likes.some((id: any) => id.toString() === userId) : false;
-
 	return {
-		liked,
-		likeCount: likes.length
+		liked: userId ? likes.some((id: any) => id.toString() === userId) : false,
+		likeCount: likes.length,
 	};
 }

@@ -6,12 +6,12 @@ import { useState } from "react";
 import { Button } from "@/app/ui/button";
 import { uploadFile } from "@/app/lib/actions/upload";
 import ImageUploadInput from "@/app/ui/image-upload-input";
-import type { Post } from "@/app/lib/definitions/post";
+import type { Entry } from "@/app/lib/definitions/entry";
 
 interface CreatePostFormProps {
-  onSuccess: (post: Post) => void;
+  onSuccess: (entry: Entry) => void;
   onClose: () => void;
-  editItem?: Post;
+  editItem?: Entry;
 }
 
 export default function CreatePostForm({ onSuccess, onClose, editItem }: CreatePostFormProps) {
@@ -27,32 +27,28 @@ export default function CreatePostForm({ onSuccess, onClose, editItem }: CreateP
 
     try {
       let imageId: string | undefined;
-
       if (file) {
         const uploadedImage = await uploadFile(file);
         imageId = uploadedImage.id;
       }
 
-      const url = editItem ? `/api/posts/${editItem.id}` : "/api/posts";
+      const url = editItem ? `/api/entries/${editItem.id}` : "/api/entries";
       const method = editItem ? "PUT" : "POST";
 
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content,
-          imageId,
-        }),
+        body: JSON.stringify({ contentType: 'post', content, imageId }),
       });
-      
+
       if (!response.ok) {
         throw new Error(editItem ? "Failed to update post" : "Failed to create post");
       }
 
-      const newPost = await response.json();
-      onSuccess(newPost);
+      const entry = await response.json();
+      onSuccess(entry);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create post");
+      setError(err instanceof Error ? err.message : "Failed to save post");
     } finally {
       setLoading(false);
     }
@@ -73,30 +69,18 @@ export default function CreatePostForm({ onSuccess, onClose, editItem }: CreateP
           maxLength={1000}
           placeholder="Share your thoughts..."
         />
-        <div className="text-sm text-gray-500 mt-1">
-          {content.length}/1000
-        </div>
+        <div className="text-sm text-gray-500 mt-1">{content.length}/1000</div>
       </div>
 
       <ImageUploadInput file={file} onFileChange={setFile} />
 
-      {error && (
-        <p className="text-sm text-red-600">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex gap-2 justify-end">
-        <Button
-          type="submit"
-          disabled={loading || !(content.trim() || file)}
-        >
-          {loading ? "Saving..." : (editItem ? " Update Post" : "Save Post")}
+        <Button type="submit" disabled={loading || !(content.trim() || file)}>
+          {loading ? "Saving..." : (editItem ? "Update Post" : "Save Post")}
         </Button>
-        <Button
-          type="button"
-          onClick={onClose}
-          disabled={loading}
-          variant="secondary"
-        >
+        <Button type="button" onClick={onClose} disabled={loading} variant="secondary">
           Cancel
         </Button>
       </div>

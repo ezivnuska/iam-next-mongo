@@ -6,16 +6,15 @@ import { useState } from "react";
 import { Button } from "@/app/ui/button";
 import { uploadFile } from "@/app/lib/actions/upload";
 import ImageUploadInput from "@/app/ui/image-upload-input";
-import type { Memory } from "@/app/lib/definitions/memory";
+import type { Entry } from "@/app/lib/definitions/entry";
 
 interface CreateMemoryFormProps {
-  onSuccess: (memory: Memory) => void;
+  onSuccess: (entry: Entry) => void;
   onClose: () => void;
-  editItem?: Memory;
+  editItem?: Entry;
 }
 
 export default function CreateMemoryForm({ onSuccess, onClose, editItem }: CreateMemoryFormProps) {
-    // Helper to get local date string in YYYY-MM-DD format
     const getLocalDateString = (dateString?: string) => {
         const d = dateString ? new Date(dateString) : new Date();
         const year = d.getFullYear();
@@ -39,22 +38,20 @@ export default function CreateMemoryForm({ onSuccess, onClose, editItem }: Creat
 
         try {
             let imageId: string | undefined;
-
             if (file) {
                 const uploadedImage = await uploadFile(file);
                 imageId = uploadedImage.id;
             }
 
-            const url = editItem ? `/api/memories/${editItem.id}` : "/api/memories";
+            const url = editItem ? `/api/entries/${editItem.id}` : "/api/entries";
             const method = editItem ? "PUT" : "POST";
-
-            // Create date at noon local time to avoid timezone issues
             const localDate = new Date(date + 'T12:00:00');
 
             const response = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
+                    contentType: 'memory',
                     date: localDate.toISOString(),
                     title,
                     content,
@@ -67,10 +64,10 @@ export default function CreateMemoryForm({ onSuccess, onClose, editItem }: Creat
                 throw new Error(editItem ? "Failed to update memory" : "Failed to create memory");
             }
 
-            const newMemory = await response.json();
-            onSuccess(newMemory);
+            const entry = await response.json();
+            onSuccess(entry);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to create memory");
+            setError(err instanceof Error ? err.message : "Failed to save memory");
         } finally {
             setLoading(false);
         }
@@ -121,9 +118,7 @@ export default function CreateMemoryForm({ onSuccess, onClose, editItem }: Creat
                     maxLength={2000}
                     placeholder="Write about this memory..."
                 />
-                <div className="text-sm text-gray-500 mt-1">
-                    {content.length}/2000
-                </div>
+                <div className="text-sm text-gray-500 mt-1">{content.length}/2000</div>
             </div>
 
             <div className="flex items-center">
@@ -141,23 +136,13 @@ export default function CreateMemoryForm({ onSuccess, onClose, editItem }: Creat
 
             <ImageUploadInput file={file} onFileChange={setFile} />
 
-            {error && (
-                <p className="text-sm text-red-600">{error}</p>
-            )}
+            {error && <p className="text-sm text-red-600">{error}</p>}
 
             <div className="flex gap-2 justify-end">
-                <Button
-                    type="submit"
-                    disabled={loading || !(content.trim() || file)}
-                >
+                <Button type="submit" disabled={loading || !(content.trim() || file)}>
                     {loading ? "Saving..." : (editItem ? "Update Memory" : "Save Memory")}
                 </Button>
-                <Button
-                    type="button"
-                    onClick={onClose}
-                    disabled={loading}
-                    variant="secondary"
-                >
+                <Button type="button" onClick={onClose} disabled={loading} variant="secondary">
                     Cancel
                 </Button>
             </div>
