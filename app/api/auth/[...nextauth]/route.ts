@@ -26,7 +26,11 @@ export async function POST(req: NextRequest, ctx: any): Promise<Response> {
         ? '__Secure-next-auth.session-token'
         : 'next-auth.session-token'
       const res = NextResponse.json({ url: '/' })
-      res.cookies.set(cookieName, '', { maxAge: 0, path: '/' })
+      res.cookies.set(cookieName, '', {
+        maxAge: 0,
+        path: '/',
+        domain: process.env.NODE_ENV === 'production' ? '.iameric.me' : undefined,
+      })
       return res
     }
     return NextResponse.json({ error: 'Auth error' }, { status: 500 })

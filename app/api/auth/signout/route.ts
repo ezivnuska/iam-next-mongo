@@ -18,6 +18,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     httpOnly: true,
     secure: isProduction,
     sameSite: 'lax',
+    domain: isProduction ? '.iameric.me' : undefined,
   })
   return res
 }
