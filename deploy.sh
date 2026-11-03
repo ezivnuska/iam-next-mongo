@@ -40,6 +40,11 @@ git fetch origin
 git checkout "$BRANCH"
 git pull origin "$BRANCH"
 
+echo "Busting local package cache..."
+rm -rf node_modules/.pnpm/@iam+ui* node_modules/@iam/ui
+rm -rf node_modules/.pnpm/@iam+db* node_modules/@iam/db
+rm -rf node_modules/.pnpm/@iam+shared-types* node_modules/@iam/shared-types
+
 echo "Installing dependencies..."
 pnpm install
 

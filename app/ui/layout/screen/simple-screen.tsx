@@ -10,22 +10,21 @@ import AuthRedirectHandler from '@/app/ui/auth/auth-redirect-handler';
 interface SimpleScreenProps {
     children: React.ReactNode;
     showLoading?: boolean;
+    loggedIn?: boolean;
 }
 
-export default function SimpleScreen({ children, showLoading = true }: SimpleScreenProps) {
+export default function SimpleScreen({ children, showLoading = true, loggedIn = false }: SimpleScreenProps) {
     return (
         <Screen
-            headerRight={
-                <>
-                    <a
-                        href='https://games.iameric.me'
-                        className='flex items-center justify-center h-10 rounded-full px-4 text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors'
-                    >
-                        games
-                    </a>
-                    <UserButton />
-                </>
-            }
+            userControls={loggedIn ? <UserButton /> : undefined}
+            nav={loggedIn ? (
+                <a
+                    href='https://games.iameric.me'
+                    className='flex items-center justify-center h-10 rounded-full px-4 text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors'
+                >
+                    games
+                </a>
+            ) : undefined}
             extras={
                 <Suspense fallback={null}>
                     <AuthRedirectHandler />

@@ -9,7 +9,8 @@ import LoadingSpinner from './loading-spinner';
 
 interface ScreenProps {
     children: React.ReactNode;
-    headerRight?: React.ReactNode;
+    userControls?: React.ReactNode;
+    nav?: React.ReactNode;
     extras?: React.ReactNode;
     showLoading?: boolean;
     brandHref?: string;
@@ -17,13 +18,15 @@ interface ScreenProps {
 
 export default function Screen({
     children,
-    headerRight,
+    userControls,
+    nav,
     extras,
     showLoading = true,
     brandHref,
 }: ScreenProps) {
     const horizontalLayout = useHorizontalLayout();
     const isContentLoaded = useContentLoaded();
+    const loggedIn = !!userControls;
 
     return (
         <div className='w-screen h-screen flex overflow-hidden'>
@@ -33,17 +36,24 @@ export default function Screen({
             })}>
                 {extras}
 
-                <div className={clsx('flex shrink-0 max-w-content mx-auto items-center py-2 gap-4 px-4', {
-                    'flex-row w-full justify-between': !horizontalLayout,
+                <div className={clsx('flex shrink-0', {
+                    'flex-row w-full max-w-content mx-auto items-center justify-between py-2 gap-4 px-4': !horizontalLayout,
                     'flex-col py-4 px-4': horizontalLayout,
+                    'justify-between': horizontalLayout && loggedIn,
                 })}>
-                    <Brand href={brandHref} />
-                    {headerRight && (
-                        <div className={clsx('flex items-center gap-6', {
-                            'flex-col-reverse': horizontalLayout,
-                        })}>
-                            {headerRight}
-                        </div>
+                    {loggedIn ? (
+                        <>
+                            <div>{userControls}</div>
+                            <div className={clsx('flex items-center gap-4', {
+                                'flex-row': !horizontalLayout,
+                                'flex-col': horizontalLayout,
+                            })}>
+                                {nav}
+                                <Brand href={brandHref} />
+                            </div>
+                        </>
+                    ) : (
+                        <Brand href={brandHref} />
                     )}
                 </div>
 

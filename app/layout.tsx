@@ -43,7 +43,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                         <AuthModalProvider>
                             <SocketProvider>
                                 <TileProvider>
-                                    <SimpleScreen>
+                                    <SimpleScreen loggedIn={!!session?.user}>
                                         {children}
                                     </SimpleScreen>
                                 </TileProvider>
