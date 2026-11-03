@@ -10,8 +10,7 @@ import NextImage from 'next/image';
 import { Button } from '@/app/ui/button';
 import ContentItemCard from '@/app/ui/content-item-card';
 import Modal from '@/app/ui/modal';
-import CreateMemoryForm from '@/app/ui/memories/create-memory-form';
-import CreatePostForm from '@/app/ui/posts/create-post-form';
+import CreateEntryForm from '@/app/ui/entries/create-entry-form';
 import ImageModalMenu from '@/app/ui/images/image-modal-menu';
 import { useUser } from '@/app/lib/providers/user-provider';
 import { useSocket } from '@/app/lib/providers/socket-provider';
@@ -24,7 +23,7 @@ interface UserContentFeedProps {
     editable?: boolean;
 }
 
-type ModalType = 'memory' | 'post' | null;
+type ModalType = 'entry' | null;
 
 export default function UserContentFeed({ initialContent, editable = false }: UserContentFeedProps) {
     const { user } = useUser();
@@ -47,7 +46,7 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
 
     const handleEdit = (item: Entry) => {
         setEditingItem(item);
-        setModalType(item.contentType);
+        setModalType('entry');
     };
 
     const handleFlag = (item: Entry) => {
@@ -119,9 +118,8 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
     return (
         <div className='w-full max-w-[600px] pb-4'>
             {editable && (
-                <div className='flex justify-between gap-2 mb-4'>
-                    <Button size='sm' onClick={() => setModalType('memory')}>+ Memory</Button>
-                    <Button size='sm' onClick={() => setModalType('post')}>+ Post</Button>
+                <div className='flex justify-end mb-4'>
+                    <Button size='sm' onClick={() => setModalType('entry')}>+ New Entry</Button>
                 </div>
             )}
 
@@ -153,11 +151,13 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                 )}
             </div>
 
-            {modalType === 'memory' && (
+            {modalType === 'entry' && (
                 <Modal isOpen={true} onClose={handleCloseModal}>
                     <div className='flex flex-row items-center justify-between mb-4'>
                         <h1 className='text-2xl font-semibold text-gray-900'>
-                            {editingItem ? 'Edit Memory' : 'Create Memory'}
+                            {editingItem
+                                ? `Edit ${editingItem.contentType}`
+                                : 'New Entry'}
                         </h1>
                         <button
                             className='text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer'
@@ -165,7 +165,7 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                             aria-label='Close'
                         >✕</button>
                     </div>
-                    <CreateMemoryForm
+                    <CreateEntryForm
                         onSuccess={handleEntrySuccess}
                         onClose={handleCloseModal}
                         editItem={editingItem}
@@ -211,25 +211,6 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                 </div>
             )}
 
-            {modalType === 'post' && (
-                <Modal isOpen={true} onClose={handleCloseModal}>
-                    <div className='flex flex-row items-center justify-between mb-4'>
-                        <h1 className='text-2xl font-semibold text-gray-900'>
-                            {editingItem ? 'Edit Post' : 'Create Post'}
-                        </h1>
-                        <button
-                            className='text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer'
-                            onClick={handleCloseModal}
-                            aria-label='Close'
-                        >✕</button>
-                    </div>
-                    <CreatePostForm
-                        onSuccess={handleEntrySuccess}
-                        onClose={handleCloseModal}
-                        editItem={editingItem}
-                    />
-                </Modal>
-            )}
         </div>
     );
 }
