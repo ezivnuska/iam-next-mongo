@@ -55,23 +55,6 @@ export function transformEntry(
   }
 }
 
-// Legacy wrappers — kept for any callers that haven't migrated yet
-export function transformMemory(
-  m: any,
-  commentCounts: Record<string, number>,
-  currentUserId?: string
-): Entry & { contentType: 'memory' } {
-  return transformEntry({ ...m, contentType: 'memory' }, commentCounts, currentUserId) as Entry & { contentType: 'memory' }
-}
-
-export function transformPost(
-  p: any,
-  commentCounts: Record<string, number>,
-  currentUserId?: string
-): Entry & { contentType: 'post' } {
-  return transformEntry({ ...p, contentType: 'post' }, commentCounts, currentUserId) as Entry & { contentType: 'post' }
-}
-
 // transformImage kept for standalone image content items
 export function transformImage(
   image: any,

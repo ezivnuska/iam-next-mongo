@@ -4,11 +4,9 @@
 
 import { connectToDatabase } from "@/app/lib/mongoose";
 import EntryModel from "@/app/lib/models/entry";
-import Image from "@/app/lib/models/image";
 import User from "@/app/lib/models/user";
 import {
   transformEntry,
-  transformImage,
   getCommentCountsForContent,
   sortContentByDate,
 } from "@/app/lib/utils/transformers/content";
@@ -40,10 +38,6 @@ export async function getUserContent(username?: string): Promise<ContentItem[]> 
 
   const entries = await EntryModel.find(entriesQuery)
     .populate(CONTENT_POPULATE_CONFIG)
-    .sort({ createdAt: -1 })
-    .lean();
-
-  const images = await Image.find({ userId: targetUserId })
     .sort({ createdAt: -1 })
     .lean();
 

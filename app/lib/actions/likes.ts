@@ -81,28 +81,3 @@ export async function toggleLike(itemId: string, itemType: LikeableType) {
 	}
 }
 
-export async function getLikeStatus(itemId: string, itemType: LikeableType, userId?: string) {
-	await connectToDatabase();
-
-	let item: any;
-
-	switch (itemType) {
-		case 'Image':
-			item = await ImageModel.findById(itemId).select('likes').lean();
-			break;
-		case 'Post':
-		case 'Memory':
-			item = await EntryModel.findById(itemId).select('likes').lean();
-			break;
-		default:
-			throw new Error('Invalid likeable type');
-	}
-
-	if (!item) return { liked: false, likeCount: 0 };
-
-	const likes = item.likes || [];
-	return {
-		liked: userId ? likes.some((id: any) => id.toString() === userId) : false,
-		likeCount: likes.length,
-	};
-}
