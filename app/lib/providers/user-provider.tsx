@@ -25,39 +25,48 @@ interface UserProviderProps {
     initialUser: AppUser | null;
 }
 
+function partialUser(session: AppUser): User {
+    return {
+        id: session.id,
+        username: session.username,
+        email: session.email,
+        role: session.role,
+        emailVerified: session.emailVerified ?? null,
+        bio: '',
+        avatar: null,
+        verified: false,
+        createdAt: '',
+        updatedAt: '',
+    };
+}
+
 export function UserProvider({ children, initialUser }: UserProviderProps) {
-    const [user, setUser] = useState<User | null>(null);
-    const [status, setStatus] = useState<AuthStatus>(initialUser ? "loading" : "unauthenticated");
+    const [user, setUser] = useState<User | null>(initialUser ? partialUser(initialUser) : null);
+    const [status, setStatus] = useState<AuthStatus>(initialUser ? "authenticated" : "unauthenticated");
 
     const [userCache] = useState<Map<string, User>>(new Map());
 
     useEffect(() => {
-        async function fetchFullUser() {
-            if (!initialUser) {
-                setUser(null);
-                setStatus("unauthenticated");
-                return;
-            }
+        if (!initialUser) {
+            setUser(null);
+            setStatus("unauthenticated");
+            return;
+        }
 
-            setStatus("loading");
-            try {
-                const res = await fetch("/api/users/me");
-                if (!res.ok) {
-                    setUser(null);
-                    setStatus("unauthenticated");
-                    return;
-                }
-                const fullUser: User = await res.json();
+        // Set partial data immediately so UI stays visible, hydrate in background.
+        setUser(partialUser(initialUser));
+        setStatus("authenticated");
+
+        fetch("/api/users/me")
+            .then(res => res.ok ? res.json() : Promise.reject(new Error('fetch failed')))
+            .then((fullUser: User) => {
                 setUser(fullUser);
-                setStatus("authenticated");
-            } catch (err) {
+            })
+            .catch(err => {
                 console.error("Failed to fetch full user:", err);
                 setUser(null);
                 setStatus("unauthenticated");
-            }
-        }
-
-        fetchFullUser();
+            });
     }, [initialUser]);
 
     async function fetchUserById(id: string): Promise<User | null> {
@@ -109,7 +118,7 @@ export function UserProvider({ children, initialUser }: UserProviderProps) {
                 fetchUserByUsername,
             }}
         >
-            {["authenticated", "unauthenticated", "signing-out"].includes(status) ? children : null}
+            {children}
         </UserContext.Provider>
     );
 }

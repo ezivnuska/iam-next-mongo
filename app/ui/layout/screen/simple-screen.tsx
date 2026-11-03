@@ -7,14 +7,17 @@ import { Screen } from '@iam/ui';
 import UserButton from '@/app/ui/header/user-button';
 import SigninButton from '@/app/ui/auth/signin-button';
 import AuthRedirectHandler from '@/app/ui/auth/auth-redirect-handler';
+import { useUser } from '@/app/lib/providers/user-provider';
 
 interface SimpleScreenProps {
     children: React.ReactNode;
     showLoading?: boolean;
-    loggedIn?: boolean;
 }
 
-export default function SimpleScreen({ children, showLoading = true, loggedIn = false }: SimpleScreenProps) {
+export default function SimpleScreen({ children, showLoading = true }: SimpleScreenProps) {
+    const { user } = useUser();
+    const loggedIn = !!user && !user.isGuest;
+
     return (
         <Screen
             userControls={loggedIn ? <UserButton /> : undefined}
