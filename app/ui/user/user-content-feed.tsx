@@ -2,16 +2,18 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { ContentItem } from '@/app/lib/definitions/content';
 import type { Memory } from '@/app/lib/definitions/memory';
 import type { Post } from '@/app/lib/definitions/post';
 import type { Image } from '@/app/lib/definitions/image';
+import NextImage from 'next/image';
 import { Button } from '@/app/ui/button';
 import ContentItemCard from '@/app/ui/content-item-card';
 import Modal from '@/app/ui/modal';
 import CreateMemoryForm from '@/app/ui/memories/create-memory-form';
 import CreatePostForm from '@/app/ui/posts/create-post-form';
+import ImageModalMenu from '@/app/ui/images/image-modal-menu';
 import { useUser } from '@/app/lib/providers/user-provider';
 import { useSocket } from '@/app/lib/providers/socket-provider';
 import { getCommentCountsForItems } from '@/app/lib/actions/comments';
@@ -31,6 +33,7 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
     const [content, setContent] = useState<ContentItem[]>(initialContent);
     const [modalType, setModalType] = useState<ModalType>(null);
     const [editingItem, setEditingItem] = useState<Memory | Post | undefined>(undefined);
+    const [selectedImage, setSelectedImage] = useState<Image | null>(null);
 
     // Check if current user is the author of an item
     const isCurrentUserAuthor = (item: ContentItem): boolean => {
@@ -106,6 +109,27 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
         fetchCommentCounts();
     }, []); // Only run on mount
 
+    const handleCloseLightbox = useCallback(() => {
+        setSelectedImage(null);
+    }, []);
+
+    const handleImageLikeChange = useCallback((newLiked: boolean, newCount: number) => {
+        if (!selectedImage) return;
+        setSelectedImage(prev => prev ? {
+            ...prev,
+            likedByCurrentUser: newLiked,
+            likes: newLiked
+                ? [...(prev.likes || []), user?.id || '']
+                : (prev.likes || []).filter(id => id !== user?.id),
+        } : null);
+    }, [selectedImage, user?.id]);
+
+    const handleImageDeleted = useCallback(() => {
+        if (!selectedImage) return;
+        setContent(prev => prev.filter(item => item.id !== selectedImage.id));
+        handleCloseLightbox();
+    }, [selectedImage, handleCloseLightbox]);
+
     useCommentCountSocket(socket, setContent);
 
     // Show only memories and posts (exclude standalone images)
@@ -145,11 +169,13 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                                 onDeleted={handleDeleted}
                                 onEdit={handleEdit as (item: Memory | Post) => void}
                                 onFlag={handleFlag}
+                                onImageClick={setSelectedImage}
                             />
                         ) : (
                             <ContentItemCard
                                 key={`${item.contentType}-${item.id}`}
                                 item={item}
+                                onImageClick={setSelectedImage}
                             />
                         )
                     )
@@ -177,6 +203,46 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                         editItem={editingItem as Memory | undefined}
                     />
                 </Modal>
+            )}
+
+            {/* Image Lightbox */}
+            {selectedImage && (
+                <div
+                    className='fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50'
+                    onClick={handleCloseLightbox}
+                >
+                    <div className='relative max-w-5xl w-full h-full flex items-center justify-center p-4'>
+                        <NextImage
+                            src={
+                                selectedImage.variants.find(v => v.size === 'original')?.url ||
+                                selectedImage.variants[0].url
+                            }
+                            alt={selectedImage.alt || 'Image'}
+                            fill
+                            style={{ objectFit: 'contain' }}
+                            sizes='100vw'
+                            onClick={e => e.stopPropagation()}
+                        />
+                        <button
+                            className='absolute top-4 right-4 bg-white rounded-full px-3 py-1 shadow text-black z-10'
+                            onClick={handleCloseLightbox}
+                        >
+                            ✕
+                        </button>
+                        <ImageModalMenu
+                            imageId={selectedImage.id}
+                            currentUserId={user?.id}
+                            currentUserRole={user?.role}
+                            initialLiked={selectedImage.likedByCurrentUser}
+                            initialLikeCount={selectedImage.likes?.length || 0}
+                            initialCommentCount={selectedImage.commentCount || 0}
+                            authorized={selectedImage.userId === user?.id}
+                            isAvatar={user?.avatar?.id === selectedImage.id}
+                            onDeleted={handleImageDeleted}
+                            onLikeChange={handleImageLikeChange}
+                        />
+                    </div>
+                </div>
             )}
 
             {/* Post Modal */}
