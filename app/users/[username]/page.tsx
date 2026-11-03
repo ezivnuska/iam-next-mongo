@@ -6,7 +6,6 @@ import { auth } from '@/app/lib/auth';
 import { redirect } from 'next/navigation';
 import UserProfileCard from '@/app/ui/user/user-profile-card';
 import UserContentFeed from '@/app/ui/user/user-content-feed';
-import Breadcrumbs from '@/app/ui/layout/breadcrumbs';
 import { getUserContent } from '@/app/lib/actions/user-content';
 import PageContent from '@/app/ui/layout/page/page-content';
 
@@ -28,13 +27,6 @@ export default async function UserProfilePage({ params }: Props) {
 
     return (
         <PageContent>
-            <Breadcrumbs
-                breadcrumbs={[
-                    { label: 'Users', href: '/users' },
-                    { label: username, href: `/users/${username}`, active: true },
-                    { label: 'Images', href: `/users/${username}/images` },
-                ]}
-            />
             <UserProfileCard username={username} />
             <UserContentFeed initialContent={content} editable={isOwnProfile} />
         </PageContent>

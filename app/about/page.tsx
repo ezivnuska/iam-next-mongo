@@ -36,13 +36,7 @@ const pages = [
 export default function AboutPage() {
     return (
         <PageContent>
-            <PageHeader
-                useBreadcrumbs={true}
-                breadcrumbs={[
-                    { label: 'About', href: '/about', active: true }
-                ]}
-                subtitle='About Me'
-            />
+            <PageHeader subtitle='About Me' />
 
             <div className='grid gap-4 px-2 pb-8'>
                 {pages.map((page) => {

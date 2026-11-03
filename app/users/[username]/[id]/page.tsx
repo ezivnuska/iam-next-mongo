@@ -6,8 +6,8 @@ import { auth } from '@/app/lib/auth';
 import { redirect, notFound } from 'next/navigation';
 import { getContentDetailByUsername } from '@/app/lib/actions/content-detail';
 import PageContent from '@/app/ui/layout/page/page-content';
-import Breadcrumbs from '@/app/ui/layout/breadcrumbs';
 import ContentDetailView from '@/app/ui/content-detail-view';
+import { SetBreadcrumbLabel } from '@iam/ui';
 import type { Metadata } from 'next';
 import { isMemory, isPost, isImage } from '@/app/lib/utils/content-helpers';
 
@@ -74,13 +74,7 @@ export default async function ContentDetailPage({ params }: Props) {
 
     return (
         <PageContent>
-            <Breadcrumbs
-                breadcrumbs={[
-                    { label: 'Users', href: '/users' },
-                    { label: username, href: `/users/${username}` },
-                    { label: contentLabel, href: `/users/${username}/${id}`, active: true },
-                ]}
-            />
+            <SetBreadcrumbLabel segment={id} label={contentLabel} />
             <ContentDetailView item={content} />
         </PageContent>
     );

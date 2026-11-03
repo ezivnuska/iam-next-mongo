@@ -12,13 +12,7 @@ export default function SandboxPage() {
 
     return (
         <PageContent>
-            <PageHeader
-                useBreadcrumbs={true}
-                breadcrumbs={[
-                    { label: 'Sandbox', href: '/sandbox', active: true }
-                ]}
-                subtitle='Custom Component Playground'
-            />
+            <PageHeader subtitle='Custom Component Playground' />
 
             <div className='flex flex-1 w-full border border-white'>
                 <div className='flex flex-col w-full border border-white'>

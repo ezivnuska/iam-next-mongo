@@ -14,14 +14,7 @@ export const metadata: Metadata = {
 export default function EricDetailPage() {
     return (
         <PageContent>
-            <PageHeader
-                useBreadcrumbs={true}
-                breadcrumbs={[
-                    { label: 'About Eric', href: '/about' },
-                    { label: 'About Me', href: '/about/eric', active: true }
-                ]}
-                subtitle='Professional Background'
-            />
+            <PageHeader subtitle='Professional Background' />
 
             <div className='px-2 pb-8'>
                 <Accordion>

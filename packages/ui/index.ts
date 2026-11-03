@@ -10,9 +10,13 @@ export { default as PageHeader } from './components/page-header';
 export { default as Breadcrumbs } from './components/breadcrumbs';
 export { default as UserAvatar } from './components/user-avatar';
 export { ThemeProvider, useTheme } from './providers/theme-provider';
+export { BreadcrumbProvider, useSetBreadcrumbLabel } from './providers/breadcrumb-provider';
+export { default as SetBreadcrumbLabel } from './components/set-breadcrumb-label';
 export { useScreenOrientation } from './hooks/use-screen-orientation';
 export { useHorizontalLayout } from './hooks/use-horizontal-layout';
 export { useContentLoaded } from './hooks/use-content-loaded';
+export { useBreadcrumbs } from './hooks/use-breadcrumbs';
+export type { Breadcrumb } from './hooks/use-breadcrumbs';
 export type { ScreenOrientation } from './hooks/use-screen-orientation';
 export { ubuntu } from './fonts';
 export {

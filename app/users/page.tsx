@@ -4,7 +4,6 @@ export const dynamic = 'force-dynamic';
 
 import { getUsers } from '@/app/lib/actions/users';
 import UserList from '@/app/ui/user/user-list';
-import PageHeader from '@/app/ui/layout/page-header';
 import { auth } from '@/app/lib/auth';
 import { redirect } from 'next/navigation';
 import PageContent from '@/app/ui/layout/page/page-content';
@@ -20,12 +19,6 @@ export default async function Page() {
 
     return (
         <PageContent>
-            <PageHeader
-                useBreadcrumbs={true}
-                breadcrumbs={[
-                    { label: 'Users', href: '/users', active: true }
-                ]}
-            />
             <UserList users={users || []} />
         </PageContent>
     );

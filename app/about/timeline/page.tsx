@@ -13,14 +13,7 @@ export const metadata: Metadata = {
 export default function TimelinePage() {
     return (
         <PageContent>
-            <PageHeader
-                useBreadcrumbs={true}
-                breadcrumbs={[
-                    { label: 'About', href: '/about' },
-                    { label: 'Timeline', href: '/about/timeline', active: true }
-                ]}
-                subtitle='Career History'
-            />
+            <PageHeader subtitle='Career History' />
             <div className='px-2 pb-8'>
                 <TimelineFeed />
             </div>

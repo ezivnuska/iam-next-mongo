@@ -14,14 +14,7 @@ export const metadata: Metadata = {
 export default function WorkPage() {
     return (
         <PageContent>
-            <PageHeader
-                useBreadcrumbs={true}
-                breadcrumbs={[
-                    { label: 'About', href: '/about' },
-                    { label: 'Work', href: '/about/work', active: true }
-                ]}
-                subtitle='Professional Experience'
-            />
+            <PageHeader subtitle='Professional Experience' />
 
             <div className='px-2 pb-8'>
                 <WorkTimeline jobs={jobs} />
