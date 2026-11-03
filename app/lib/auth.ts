@@ -9,6 +9,7 @@ import UserModel from "@/app/lib/models/user";
 import "@/app/lib/models/image"; // Required for populate("avatar")
 import bcrypt from "bcrypt";
 import { UserRole } from "@/app/lib/definitions/user";
+import { VERIFICATION_CUTOFF } from "@/app/lib/constants";
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -50,7 +51,6 @@ export const authOptions: NextAuthConfig = {
         const isValid = await bcrypt.compare(password, userDoc.password);
         if (!isValid) return null;
 
-        const VERIFICATION_CUTOFF = new Date("2026-10-24T00:00:00.000Z");
         if (userDoc.createdAt >= VERIFICATION_CUTOFF && !userDoc.verified) return null;
 
         return {

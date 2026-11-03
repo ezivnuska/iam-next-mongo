@@ -7,7 +7,7 @@ import { ZodError } from 'zod'
 import bcrypt from 'bcrypt'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import UserModel from '@/app/lib/models/user'
-import { loginRateLimit } from '../../middleware/rate-limit'
+import { loginRateLimit, registerRateLimit } from '../../middleware/rate-limit'
 import { signMobileToken } from '@/app/lib/jwt'
 import { loginRequestSchema, registerRequestSchema } from '../../lib/schemas/auth'
 
@@ -42,7 +42,7 @@ auth.post('/api/mobile/login', loginRateLimit, async (c) => {
   }
 })
 
-auth.post('/api/mobile/register', async (c) => {
+auth.post('/api/mobile/register', registerRateLimit, async (c) => {
   try {
     const { email, password, username } = registerRequestSchema.parse(await c.req.json())
 

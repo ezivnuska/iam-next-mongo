@@ -16,33 +16,20 @@ export function getIO(): SocketIOServer | null {
 
 export async function emitViaAPI(event: string, data: unknown, room?: string, excludeUserId?: string) {
 	const io = global.io
-	if (io) {
-		if (excludeUserId) {
-			const sockets = await io.fetchSockets()
-			for (const socket of sockets) {
-				if ((socket.data as { userId?: string }).userId !== excludeUserId) {
-					if (!room || socket.rooms.has(room)) socket.emit(event, data)
-				}
-			}
-		} else if (room) {
-			io.to(room).emit(event, data)
-		} else {
-			io.emit(event, data)
-		}
-		return
+	if (!io) {
+		throw new Error('Socket.IO is not initialized')
 	}
 
-	const response = await fetch(`http://localhost:${process.env.PORT ?? '3000'}/api/socket/emit`, {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			'x-internal-secret': process.env.INTERNAL_SECRET ?? '',
-		},
-		body: JSON.stringify({ event, data, room, excludeUserId }),
-	})
-
-	if (!response.ok) {
-		const errorText = await response.text()
-		throw new Error(`Socket emit failed: ${errorText}`)
+	if (excludeUserId) {
+		const sockets = await io.fetchSockets()
+		for (const socket of sockets) {
+			if ((socket.data as { userId?: string }).userId !== excludeUserId) {
+				if (!room || socket.rooms.has(room)) socket.emit(event, data)
+			}
+		}
+	} else if (room) {
+		io.to(room).emit(event, data)
+	} else {
+		io.emit(event, data)
 	}
 }
