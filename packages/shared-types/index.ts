@@ -404,28 +404,69 @@ export const IMAGE_SIZES = {
 } as const;
 
 // ---------------------------------------------------------------------------
+// Poker primitives (wire-format — no Mongoose, no game-engine deps)
+// ---------------------------------------------------------------------------
+
+export type PokerSuit = 'hearts' | 'clubs' | 'diamonds' | 'spades'
+
+export interface PokerCard {
+	id: string
+	type: number
+	suit: PokerSuit
+	color: string
+	label: string
+	symbol: string
+}
+
+export interface PokerBet {
+	player: string
+	chipCount: number
+}
+
+export interface PokerPlayer {
+	id: string
+	username: string
+	hand: PokerCard[]
+	chipCount: number
+	lastHeartbeat?: Date | string
+	folded?: boolean
+	isAllIn?: boolean
+	allInAmount?: number
+	isAI?: boolean
+	isAway?: boolean
+	isGuest?: boolean
+}
+
+export interface PokerWinner {
+	winnerId: string
+	winnerName: string
+	handRank: string
+	isTie: boolean
+	tiedPlayers?: string[]
+}
+
+// ---------------------------------------------------------------------------
 // Poker socket payloads
 // ---------------------------------------------------------------------------
 
 export interface PokerStateUpdatePayload {
 	_id?: string
-	players: any[]
-	deck: any[]
-	communalCards: any[]
-	pot: any[]
+	players: PokerPlayer[]
+	deck: PokerCard[]
+	communalCards: PokerCard[]
+	pot: PokerBet[]
 	stage: number
 	locked: boolean
 	lockTime?: string
 	currentPlayerIndex: number
 	dealerButtonPosition?: number
 	playerBets: number[]
-	winner?: {
-		winnerId: string
-		winnerName: string
-		handRank: string
-		isTie: boolean
-		tiedPlayers?: string[]
-	}
+	winner?: PokerWinner
+	// Extended fields emitted by server but not in the base schema
+	stages?: unknown[]
+	actionHistory?: unknown[]
+	actionTimer?: unknown
+	autoAdvanceMode?: boolean
 }
 
 export interface PokerGameDeletedPayload {
@@ -439,7 +480,7 @@ export interface PokerJoinGamePayload {
 }
 
 export interface PokerJoinSuccessPayload {
-	gameState: any
+	gameState: unknown
 }
 
 export interface PokerJoinErrorPayload {
@@ -450,18 +491,21 @@ export interface PokerPlayerJoinedPayload {
 	player: {
 		id: string
 		username: string
-		chips: any[]
-		hand: any[]
+		chipCount: number
+		hand: PokerCard[]
 	}
-	players: any[] // Full updated players array
+	players: PokerPlayer[]
 	playerCount: number
+	actionHistory?: unknown[]
+	lockTime?: string
 }
 
 export interface PokerPlayerLeftPayload {
 	playerId: string
-	players: any[] // Full updated players array
+	players: PokerPlayer[]
 	playerCount: number
-	gameReset?: boolean // True if game was reset due to only 1 player remaining
+	gameReset?: boolean
+	actionHistory?: unknown[]
 }
 
 export interface PokerSetPresencePayload {
@@ -472,40 +516,41 @@ export interface PokerSetPresencePayload {
 export interface PokerPlayerPresenceUpdatedPayload {
 	playerId: string
 	isAway: boolean
+	username?: string
 }
 
 export interface PokerGameLockedPayload {
 	locked: true
 	stage: number
-	players: any[] // Players with dealt cards
+	players: PokerPlayer[]
 	currentPlayerIndex: number
 	lockTime?: string
+	actionHistory?: unknown[]
 }
 
 // Granular event payloads
 export interface PokerBetPlacedPayload {
 	playerIndex: number
 	chipCount: number
-	pot: any[]
+	pot: PokerBet[]
 	playerBets: number[]
 	currentPlayerIndex: number
+	players?: PokerPlayer[]
+	actionHistory?: unknown[]
 }
 
 export interface PokerCardsDealtPayload {
 	stage: number
-	communalCards: any[]
-	deckCount: number
+	communalCards: PokerCard[]
+	deck: PokerCard[]
+	players?: PokerPlayer[]
+	currentPlayerIndex?: number
+	stages?: unknown[]
 }
 
 export interface PokerRoundCompletePayload {
-	winner: {
-		winnerId: string
-		winnerName: string
-		handRank: string
-		isTie: boolean
-		tiedPlayers?: string[]
-	}
-	players: any[] // Updated with chips awarded
+	winner: PokerWinner
+	players: PokerPlayer[]
 }
 
 // Timer event payloads
@@ -638,7 +683,7 @@ export interface PokerNotificationPayload {
 	countdownSeconds?: number;
 
 	// Pot synchronization data (included with betting actions and blinds)
-	pot?: any[];
+	pot?: PokerBet[];
 	playerBets?: number[];
 	currentPlayerIndex?: number;
 }
