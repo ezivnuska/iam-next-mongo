@@ -34,6 +34,7 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
     const [modalType, setModalType] = useState<ModalType>(null);
     const [editingItem, setEditingItem] = useState<Memory | Post | undefined>(undefined);
     const [selectedImage, setSelectedImage] = useState<Image | null>(null);
+    const [openWithComments, setOpenWithComments] = useState(false);
 
     // Check if current user is the author of an item
     const isCurrentUserAuthor = (item: ContentItem): boolean => {
@@ -111,6 +112,12 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
 
     const handleCloseLightbox = useCallback(() => {
         setSelectedImage(null);
+        setOpenWithComments(false);
+    }, []);
+
+    const handleCommentImageClick = useCallback((image: Image) => {
+        setOpenWithComments(true);
+        setSelectedImage(image);
     }, []);
 
     const handleImageLikeChange = useCallback((newLiked: boolean, newCount: number) => {
@@ -170,12 +177,14 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                                 onEdit={handleEdit as (item: Memory | Post) => void}
                                 onFlag={handleFlag}
                                 onImageClick={setSelectedImage}
+                                onCommentImageClick={handleCommentImageClick}
                             />
                         ) : (
                             <ContentItemCard
                                 key={`${item.contentType}-${item.id}`}
                                 item={item}
                                 onImageClick={setSelectedImage}
+                                onCommentImageClick={handleCommentImageClick}
                             />
                         )
                     )
@@ -238,6 +247,7 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                             initialCommentCount={selectedImage.commentCount || 0}
                             authorized={selectedImage.userId === user?.id}
                             isAvatar={user?.avatar?.id === selectedImage.id}
+                            initialExpanded={openWithComments}
                             onDeleted={handleImageDeleted}
                             onLikeChange={handleImageLikeChange}
                         />

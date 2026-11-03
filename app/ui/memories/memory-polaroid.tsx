@@ -24,6 +24,7 @@ interface MemoryPolaroidProps {
     initialLikeCount?: number;
     initialCommentCount?: number;
     autoExpandComments?: boolean;
+    onCommentClick?: () => void;
   };
   editable?: boolean;
   canEdit?: boolean;
@@ -122,6 +123,7 @@ export default function MemoryPolaroid({
             initialLikeCount={interactions.initialLikeCount || 0}
             initialCommentCount={interactions.initialCommentCount || 0}
             autoExpandComments={interactions.autoExpandComments}
+            onCommentClick={interactions.onCommentClick}
           />
         </div>
       )}

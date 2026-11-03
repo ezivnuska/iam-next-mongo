@@ -22,6 +22,7 @@ interface ContentCardProps {
         initialLikeCount?: number;
         initialCommentCount?: number;
         autoExpandComments?: boolean;
+        onCommentClick?: () => void;
     };
     children: React.ReactNode;
 }
@@ -62,6 +63,7 @@ export default function ContentCard({
                         initialLikeCount={interactions.initialLikeCount || 0}
                         initialCommentCount={interactions.initialCommentCount || 0}
                         autoExpandComments={interactions.autoExpandComments}
+                        onCommentClick={interactions.onCommentClick}
                     />
                 )}
             </div>

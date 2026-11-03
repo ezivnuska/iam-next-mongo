@@ -19,6 +19,7 @@ type ImageModalMenuProps = {
 	initialCommentCount?: number
 	authorized?: boolean
 	isAvatar?: boolean
+	initialExpanded?: boolean
 	onDeleted?: () => void
 	onLikeChange?: (newLiked: boolean, newCount: number) => void
 	onCommentCountChange?: (newCount: number) => void
@@ -34,13 +35,14 @@ export default function ImageModalMenu({
 	initialCommentCount = 0,
 	authorized = false,
 	isAvatar = false,
+	initialExpanded = false,
 	onDeleted,
 	onLikeChange,
 	onCommentCountChange,
 	onAvatarChange,
 }: ImageModalMenuProps) {
 	const { user, setUser } = useUser()
-	const [expanded, setExpanded] = useState(false)
+	const [expanded, setExpanded] = useState(initialExpanded)
 	const [commentCount, setCommentCount] = useState(initialCommentCount)
 
 	const handleToggleExpanded = useCallback((e: React.MouseEvent) => {

@@ -17,6 +17,7 @@ import { useContentDelete } from '@/app/lib/hooks/use-content-delete';
 type ContentItemCardProps = {
   item: ContentItem;
   onImageClick?: (image: ImageType) => void;
+  onCommentImageClick?: (image: ImageType) => void;
   autoExpandComments?: boolean;
   editable?: boolean;
   onEdit?: (item: Memory | Post) => void;
@@ -27,6 +28,7 @@ type ContentItemCardProps = {
 export default function ContentItemCard({
   item,
   onImageClick,
+  onCommentImageClick,
   autoExpandComments,
   editable = false,
   onEdit,
@@ -58,6 +60,9 @@ export default function ContentItemCard({
           initialLikeCount: memory.likes?.length || 0,
           initialCommentCount: memory.commentCount || 0,
           autoExpandComments,
+          onCommentClick: memory.image
+            ? (onCommentImageClick ? () => onCommentImageClick(memory.image!) : onImageClick ? () => onImageClick(memory.image!) : undefined)
+            : undefined,
         }}
         editable={editable}
         canEdit={canEdit}
@@ -85,6 +90,9 @@ export default function ContentItemCard({
           initialLikeCount: post.likes?.length || 0,
           initialCommentCount: post.commentCount || 0,
           autoExpandComments,
+          onCommentClick: post.image
+            ? (onCommentImageClick ? () => onCommentImageClick(post.image!) : onImageClick ? () => onImageClick(post.image!) : undefined)
+            : undefined,
         }}
       >
         <ContentImage
