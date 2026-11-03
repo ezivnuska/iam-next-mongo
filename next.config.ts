@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import path from 'path';
 
 const nextConfig: NextConfig = {
     transpilePackages: ['@iam/shared-types', '@iam/db', '@iam/ui'],
@@ -50,6 +51,16 @@ const nextConfig: NextConfig = {
         ],
     },
     webpack: (config, { isServer }) => {
+        // Resolve @iam/* directly to source so webpack watches packages/* at their
+        // real path — pnpm hardlinks cause filesystem events to fire on the source
+        // path, not the node_modules symlink chain, so the alias is required for HMR.
+        config.resolve.alias = {
+            ...config.resolve.alias,
+            '@iam/ui':          path.resolve(__dirname, 'packages/ui'),
+            '@iam/db':          path.resolve(__dirname, 'packages/db'),
+            '@iam/shared-types': path.resolve(__dirname, 'packages/shared-types'),
+        };
+
         // Exclude server-only packages from client bundle
         if (!isServer) {
             config.resolve.alias = {

@@ -39,7 +39,7 @@ export default function Screen({
                 <div className={clsx('flex shrink-0', {
                     'flex-row w-full max-w-content mx-auto items-center justify-between py-2 gap-4 px-4': !horizontalLayout,
                     'flex-col py-4 px-4': horizontalLayout,
-                    'justify-between': horizontalLayout && loggedIn,
+                    'justify-between': horizontalLayout && (loggedIn || !!nav),
                 })}>
                     {loggedIn ? (
                         <>
@@ -53,7 +53,10 @@ export default function Screen({
                             </div>
                         </>
                     ) : (
-                        <Brand href={brandHref} />
+                        <>
+                            <Brand href={brandHref} />
+                            {nav && <div>{nav}</div>}
+                        </>
                     )}
                 </div>
 

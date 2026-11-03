@@ -5,6 +5,7 @@
 import { Suspense } from 'react';
 import { Screen } from '@iam/ui';
 import UserButton from '@/app/ui/header/user-button';
+import SigninButton from '@/app/ui/auth/signin-button';
 import AuthRedirectHandler from '@/app/ui/auth/auth-redirect-handler';
 
 interface SimpleScreenProps {
@@ -24,7 +25,9 @@ export default function SimpleScreen({ children, showLoading = true, loggedIn = 
                 >
                     games
                 </a>
-            ) : undefined}
+            ) : (
+                <SigninButton />
+            )}
             extras={
                 <Suspense fallback={null}>
                     <AuthRedirectHandler />

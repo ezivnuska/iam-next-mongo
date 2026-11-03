@@ -27,7 +27,7 @@ interface UserProviderProps {
 
 export function UserProvider({ children, initialUser }: UserProviderProps) {
     const [user, setUser] = useState<User | null>(null);
-    const [status, setStatus] = useState<AuthStatus>("loading");
+    const [status, setStatus] = useState<AuthStatus>(initialUser ? "loading" : "unauthenticated");
 
     const [userCache] = useState<Map<string, User>>(new Map());
 
