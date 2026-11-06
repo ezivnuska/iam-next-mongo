@@ -13,6 +13,8 @@ export { BreadcrumbProvider, useSetBreadcrumbLabel } from './providers/breadcrum
 export { default as SetBreadcrumbLabel } from './components/set-breadcrumb-label';
 export { useHorizontalLayout } from './hooks/use-horizontal-layout';
 export { useContentLoaded } from './hooks/use-content-loaded';
+export { useScreenOrientation } from './hooks/use-screen-orientation';
+export type { ScreenOrientation } from './hooks/use-screen-orientation';
 export { ubuntu } from './fonts';
 export {
     HeartIcon,
