@@ -4,7 +4,7 @@
 
 import { Suspense } from 'react';
 import Link from 'next/link';
-import { Screen } from '@iam/ui';
+import { Screen, useHorizontalLayout } from '@iam/ui';
 import UserButton from '@/app/ui/header/user-button';
 import SigninButton from '@/app/ui/auth/signin-button';
 import AuthRedirectHandler from '@/app/ui/auth/auth-redirect-handler';
@@ -18,11 +18,13 @@ interface SimpleScreenProps {
 }
 
 export default function SimpleScreen({ children, showLoading = true, loggedIn = false }: SimpleScreenProps) {
+    const horizontalLayout = useHorizontalLayout();
+
     return (
         <Screen
             userControls={loggedIn ? <UserButton /> : undefined}
             nav={loggedIn ? (
-                <div className='flex items-center gap-2'>
+                <div className={horizontalLayout ? 'flex flex-col items-center gap-2' : 'flex items-center gap-2'}>
                     <Link
                         href='/feed'
                         className='flex items-center justify-center text-gray-700 hover:text-gray-500 transition-colors'

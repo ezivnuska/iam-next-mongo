@@ -22,8 +22,8 @@ export function RepoCard({ repo }: { repo: Repo }) {
       >
         <CodeBracketIcon className='w-5 h-5 text-gray-400 shrink-0 mt-0.5' />
         <div className='flex-1 min-w-0'>
-          <span className='text-gray-900 font-medium truncate block'>{repo.name}</span>
-          <div className='text-gray-400 text-xs mt-0.5'>
+          <span className='text-gray-900 font-medium break-words'>{repo.name}</span>
+          <div className='text-gray-400 text-xs mt-0.5 break-words'>
             {formatIsoDate(repo.first_commit_at)} – {formatIsoDate(repo.pushed_at)}
             {repo.language && <span> · {repo.language}</span>}
           </div>
@@ -42,7 +42,7 @@ export function RepoCard({ repo }: { repo: Repo }) {
       <div className={`overflow-hidden transition-all duration-300 ${expanded ? 'max-h-[400px]' : 'max-h-0'}`}>
         <div className='px-4 pb-4 space-y-2'>
           {repo.description && (
-            <p className='text-sm text-gray-600'>{repo.description}</p>
+            <p className='text-sm text-gray-600 break-words'>{repo.description}</p>
           )}
           {repo.topics.length > 0 && (
             <div className='flex flex-wrap gap-1.5'>

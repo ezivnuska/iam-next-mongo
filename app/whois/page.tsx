@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function WhoisPage() {
     return (
         <PageContent>
-            <PageHeader subtitle='Who is Eric?' />
+            {/* <PageHeader subtitle='Who is Eric?' /> */}
             <div className='px-2 pb-8'>
                 <TimelineFeed />
             </div>

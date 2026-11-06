@@ -32,7 +32,7 @@ export default function Screen({
     return (
         <BreadcrumbProvider>
             <div className='w-screen h-screen flex overflow-hidden bg-gray-300'>
-                <div className={clsx('flex w-full m-2 min-h-0', {
+                <div className={clsx('flex flex-1 m-2 min-h-0', {
                     'flex-col': !horizontalLayout,
                     'flex-row': horizontalLayout,
                 })}>
@@ -80,7 +80,7 @@ export default function Screen({
                         )}
                     </div>
 
-                    <main className={clsx('flex flex-col flex-1 min-h-0 min-w-0 overflow-auto bg-white', {
+                    <main className={clsx('flex flex-col flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden bg-white', {
                         'rounded-t-2xl': !horizontalLayout,
                         'rounded-2xl py-5': horizontalLayout,
                     })}>
