@@ -1,6 +1,6 @@
 // app/lib/utils/transformers/content.ts
 
-import { transformPopulatedImage, transformPopulatedAuthor } from '@/app/lib/utils/transformers'
+import { transformPopulatedImage, transformPopulatedAuthor } from '@iam/db'
 import { getCommentCounts } from '@/app/lib/actions/comments'
 import type { Entry } from '@/app/lib/definitions/entry'
 import type { Image as ImageType } from '@/app/lib/definitions/image'

@@ -1,6 +1,6 @@
 // app/api/pledges/[id]/route.ts
 
-import { isValidObjectId } from '@/app/lib/utils/validation'
+import { isValidObjectId } from '@iam/shared-types'
 import { NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import Pledge from '@/app/lib/models/pledge'
