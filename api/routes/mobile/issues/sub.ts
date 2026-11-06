@@ -12,7 +12,8 @@ import {
   serializeApplicant,
   serializePledge,
 } from '@/app/lib/mobile/serializers'
-import { isValidObjectId, USER_WITH_AVATAR_POPULATE, APPLICANT_FULL_POPULATE } from '@/app/lib/utils/validation'
+import { isValidObjectId } from '@iam/shared-types'
+import { USER_WITH_AVATAR_POPULATE, APPLICANT_FULL_POPULATE } from '@iam/db'
 import { calculateApprovalRate } from '@/app/lib/utils/ratingUtils'
 import { midnightFollowingDay } from '@/app/lib/mobile/deadlines'
 import { settleIssue } from '@/app/lib/mobile/settleIssue'

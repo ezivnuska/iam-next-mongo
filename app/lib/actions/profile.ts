@@ -5,7 +5,7 @@
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "../models/user";
 import "@/app/lib/models/image"; // Required for populate("avatar")
-import { normalizeUser } from "../utils/normalizers";
+import { normalizeUser } from '@iam/db';
 import { requireAuth } from "@/app/lib/utils/auth";
 
 export async function getProfile() {

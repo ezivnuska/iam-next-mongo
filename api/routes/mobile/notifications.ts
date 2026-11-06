@@ -7,7 +7,7 @@ import { Hono } from 'hono'
 import { ZodError } from 'zod'
 import { authMiddleware, TokenPayload } from '../../middleware/auth'
 import { connectToDatabase } from '@/app/lib/mongoose'
-import { isValidObjectId } from '@/app/lib/utils/validation'
+import { isValidObjectId } from '@iam/shared-types'
 import UserModel from '@/app/lib/models/user'
 import {
   registerPushTokenRequestSchema,

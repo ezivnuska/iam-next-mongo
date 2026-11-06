@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
 import "@/app/lib/models/image"; // Required for populate("avatar")
-import { normalizePublicUser } from "@/app/lib/utils/normalizers";
+import { normalizePublicUser } from '@iam/db';
 
 export async function GET(req: Request, { params }: { params: Promise<{ username: string }> }) {
   try {
