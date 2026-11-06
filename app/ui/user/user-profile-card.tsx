@@ -4,8 +4,8 @@
 
 import { useEffect, useState } from 'react';
 import { useUser } from '@/app/lib/providers/user-provider';
-import UserAvatar from '@/app/ui/user/user-avatar';
-import BioForm from '@/app/profile/bio-form';
+import UserIdentity from '@/app/ui/user/user-identity';
+import UserBio from '@/app/ui/user/user-bio';
 import SignOutButton from '@/app/ui/auth/signout-button';
 import type { User } from '@/app/lib/definitions';
 
@@ -48,29 +48,19 @@ export default function UserProfileCard({ username }: UserProfileCardProps) {
     if (loading) return <p>Loading...</p>;
     if (!displayUser) return <p>User not found</p>;
 
+    if (isCurrentUser) {
+        return (
+            <div className='flex flex-row items-start gap-4 pr-1'>
+                <UserBio bio={displayUser.bio} editable />
+                <SignOutButton />
+            </div>
+        );
+    }
+
     return (
-        <div className='flex flex-1 flex-row flex-wrap gap-4'>
-            <div className='w-[64px] h-[64px]'>
-                <UserAvatar
-                    username={displayUser.username}
-                    avatar={displayUser.avatar}
-                    size={64}
-                />
-            </div>
-            <div className='flex flex-1 flex-col gap-2'>
-                <div className='flex flex-1 flex-row items-center gap-4 pr-1'>
-                    <h1 className='flex-1 text-2xl font-bold text-gray-900'>
-                        {displayUser.username}
-                    </h1>
-                    {isCurrentUser && <SignOutButton />}
-                </div>
-                <div className='flex flex-1 flex-row items-start gap-4 pr-1'>
-                    <p className='flex flex-1 text-gray-600'>
-                        {displayUser.bio || ''}
-                    </p>
-                    {isCurrentUser && <BioForm />}
-                </div>
-            </div>
+        <div className='flex flex-col gap-2'>
+            <UserIdentity username={displayUser.username} avatar={displayUser.avatar} />
+            <UserBio bio={displayUser.bio} />
         </div>
     );
 }

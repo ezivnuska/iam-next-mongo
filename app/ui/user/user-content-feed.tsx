@@ -119,16 +119,16 @@ export default function UserContentFeed({ initialContent, editable = false, user
     useCommentCountSocket(socket, setContent);
 
     const filteredContent = filterCommentableContent(content).filter(item =>
-        item.contentType === activeTab
+        !editable || item.contentType === activeTab
     );
 
     return (
         <div className='w-full max-w-[600px] pb-4'>
-            {username && (
+            {username && editable && (
                 <ProfileTabBar
                     username={username}
                     activeTab={activeTab}
-                    isOwnProfile={editable}
+                    isOwnProfile={true}
                     onTabChange={setActiveTab}
                 />
             )}

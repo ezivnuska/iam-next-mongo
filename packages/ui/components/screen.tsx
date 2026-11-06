@@ -6,7 +6,6 @@ import { useHorizontalLayout } from '../hooks/use-horizontal-layout';
 import { useContentLoaded } from '../hooks/use-content-loaded';
 import { BreadcrumbProvider } from '../providers/breadcrumb-provider';
 import Brand from './brand';
-import BreadcrumbNav from './breadcrumb-nav';
 import LoadingSpinner from './loading-spinner';
 
 interface ScreenProps {
@@ -48,7 +47,6 @@ export default function Screen({
                             loggedIn ? (
                                 <>
                                     <div>{userControls}</div>
-                                    <BreadcrumbNav />
                                     <div className='flex flex-col items-center gap-4'>
                                         {nav}
                                         <Brand href={brandHref} />
@@ -57,7 +55,6 @@ export default function Screen({
                             ) : (
                                 <>
                                     <Brand href={brandHref} />
-                                    <BreadcrumbNav />
                                     {nav && <div>{nav}</div>}
                                 </>
                             )
@@ -79,7 +76,6 @@ export default function Screen({
                                         </>
                                     )}
                                 </div>
-                                <BreadcrumbNav />
                             </>
                         )}
                     </div>
