@@ -13,34 +13,6 @@ import { CONTENT_POPULATE_CONFIG } from "@/app/lib/utils/db-query-config";
 
 export type { ContentItem };
 
-export async function getContentDetail(
-  type: 'post' | 'memory',
-  id: string
-): Promise<ContentItem | null> {
-  if (type !== 'post' && type !== 'memory') return null;
-  if (!/^[a-f\d]{24}$/i.test(id)) return null;
-
-  const session = await auth();
-  const currentUserId = session?.user?.id;
-
-  await connectToDatabase();
-
-  const entry = await EntryModel.findOne({ _id: id, contentType: type })
-    .populate(CONTENT_POPULATE_CONFIG)
-    .lean();
-
-  if (!entry) return null;
-
-  if (type === 'memory') {
-    const isAuthor = currentUserId === (entry.author as any)._id.toString();
-    if (!entry.shared && !isAuthor) return null;
-  }
-
-  const refType = type === 'memory' ? 'Memory' : 'Post';
-  const commentCounts = await getCommentCounts([id], refType);
-  return transformEntry(entry, commentCounts, currentUserId);
-}
-
 export async function getContentDetailByUsername(
   username: string,
   id: string

@@ -46,7 +46,7 @@ export default function SimpleScreen({ children, showLoading = true, loggedIn = 
                     <AuthRedirectHandler />
                 </Suspense>
             }
-            brandHref='/about/work'
+            brandHref='/whois'
             showLoading={showLoading}
         >
             {children}

@@ -54,10 +54,6 @@ export default function UserContentFeed({ initialContent, editable = false, user
         setModalType('entry');
     };
 
-    const handleFlag = (item: Entry) => {
-        // TODO: Implement flag functionality
-    };
-
     const handleCloseModal = () => {
         setModalType(null);
         setEditingItem(undefined);
@@ -150,7 +146,6 @@ export default function UserContentFeed({ initialContent, editable = false, user
                                 editable={true}
                                 onDeleted={handleDeleted}
                                 onEdit={handleEdit}
-                                onFlag={handleFlag}
                                 onImageClick={setSelectedImage}
                                 onCommentImageClick={handleCommentImageClick}
                             />
