@@ -31,14 +31,14 @@ export default function Screen({
 
     return (
         <BreadcrumbProvider>
-            <div className='w-screen h-screen flex overflow-hidden bg-gray-300'>
+            <div className='w-screen h-dvh flex overflow-hidden bg-gray-300'>
                 <div className={clsx('flex flex-1 m-2 min-h-0', {
                     'flex-col': !horizontalLayout,
                     'flex-row': horizontalLayout,
                 })}>
                     {extras}
 
-                    <div className={clsx('flex shrink-0', {
+                    <div className={clsx('flex shrink-0 overflow-hidden', {
                         'flex-col w-full': !horizontalLayout,
                         'flex-col py-4 px-2 w-24': horizontalLayout,
                         'justify-between': horizontalLayout && (loggedIn || !!nav),
