@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { useUser } from '@/app/lib/providers/user-provider';
 import UserAvatar from '@/app/ui/user/user-avatar';
 import BioForm from '@/app/profile/bio-form';
+import SignOutButton from '@/app/ui/auth/signout-button';
 import type { User } from '@/app/lib/definitions';
 
 interface UserProfileCardProps {
@@ -61,6 +62,7 @@ export default function UserProfileCard({ username }: UserProfileCardProps) {
                     <h1 className='flex-1 text-2xl font-bold text-gray-900'>
                         {displayUser.username}
                     </h1>
+                    {isCurrentUser && <SignOutButton />}
                 </div>
                 <div className='flex flex-1 flex-row items-start gap-4 pr-1'>
                     <p className='flex flex-1 text-gray-600'>
