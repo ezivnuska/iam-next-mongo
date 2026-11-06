@@ -18,7 +18,7 @@ export default function UserButton() {
 
     return (
         <Link href={profilePath} className='text-gray-700 hover:text-gray-500 transition-colors'>
-            <UserIdentity username={user.username} avatar={user.avatar} size={avatarSize} />
+            <UserIdentity username={user.username} avatar={user.avatar} size={avatarSize} stacked={horizontalLayout} />
         </Link>
     );
 }
