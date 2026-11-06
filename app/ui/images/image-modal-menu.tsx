@@ -8,7 +8,7 @@ import DeleteButtonWithConfirm from '@/app/ui/delete-button-with-confirm'
 import AvatarButton from '@/app/ui/user/set-avatar-button'
 import CommentPanel from '@/app/ui/comments/comment-panel'
 import { useUser } from '@/app/lib/providers/user-provider'
-import { CommentIcon } from '@/app/ui/icons'
+import { CommentIcon } from '@iam/ui'
 
 type ImageModalMenuProps = {
 	imageId: string

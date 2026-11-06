@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
-import PageHeader from '@/app/ui/layout/page-header';
-import PageContent from '@/app/ui/layout/page/page-content';
+import { PageHeader } from '@iam/ui';
+import { PageContent } from '@iam/ui';
 import { TimelineFeed } from '@/app/about/timeline/components/TimelineFeed';
 
 export const metadata: Metadata = {

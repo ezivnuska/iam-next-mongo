@@ -3,11 +3,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Modal from '@/app/ui/modal';
+import { Modal } from '@iam/ui';
 import UploadForm from '@/app/ui/images/upload-form';
 import ImageGallery from './image-gallery';
 import type { Image } from '@/app/lib/definitions/image';
-import { Button } from '@/app/ui/button';
+import { Button } from '@iam/ui';
 import { getImages } from '@/app/lib/actions/images';
 import ProfileTabBar from '@/app/ui/user/profile-tab-bar';
 

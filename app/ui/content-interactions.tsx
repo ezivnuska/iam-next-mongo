@@ -9,7 +9,7 @@ import CommentFormModal from '@/app/ui/comments/comment-form-modal'
 import CommentSection from '@/app/ui/comments/comment-section'
 import { useComments } from '@/app/lib/hooks/use-comments'
 import { useUser } from '@/app/lib/providers/user-provider'
-import { CommentIcon } from '@/app/ui/icons'
+import { CommentIcon } from '@iam/ui'
 import type { CommentRefType } from '@/app/lib/definitions/comment'
 
 type ContentInteractionsProps = {

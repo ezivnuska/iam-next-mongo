@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation';
 import UserProfileCard from '@/app/ui/user/user-profile-card';
 import UserContentFeed from '@/app/ui/user/user-content-feed';
 import { getUserContent } from '@/app/lib/actions/user-content';
-import PageContent from '@/app/ui/layout/page/page-content';
+import { PageContent } from '@iam/ui';
 
 interface Props {
   params: Promise<{ username: string }>;

@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from 'react';
-import Modal from '@/app/ui/modal';
+import { Modal } from '@iam/ui';
 import SigninForm from './signin-form';
 import SignupForm from './signup-form';
 

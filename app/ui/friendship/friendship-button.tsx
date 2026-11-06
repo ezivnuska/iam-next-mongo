@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import FriendsMenu from '@/app/ui/friendship/friends-menu'
-import Modal from '@/app/ui/modal'
+import { Modal } from '@iam/ui'
 import { getFriendshipStatus } from '@/app/lib/actions/friendships'
 import { useFriendshipSocketEvents } from '@/app/lib/hooks/useFriendshipSocketEvents'
 import { useFriendshipActions } from '@/app/lib/hooks/useFriendshipActions'

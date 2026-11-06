@@ -8,7 +8,7 @@ import { toggleLike } from '@/app/lib/actions/likes'
 import { useSocket } from '@/app/lib/providers/socket-provider'
 import { SOCKET_EVENTS } from '@/app/lib/socket/events'
 import type { LikePayload } from '@/app/lib/socket/events'
-import { HeartIcon } from '@/app/ui/icons'
+import { HeartIcon } from '@iam/ui'
 
 type LikeButtonProps = {
 	itemId: string

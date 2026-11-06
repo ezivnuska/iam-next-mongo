@@ -4,7 +4,7 @@
 
 import { Button } from "@/app/ui/button";
 import { useState } from "react";
-import { TrashIcon } from '@/app/ui/icons'
+import { TrashIcon } from '@iam/ui'
 import { XMarkIcon } from "@heroicons/react/24/outline";
 
 interface DeleteButtonWithConfirmProps {

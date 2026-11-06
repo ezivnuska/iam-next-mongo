@@ -6,7 +6,7 @@ import { getUsers } from '@/app/lib/actions/users';
 import UserList from '@/app/ui/user/user-list';
 import { auth } from '@/app/lib/auth';
 import { redirect } from 'next/navigation';
-import PageContent from '@/app/ui/layout/page/page-content';
+import { PageContent } from '@iam/ui';
 
 export default async function Page() {
     // Server-side authentication check

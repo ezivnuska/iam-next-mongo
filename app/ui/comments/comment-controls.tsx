@@ -2,7 +2,7 @@
 
 'use client'
 
-import { CommentIcon, ChevronUpIcon } from '@/app/ui/icons'
+import { CommentIcon, ChevronUpIcon } from '@iam/ui'
 
 type CommentControlsProps = {
   commentCount: number

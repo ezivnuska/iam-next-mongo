@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 import { Metadata } from 'next';
 import { getPublicContent } from '@/app/lib/actions/public-content';
 import UserContentFeed from '@/app/ui/user/user-content-feed';
-import PageContent from '@/app/ui/layout/page/page-content';
+import { PageContent } from '@iam/ui';
 
 export const metadata: Metadata = {
     title: 'Feed',

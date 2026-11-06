@@ -2,7 +2,7 @@
 
 'use client';
 
-import { Button } from '@/app/ui/button';
+import { Button } from '@iam/ui';
 import { PencilIcon } from '@heroicons/react/24/outline';
 
 interface EditContentButtonProps {

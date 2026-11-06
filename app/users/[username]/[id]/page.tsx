@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 import { auth } from '@/app/lib/auth';
 import { redirect, notFound } from 'next/navigation';
 import { getContentDetailByUsername } from '@/app/lib/actions/content-detail';
-import PageContent from '@/app/ui/layout/page/page-content';
+import { PageContent } from '@iam/ui';
 import ContentDetailView from '@/app/ui/content-detail-view';
 import { SetBreadcrumbLabel } from '@iam/ui';
 import type { Metadata } from 'next';

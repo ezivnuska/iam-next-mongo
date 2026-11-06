@@ -2,7 +2,7 @@
 
 'use client'
 
-import Modal from '@/app/ui/modal'
+import { Modal } from '@iam/ui'
 import CommentForm from '@/app/ui/comments/comment-form'
 import type { CommentRefType } from '@/app/lib/definitions/comment'
 

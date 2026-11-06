@@ -3,7 +3,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from '@/app/ui/button'
+import { Button } from '@iam/ui'
 import { setAvatar } from "@/app/lib/actions/profile";
 import { useUser } from "@/app/lib/providers/user-provider";
 import { UserCircleIcon } from "@heroicons/react/20/solid";
