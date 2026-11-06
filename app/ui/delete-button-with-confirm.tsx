@@ -2,7 +2,7 @@
 
 "use client";
 
-import { Button } from "@/app/ui/button";
+import { Button } from "@iam/ui";
 import { useState } from "react";
 import { TrashIcon } from '@iam/ui'
 import { XMarkIcon } from "@heroicons/react/24/outline";

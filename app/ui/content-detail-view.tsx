@@ -13,7 +13,7 @@ import CommentFormModal from './comments/comment-form-modal';
 import CommentSection from './comments/comment-section';
 import { useComments } from '@/app/lib/hooks/use-comments';
 import { useUser } from '@/app/lib/providers/user-provider';
-import { CommentIcon } from './icons';
+import { CommentIcon } from '@iam/ui';
 import type { CommentRefType } from '@/app/lib/definitions/comment';
 import { toCommentRefType, getContentImageUrl, getContentImageAlt, getContentImage } from '@/app/lib/utils/content-helpers';
 

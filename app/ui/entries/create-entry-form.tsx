@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/app/ui/button";
+import { Button } from "@iam/ui";
 import { uploadFile } from "@/app/lib/actions/upload";
 import ImageUploadInput from "@/app/ui/image-upload-input";
 import type { Entry } from "@/app/lib/definitions/entry";

@@ -10,7 +10,7 @@ import { useFriendshipSocketEvents } from '@/app/lib/hooks/useFriendshipSocketEv
 import { useFriendshipActions } from '@/app/lib/hooks/useFriendshipActions'
 import { showError } from '@/app/lib/utils/error-handler'
 import type { FriendshipStatusPayload, FriendRequestPayload } from '@/app/lib/socket/events'
-import { Button } from '../button'
+import { Button } from '@iam/ui'
 
 type FriendshipButtonProps = {
 	userId: string
