@@ -6,11 +6,11 @@ import { useState, useEffect, useCallback } from 'react';
 import type { ContentItem } from '@/app/lib/definitions/content';
 import type { Entry } from '@/app/lib/definitions/entry';
 import type { Image } from '@/app/lib/definitions/image';
-import NextImage from 'next/image';
 import { Button } from '@/app/ui/button';
 import ContentItemCard from '@/app/ui/content-item-card';
 import Modal from '@/app/ui/modal';
 import CreateEntryForm from '@/app/ui/entries/create-entry-form';
+import Lightbox from '@/app/ui/lightbox';
 import ImageModalMenu from '@/app/ui/images/image-modal-menu';
 import { useUser } from '@/app/lib/providers/user-provider';
 import { useSocket } from '@/app/lib/providers/socket-provider';
@@ -174,41 +174,25 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
             )}
 
             {selectedImage && (
-                <div
-                    className='fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50'
-                    onClick={handleCloseLightbox}
+                <Lightbox
+                    src={selectedImage.variants.find(v => v.size === 'original')?.url || selectedImage.variants[0].url}
+                    alt={selectedImage.alt || 'Image'}
+                    onClose={handleCloseLightbox}
                 >
-                    <div className='relative max-w-5xl w-full h-full flex items-center justify-center p-4'>
-                        <NextImage
-                            src={
-                                selectedImage.variants.find(v => v.size === 'original')?.url ||
-                                selectedImage.variants[0].url
-                            }
-                            alt={selectedImage.alt || 'Image'}
-                            fill
-                            style={{ objectFit: 'contain' }}
-                            sizes='100vw'
-                            onClick={e => e.stopPropagation()}
-                        />
-                        <button
-                            className='absolute top-4 right-4 bg-white rounded-full px-3 py-1 shadow text-black z-10'
-                            onClick={handleCloseLightbox}
-                        >✕</button>
-                        <ImageModalMenu
-                            imageId={selectedImage.id}
-                            currentUserId={user?.id}
-                            currentUserRole={user?.role}
-                            initialLiked={selectedImage.likedByCurrentUser}
-                            initialLikeCount={selectedImage.likes?.length || 0}
-                            initialCommentCount={selectedImage.commentCount || 0}
-                            authorized={selectedImage.userId === user?.id}
-                            isAvatar={user?.avatar?.id === selectedImage.id}
-                            initialExpanded={openWithComments}
-                            onDeleted={handleImageDeleted}
-                            onLikeChange={handleImageLikeChange}
-                        />
-                    </div>
-                </div>
+                    <ImageModalMenu
+                        imageId={selectedImage.id}
+                        currentUserId={user?.id}
+                        currentUserRole={user?.role}
+                        initialLiked={selectedImage.likedByCurrentUser}
+                        initialLikeCount={selectedImage.likes?.length || 0}
+                        initialCommentCount={selectedImage.commentCount || 0}
+                        authorized={selectedImage.userId === user?.id}
+                        isAvatar={user?.avatar?.id === selectedImage.id}
+                        initialExpanded={openWithComments}
+                        onDeleted={handleImageDeleted}
+                        onLikeChange={handleImageLikeChange}
+                    />
+                </Lightbox>
             )}
 
         </div>
