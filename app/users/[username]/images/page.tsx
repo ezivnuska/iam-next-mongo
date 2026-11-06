@@ -30,7 +30,7 @@ export default async function Page({ params }: Props) {
 
     return (
         <PageContent>
-            <ImagesClient userId={id} authorized={isOwnImages} />
+            <ImagesClient userId={id} authorized={isOwnImages} username={username} />
         </PageContent>
     );
 }

@@ -28,7 +28,7 @@ export default async function UserProfilePage({ params }: Props) {
     return (
         <PageContent>
             <UserProfileCard username={username} />
-            <UserContentFeed initialContent={content} editable={isOwnProfile} />
+            <UserContentFeed initialContent={content} editable={isOwnProfile} username={username} />
         </PageContent>
     );
 }

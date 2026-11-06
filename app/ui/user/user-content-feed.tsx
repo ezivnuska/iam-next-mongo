@@ -17,18 +17,23 @@ import { useSocket } from '@/app/lib/providers/socket-provider';
 import { getCommentCountsForItems } from '@/app/lib/actions/comments';
 import { filterCommentableContent, isImage } from '@/app/lib/utils/content-helpers';
 import { useCommentCountSocket } from '@/app/lib/hooks/use-comment-count-socket';
+import ProfileTabBar from '@/app/ui/user/profile-tab-bar';
+
+type ContentTab = 'post' | 'memory';
 
 interface UserContentFeedProps {
     initialContent: ContentItem[];
     editable?: boolean;
+    username?: string;
 }
 
 type ModalType = 'entry' | null;
 
-export default function UserContentFeed({ initialContent, editable = false }: UserContentFeedProps) {
+export default function UserContentFeed({ initialContent, editable = false, username }: UserContentFeedProps) {
     const { user } = useUser();
     const { socket } = useSocket();
     const [content, setContent] = useState<ContentItem[]>(initialContent);
+    const [activeTab, setActiveTab] = useState<ContentTab>('post');
     const [modalType, setModalType] = useState<ModalType>(null);
     const [editingItem, setEditingItem] = useState<Entry | undefined>(undefined);
     const [selectedImage, setSelectedImage] = useState<Image | null>(null);
@@ -113,10 +118,20 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
 
     useCommentCountSocket(socket, setContent);
 
-    const filteredContent = filterCommentableContent(content);
+    const filteredContent = filterCommentableContent(content).filter(item =>
+        item.contentType === activeTab
+    );
 
     return (
         <div className='w-full max-w-[600px] pb-4'>
+            {username && (
+                <ProfileTabBar
+                    username={username}
+                    activeTab={activeTab}
+                    isOwnProfile={editable}
+                    onTabChange={setActiveTab}
+                />
+            )}
             {editable && (
                 <div className='flex justify-end mb-4'>
                     <Button size='sm' onClick={() => setModalType('entry')}>+ New Entry</Button>
