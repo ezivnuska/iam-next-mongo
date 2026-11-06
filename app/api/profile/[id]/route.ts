@@ -6,7 +6,7 @@ import UserModel from "@/app/lib/models/user";
 import bcrypt from "bcrypt";
 import ImageModel from "@/app/lib/models/image";
 import { requireAuth } from "@/app/lib/utils/auth";
-import { isValidObjectId } from "@/app/lib/utils/validation";
+import { isValidObjectId } from "/shared-types";
 
 export async function POST(req: NextRequest) {
     try {

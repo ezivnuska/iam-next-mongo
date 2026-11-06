@@ -4,11 +4,11 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import EntryModel from "@/app/lib/models/entry";
 import "@/app/lib/models/image";
-import { transformPopulatedImage, transformPopulatedAuthor } from "@/app/lib/utils/transformers";
+import { transformPopulatedImage, transformPopulatedAuthor } from "/db";
 import { logActivity, getRequestMetadata } from "@/app/lib/utils/activity-logger";
 import { requireAuth } from "@/app/lib/utils/auth";
 import { CONTENT_POPULATE_CONFIG } from "@/app/lib/utils/db-query-config";
-import { isValidObjectId } from "@/app/lib/utils/validation";
+import { isValidObjectId } from "/shared-types";
 
 export async function PUT(req: Request) {
   try {

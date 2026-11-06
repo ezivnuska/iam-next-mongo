@@ -6,7 +6,7 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import Activity from "@/app/lib/models/activity";
 import "@/app/lib/models/user"; // Required for populate("user")
 import "@/app/lib/models/image"; // Required for populate("user.avatar")
-import { transformPopulatedAuthor } from "@/app/lib/utils/transformers";
+import { transformPopulatedAuthor } from "/db";
 import type { Activity as ActivityType, ActivityAction, ActivityEntityType } from "@/app/lib/definitions/activity";
 import { requireAuth } from "@/app/lib/utils/auth";
 
