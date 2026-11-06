@@ -1,20 +1,14 @@
-// app/page.tsx
+export const dynamic = 'force-dynamic';
 
-'use client';
-
-import { useSearchParams } from 'next/navigation';
+import { getPublicContent } from '@/app/lib/actions/public-content';
+import UserContentFeed from '@/app/ui/user/user-content-feed';
 import PageContent from './ui/layout/page/page-content';
-import NavLinkListAnimated from './ui/header/nav-link-list-animated';
 
-export default function Page() {
-    const searchParams = useSearchParams();
-    const section = searchParams.get('section');
-
+export default async function Page() {
+    const content = await getPublicContent();
     return (
         <PageContent>
-            <div className='flex flex-1 mb-4'>
-                <NavLinkListAnimated className='py-4' initialSection={section} />
-            </div>
+            <UserContentFeed initialContent={content} />
         </PageContent>
     );
 }

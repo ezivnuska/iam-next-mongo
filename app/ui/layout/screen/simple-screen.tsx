@@ -9,7 +9,7 @@ import UserButton from '@/app/ui/header/user-button';
 import SigninButton from '@/app/ui/auth/signin-button';
 import AuthRedirectHandler from '@/app/ui/auth/auth-redirect-handler';
 import { PuzzleIcon } from '@/app/ui/icons';
-import { NewspaperIcon, UsersIcon } from '@heroicons/react/24/solid';
+import { NewspaperIcon } from '@heroicons/react/24/solid';
 
 interface SimpleScreenProps {
     children: React.ReactNode;
@@ -30,13 +30,6 @@ export default function SimpleScreen({ children, showLoading = true, loggedIn = 
                     >
                         <NewspaperIcon className='w-7 h-7' />
                     </Link>
-                    <Link
-                        href='/users'
-                        className='flex items-center justify-center text-gray-700 hover:text-gray-500 transition-colors'
-                        aria-label='Users'
-                    >
-                        <UsersIcon className='w-7 h-7' />
-                    </Link>
                     <a
                         href='https://games.iameric.me'
                         className='flex items-center justify-center text-gray-700 hover:text-gray-500 transition-colors'
@@ -53,6 +46,7 @@ export default function SimpleScreen({ children, showLoading = true, loggedIn = 
                     <AuthRedirectHandler />
                 </Suspense>
             }
+            brandHref='/about/work'
             showLoading={showLoading}
         >
             {children}
