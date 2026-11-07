@@ -31,7 +31,7 @@ export async function getContentDetailByUsername(
 
   if (!entry) return null;
 
-  const author = entry.author as { _id: { toString(): string }; username: string } | null;
+  const author = entry.author as unknown as { _id: { toString(): string }; username: string } | null;
   if (!author || typeof author !== 'object' || !('username' in author)) return null;
   if (author.username !== username) return null;
 
