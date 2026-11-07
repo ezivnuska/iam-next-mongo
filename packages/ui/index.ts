@@ -28,4 +28,5 @@ export {
     PostIcon,
     MemoryIcon,
     ImageIcon,
+    ProfileIcon,
 } from './icons';

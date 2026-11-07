@@ -89,3 +89,12 @@ export function ImageIcon({ className = 'w-5 h-5', strokeWidth = 2 }: IconProps)
         </svg>
     )
 }
+
+export function ProfileIcon({ className = 'w-5 h-5', strokeWidth = 2 }: IconProps) {
+    return (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={strokeWidth}>
+            <circle cx="12" cy="8" r="4" strokeLinecap="round" strokeLinejoin="round" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 20c0-4.418 3.582-8 8-8s8 3.582 8 8" />
+        </svg>
+    )
+}

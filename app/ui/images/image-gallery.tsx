@@ -7,7 +7,7 @@ import { useCarousel } from '@/app/lib/hooks/use-carousel';
 import Lightbox from '@/app/ui/lightbox';
 import ImageModalMenu from '@/app/ui/images/image-modal-menu';
 import type { Image as ImageType } from '@/app/lib/definitions/image';
-import { PostIcon, MemoryIcon } from '@iam/ui';
+import { PostIcon, MemoryIcon, ProfileIcon } from '@iam/ui';
 
 interface ImageGalleryProps {
   authorized?: boolean;
@@ -68,6 +68,11 @@ export default function ImageGallery({ authorized, images, onDeleted, onImageUpd
                 className='relative rounded-lg overflow-hidden shadow w-full h-48 cursor-pointer'
                 onClick={() => openAt(index)}
               >
+                {user?.avatar?.id === img.id && (
+                  <div className='absolute top-1.5 right-1.5 z-10 bg-black/40 rounded-sm p-0.5' title='Profile image'>
+                    <ProfileIcon className='w-8 h-8 text-white' strokeWidth={1.5} />
+                  </div>
+                )}
                 {medium?.url ? (
                   <Image
                     src={medium.url}
@@ -95,8 +100,8 @@ export default function ImageGallery({ authorized, images, onDeleted, onImageUpd
                         className='flex items-center gap-1 text-xs text-white bg-black/40 px-1.5 py-0.5 rounded-sm leading-none'
                       >
                         {type === 'post'
-                          ? <PostIcon className='w-3 h-3' strokeWidth={2.5} />
-                          : <MemoryIcon className='w-3 h-3' strokeWidth={2.5} />
+                          ? <PostIcon className='w-8 h-8' strokeWidth={1.5} />
+                          : <MemoryIcon className='w-8 h-8' strokeWidth={1.5} />
                         }
                         {count > 1 && <span>{count}</span>}
                       </span>
