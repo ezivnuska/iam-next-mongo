@@ -72,31 +72,18 @@ export default function ContentItemCard({
 
   if (isPost(item)) {
     const imageClickHandler = item.image && onImageClick ? () => onImageClick(item.image!) : undefined;
-    const commentClickHandler = item.image
-      ? (onCommentImageClick
-          ? () => onCommentImageClick(item.image!, item.id, 'Post')
-          : imageClickHandler)
-      : undefined;
 
     return (
       <ContentCard
         author={item.author}
         avatar={item.author.avatar}
         createdAt={item.createdAt}
-        itemId={item.id}
-        itemType='Post'
         actions={editable ? {
           onDelete: () => handleDelete(item.id),
           onFlag: onFlag ? () => onFlag(item) : undefined,
           canDelete,
         } : undefined}
-        interactions={{
-          initialLiked: item.likedByCurrentUser,
-          initialLikeCount: item.likes?.length || 0,
-          initialCommentCount: item.commentCount || 0,
-          autoExpandComments,
-          onCommentClick: commentClickHandler,
-        }}
+        href={`/users/${item.author.username}/${item.id}`}
         compact={isLandscape}
         thumbnail={
           isLandscape && item.image
@@ -104,7 +91,6 @@ export default function ContentItemCard({
                 image={item.image}
                 size={IMAGE_SIZES.THUMBNAIL}
                 className='w-14 h-14 rounded object-cover'
-                onClick={imageClickHandler}
               />
             : undefined
         }
@@ -126,7 +112,7 @@ export default function ContentItemCard({
                 <div className='flex flex-col gap-1 text-gray-900'>
                   <p>{item.content}</p>
                   {item.linkUrl && (
-                    <a href={item.linkUrl} target='_blank' className='text-blue-500 underline'>
+                    <a href={item.linkUrl} target='_blank' className='text-blue-500 underline' onClick={e => e.stopPropagation()}>
                       [source]
                     </a>
                   )}
