@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@iam/ui";
 import { uploadFile } from "@/app/lib/actions/upload";
 import ImageUploadInput from "@/app/ui/image-upload-input";
+import { getBestVariant, IMAGE_SIZES } from "@/app/lib/utils/images";
 import type { Entry } from "@/app/lib/definitions/entry";
 
 interface CreateEntryFormProps {
@@ -24,8 +25,13 @@ export default function CreateEntryForm({ onSuccess, onClose, editItem }: Create
   const [content, setContent] = useState(editItem?.content ?? "");
   const [shared, setShared] = useState(editItem?.shared ?? false);
   const [file, setFile] = useState<File | null>(null);
+  const [removeExistingImage, setRemoveExistingImage] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const existingImageUrl = !removeExistingImage
+    ? getBestVariant(editItem?.image, IMAGE_SIZES.CARD)?.url
+    : undefined;
 
   const isEditing = !!editItem;
 
@@ -44,7 +50,11 @@ export default function CreateEntryForm({ onSuccess, onClose, editItem }: Create
       const url = isEditing ? `/api/entries/${editItem.id}` : "/api/entries";
       const method = isEditing ? "PUT" : "POST";
 
-      const body: Record<string, unknown> = { contentType, content, imageId };
+      const body: Record<string, unknown> = {
+        contentType,
+        content,
+        ...(imageId !== undefined ? { imageId } : removeExistingImage ? { imageId: null } : {}),
+      };
       if (contentType === 'memory') {
         body.date = new Date(date + 'T12:00:00').toISOString();
         body.title = title;
@@ -154,7 +164,12 @@ export default function CreateEntryForm({ onSuccess, onClose, editItem }: Create
         </div>
       )}
 
-      <ImageUploadInput file={file} onFileChange={setFile} />
+      <ImageUploadInput
+        file={file}
+        onFileChange={setFile}
+        existingImageUrl={existingImageUrl}
+        onRemoveExisting={() => setRemoveExistingImage(true)}
+      />
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
