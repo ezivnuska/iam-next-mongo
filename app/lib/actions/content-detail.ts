@@ -10,6 +10,7 @@ import { getCommentCounts } from "@/app/lib/actions/comments";
 import type { ContentItem } from "@/app/lib/definitions/content";
 import { auth } from "@/app/lib/auth";
 import { CONTENT_POPULATE_CONFIG } from "@/app/lib/utils/db-query-config";
+import { isValidObjectId } from "@iam/shared-types";
 
 export type { ContentItem };
 
@@ -17,7 +18,7 @@ export async function getContentDetailByUsername(
   username: string,
   id: string
 ): Promise<ContentItem | null> {
-  if (!/^[a-f\d]{24}$/i.test(id)) return null;
+  if (!isValidObjectId(id)) return null;
 
   const session = await auth();
   const currentUserId = session?.user?.id;

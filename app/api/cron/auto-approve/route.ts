@@ -4,6 +4,7 @@
 // Protect with CRON_SECRET env var to prevent unauthenticated calls.
 
 import { NextRequest, NextResponse } from 'next/server'
+import { timingSafeEqual } from 'crypto'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { serializeCompletion, serializeIssue } from '@/app/lib/mobile/serializers'
 import { settleIssue } from '@/app/lib/mobile/settleIssue'
@@ -18,7 +19,11 @@ import '@/app/lib/models/user'
 
 export const GET = async (req: NextRequest) => {
   const secret = req.headers.get('x-cron-secret')
-  if (secret !== process.env.CRON_SECRET)
+  const expected = process.env.CRON_SECRET
+  const isValid = secret && expected &&
+    secret.length === expected.length &&
+    timingSafeEqual(Buffer.from(secret), Buffer.from(expected))
+  if (!isValid)
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {

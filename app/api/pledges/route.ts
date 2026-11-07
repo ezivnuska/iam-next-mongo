@@ -56,8 +56,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid issue ID' }, { status: 400 })
     }
 
-    if (typeof amount !== 'number' || amount <= 0) {
+    if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0) {
       return NextResponse.json({ error: 'Amount must be a positive number' }, { status: 400 })
+    }
+    if (Math.round(amount * 100) !== amount * 100) {
+      return NextResponse.json({ error: 'Amount must have at most 2 decimal places' }, { status: 400 })
     }
 
     await connectToDatabase()

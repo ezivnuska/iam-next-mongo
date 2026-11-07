@@ -138,12 +138,16 @@ export async function acceptFriendRequest(friendshipId: string) {
 	})
 
 	// Emit socket event to requester (they need to know their request was accepted)
-	emitFriendRequestAccepted({
-		friendshipId: friendship._id.toString(),
-		userId: friendship.requester.toString(),
-		username: user.username || '',
-		otherUserId: user.id, // The user who accepted (recipient)
-	})
+	try {
+		await emitFriendRequestAccepted({
+			friendshipId: friendship._id.toString(),
+			userId: friendship.requester.toString(),
+			username: user.username || '',
+			otherUserId: user.id,
+		})
+	} catch (emitError) {
+		console.error('[Friendship] Failed to emit accept event:', emitError)
+	}
 
 	return { success: true }
 }
@@ -179,12 +183,16 @@ export async function rejectFriendRequest(friendshipId: string) {
 	})
 
 	// Emit socket event to requester
-	emitFriendRequestRejected({
-		friendshipId: friendship._id.toString(),
-		userId: friendship.requester.toString(),
-		username: user.username || '',
-		otherUserId: user.id, // The user who rejected (recipient)
-	})
+	try {
+		await emitFriendRequestRejected({
+			friendshipId: friendship._id.toString(),
+			userId: friendship.requester.toString(),
+			username: user.username || '',
+			otherUserId: user.id,
+		})
+	} catch (emitError) {
+		console.error('[Friendship] Failed to emit reject event:', emitError)
+	}
 
 	return { success: true }
 }
@@ -229,12 +237,16 @@ export async function removeFriend(friendshipId: string) {
 	})
 
 	// Emit socket event to the other user
-	emitFriendshipRemoved({
-		friendshipId: friendshipId,
-		userId: otherUserId,
-		username: user.username || '',
-		otherUserId: user.id, // The user who removed the friendship
-	})
+	try {
+		await emitFriendshipRemoved({
+			friendshipId: friendshipId,
+			userId: otherUserId,
+			username: user.username || '',
+			otherUserId: user.id,
+		})
+	} catch (emitError) {
+		console.error('[Friendship] Failed to emit remove event:', emitError)
+	}
 
 	return { success: true }
 }

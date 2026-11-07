@@ -7,6 +7,7 @@ import UserModel from "../models/user";
 import "@/app/lib/models/image"; // Required for populate("avatar")
 import { normalizeUser } from '@iam/db';
 import { requireAuth } from "@/app/lib/utils/auth";
+import { isValidObjectId } from "@iam/shared-types";
 
 export async function getProfile() {
     const { id: userId } = await requireAuth();
@@ -27,7 +28,7 @@ export async function setAvatar(imageId: string | null) {
 
     try {
       // Validate imageId format if provided
-      if (imageId !== null && !/^[a-f\d]{24}$/i.test(imageId)) {
+      if (imageId !== null && !isValidObjectId(imageId)) {
         return { success: false, error: "Invalid imageId format" };
       }
 
@@ -60,8 +61,7 @@ export async function updateBio(bio: string) {
         return { success: false, error: "Bio must be 500 characters or less" };
       }
 
-      // Sanitize: remove potentially dangerous characters
-      const sanitizedBio = trimmedBio.replace(/[<>]/g, '');
+      const sanitizedBio = trimmedBio.replace(/<[^>]*>/g, '');
 
       const user = await UserModel.findByIdAndUpdate(
         userId,
