@@ -3,16 +3,19 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { Entry } from '@/app/lib/definitions/entry';
 import type { Image as ImageType } from '@/app/lib/definitions/image';
-import UnifiedUserHeader from './user/unified-user-header';
 import ContentImage from './content-image';
 import LikeButton from './like-button';
+import DeleteButtonWithConfirm from './delete-button-with-confirm';
 import CommentFormModal from './comments/comment-form-modal';
 import CommentSection from './comments/comment-section';
 import { useComments } from '@/app/lib/hooks/use-comments';
 import { useUser } from '@/app/lib/providers/user-provider';
+import { useContentPermissions } from '@/app/lib/hooks/use-content-permissions';
+import { useContentDelete } from '@/app/lib/hooks/use-content-delete';
 import { CommentIcon } from '@iam/ui';
 import type { CommentRefType } from '@/app/lib/definitions/comment';
 import { toCommentRefType, getContentImageUrl, getContentImageAlt, getContentImage } from '@/app/lib/utils/content-helpers';
@@ -22,7 +25,10 @@ interface ContentDetailViewProps {
 }
 
 export default function ContentDetailView({ item }: ContentDetailViewProps) {
+    const router = useRouter();
     const { user } = useUser();
+    const { canDelete } = useContentPermissions(item.author.id);
+    const handleDelete = useContentDelete('entries', () => router.back());
     const [showCommentForm, setShowCommentForm] = useState(false);
     const [showImageModal, setShowImageModal] = useState(false);
     const previousCountRef = useRef(item.commentCount || 0);
@@ -75,14 +81,6 @@ export default function ContentDetailView({ item }: ContentDetailViewProps) {
 
     return (
         <div className='flex flex-col gap-2'>
-            <UnifiedUserHeader
-                user={item.author}
-                avatar={item.author.avatar}
-                timestamp={item.createdAt}
-                avatarSize={40}
-                clickable
-            />
-
             <div className='flex flex-col flex-1'>
                 {item.contentType === 'memory' && (
                     <div className='flex flex-1 flex-col gap-2'>
@@ -103,13 +101,7 @@ export default function ContentDetailView({ item }: ContentDetailViewProps) {
                 )}
 
                 {item.contentType === 'post' && (
-                    <div className='flex flex-1 gap-2'>
-                        <ContentImage
-                            image={item.image}
-                            alt='Post image'
-                            className='rounded object-cover cursor-pointer'
-                            onClick={item.image ? () => handleImageClick(item.image) : undefined}
-                        />
+                    <div className='flex flex-col gap-2'>
                         {item.content && (
                             <div className='text-gray-900'>
                                 <p>{item.content}</p>
@@ -120,24 +112,33 @@ export default function ContentDetailView({ item }: ContentDetailViewProps) {
                                 )}
                             </div>
                         )}
+                        <ContentImage
+                            image={item.image}
+                            alt='Post image'
+                            className='rounded object-cover cursor-pointer'
+                            onClick={item.image ? () => handleImageClick(item.image) : undefined}
+                        />
                     </div>
                 )}
 
-                <div className='flex flex-row items-center gap-2 text-sm text-gray-600'>
-                    <LikeButton
-                        itemId={item.id}
-                        itemType={refType}
-                        initialLiked={item.likedByCurrentUser}
-                        initialLikeCount={item.likes?.length || 0}
-                    />
-                    <button
-                        className='flex items-center gap-2 rounded transition-colors cursor-pointer'
-                        onClick={handleOpenCommentForm}
-                        aria-label='Add comment'
-                    >
-                        <CommentIcon className='w-5 h-5 text-gray-600 hover:text-blue-300' />
-                    </button>
-                    <span className='text-sm font-medium text-gray-700'>{commentCount}</span>
+                <div className='flex flex-row items-center justify-between text-sm text-gray-600'>
+                    <div className='flex items-center gap-2'>
+                        <LikeButton
+                            itemId={item.id}
+                            itemType={refType}
+                            initialLiked={item.likedByCurrentUser}
+                            initialLikeCount={item.likes?.length || 0}
+                        />
+                        <button
+                            className='flex items-center gap-2 rounded transition-colors cursor-pointer'
+                            onClick={handleOpenCommentForm}
+                            aria-label='Add comment'
+                        >
+                            <CommentIcon className='w-5 h-5 text-gray-600 hover:text-blue-300' />
+                        </button>
+                        <span className='text-sm font-medium text-gray-700'>{commentCount}</span>
+                    </div>
+                    {canDelete && <DeleteButtonWithConfirm onDelete={() => handleDelete(item.id)} />}
                 </div>
 
                 <div className='pb-4'>

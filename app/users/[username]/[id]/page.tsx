@@ -5,9 +5,9 @@ export const dynamic = 'force-dynamic';
 import { auth } from '@/app/lib/auth';
 import { redirect, notFound } from 'next/navigation';
 import { getContentDetailByUsername } from '@/app/lib/actions/content-detail';
-import { PageContent } from '@iam/ui';
+import { PageContent, SetBreadcrumbLabel } from '@iam/ui';
 import ContentDetailView from '@/app/ui/content-detail-view';
-import { SetBreadcrumbLabel } from '@iam/ui';
+import ContentDetailHeader from '@/app/ui/content-detail-header';
 import type { Metadata } from 'next';
 import { isMemory, isPost, isImage } from '@/app/lib/utils/content-helpers';
 
@@ -73,7 +73,13 @@ export default async function ContentDetailPage({ params }: Props) {
     const contentLabel = isPost(content) ? 'Post' : 'Memory';
 
     return (
-        <PageContent>
+        <PageContent header={
+            <ContentDetailHeader
+                username={content.author.username}
+                avatar={content.author.avatar}
+                createdAt={content.createdAt}
+            />
+        }>
             <SetBreadcrumbLabel segment={id} label={contentLabel} />
             <ContentDetailView item={content} />
         </PageContent>

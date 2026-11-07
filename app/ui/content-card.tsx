@@ -4,7 +4,8 @@
 
 import { useRouter } from 'next/navigation';
 import type { Image as ImageType } from '@/app/lib/definitions/image';
-import UnifiedUserHeader from './user/unified-user-header';
+import EntryHeader from './user/entry-header';
+import FlagContentButton from './flag-content-button';
 
 interface ContentCardProps {
     author: { id: string; username: string };
@@ -12,9 +13,7 @@ interface ContentCardProps {
     createdAt: string;
     href?: string;
     actions?: {
-        onDelete?: () => Promise<void>;
         onFlag?: () => void;
-        canDelete?: boolean;
     };
     compact?: boolean;
     thumbnail?: React.ReactNode;
@@ -35,6 +34,12 @@ export default function ContentCard({
 
     const handleCardClick = href ? () => router.push(href) : undefined;
 
+    const actionsNode = actions?.onFlag && (
+        <div className='flex items-center shrink-0' onClick={e => e.stopPropagation()}>
+            <FlagContentButton onFlag={actions.onFlag} />
+        </div>
+    );
+
     if (compact) {
         return (
             <div
@@ -43,17 +48,14 @@ export default function ContentCard({
             >
                 {thumbnail && <div className='shrink-0'>{thumbnail}</div>}
                 <div className='flex flex-col flex-1 min-w-0'>
-                    <div onClick={e => e.stopPropagation()}>
-                        <UnifiedUserHeader
-                            user={author}
+                    <div className='flex items-center justify-between'>
+                        <EntryHeader
+                            username={author.username}
                             avatar={avatar}
-                            onFlag={actions?.onFlag}
-                            onDelete={actions?.onDelete}
-                            canDelete={actions?.canDelete}
                             avatarSize={28}
-                            variant='compact'
-                            clickable
+                            createdAt={createdAt}
                         />
+                        {actionsNode}
                     </div>
                     <div className='flex-1 min-w-0'>{children}</div>
                 </div>
@@ -66,16 +68,14 @@ export default function ContentCard({
             className={`flex flex-col${href ? ' cursor-pointer' : ''}`}
             onClick={handleCardClick}
         >
-            <div onClick={e => e.stopPropagation()}>
-                <UnifiedUserHeader
-                    user={author}
+            <div className='flex items-center justify-between'>
+                <EntryHeader
+                    username={author.username}
                     avatar={avatar}
-                    onFlag={actions?.onFlag}
-                    onDelete={actions?.onDelete}
-                    canDelete={actions?.canDelete}
                     avatarSize={36}
-                    clickable
+                    createdAt={createdAt}
                 />
+                {actionsNode}
             </div>
 
             <div className='flex flex-col flex-1'>

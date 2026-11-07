@@ -78,11 +78,7 @@ export default function ContentItemCard({
         author={item.author}
         avatar={item.author.avatar}
         createdAt={item.createdAt}
-        actions={editable ? {
-          onDelete: () => handleDelete(item.id),
-          onFlag: onFlag ? () => onFlag(item) : undefined,
-          canDelete,
-        } : undefined}
+        actions={editable && onFlag ? { onFlag: () => onFlag(item) } : undefined}
         href={`/users/${item.author.username}/${item.id}`}
         compact={isLandscape}
         thumbnail={
@@ -95,14 +91,6 @@ export default function ContentItemCard({
             : undefined
         }
       >
-        {!isLandscape && (
-          <ContentImage
-            image={item.image}
-            alt='Post image'
-            className='rounded mt-2 object-cover'
-            onClick={imageClickHandler}
-          />
-        )}
         {item.content && (
           isLandscape ? (
             <p className='text-sm text-gray-900 truncate'>{item.content}</p>
@@ -121,6 +109,14 @@ export default function ContentItemCard({
               {editable && canEdit && onEdit && <EditContentButton onEdit={() => onEdit(item)} />}
             </div>
           )
+        )}
+        {!isLandscape && (
+          <ContentImage
+            image={item.image}
+            alt='Post image'
+            className='rounded mt-2 object-cover'
+            onClick={imageClickHandler}
+          />
         )}
       </ContentCard>
     );
