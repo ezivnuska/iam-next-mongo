@@ -67,7 +67,7 @@ export async function POST(req: Request) {
     await logActivity({
       userId,
       action: 'create',
-      entityType: 'entry',
+      entityType: contentType,
       entityId: doc._id,
       entityData: { contentType, hasImage: !!doc.image },
       metadata: getRequestMetadata(req),
