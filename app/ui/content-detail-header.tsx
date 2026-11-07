@@ -6,6 +6,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeftIcon, EllipsisIcon, Modal } from '@iam/ui';
 import UserAvatar from './user/user-avatar';
+import EditContentButton from './edit-content-button';
 import DeleteButtonWithConfirm from './delete-button-with-confirm';
 import CreateEntryForm from './entries/create-entry-form';
 import { formatRelativeTime } from '@/app/lib/utils/format-date';
@@ -72,20 +73,15 @@ export default function ContentDetailHeader({ item, avatar }: ContentDetailHeade
                     </button>
 
                     {menuOpen && (
-                        <div className='absolute right-0 top-full mt-1 bg-white border border-gray-100 rounded-lg shadow-lg py-1 min-w-[120px] z-50'>
-                            {canEdit && (
-                                <button
-                                    className='w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors'
-                                    onClick={() => { setMenuOpen(false); setShowEditModal(true); }}
-                                >
-                                    Edit
-                                </button>
-                            )}
-                            {canDelete && (
-                                <div className='px-2 py-1'>
+                        <div className='absolute right-0 top-full mt-1 bg-white border border-gray-100 rounded-lg shadow-lg py-1 z-50'>
+                            <div className='flex items-center gap-1 px-2 py-1'>
+                                {canEdit && (
+                                    <EditContentButton onEdit={() => { setMenuOpen(false); setShowEditModal(true); }} />
+                                )}
+                                {canDelete && (
                                     <DeleteButtonWithConfirm onDelete={() => handleDelete(item.id)} />
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>

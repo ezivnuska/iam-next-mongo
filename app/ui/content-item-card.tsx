@@ -70,8 +70,6 @@ export default function ContentItemCard({
   }
 
   if (isPost(item)) {
-    const imageClickHandler = item.image && onImageClick ? () => onImageClick(item.image!) : undefined;
-
     return (
       <ContentCard
         author={item.author}
@@ -109,7 +107,6 @@ export default function ContentItemCard({
             image={item.image}
             alt='Post image'
             className='rounded mt-2 object-cover'
-            onClick={imageClickHandler}
           />
         )}
       </ContentCard>
