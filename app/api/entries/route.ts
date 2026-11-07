@@ -44,6 +44,16 @@ export async function POST(req: Request) {
       if (content && content.length > 1000) {
         return NextResponse.json({ error: "Content must be 1000 characters or less" }, { status: 400 });
       }
+      if (linkUrl) {
+        try {
+          const parsed = new URL(linkUrl);
+          if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+            return NextResponse.json({ error: "Link URL must use http or https" }, { status: 400 });
+          }
+        } catch {
+          return NextResponse.json({ error: "Invalid link URL" }, { status: 400 });
+        }
+      }
     }
 
     await connectToDatabase();

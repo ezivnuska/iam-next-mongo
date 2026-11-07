@@ -24,6 +24,14 @@ export async function POST(req: NextRequest) {
 
         await connectToDatabase();
 
+        const image = await ImageModel.findById(imageId);
+        if (!image) {
+            return NextResponse.json({ error: "Image not found" }, { status: 404 });
+        }
+        if (image.userId.toString() !== userId) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
         const user = await UserModel.findByIdAndUpdate(userId, { avatar: imageId }, { new: true })
         return NextResponse.json({ user });
     } catch (err) {
