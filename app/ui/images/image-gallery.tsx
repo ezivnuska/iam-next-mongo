@@ -69,7 +69,7 @@ export default function ImageGallery({ authorized, images, onDeleted, onImageUpd
                 onClick={() => openAt(index)}
               >
                 {user?.avatar?.id === img.id && (
-                  <div className='absolute top-1.5 right-1.5 z-10 bg-black/40 rounded-sm p-0.5' title='Profile image'>
+                  <div className='absolute bottom-1.5 right-1.5 z-10 bg-black/40 rounded-sm p-0.5' title='Profile image'>
                     <ProfileIcon className='w-8 h-8 text-white' strokeWidth={1.5} />
                   </div>
                 )}
