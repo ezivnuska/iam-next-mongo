@@ -6,7 +6,7 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import ImageModel from "@/app/lib/models/image";
 import UserModel from "@/app/lib/models/user";
 import Comment from "@/app/lib/models/comment";
-import Post from "@/app/lib/models/post";
+import EntryModel from "@/app/lib/models/entry";
 import { Image } from "@/app/lib/definitions/image";
 import { deleteS3File } from "@/app/lib/aws/s3";
 import { auth } from "@/app/lib/auth";
@@ -33,9 +33,28 @@ export async function getImages(
       .sort({ createdAt: -1 })
       .lean({ virtuals: true });
 
-    // Get comment counts for all images
     const imageIds = images.map((img: any) => img._id.toString());
-    const commentCounts = await getCommentCounts(imageIds, 'Image');
+
+    // Batch fetch comment counts and entry references in parallel
+    const imageObjectIds = images.map((img: any) => img._id);
+    const [commentCounts, entriesWithImages] = await Promise.all([
+      getCommentCounts(imageIds, 'Image'),
+      EntryModel.find({ image: { $in: imageObjectIds } })
+        .select('_id contentType title image')
+        .lean(),
+    ]);
+
+    // Build imageId → usages map
+    const usageMap: Record<string, Array<{ type: 'post' | 'memory'; id: string; title?: string }>> = {};
+    for (const entry of entriesWithImages as any[]) {
+      const imgId = entry.image.toString();
+      if (!usageMap[imgId]) usageMap[imgId] = [];
+      usageMap[imgId].push({
+        type: entry.contentType as 'post' | 'memory',
+        id: entry._id.toString(),
+        ...(entry.title ? { title: entry.title } : {}),
+      });
+    }
 
     const activeUserId = currentUserId || session?.user?.id;
     return images.map((img: any) => {
@@ -50,7 +69,7 @@ export async function getImages(
         username: img.username,
         filename: img.filename,
         alt: img.alt ?? "",
-        url: img.url ?? "", // original image URL
+        url: img.url ?? "",
         variants: (img.variants ?? []).map((v: any) => ({
           size: v.size,
           filename: v.filename,
@@ -61,6 +80,7 @@ export async function getImages(
         likes: (img.likes ?? []).map((id: any) => id.toString()),
         likedByCurrentUser,
         commentCount: commentCounts[imgId] || 0,
+        usages: usageMap[imgId] || [],
         createdAt: img.createdAt?.toISOString() ?? new Date().toISOString(),
         updatedAt: img.updatedAt?.toISOString() ?? new Date().toISOString(),
       };
@@ -101,14 +121,14 @@ export async function deleteImage(imageId: string) {
       console.log(`Removed avatar reference from user ${userId}`);
     }
 
-    // Find posts that reference this image
-    const postsWithImage = await Post.find({ image: objectId });
+    // Find entries that reference this image
+    const postsWithImage = await EntryModel.find({ image: objectId });
 
     // Delete posts that have no content (only the image)
     const postsToDelete = postsWithImage.filter(p => !p.content || !p.content.trim());
     if (postsToDelete.length > 0) {
       const postIdsToDelete = postsToDelete.map(p => p._id);
-      await Post.deleteMany({ _id: { $in: postIdsToDelete } });
+      await EntryModel.deleteMany({ _id: { $in: postIdsToDelete } });
       console.log(`Deleted ${postsToDelete.length} posts with no content after image removal`);
     }
 
@@ -116,7 +136,7 @@ export async function deleteImage(imageId: string) {
     const postsToUpdate = postsWithImage.filter(p => p.content && p.content.trim());
     if (postsToUpdate.length > 0) {
       const postIdsToUpdate = postsToUpdate.map(p => p._id);
-      await Post.updateMany(
+      await EntryModel.updateMany(
         { _id: { $in: postIdsToUpdate } },
         { $unset: { image: "" } }
       );

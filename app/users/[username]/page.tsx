@@ -6,9 +6,9 @@ import { auth } from '@/app/lib/auth';
 import { redirect } from 'next/navigation';
 import UserProfileCard from '@/app/ui/user/user-profile-card';
 import UserContentFeed from '@/app/ui/user/user-content-feed';
-import Breadcrumbs from '@/app/ui/layout/breadcrumbs';
 import { getUserContent } from '@/app/lib/actions/user-content';
-import PageContent from '@/app/ui/layout/page/page-content';
+import { PageContent, PageHeader } from '@iam/ui';
+import SignOutButton from '@/app/ui/auth/signout-button';
 
 interface Props {
   params: Promise<{ username: string }>;
@@ -27,16 +27,9 @@ export default async function UserProfilePage({ params }: Props) {
     const isOwnProfile = session.user?.username === username;
 
     return (
-        <PageContent>
-            <Breadcrumbs
-                breadcrumbs={[
-                    { label: 'Users', href: '/users' },
-                    { label: username, href: `/users/${username}`, active: true },
-                    { label: 'Images', href: `/users/${username}/images` },
-                ]}
-            />
+        <PageContent header={<PageHeader subtitle='Profile' actions={isOwnProfile ? <SignOutButton /> : undefined} />}>
             <UserProfileCard username={username} />
-            <UserContentFeed initialContent={content} editable={isOwnProfile} />
+            <UserContentFeed initialContent={content} editable={isOwnProfile} username={username} />
         </PageContent>
     );
 }

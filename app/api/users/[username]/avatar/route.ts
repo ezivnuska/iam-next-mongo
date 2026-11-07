@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import User from "@/app/lib/models/user";
 import "@/app/lib/models/image"; // Required for populate("avatar")
-import { transformPopulatedImage } from "@/app/lib/utils/transformers";
+import { transformPopulatedImage } from "@iam/db";
 
 export async function GET(
   req: Request,

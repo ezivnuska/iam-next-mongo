@@ -3,16 +3,12 @@
 "use server";
 
 import { connectToDatabase } from "@/app/lib/mongoose";
-import Memory from "@/app/lib/models/memory";
-import Post from "@/app/lib/models/post";
-import Image from "@/app/lib/models/image"; // Also registers Image model for populate
+import EntryModel from "@/app/lib/models/entry";
 import User from "@/app/lib/models/user";
 import {
-  transformMemory,
-  transformPost,
-  transformImage,
+  transformEntry,
   getCommentCountsForContent,
-  sortContentByDate
+  sortContentByDate,
 } from "@/app/lib/utils/transformers/content";
 import type { ContentItem } from "@/app/lib/definitions/content";
 import { requireAuth } from "@/app/lib/utils/auth";
@@ -25,74 +21,31 @@ export async function getUserContent(username?: string): Promise<ContentItem[]> 
 
   await connectToDatabase();
 
-  // Determine which user's content to fetch
   let targetUserId: string;
   if (username) {
     const user = await User.findOne({ username });
-    if (!user) {
-      throw new Error("User not found");
-    }
+    if (!user) throw new Error("User not found");
     targetUserId = user._id.toString();
   } else {
     targetUserId = userId;
   }
 
-  // Check if viewing own profile
   const isOwnProfile = targetUserId === userId;
 
-  // Fetch memories
-  // Only filter to shared:true if viewing another user's profile
-  const memoriesQuery = isOwnProfile
+  const entriesQuery = isOwnProfile
     ? { author: targetUserId }
-    : { author: targetUserId, shared: true };
+    : { author: targetUserId, $or: [{ contentType: 'post' }, { contentType: 'memory', shared: true }] };
 
-  const memories = await Memory.find(memoriesQuery)
+  const entries = await EntryModel.find(entriesQuery)
     .populate(CONTENT_POPULATE_CONFIG)
     .sort({ createdAt: -1 })
     .lean();
 
-  // Fetch posts
-  const posts = await Post.find({ author: targetUserId })
-    .populate(CONTENT_POPULATE_CONFIG)
-    .sort({ createdAt: -1 })
-    .lean();
+  const commentCounts = await getCommentCountsForContent(entries);
 
-  // Fetch images
-  const images = await Image.find({ userId: targetUserId })
-    .sort({ createdAt: -1 })
-    .lean();
-
-  // Get comment counts for all content types (parallel execution)
-  const {
-    memoryCommentCounts,
-    postCommentCounts,
-    // imageCommentCounts,
-} =
-    await getCommentCountsForContent(
-        memories,
-        posts,
-        // images,
-    );
-
-  // Transform all content
-  const transformedMemories = memories.map((m: any) =>
-    transformMemory(m, memoryCommentCounts, userId)
+  const transformedEntries = entries.map((e: any) =>
+    transformEntry(e, commentCounts, userId)
   );
 
-  const transformedPosts = posts.map((p: any) =>
-    transformPost(p, postCommentCounts, userId)
-  );
-
-//   const transformedImages = images.map((img: any) =>
-//     transformImage(img, imageCommentCounts, userId)
-//   );
-
-  // Combine and sort by createdAt
-  const allContent = sortContentByDate([
-    ...transformedMemories,
-    ...transformedPosts,
-    // ...transformedImages
-  ]);
-
-  return allContent;
+  return sortContentByDate(transformedEntries);
 }

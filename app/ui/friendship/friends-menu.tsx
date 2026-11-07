@@ -9,7 +9,7 @@ import { useFriendshipActions } from '@/app/lib/hooks/useFriendshipActions'
 import { showError } from '@/app/lib/utils/error-handler'
 import type { Friend, Friendship } from '@/app/lib/definitions/friendship'
 import type { FriendRequestPayload, FriendshipStatusPayload } from '@/app/lib/socket/events'
-import { Button } from '../button'
+import { Button } from '@iam/ui'
 import FriendCard from './friend-card'
 import UnifiedUserHeader from '../user/unified-user-header'
 

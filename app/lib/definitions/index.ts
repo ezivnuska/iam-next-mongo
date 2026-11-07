@@ -1,3 +1,3 @@
+export * from './entry'
 export * from './image'
-export * from './post'
 export * from './user'

@@ -98,9 +98,6 @@ export const TileProvider: React.FC<TileProviderProps> = ({ children }) => {
     }, [state.ticks])
 
     const handleNewScore = async () => {
-        // TODO: Implement score saving API
-        // const newScore = await addNewScore(savedScore as string)
-        // if (newScore) await fetchScores()
         setSavedScore(undefined)
     }
 
@@ -119,16 +116,10 @@ export const TileProvider: React.FC<TileProviderProps> = ({ children }) => {
     const clearScores = async () => {
         stopTicker()
         setStatus(GameStatus.IDLE)
-        // TODO: Implement clear scores API
-        // await clearAllScores()
         setScores([])
     }
 
-    const fetchScores = async () => {
-        // TODO: Implement fetch scores API
-        // const fetchedScores = await fetchScoresForGame()
-        // if (fetchedScores) setScores(fetchedScores)
-    }
+    const fetchScores = async () => {}
 
     useEffect(() => {
         fetchScores()
@@ -148,7 +139,6 @@ export const TileProvider: React.FC<TileProviderProps> = ({ children }) => {
                 shuffle()
             break
             case GameStatus.PLAYING:
-                // resetTicks()
                 startTicker()
             break
             case GameStatus.PAUSED:
@@ -222,9 +212,6 @@ export const TileProvider: React.FC<TileProviderProps> = ({ children }) => {
         }
 
         const lastTile = initialTiles.pop()
-        // let empty = { col: state.level - 1, row: state.level - 1 }
-        // if (lastTile) empty = { col: lastTile.col, row: lastTile.row }
-        
         setTiles(initialTiles)
     }
 

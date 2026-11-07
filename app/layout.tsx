@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import '@/app/ui/global.css';
-import { ubuntu } from '@/app/ui/fonts';
+import { ubuntu } from '@iam/ui';
 import { auth } from '@/app/lib/auth';
 import { UserProvider } from '@/app/lib/providers/user-provider';
 import { ThemeProvider } from '@/app/lib/providers/theme-provider';
@@ -37,7 +37,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     }}
                 />
             </head>
-            <body className={`${ubuntu.className} antialiased flex min-h-screen flex-col overflow-x-hidden`}>
+            <body className={`${ubuntu.className} antialiased h-dvh overflow-hidden flex flex-col`}>
                 <UserProvider initialUser={session?.user ?? null}>
                     <ThemeProvider>
                         <AuthModalProvider>

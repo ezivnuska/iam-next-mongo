@@ -4,7 +4,7 @@
 import { Hono } from 'hono'
 import { authMiddleware, TokenPayload } from '../../../middleware/auth'
 import { connectToDatabase } from '@/app/lib/mongoose'
-import { isValidObjectId } from '@/app/lib/utils/validation'
+import { isValidObjectId } from '@iam/shared-types'
 import AllocationModel from '@/app/lib/models/allocation'
 import MembershipModel from '@/app/lib/models/membership'
 import Issue from '@/app/lib/models/issue'

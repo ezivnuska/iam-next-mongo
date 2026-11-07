@@ -1,7 +1,7 @@
 // app/lib/mobile/attachIssueData.ts
 // Attaches pledges and applicants to an array of raw Issue documents.
 
-import { USER_WITH_AVATAR_POPULATE, APPLICANT_USER_POPULATE } from '@/app/lib/utils/validation'
+import { USER_WITH_AVATAR_POPULATE, APPLICANT_USER_POPULATE } from '@iam/db'
 import Pledge from '@/app/lib/models/pledge'
 import Applicant from '@/app/lib/models/applicant'
 

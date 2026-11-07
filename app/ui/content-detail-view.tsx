@@ -4,27 +4,20 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import type { ContentItem } from '@/app/lib/definitions/content';
-import type { Post } from '@/app/lib/definitions/post';
-import type { Memory } from '@/app/lib/definitions/memory';
+import type { Entry } from '@/app/lib/definitions/entry';
 import type { Image as ImageType } from '@/app/lib/definitions/image';
-import UnifiedUserHeader from './user/unified-user-header';
 import ContentImage from './content-image';
 import LikeButton from './like-button';
 import CommentFormModal from './comments/comment-form-modal';
 import CommentSection from './comments/comment-section';
 import { useComments } from '@/app/lib/hooks/use-comments';
 import { useUser } from '@/app/lib/providers/user-provider';
-import { CommentIcon } from './icons';
+import { CommentIcon } from '@iam/ui';
 import type { CommentRefType } from '@/app/lib/definitions/comment';
-import { toCommentRefType, isMemory, isPost, getContentImageUrl, getContentImageAlt, getContentImage } from '@/app/lib/utils/content-helpers';
-
-type DetailViewContent =
-    | (Post & { contentType: 'post' })
-    | (Memory & { contentType: 'memory' });
+import { toCommentRefType, getContentImageUrl, getContentImageAlt, getContentImage } from '@/app/lib/utils/content-helpers';
 
 interface ContentDetailViewProps {
-    item: DetailViewContent;
+    item: Entry;
 }
 
 export default function ContentDetailView({ item }: ContentDetailViewProps) {
@@ -79,75 +72,49 @@ export default function ContentDetailView({ item }: ContentDetailViewProps) {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [showImageModal]);
 
-    const renderMemoryContent = () => {
-        if (!isMemory(item)) return null;
-        const memory = item;
-        const memoryDate = new Date(memory.date).toLocaleDateString('en-US', {
-            year: 'numeric', month: 'long', day: 'numeric'
-        });
-
-        return (
-            <div className='flex flex-1 flex-col gap-2'>
-                <div className='flex flex-1 flex-col gap-2'>
-                    <p className='text-lg font-bold text-gray-900'>{memoryDate}</p>
-                    {memory.title && (
-                        <p className='text-lg font-light text-gray-600'>{memory.title}</p>
-                    )}
-                </div>
-                <ContentImage
-                    image={memory.image}
-                    alt='Memory image'
-                    className='max-w-full max-h-96 rounded object-cover cursor-pointer'
-                    onClick={memory.image ? () => handleImageClick(memory.image) : undefined}
-                />
-                {memory.content && (
-                    <p className='whitespace-pre-wrap text-gray-900'>{memory.content}</p>
-                )}
-            </div>
-        );
-    };
-
-    const renderPostContent = () => {
-        if (!isPost(item)) return null;
-        const post = item;
-
-        return (
-            <div className='flex flex-1 gap-2'>
-                <ContentImage
-                    image={post.image}
-                    alt='Post image'
-                    className='rounded object-cover cursor-pointer'
-                    onClick={post.image ? () => handleImageClick(post.image) : undefined}
-                />
-                {post.content && (
-                    <div className='text-gray-900'>
-                        <p>{post.content}</p>
-                        {post.linkUrl && (
-                            <a href={post.linkUrl} target='_blank' className='text-blue-500 underline mt-2 block'>
-                                [source]
-                            </a>
-                        )}
-                    </div>
-                )}
-            </div>
-        );
-    };
-
     return (
         <div className='flex flex-col gap-2'>
-            <UnifiedUserHeader
-                user={item.author}
-                avatar={item.author.avatar}
-                timestamp={item.createdAt}
-                avatarSize={40}
-                clickable
-            />
-
             <div className='flex flex-col flex-1'>
-                {isMemory(item) && renderMemoryContent()}
-                {isPost(item) && renderPostContent()}
+                {item.contentType === 'memory' && (
+                    <div className='flex flex-1 flex-col gap-2'>
+                        <div className='flex flex-1 flex-col gap-2'>
+                            <p className='text-lg font-bold text-gray-900'>
+                                {item.date ? new Date(item.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : ''}
+                            </p>
+                            {item.title && <p className='text-lg font-light text-gray-600'>{item.title}</p>}
+                        </div>
+                        <ContentImage
+                            image={item.image}
+                            alt='Memory image'
+                            className='max-w-full max-h-96 rounded object-cover cursor-pointer'
+                            onClick={item.image ? () => handleImageClick(item.image) : undefined}
+                        />
+                        {item.content && <p className='whitespace-pre-wrap text-gray-900'>{item.content}</p>}
+                    </div>
+                )}
 
-                <div className='flex flex-row items-center gap-2 text-sm text-gray-600'>
+                {item.contentType === 'post' && (
+                    <div className='flex flex-col gap-2'>
+                        {item.content && (
+                            <div className='text-gray-900'>
+                                <p>{item.content}</p>
+                                {item.linkUrl && (
+                                    <a href={item.linkUrl} target='_blank' className='text-blue-500 underline mt-2 block'>
+                                        [source]
+                                    </a>
+                                )}
+                            </div>
+                        )}
+                        <ContentImage
+                            image={item.image}
+                            alt='Post image'
+                            className='rounded object-cover cursor-pointer'
+                            onClick={item.image ? () => handleImageClick(item.image) : undefined}
+                        />
+                    </div>
+                )}
+
+                <div className='flex items-center gap-2 text-sm text-gray-600'>
                     <LikeButton
                         itemId={item.id}
                         itemType={refType}
@@ -191,9 +158,7 @@ export default function ContentDetailView({ item }: ContentDetailViewProps) {
                         <button
                             className='absolute top-4 right-4 bg-white rounded-full px-3 py-1 shadow text-black z-10'
                             onClick={closeImageModal}
-                        >
-                            ✕
-                        </button>
+                        >✕</button>
                     </div>
                 </div>
             )}
@@ -205,6 +170,7 @@ export default function ContentDetailView({ item }: ContentDetailViewProps) {
                 refType={refType}
                 onSubmit={handleCommentSubmit}
             />
+
         </div>
     );
 }

@@ -2,27 +2,21 @@
 
 'use client';
 
-import ContentInteractions from './content-interactions';
+import { useRouter } from 'next/navigation';
 import type { Image as ImageType } from '@/app/lib/definitions/image';
-import UnifiedUserHeader from './user/unified-user-header';
+import EntryHeader from './user/entry-header';
+import FlagContentButton from './flag-content-button';
 
 interface ContentCardProps {
     author: { id: string; username: string };
     avatar?: ImageType | null;
     createdAt: string;
-    itemId?: string;
-    itemType?: 'Post' | 'Memory' | 'Image';
+    href?: string;
     actions?: {
-        onDelete?: () => Promise<void>;
         onFlag?: () => void;
-        canDelete?: boolean;
     };
-    interactions?: {
-        initialLiked?: boolean;
-        initialLikeCount?: number;
-        initialCommentCount?: number;
-        autoExpandComments?: boolean;
-    };
+    compact?: boolean;
+    thumbnail?: React.ReactNode;
     children: React.ReactNode;
 }
 
@@ -30,40 +24,62 @@ export default function ContentCard({
     author,
     avatar,
     createdAt,
-    itemId,
-    itemType,
+    href,
     actions,
-    interactions,
+    compact = false,
+    thumbnail,
     children,
 }: ContentCardProps) {
-    return (
-        <div className='flex flex-col'>
-            <UnifiedUserHeader
-              user={author}
-              avatar={avatar}
-              onFlag={actions?.onFlag}
-              onDelete={actions?.onDelete}
-              canDelete={actions?.canDelete}
-              avatarSize={36}
-            //   variant='compact'
-              clickable
-            />
+    const router = useRouter();
 
-            {/* Content */}
+    const handleCardClick = href ? () => router.push(href) : undefined;
+
+    const actionsNode = actions?.onFlag && (
+        <div className='flex items-center shrink-0' onClick={e => e.stopPropagation()}>
+            <FlagContentButton onFlag={actions.onFlag} />
+        </div>
+    );
+
+    if (compact) {
+        return (
+            <div
+                className={`flex flex-row items-start gap-3${href ? ' cursor-pointer' : ''}`}
+                onClick={handleCardClick}
+            >
+                {thumbnail && <div className='shrink-0'>{thumbnail}</div>}
+                <div className='flex flex-col flex-1 min-w-0'>
+                    <div className='flex items-center justify-between'>
+                        <EntryHeader
+                            username={author.username}
+                            avatar={avatar}
+                            avatarSize={28}
+                            createdAt={createdAt}
+                        />
+                        {actionsNode}
+                    </div>
+                    <div className='flex-1 min-w-0'>{children}</div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div
+            className={`flex flex-col${href ? ' cursor-pointer' : ''}`}
+            onClick={handleCardClick}
+        >
+            <div className='flex items-center justify-between'>
+                <EntryHeader
+                    username={author.username}
+                    avatar={avatar}
+                    avatarSize={36}
+                    createdAt={createdAt}
+                />
+                {actionsNode}
+            </div>
+
             <div className='flex flex-col flex-1'>
                 {children}
-
-                {/* Footer Interactions */}
-                {interactions && itemId && itemType && (
-                    <ContentInteractions
-                        itemId={itemId}
-                        itemType={itemType}
-                        initialLiked={interactions.initialLiked}
-                        initialLikeCount={interactions.initialLikeCount || 0}
-                        initialCommentCount={interactions.initialCommentCount || 0}
-                        autoExpandComments={interactions.autoExpandComments}
-                    />
-                )}
             </div>
         </div>
     );

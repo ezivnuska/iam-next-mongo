@@ -2,15 +2,25 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
 export async function sendVerificationEmail(email: string, token: string, username: string) {
   const verifyUrl = `${process.env.NEXTAUTH_URL}/verify?token=${token}`;
+  const safeUsername = escapeHtml(username);
 
   const { error } = await resend.emails.send({
     from: process.env.EMAIL_FROM!,
     to: email,
     subject: "Verify your email address",
     html: `
-      <p>Hi ${username},</p>
+      <p>Hi ${safeUsername},</p>
       <p>Thanks for signing up. Click the link below to verify your email address:</p>
       <p><a href="${verifyUrl}">${verifyUrl}</a></p>
       <p>This link expires in 24 hours.</p>

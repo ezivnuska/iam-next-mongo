@@ -2,12 +2,11 @@
 
 export const dynamic = 'force-dynamic';
 
-import Breadcrumbs from '@/app/ui/layout/breadcrumbs';
 import ImagesClient from '@/app/ui/images/images-client';
 import { fetchUserByUsername } from '@/app/lib/actions/users';
 import { auth } from '@/app/lib/auth';
 import { redirect } from 'next/navigation';
-import PageContent from '@/app/ui/layout/page/page-content';
+import { PageContent } from '@iam/ui';
 
 interface Props {
     params: Promise<{ username: string }>;
@@ -31,14 +30,7 @@ export default async function Page({ params }: Props) {
 
     return (
         <PageContent>
-            <Breadcrumbs
-                breadcrumbs={[
-                    { label: 'Users', href: `/users` },
-                    { label: username, href: `/users/${username}` },
-                    { label: 'Images', href: `/users/${username}/images`, active: true },
-                ]}
-            />
-            <ImagesClient userId={id} authorized={isOwnImages} />
+            <ImagesClient userId={id} authorized={isOwnImages} username={username} />
         </PageContent>
     );
 }

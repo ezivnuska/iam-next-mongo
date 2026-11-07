@@ -1,6 +1,6 @@
 'use client'
 
-import { TrashIcon } from '@/app/ui/icons'
+import { TrashIcon } from '@iam/ui'
 import UserAvatar from '@/app/ui/user/user-avatar'
 import { formatRelativeTime } from '@/app/lib/utils/format-date'
 import { canDeleteComment } from '@/app/lib/utils/auth/permissions'

@@ -31,5 +31,6 @@ function makeRateLimiter(maxRequests: number, windowMs: number) {
   })
 }
 
-export const globalRateLimit = makeRateLimiter(120, 60_000)  // 120 req/min per IP
-export const loginRateLimit = makeRateLimiter(5, 60_000)     // 5 req/min per IP
+export const globalRateLimit = makeRateLimiter(120, 60_000)   // 120 req/min per IP
+export const loginRateLimit = makeRateLimiter(5, 60_000)      // 5 req/min per IP
+export const registerRateLimit = makeRateLimiter(3, 3_600_000) // 3 req/hr per IP

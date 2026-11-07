@@ -2,9 +2,9 @@
 
 'use client';
 
-import { ubuntu } from '@/app/ui/fonts';
+import { ubuntu } from '@iam/ui';
 import { AtSymbolIcon, KeyIcon, ExclamationCircleIcon, UserIcon } from '@heroicons/react/24/outline';
-import { Button } from '@/app/ui/button';
+import { Button } from '@iam/ui';
 import { useActionState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { register, type RegisterResult } from '@/app/lib/actions/register';

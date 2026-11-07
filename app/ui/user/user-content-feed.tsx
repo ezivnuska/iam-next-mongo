@@ -2,43 +2,46 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { ContentItem } from '@/app/lib/definitions/content';
-import type { Memory } from '@/app/lib/definitions/memory';
-import type { Post } from '@/app/lib/definitions/post';
+import type { Entry } from '@/app/lib/definitions/entry';
 import type { Image } from '@/app/lib/definitions/image';
-import { Button } from '@/app/ui/button';
+import { Button } from '@iam/ui';
 import ContentItemCard from '@/app/ui/content-item-card';
-import Modal from '@/app/ui/modal';
-import CreateMemoryForm from '@/app/ui/memories/create-memory-form';
-import CreatePostForm from '@/app/ui/posts/create-post-form';
+import { Modal } from '@iam/ui';
+import CreateEntryForm from '@/app/ui/entries/create-entry-form';
+import Lightbox from '@/app/ui/lightbox';
+import ImageModalMenu from '@/app/ui/images/image-modal-menu';
 import { useUser } from '@/app/lib/providers/user-provider';
 import { useSocket } from '@/app/lib/providers/socket-provider';
 import { getCommentCountsForItems } from '@/app/lib/actions/comments';
 import { filterCommentableContent, isImage } from '@/app/lib/utils/content-helpers';
 import { useCommentCountSocket } from '@/app/lib/hooks/use-comment-count-socket';
+import ProfileTabBar from '@/app/ui/user/profile-tab-bar';
+
+type ContentTab = 'post' | 'memory';
 
 interface UserContentFeedProps {
     initialContent: ContentItem[];
     editable?: boolean;
+    username?: string;
 }
 
-type ModalType = 'memory' | 'post' | 'image' | null;
+type ModalType = 'entry' | null;
 
-export default function UserContentFeed({ initialContent, editable = false }: UserContentFeedProps) {
+export default function UserContentFeed({ initialContent, editable = false, username }: UserContentFeedProps) {
     const { user } = useUser();
     const { socket } = useSocket();
     const [content, setContent] = useState<ContentItem[]>(initialContent);
+    const [activeTab, setActiveTab] = useState<ContentTab>('post');
     const [modalType, setModalType] = useState<ModalType>(null);
-    const [editingItem, setEditingItem] = useState<Memory | Post | undefined>(undefined);
+    const [editingItem, setEditingItem] = useState<Entry | undefined>(undefined);
+    const [selectedImage, setSelectedImage] = useState<Image | null>(null);
+    const [openWithComments, setOpenWithComments] = useState(false);
 
-    // Check if current user is the author of an item
     const isCurrentUserAuthor = (item: ContentItem): boolean => {
         if (!user?.id) return false;
-
-        if (isImage(item)) {
-            return item.userId === user.id;
-        }
+        if (isImage(item)) return item.userId === user.id;
         return item.author.id === user.id;
     };
 
@@ -46,14 +49,9 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
         setContent(prev => prev.filter(item => item.id !== id));
     };
 
-    const handleEdit = (item: ContentItem) => {
-        if (isImage(item)) return; // Images don't support editing yet
+    const handleEdit = (item: Entry) => {
         setEditingItem(item);
-        setModalType(item.contentType);
-    };
-
-    const handleFlag = (item: Memory | Post) => {
-        // TODO: Implement flag functionality
+        setModalType('entry');
     };
 
     const handleCloseModal = () => {
@@ -61,77 +59,81 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
         setEditingItem(undefined);
     };
 
-    const handleMemorySuccess = (memory: Memory) => {
+    const handleEntrySuccess = (entry: Entry) => {
         if (editingItem) {
-            setContent((prev) => prev.map(item => item.id === memory.id ? { ...memory, contentType: 'memory' as const } : item));
+            setContent(prev => prev.map(item => item.id === entry.id ? entry : item));
         } else {
-            setContent((prev) => [{ ...memory, contentType: 'memory' as const }, ...prev]);
+            setContent(prev => [entry, ...prev]);
         }
         handleCloseModal();
     };
 
-    const handlePostSuccess = (post: Post) => {
-        if (editingItem) {
-            setContent((prev) => prev.map(item => item.id === post.id ? { ...post, contentType: 'post' as const } : item));
-        } else {
-            setContent((prev) => [{ ...post, contentType: 'post' as const }, ...prev]);
-        }
-        handleCloseModal();
-    };
-
-    const handleImageSuccess = (image: Image) => {
-        setContent((prev) => [{ ...image, contentType: 'image' as const }, ...prev]);
-        handleCloseModal();
-    };
-
-    // Fetch fresh comment counts on mount to ensure accuracy
     useEffect(() => {
         const fetchCommentCounts = async () => {
-            const itemIds = filterCommentableContent(initialContent)
-                .map(item => item.id);
-
+            const itemIds = filterCommentableContent(initialContent).map(item => item.id);
             if (itemIds.length === 0) return;
-
             try {
                 const counts = await getCommentCountsForItems(itemIds);
                 setContent(prev => prev.map(item => ({
                     ...item,
-                    commentCount: counts[item.id] || 0
+                    commentCount: counts[item.id] || 0,
                 })));
             } catch (error) {
                 console.error('Failed to fetch comment counts:', error);
             }
         };
-
         fetchCommentCounts();
-    }, []); // Only run on mount
+    }, []);
+
+    const handleCloseLightbox = useCallback(() => {
+        setSelectedImage(null);
+        setOpenWithComments(false);
+    }, []);
+
+    const handleCommentImageClick = useCallback((image: Image) => {
+        setOpenWithComments(true);
+        setSelectedImage(image);
+    }, []);
+
+    const handleImageLikeChange = useCallback((newLiked: boolean, newCount: number) => {
+        if (!selectedImage) return;
+        setSelectedImage(prev => prev ? {
+            ...prev,
+            likedByCurrentUser: newLiked,
+            likes: newLiked
+                ? [...(prev.likes || []), user?.id || '']
+                : (prev.likes || []).filter(id => id !== user?.id),
+        } : null);
+    }, [selectedImage, user?.id]);
+
+    const handleImageDeleted = useCallback(() => {
+        if (!selectedImage) return;
+        setContent(prev => prev.filter(item => item.id !== selectedImage.id));
+        handleCloseLightbox();
+    }, [selectedImage, handleCloseLightbox]);
 
     useCommentCountSocket(socket, setContent);
 
-    // Show only memories and posts (exclude standalone images)
-    const filteredContent = filterCommentableContent(content);
+    const filteredContent = filterCommentableContent(content).filter(item =>
+        !editable || item.contentType === activeTab
+    );
 
     return (
         <div className='w-full max-w-[600px] pb-4'>
-            {/* Add Buttons - only show when editable */}
+            {username && editable && (
+                <ProfileTabBar
+                    username={username}
+                    activeTab={activeTab}
+                    isOwnProfile={true}
+                    onTabChange={setActiveTab}
+                />
+            )}
             {editable && (
-                <div className='flex justify-between gap-2 mb-4'>
-                    <Button
-                        size='sm'
-                        onClick={() => setModalType('memory')}
-                    >
-                        + Memory
-                    </Button>
-                    <Button
-                        size='sm'
-                        onClick={() => setModalType('post')}
-                    >
-                        + Post
-                    </Button>
+                <div className='flex justify-end mb-4'>
+                    <Button size='sm' onClick={() => setModalType('entry')}>+ New Entry</Button>
                 </div>
             )}
 
-            {/* Content List */}
             <div className='w-full max-w-[600px] mt-4 space-y-4'>
                 {filteredContent.length === 0 ? (
                     <p className='text-gray-500'>No content to display</p>
@@ -143,64 +145,66 @@ export default function UserContentFeed({ initialContent, editable = false }: Us
                                 item={item}
                                 editable={true}
                                 onDeleted={handleDeleted}
-                                onEdit={handleEdit as (item: Memory | Post) => void}
-                                onFlag={handleFlag}
+                                onEdit={handleEdit}
+                                onImageClick={setSelectedImage}
+                                onCommentImageClick={handleCommentImageClick}
                             />
                         ) : (
                             <ContentItemCard
                                 key={`${item.contentType}-${item.id}`}
                                 item={item}
+                                onImageClick={setSelectedImage}
+                                onCommentImageClick={handleCommentImageClick}
                             />
                         )
                     )
                 )}
             </div>
 
-            {/* Memory Modal */}
-            {modalType === 'memory' && (
+            {modalType === 'entry' && (
                 <Modal isOpen={true} onClose={handleCloseModal}>
                     <div className='flex flex-row items-center justify-between mb-4'>
                         <h1 className='text-2xl font-semibold text-gray-900'>
-                            {editingItem ? 'Edit Memory' : 'Create Memory'}
+                            {editingItem
+                                ? `Edit ${editingItem.contentType}`
+                                : 'New Entry'}
                         </h1>
                         <button
                             className='text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer'
                             onClick={handleCloseModal}
                             aria-label='Close'
-                        >
-                            ✕
-                        </button>
+                        >✕</button>
                     </div>
-                    <CreateMemoryForm
-                        onSuccess={handleMemorySuccess}
+                    <CreateEntryForm
+                        onSuccess={handleEntrySuccess}
                         onClose={handleCloseModal}
-                        editItem={editingItem as Memory | undefined}
+                        editItem={editingItem}
                     />
                 </Modal>
             )}
 
-            {/* Post Modal */}
-            {modalType === 'post' && (
-                <Modal isOpen={true} onClose={handleCloseModal}>
-                    <div className='flex flex-row items-center justify-between mb-4'>
-                        <h1 className='text-2xl font-semibold text-gray-900'>
-                            {editingItem ? 'Edit Post' : 'Create Post'}
-                        </h1>
-                        <button
-                            className='text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer'
-                            onClick={handleCloseModal}
-                            aria-label='Close'
-                        >
-                            ✕
-                        </button>
-                    </div>
-                    <CreatePostForm
-                        onSuccess={handlePostSuccess}
-                        onClose={handleCloseModal}
-                        editItem={editingItem as Post | undefined}
+            {selectedImage && (
+                <Lightbox
+                    src={selectedImage.variants.find(v => v.size === 'original')?.url || selectedImage.variants[0].url}
+                    alt={selectedImage.alt || 'Image'}
+                    onClose={handleCloseLightbox}
+                >
+                    <ImageModalMenu
+                        imageId={selectedImage.id}
+                        currentUserId={user?.id}
+                        currentUserRole={user?.role}
+                        initialLiked={selectedImage.likedByCurrentUser}
+                        initialLikeCount={selectedImage.likes?.length || 0}
+                        initialCommentCount={selectedImage.commentCount || 0}
+                        authorized={selectedImage.userId === user?.id}
+                        isAvatar={user?.avatar?.id === selectedImage.id}
+                        initialExpanded={openWithComments}
+                        onDeleted={handleImageDeleted}
+                        onLikeChange={handleImageLikeChange}
                     />
-                </Modal>
+                </Lightbox>
             )}
+
         </div>
     );
 }

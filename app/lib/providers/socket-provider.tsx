@@ -57,8 +57,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 		})
 
 		// Listen for initial online users list
-		socketInstance.on('users:online', ({ userIds }: { userIds: string[] }) => {
-			setOnlineUsers(new Set(userIds))
+		socketInstance.on('users:online', ({ users }: { users: { id: string; username: string }[] }) => {
+			setOnlineUsers(new Set(users.map(u => u.id)))
 		})
 
 		// Listen for user online/offline events

@@ -4,13 +4,13 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import FriendsMenu from '@/app/ui/friendship/friends-menu'
-import Modal from '@/app/ui/modal'
+import { Modal } from '@iam/ui'
 import { getFriendshipStatus } from '@/app/lib/actions/friendships'
 import { useFriendshipSocketEvents } from '@/app/lib/hooks/useFriendshipSocketEvents'
 import { useFriendshipActions } from '@/app/lib/hooks/useFriendshipActions'
 import { showError } from '@/app/lib/utils/error-handler'
 import type { FriendshipStatusPayload, FriendRequestPayload } from '@/app/lib/socket/events'
-import { Button } from '../button'
+import { Button } from '@iam/ui'
 
 type FriendshipButtonProps = {
 	userId: string

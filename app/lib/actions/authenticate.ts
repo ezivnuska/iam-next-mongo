@@ -4,8 +4,7 @@ import { signIn } from "@/app/lib/auth";
 import { AuthError } from "next-auth";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
-
-const VERIFICATION_CUTOFF = new Date("2026-10-24T00:00:00.000Z");
+import { VERIFICATION_CUTOFF } from "@/app/lib/constants";
 
 export async function authenticate(formData: FormData): Promise<string | undefined> {
   const email = formData.get("email") as string;

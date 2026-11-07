@@ -6,7 +6,7 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import Activity from "@/app/lib/models/activity";
 import "@/app/lib/models/user"; // Required for populate("user")
 import "@/app/lib/models/image"; // Required for populate("user.avatar")
-import { transformPopulatedAuthor } from "@/app/lib/utils/transformers";
+import { transformPopulatedAuthor } from "@iam/db";
 import type { Activity as ActivityType, ActivityAction, ActivityEntityType } from "@/app/lib/definitions/activity";
 import { requireAuth } from "@/app/lib/utils/auth";
 
@@ -70,88 +70,3 @@ export async function getUserActivities(limit = 50, offset = 0): Promise<Activit
   });
 }
 
-/**
- * Get activities by entity type
- */
-export async function getActivitiesByEntityType(
-  entityType: ActivityEntityType,
-  limit = 50,
-  offset = 0
-): Promise<ActivityType[]> {
-  await requireAuth();
-
-  return getActivities({
-    entityType,
-    limit,
-    offset
-  });
-}
-
-/**
- * Get activities for a specific entity
- */
-export async function getEntityActivities(
-  entityType: ActivityEntityType,
-  entityId: string
-): Promise<ActivityType[]> {
-  await requireAuth();
-
-  await connectToDatabase();
-
-  const activities = await Activity.find({
-    entityType,
-    entityId
-  })
-    .populate('user')
-    .sort({ createdAt: -1 })
-    .lean();
-
-  return activities.map((activity: any) => ({
-    id: activity._id.toString(),
-    user: transformPopulatedAuthor(activity.user),
-    action: activity.action,
-    entityType: activity.entityType,
-    entityId: activity.entityId.toString(),
-    entityData: activity.entityData,
-    metadata: activity.metadata,
-    createdAt: activity.createdAt.toISOString()
-  }));
-}
-
-/**
- * Get activity stats for a user
- */
-export async function getUserActivityStats(userId?: string) {
-  const user = await requireAuth();
-
-  const targetUserId = userId || user.id;
-
-  await connectToDatabase();
-
-  const stats = await Activity.aggregate([
-    { $match: { user: targetUserId } },
-    {
-      $group: {
-        _id: {
-          action: '$action',
-          entityType: '$entityType'
-        },
-        count: { $sum: 1 }
-      }
-    },
-    {
-      $group: {
-        _id: '$_id.action',
-        entityTypes: {
-          $push: {
-            type: '$_id.entityType',
-            count: '$count'
-          }
-        },
-        total: { $sum: '$count' }
-      }
-    }
-  ]);
-
-  return stats;
-}

@@ -7,11 +7,15 @@ import { useFilePreview } from "@/app/lib/hooks/useFilePreview";
 interface ImageUploadInputProps {
     file: File | null;
     onFileChange: (file: File | null) => void;
+    existingImageUrl?: string;
+    onRemoveExisting?: () => void;
     id?: string;
 }
 
-export default function ImageUploadInput({ file, onFileChange, id = "image" }: ImageUploadInputProps) {
-    const preview = useFilePreview(file);
+export default function ImageUploadInput({ file, onFileChange, existingImageUrl, onRemoveExisting, id = "image" }: ImageUploadInputProps) {
+    const newPreview = useFilePreview(file);
+    const preview = newPreview || (!file ? existingImageUrl : undefined);
+    const isExisting = !newPreview && !!existingImageUrl && !file;
 
     return (
         <div>
@@ -32,7 +36,10 @@ export default function ImageUploadInput({ file, onFileChange, id = "image" }: I
                 {preview && (
                     <button
                         type="button"
-                        onClick={() => onFileChange(null)}
+                        onClick={() => {
+                            onFileChange(null);
+                            if (isExisting) onRemoveExisting?.();
+                        }}
                         className="cursor-pointer text-sm text-red-600 hover:text-red-700"
                     >
                         Remove image

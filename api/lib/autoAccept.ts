@@ -10,7 +10,7 @@ import { serializeApplicant } from '../../app/lib/mobile/serializers'
 import { selectFundedWinner } from '../../app/lib/mobile/fundingUtils'
 import { midnightFollowingDay } from '../../app/lib/mobile/deadlines'
 import { holdPledges } from '../../app/lib/mobile/pledgePayments'
-import { APPLICANT_USER_POPULATE } from '../../app/lib/utils/validation'
+import { APPLICANT_USER_POPULATE } from '@iam/db'
 
 /**
  * After a bid or pledge change, check whether any pending applicant is now

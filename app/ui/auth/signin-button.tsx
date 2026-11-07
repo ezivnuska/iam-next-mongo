@@ -4,7 +4,7 @@
 
 import { useUser } from "@/app/lib/providers/user-provider";
 import { useAuthModal } from "@/app/lib/providers/auth-modal-provider";
-import { Button } from "../button";
+import { Button } from "@iam/ui";
 
 export default function SigninButton() {
     const { status } = useUser();

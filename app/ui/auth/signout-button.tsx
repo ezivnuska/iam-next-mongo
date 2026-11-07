@@ -3,7 +3,7 @@
 "use client";
 
 import { useUser } from "@/app/lib/providers/user-provider";
-import { Button } from "../button";
+import { Button } from "@iam/ui";
 
 export default function SignOutButton() {
     const { status, signOut } = useUser();

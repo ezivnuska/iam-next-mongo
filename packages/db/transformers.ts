@@ -14,6 +14,7 @@ type RawImageDoc = {
   username: string
   alt?: string
   variants?: RawVariant[]
+  likes?: { toString(): string }[]
 }
 
 // avatar may be an unpopulated ObjectId or a full populated document
@@ -33,16 +34,19 @@ export function transformImageVariant(variant: RawVariant): ImageVariant {
   };
 }
 
-export function transformPopulatedImage(image: unknown): Image | undefined {
+export function transformPopulatedImage(image: unknown, currentUserId?: string): Image | undefined {
   if (!image || typeof image !== 'object') return undefined;
   const doc = image as RawImageDoc;
   if (!('username' in doc)) return undefined;
+  const likes = (doc.likes || []).map(id => id.toString());
   return {
     id: doc._id.toString(),
     userId: doc.userId.toString(),
     username: doc.username,
     alt: doc.alt ?? '',
     variants: (doc.variants || []).map(transformImageVariant),
+    likes,
+    likedByCurrentUser: currentUserId ? likes.includes(currentUserId) : false,
   };
 }
 

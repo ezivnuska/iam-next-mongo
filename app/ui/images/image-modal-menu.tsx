@@ -2,20 +2,15 @@
 
 'use client'
 
-import { useEffect, forwardRef, useImperativeHandle } from 'react'
-import CommentControls from '@/app/ui/comments/comment-controls'
-import CommentSection from '@/app/ui/comments/comment-section'
+import { useState, useCallback } from 'react'
 import LikeButton from '@/app/ui/like-button'
 import DeleteButtonWithConfirm from '@/app/ui/delete-button-with-confirm'
 import AvatarButton from '@/app/ui/user/set-avatar-button'
-import { useComments } from '@/app/lib/hooks/use-comments'
+import CommentPanel from '@/app/ui/comments/comment-panel'
 import { useUser } from '@/app/lib/providers/user-provider'
-import type { Comment } from '@/app/lib/definitions/comment'
+import { CommentIcon } from '@iam/ui'
 
 type ImageModalMenuProps = {
-	isExpanded: boolean
-	onToggleExpanded: (e: React.MouseEvent) => void
-	onOpenCommentForm: (e: React.MouseEvent) => void
 	imageId: string
 	currentUserId?: string
 	currentUserRole?: string
@@ -24,20 +19,14 @@ type ImageModalMenuProps = {
 	initialCommentCount?: number
 	authorized?: boolean
 	isAvatar?: boolean
+	initialExpanded?: boolean
 	onDeleted?: () => void
 	onLikeChange?: (newLiked: boolean, newCount: number) => void
 	onCommentCountChange?: (newCount: number) => void
 	onAvatarChange?: (newAvatarId: string | null) => void
 }
 
-export type ImageModalMenuHandle = {
-	addComment: (comment: Comment) => void
-}
-
-const ImageModalMenu = forwardRef<ImageModalMenuHandle, ImageModalMenuProps>(({
-	isExpanded,
-	onToggleExpanded,
-	onOpenCommentForm,
+export default function ImageModalMenu({
 	imageId,
 	currentUserId,
 	currentUserRole,
@@ -46,112 +35,82 @@ const ImageModalMenu = forwardRef<ImageModalMenuHandle, ImageModalMenuProps>(({
 	initialCommentCount = 0,
 	authorized = false,
 	isAvatar = false,
+	initialExpanded = false,
 	onDeleted,
 	onLikeChange,
 	onCommentCountChange,
 	onAvatarChange,
-}, ref) => {
+}: ImageModalMenuProps) {
 	const { user, setUser } = useUser()
+	const [expanded, setExpanded] = useState(initialExpanded)
+	const [commentCount, setCommentCount] = useState(initialCommentCount)
 
-	const {
-		comments,
-		commentCount,
-		loadingComments,
-		commentsLoaded,
-		loadComments,
-		addComment,
-		deleteComment,
-		resetComments,
-	} = useComments({
-		itemId: imageId,
-		itemType: 'Image',
-		initialCommentCount,
-		onCommentCountChange,
-		currentUserId: currentUserId || user?.id,
-	})
+	const handleToggleExpanded = useCallback((e: React.MouseEvent) => {
+		e.stopPropagation()
+		setExpanded(prev => !prev)
+	}, [])
 
-	// Load comments when expanded
-	useEffect(() => {
-		if (imageId && isExpanded && !commentsLoaded) {
-			loadComments()
-		}
-	}, [imageId, isExpanded, commentsLoaded, loadComments])
-
-	// Reset comments when image changes
-	useEffect(() => {
-		resetComments()
-	}, [imageId, resetComments])
-
-	// Expose methods to parent via ref
-	useImperativeHandle(ref, () => ({
-		addComment,
-	}), [addComment])
+	const handleCommentCountChange = useCallback((count: number) => {
+		setCommentCount(count)
+		onCommentCountChange?.(count)
+	}, [onCommentCountChange])
 
 	return (
 		<div
-			className={`absolute bottom-0 left-0 right-0 flex flex-col bg-white rounded-t-lg shadow-2xl transition-all duration-300 ease-in-out ${
-				isExpanded ? 'h-[60vh]' : 'h-auto'
-			}`}
-			onClick={(e) => e.stopPropagation()}
+			className='absolute bottom-0 left-0 right-0 flex flex-col bg-white rounded-t-lg shadow-2xl'
+			onClick={e => e.stopPropagation()}
 		>
-			{/* Header Bar */}
-			<div className="flex items-center justify-between px-2 bg-gray-50 border-b border-gray-200 rounded-t-lg">
-				<div className="flex items-center gap-2">
+			<CommentPanel
+				expanded={expanded}
+				itemId={imageId}
+				itemType='Image'
+				initialCommentCount={initialCommentCount}
+				currentUserId={currentUserId}
+				currentUserRole={currentUserRole}
+				onCommentCountChange={handleCommentCountChange}
+			/>
+
+			{/* Footer bar — always visible */}
+			<div className='flex items-center justify-between px-2 py-1 bg-gray-50 rounded-t-lg'>
+				<div className='flex items-center gap-1'>
 					<LikeButton
 						itemId={imageId}
-						itemType="Image"
+						itemType='Image'
 						initialLiked={initialLiked}
 						initialLikeCount={initialLikeCount}
-						variant="default"
+						variant='default'
 						onLikeChange={onLikeChange}
 					/>
-					<CommentControls
-						commentCount={commentCount}
-						isExpanded={isExpanded}
-						onOpenCommentForm={onOpenCommentForm}
-						onToggleExpanded={onToggleExpanded}
-					/>
+					<button
+						onClick={handleToggleExpanded}
+						className='flex items-center gap-1 p-1 text-gray-600 hover:text-blue-500 transition-colors'
+						aria-label={expanded ? 'Collapse comments' : 'Show comments'}
+					>
+						<CommentIcon className='w-5 h-5' />
+						{commentCount > 0 && (
+							<span className='text-sm font-medium'>{commentCount}</span>
+						)}
+					</button>
 				</div>
 
 				{authorized && (
-					<div className="flex items-center gap-2">
+					<div className='flex items-center gap-2'>
 						<AvatarButton imageId={imageId} isAvatar={isAvatar} onAvatarChange={onAvatarChange} />
 						{onDeleted && (
 							<DeleteButtonWithConfirm
 								onDelete={async () => {
-									const res = await fetch(`/api/images/${imageId}`, { method: "DELETE" });
-									if (!res.ok) throw new Error("Failed to delete image");
-
-									// If this was the user's avatar, update user context
+									const res = await fetch(`/api/images/${imageId}`, { method: 'DELETE' })
+									if (!res.ok) throw new Error('Failed to delete image')
 									if (user?.avatar?.id === imageId) {
-										setUser({ ...user, avatar: null });
+										setUser({ ...user, avatar: null })
 									}
-
-									onDeleted();
+									onDeleted()
 								}}
 							/>
 						)}
 					</div>
 				)}
 			</div>
-
-			{/* Expandable Content */}
-			{isExpanded && (
-				<div className="flex-1 overflow-y-auto p-6">
-					<CommentSection
-						comments={comments}
-						loading={loadingComments}
-						currentUserId={currentUserId}
-						currentUserRole={currentUserRole}
-						onDelete={deleteComment}
-						loadingMessage="Loading comments..."
-					/>
-				</div>
-			)}
 		</div>
 	)
-})
-
-ImageModalMenu.displayName = 'ImageModalMenu'
-
-export default ImageModalMenu
+}

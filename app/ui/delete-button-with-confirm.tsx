@@ -2,16 +2,17 @@
 
 "use client";
 
-import { Button } from "@/app/ui/button";
+import { Button } from "@iam/ui";
 import { useState } from "react";
-import { TrashIcon } from '@/app/ui/icons'
+import { TrashIcon } from '@iam/ui'
 import { XMarkIcon } from "@heroicons/react/24/outline";
 
 interface DeleteButtonWithConfirmProps {
   onDelete: () => Promise<void>;
+  label?: boolean;
 }
 
-export default function DeleteButtonWithConfirm({ onDelete }: DeleteButtonWithConfirmProps) {
+export default function DeleteButtonWithConfirm({ onDelete, label = false }: DeleteButtonWithConfirmProps) {
   const [loading, setLoading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -73,10 +74,7 @@ export default function DeleteButtonWithConfirm({ onDelete }: DeleteButtonWithCo
       onClick={handleShowConfirm}
       variant='warn'
     >
-      <TrashIcon
-        className={`w-5 h-5`}
-        strokeWidth={2}
-      />
+      {label ? 'Delete' : <TrashIcon className='w-5 h-5' strokeWidth={2} />}
     </Button>
   );
 }

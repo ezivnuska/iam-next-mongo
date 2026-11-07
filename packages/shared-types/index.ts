@@ -152,6 +152,12 @@ export interface ImageVariant {
   url: string;
 }
 
+export interface ImageUsage {
+  type: 'post' | 'memory';
+  id: string;
+  title?: string;
+}
+
 export interface Image {
   id: string;
   userId: string;
@@ -167,6 +173,7 @@ export interface Image {
   likes?: string[];
   likedByCurrentUser?: boolean;
   commentCount?: number;
+  usages?: ImageUsage[];
 }
 
 export interface UploadedImage {

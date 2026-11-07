@@ -8,6 +8,7 @@ import "@/app/lib/models/image"; // Required for populate("author.avatar")
 import type { CommentRefType } from "@/app/lib/definitions/comment";
 import { Types } from "mongoose";
 import { logActivity } from "@/app/lib/utils/activity-logger";
+import { isValidObjectId } from "@iam/shared-types";
 import { emitCommentAdded, emitCommentDeleted } from "@/app/lib/socket/emit";
 import { requireAuth } from "@/app/lib/utils/auth";
 
@@ -29,7 +30,7 @@ export async function createComment(
 	}
 
 	// Validate refId is a valid MongoDB ObjectId
-	if (!/^[a-f\d]{24}$/i.test(refId)) {
+	if (!isValidObjectId(refId)) {
 		throw new Error("Invalid reference ID format");
 	}
 
@@ -154,7 +155,7 @@ export async function deleteComment(commentId: string) {
 	const user = await requireAuth();
 
 	// Validate commentId format
-	if (!/^[a-f\d]{24}$/i.test(commentId)) {
+	if (!isValidObjectId(commentId)) {
 		throw new Error("Invalid comment ID format");
 	}
 

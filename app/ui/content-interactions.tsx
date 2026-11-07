@@ -9,6 +9,7 @@ import CommentFormModal from '@/app/ui/comments/comment-form-modal'
 import CommentSection from '@/app/ui/comments/comment-section'
 import { useComments } from '@/app/lib/hooks/use-comments'
 import { useUser } from '@/app/lib/providers/user-provider'
+import { CommentIcon } from '@iam/ui'
 import type { CommentRefType } from '@/app/lib/definitions/comment'
 
 type ContentInteractionsProps = {
@@ -18,6 +19,7 @@ type ContentInteractionsProps = {
   initialLikeCount?: number
   initialCommentCount?: number
   autoExpandComments?: boolean
+  onCommentClick?: () => void
 }
 
 export default function ContentInteractions({
@@ -27,6 +29,7 @@ export default function ContentInteractions({
   initialLikeCount = 0,
   initialCommentCount = 0,
   autoExpandComments = false,
+  onCommentClick,
 }: ContentInteractionsProps) {
   const { user } = useUser()
   const [showCommentForm, setShowCommentForm] = useState(false)
@@ -98,30 +101,45 @@ export default function ContentInteractions({
           initialLiked={initialLiked}
           initialLikeCount={initialLikeCount}
         />
-        <CommentControls
-          commentCount={commentCount}
-          isExpanded={commentsExpanded}
-          onOpenCommentForm={handleOpenCommentForm}
-          onToggleExpanded={handleToggleComments}
-        />
+        {onCommentClick ? (
+          <button
+            onClick={(e) => { e.stopPropagation(); onCommentClick(); }}
+            className='flex items-center gap-1 p-1 text-gray-600 hover:text-blue-500 transition-colors'
+            aria-label='View comments'
+          >
+            <CommentIcon className='w-5 h-5' />
+            {commentCount > 0 && <span className='text-sm font-medium'>{commentCount}</span>}
+          </button>
+        ) : (
+          <CommentControls
+            commentCount={commentCount}
+            isExpanded={commentsExpanded}
+            onOpenCommentForm={handleOpenCommentForm}
+            onToggleExpanded={handleToggleComments}
+          />
+        )}
       </div>
 
-      <CommentFormModal
-        isOpen={showCommentForm}
-        onClose={() => setShowCommentForm(false)}
-        refId={itemId}
-        refType={itemType as CommentRefType}
-        onSubmit={handleCommentSubmit}
-      />
+      {!onCommentClick && (
+        <>
+          <CommentFormModal
+            isOpen={showCommentForm}
+            onClose={() => setShowCommentForm(false)}
+            refId={itemId}
+            refType={itemType as CommentRefType}
+            onSubmit={handleCommentSubmit}
+          />
 
-      {commentsExpanded && (
-        <CommentSection
-          comments={comments}
-          loading={loadingComments}
-          currentUserId={user?.id}
-          currentUserRole={user?.role}
-          onDelete={deleteComment}
-        />
+          {commentsExpanded && (
+            <CommentSection
+              comments={comments}
+              loading={loadingComments}
+              currentUserId={user?.id}
+              currentUserRole={user?.role}
+              onDelete={deleteComment}
+            />
+          )}
+        </>
       )}
     </>
   )
