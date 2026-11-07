@@ -8,10 +8,11 @@ interface ContentImageProps {
   alt?: string;
   className?: string;
   onClick?: () => void;
+  size?: number;
 }
 
-export default function ContentImage({ image, alt = 'Image', className = 'rounded my-2 object-cover', onClick }: ContentImageProps) {
-  const imageVariant = getBestVariant(image, IMAGE_SIZES.CONTENT);
+export default function ContentImage({ image, alt = 'Image', className = 'rounded my-2 object-cover', onClick, size = IMAGE_SIZES.CONTENT }: ContentImageProps) {
+  const imageVariant = getBestVariant(image, size);
 
   if (!imageVariant) return null;
 

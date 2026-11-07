@@ -12,6 +12,8 @@ import MemoryPolaroid from '@/app/ui/memories/memory-polaroid';
 import { isMemory, isPost } from '@/app/lib/utils/content-helpers';
 import { useContentPermissions } from '@/app/lib/hooks/use-content-permissions';
 import { useContentDelete } from '@/app/lib/hooks/use-content-delete';
+import { useScreenOrientation } from '@iam/ui';
+import { IMAGE_SIZES } from '@/app/lib/utils/images';
 
 type ContentItemCardProps = {
   item: ContentItem;
@@ -37,6 +39,8 @@ export default function ContentItemCard({
   const authorId = isMemory(item) || isPost(item) ? item.author.id : '';
   const { canEdit, canDelete } = useContentPermissions(authorId);
   const handleDelete = useContentDelete('entries', onDeleted || (() => {}));
+  const orientation = useScreenOrientation();
+  const isLandscape = orientation === 'landscape';
 
   if (isMemory(item)) {
     return (
@@ -67,6 +71,13 @@ export default function ContentItemCard({
   }
 
   if (isPost(item)) {
+    const imageClickHandler = item.image && onImageClick ? () => onImageClick(item.image!) : undefined;
+    const commentClickHandler = item.image
+      ? (onCommentImageClick
+          ? () => onCommentImageClick(item.image!, item.id, 'Post')
+          : imageClickHandler)
+      : undefined;
+
     return (
       <ContentCard
         author={item.author}
@@ -84,33 +95,46 @@ export default function ContentItemCard({
           initialLikeCount: item.likes?.length || 0,
           initialCommentCount: item.commentCount || 0,
           autoExpandComments,
-          onCommentClick: item.image
-            ? (onCommentImageClick
-                ? () => onCommentImageClick(item.image!, item.id, 'Post')
-                : onImageClick ? () => onImageClick(item.image!) : undefined)
-            : undefined,
+          onCommentClick: commentClickHandler,
         }}
+        compact={isLandscape}
+        thumbnail={
+          isLandscape && item.image
+            ? <ContentImage
+                image={item.image}
+                size={IMAGE_SIZES.THUMBNAIL}
+                className='w-14 h-14 rounded object-cover'
+                onClick={imageClickHandler}
+              />
+            : undefined
+        }
       >
-        <ContentImage
-          image={item.image}
-          alt='Post image'
-          className='rounded mt-2 object-cover'
-          onClick={item.image && onImageClick ? () => onImageClick(item.image!) : undefined}
-        />
+        {!isLandscape && (
+          <ContentImage
+            image={item.image}
+            alt='Post image'
+            className='rounded mt-2 object-cover'
+            onClick={imageClickHandler}
+          />
+        )}
         {item.content && (
-          <div className='flex flex-row gap-2'>
-            <div className='flex flex-1 py-1'>
-              <div className='flex flex-col gap-1 text-gray-900'>
-                <p>{item.content}</p>
-                {item.linkUrl && (
-                  <a href={item.linkUrl} target='_blank' className='text-blue-500 underline'>
-                    [source]
-                  </a>
-                )}
+          isLandscape ? (
+            <p className='text-sm text-gray-900 truncate'>{item.content}</p>
+          ) : (
+            <div className='flex flex-row gap-2'>
+              <div className='flex flex-1 py-1'>
+                <div className='flex flex-col gap-1 text-gray-900'>
+                  <p>{item.content}</p>
+                  {item.linkUrl && (
+                    <a href={item.linkUrl} target='_blank' className='text-blue-500 underline'>
+                      [source]
+                    </a>
+                  )}
+                </div>
               </div>
+              {editable && canEdit && onEdit && <EditContentButton onEdit={() => onEdit(item)} />}
             </div>
-            {editable && canEdit && onEdit && <EditContentButton onEdit={() => onEdit(item)} />}
-          </div>
+          )
         )}
       </ContentCard>
     );
