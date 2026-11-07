@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react';
 import { useUser } from '@/app/lib/providers/user-provider';
 import UserIdentity from '@/app/ui/user/user-identity';
 import UserBio from '@/app/ui/user/user-bio';
-import SignOutButton from '@/app/ui/auth/signout-button';
 import type { User } from '@/app/lib/definitions';
 
 interface UserProfileCardProps {
@@ -49,12 +48,7 @@ export default function UserProfileCard({ username }: UserProfileCardProps) {
     if (!displayUser) return <p>User not found</p>;
 
     if (isCurrentUser) {
-        return (
-            <div className='flex flex-row items-start gap-4 pr-1'>
-                <UserBio bio={displayUser.bio} editable />
-                <SignOutButton />
-            </div>
-        );
+        return <UserBio bio={displayUser.bio} editable />;
     }
 
     return (

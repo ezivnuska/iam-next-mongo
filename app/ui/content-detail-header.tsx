@@ -6,8 +6,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeftIcon, EllipsisIcon, Modal } from '@iam/ui';
 import UserAvatar from './user/user-avatar';
-import EditContentButton from './edit-content-button';
 import DeleteButtonWithConfirm from './delete-button-with-confirm';
+import { Button } from '@iam/ui';
 import CreateEntryForm from './entries/create-entry-form';
 import { formatRelativeTime } from '@/app/lib/utils/format-date';
 import { useContentPermissions } from '@/app/lib/hooks/use-content-permissions';
@@ -74,12 +74,14 @@ export default function ContentDetailHeader({ item, avatar }: ContentDetailHeade
 
                     {menuOpen && (
                         <div className='absolute right-0 top-full mt-1 bg-white border border-gray-100 rounded-lg shadow-lg py-1 z-50'>
-                            <div className='flex items-center gap-1 px-2 py-1'>
+                            <div className='flex flex-col px-2 py-1'>
                                 {canEdit && (
-                                    <EditContentButton onEdit={() => { setMenuOpen(false); setShowEditModal(true); }} />
+                                    <Button size='sm' variant='ghost' onClick={() => { setMenuOpen(false); setShowEditModal(true); }}>
+                                        Edit
+                                    </Button>
                                 )}
                                 {canDelete && (
-                                    <DeleteButtonWithConfirm onDelete={() => handleDelete(item.id)} />
+                                    <DeleteButtonWithConfirm onDelete={() => handleDelete(item.id)} label />
                                 )}
                             </div>
                         </div>

@@ -7,7 +7,8 @@ import { redirect } from 'next/navigation';
 import UserProfileCard from '@/app/ui/user/user-profile-card';
 import UserContentFeed from '@/app/ui/user/user-content-feed';
 import { getUserContent } from '@/app/lib/actions/user-content';
-import { PageContent } from '@iam/ui';
+import { PageContent, PageHeader } from '@iam/ui';
+import SignOutButton from '@/app/ui/auth/signout-button';
 
 interface Props {
   params: Promise<{ username: string }>;
@@ -26,7 +27,7 @@ export default async function UserProfilePage({ params }: Props) {
     const isOwnProfile = session.user?.username === username;
 
     return (
-        <PageContent>
+        <PageContent header={<PageHeader subtitle='Profile' actions={isOwnProfile ? <SignOutButton /> : undefined} />}>
             <UserProfileCard username={username} />
             <UserContentFeed initialContent={content} editable={isOwnProfile} username={username} />
         </PageContent>
