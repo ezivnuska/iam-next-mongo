@@ -17,7 +17,7 @@ export default function UserIdentity({ username, avatar, size = 36, stacked = fa
                 <div className='shrink-0' style={{ width: size, height: size }}>
                     <UserAvatar username={username} avatar={avatar} size={size} />
                 </div>
-                <span className='text-xs font-bold leading-none text-gray-900 truncate w-full text-center'>
+                <span className='font-bold leading-none text-gray-900 truncate w-full text-center' style={{ fontSize: '18px' }}>
                     {username}
                 </span>
             </div>

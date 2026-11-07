@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useRef, useEffect } from 'react';
 import clsx from 'clsx';
 import { useHorizontalLayout } from '../hooks/use-horizontal-layout';
 import { useContentLoaded } from '../hooks/use-content-loaded';
@@ -28,6 +28,21 @@ export default function Screen({
     const horizontalLayout = useHorizontalLayout();
     const isContentLoaded = useContentLoaded();
     const loggedIn = !!userControls;
+    const navRef = useRef<HTMLElement>(null);
+
+    useEffect(() => {
+        if (horizontalLayout) {
+            document.documentElement.style.setProperty('--nav-height', '0px');
+            return;
+        }
+        const el = navRef.current;
+        if (!el) return;
+        const sync = () => document.documentElement.style.setProperty('--nav-height', el.offsetHeight + 'px');
+        sync();
+        const obs = new ResizeObserver(sync);
+        obs.observe(el);
+        return () => obs.disconnect();
+    }, [horizontalLayout]);
 
     const content = showLoading && !isContentLoaded
         ? <LoadingSpinner />
@@ -39,7 +54,7 @@ export default function Screen({
             {horizontalLayout ? (
                 <>
                     <aside className={clsx(
-                        'fixed left-0 top-0 h-dvh w-24 flex flex-col py-4 px-2 bg-gray-100 z-10',
+                        'fixed left-0 top-0 h-dvh w-24 flex flex-col pt-2 pb-4 px-2 bg-gray-100 z-10',
                         { 'justify-between': loggedIn || !!nav },
                     )}>
                         {loggedIn ? (
@@ -57,13 +72,13 @@ export default function Screen({
                             </>
                         )}
                     </aside>
-                    <main className='ml-24 flex flex-col min-h-dvh overflow-x-hidden bg-white'>
+                    <main className='ml-24 flex flex-col flex-1 min-h-0 overflow-x-hidden bg-white'>
                         {content}
                     </main>
                 </>
             ) : (
                 <>
-                    <header className='sticky top-0 z-10 bg-gray-100 border-b border-gray-200'>
+                    <header ref={navRef} className='sticky top-0 z-10 bg-gray-100 border-b border-gray-200'>
                         <div className='flex flex-row items-center justify-between py-2 gap-4 px-4'>
                             {loggedIn ? (
                                 <>
@@ -81,7 +96,7 @@ export default function Screen({
                             )}
                         </div>
                     </header>
-                    <main className='flex flex-col min-h-dvh overflow-x-hidden bg-white'>
+                    <main className='flex flex-col flex-1 min-h-0 overflow-x-hidden bg-white'>
                         {content}
                     </main>
                 </>

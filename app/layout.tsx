@@ -37,7 +37,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     }}
                 />
             </head>
-            <body className={`${ubuntu.className} antialiased flex min-h-screen flex-col`}>
+            <body className={`${ubuntu.className} antialiased h-dvh overflow-hidden flex flex-col`}>
                 <UserProvider initialUser={session?.user ?? null}>
                     <ThemeProvider>
                         <AuthModalProvider>

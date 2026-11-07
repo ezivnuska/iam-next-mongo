@@ -10,7 +10,7 @@ interface PageHeaderProps {
 
 export default function PageHeader({ title, subtitle, className }: PageHeaderProps) {
     return (
-        <header className={clsx('', className)}>
+        <header className={clsx('border-b py-3', className)}>
             {title && (
                 <h1 className='leading-none text-xl font-bold md:text-xl text-gray-900'>
                     {title}
