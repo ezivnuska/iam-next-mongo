@@ -25,4 +25,7 @@ export {
     TrashIcon,
     CloseIcon,
     EllipsisIcon,
+    PostIcon,
+    MemoryIcon,
+    ImageIcon,
 } from './icons';

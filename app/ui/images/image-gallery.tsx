@@ -7,6 +7,7 @@ import { useCarousel } from '@/app/lib/hooks/use-carousel';
 import Lightbox from '@/app/ui/lightbox';
 import ImageModalMenu from '@/app/ui/images/image-modal-menu';
 import type { Image as ImageType } from '@/app/lib/definitions/image';
+import { PostIcon, MemoryIcon } from '@iam/ui';
 
 interface ImageGalleryProps {
   authorized?: boolean;
@@ -90,9 +91,14 @@ export default function ImageGallery({ authorized, images, onDeleted, onImageUpd
                     ).map(([type, count]) => (
                       <span
                         key={type}
-                        className='text-xs text-white bg-black/40 px-1.5 py-0.5 rounded-sm capitalize leading-none'
+                        title={count > 1 ? `${count} ${type}s` : type}
+                        className='flex items-center gap-1 text-xs text-white bg-black/40 px-1.5 py-0.5 rounded-sm leading-none'
                       >
-                        {count > 1 ? `${count} ${type}s` : type}
+                        {type === 'post'
+                          ? <PostIcon className='w-3 h-3' strokeWidth={2.5} />
+                          : <MemoryIcon className='w-3 h-3' strokeWidth={2.5} />
+                        }
+                        {count > 1 && <span>{count}</span>}
                       </span>
                     ))}
                   </div>
