@@ -80,6 +80,23 @@ export default function ImageGallery({ authorized, images, onDeleted, onImageUpd
                     No preview
                   </div>
                 )}
+                {img.usages && img.usages.length > 0 && (
+                  <div className='absolute bottom-0 left-0 right-0 flex flex-wrap gap-1 px-1.5 py-1 bg-gradient-to-t from-black/60 to-transparent'>
+                    {Object.entries(
+                      img.usages.reduce<Record<string, number>>((acc, u) => {
+                        acc[u.type] = (acc[u.type] || 0) + 1;
+                        return acc;
+                      }, {})
+                    ).map(([type, count]) => (
+                      <span
+                        key={type}
+                        className='text-xs text-white bg-black/40 px-1.5 py-0.5 rounded-sm capitalize leading-none'
+                      >
+                        {count > 1 ? `${count} ${type}s` : type}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })

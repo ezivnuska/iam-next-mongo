@@ -33,9 +33,28 @@ export async function getImages(
       .sort({ createdAt: -1 })
       .lean({ virtuals: true });
 
-    // Get comment counts for all images
     const imageIds = images.map((img: any) => img._id.toString());
-    const commentCounts = await getCommentCounts(imageIds, 'Image');
+
+    // Batch fetch comment counts and entry references in parallel
+    const imageObjectIds = images.map((img: any) => img._id);
+    const [commentCounts, entriesWithImages] = await Promise.all([
+      getCommentCounts(imageIds, 'Image'),
+      EntryModel.find({ image: { $in: imageObjectIds } })
+        .select('_id contentType title image')
+        .lean(),
+    ]);
+
+    // Build imageId → usages map
+    const usageMap: Record<string, Array<{ type: 'post' | 'memory'; id: string; title?: string }>> = {};
+    for (const entry of entriesWithImages as any[]) {
+      const imgId = entry.image.toString();
+      if (!usageMap[imgId]) usageMap[imgId] = [];
+      usageMap[imgId].push({
+        type: entry.contentType as 'post' | 'memory',
+        id: entry._id.toString(),
+        ...(entry.title ? { title: entry.title } : {}),
+      });
+    }
 
     const activeUserId = currentUserId || session?.user?.id;
     return images.map((img: any) => {
@@ -50,7 +69,7 @@ export async function getImages(
         username: img.username,
         filename: img.filename,
         alt: img.alt ?? "",
-        url: img.url ?? "", // original image URL
+        url: img.url ?? "",
         variants: (img.variants ?? []).map((v: any) => ({
           size: v.size,
           filename: v.filename,
@@ -61,6 +80,7 @@ export async function getImages(
         likes: (img.likes ?? []).map((id: any) => id.toString()),
         likedByCurrentUser,
         commentCount: commentCounts[imgId] || 0,
+        usages: usageMap[imgId] || [],
         createdAt: img.createdAt?.toISOString() ?? new Date().toISOString(),
         updatedAt: img.updatedAt?.toISOString() ?? new Date().toISOString(),
       };
