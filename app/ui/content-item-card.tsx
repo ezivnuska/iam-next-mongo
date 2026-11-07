@@ -42,6 +42,37 @@ export default function ContentItemCard({
   const isLandscape = orientation === 'landscape';
 
   if (isMemory(item)) {
+    if (isLandscape) {
+      const memoryDate = item.date
+        ? new Date(item.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+        : '';
+      return (
+        <ContentCard
+          author={item.author}
+          avatar={item.author.avatar}
+          createdAt={item.createdAt}
+          actions={editable && onFlag ? { onFlag: () => onFlag(item) } : undefined}
+          href={`/users/${item.author.username}/${item.id}`}
+          compact
+          thumbnail={
+            item.image
+              ? <ContentImage
+                  image={item.image}
+                  size={IMAGE_SIZES.THUMBNAIL}
+                  className='w-14 h-14 rounded object-cover'
+                />
+              : undefined
+          }
+        >
+          <div className='flex flex-col min-w-0'>
+            {item.title && <p className='text-sm font-semibold text-gray-900 truncate'>{item.title}</p>}
+            {memoryDate && <p className='text-xs text-gray-500 truncate'>{memoryDate}</p>}
+            {item.content && <p className='text-sm text-gray-700 truncate'>{item.content}</p>}
+          </div>
+        </ContentCard>
+      );
+    }
+
     return (
       <MemoryPolaroid
         entry={item}
