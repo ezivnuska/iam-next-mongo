@@ -24,4 +24,5 @@ export {
     ChevronLeftIcon,
     TrashIcon,
     CloseIcon,
+    EllipsisIcon,
 } from './icons';

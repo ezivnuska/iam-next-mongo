@@ -7,7 +7,6 @@ import type { Entry } from '@/app/lib/definitions/entry';
 import type { Image as ImageType } from '@/app/lib/definitions/image';
 import ContentCard from '@/app/ui/content-card';
 import ContentImage from '@/app/ui/content-image';
-import EditContentButton from '@/app/ui/edit-content-button';
 import MemoryPolaroid from '@/app/ui/memories/memory-polaroid';
 import { isMemory, isPost } from '@/app/lib/utils/content-helpers';
 import { useContentPermissions } from '@/app/lib/hooks/use-content-permissions';
@@ -95,18 +94,13 @@ export default function ContentItemCard({
           isLandscape ? (
             <p className='text-sm text-gray-900 truncate'>{item.content}</p>
           ) : (
-            <div className='flex flex-row gap-2'>
-              <div className='flex flex-1 py-1'>
-                <div className='flex flex-col gap-1 text-gray-900'>
-                  <p>{item.content}</p>
-                  {item.linkUrl && (
-                    <a href={item.linkUrl} target='_blank' className='text-blue-500 underline' onClick={e => e.stopPropagation()}>
-                      [source]
-                    </a>
-                  )}
-                </div>
-              </div>
-              {editable && canEdit && onEdit && <EditContentButton onEdit={() => onEdit(item)} />}
+            <div className='flex flex-col gap-1 py-1 text-gray-900'>
+              <p>{item.content}</p>
+              {item.linkUrl && (
+                <a href={item.linkUrl} target='_blank' className='text-blue-500 underline' onClick={e => e.stopPropagation()}>
+                  [source]
+                </a>
+              )}
             </div>
           )
         )}

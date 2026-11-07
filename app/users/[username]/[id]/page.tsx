@@ -75,9 +75,8 @@ export default async function ContentDetailPage({ params }: Props) {
     return (
         <PageContent header={
             <ContentDetailHeader
-                username={content.author.username}
+                item={content}
                 avatar={content.author.avatar}
-                createdAt={content.createdAt}
             />
         }>
             <SetBreadcrumbLabel segment={id} label={contentLabel} />

@@ -3,19 +3,15 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { Entry } from '@/app/lib/definitions/entry';
 import type { Image as ImageType } from '@/app/lib/definitions/image';
 import ContentImage from './content-image';
 import LikeButton from './like-button';
-import DeleteButtonWithConfirm from './delete-button-with-confirm';
 import CommentFormModal from './comments/comment-form-modal';
 import CommentSection from './comments/comment-section';
 import { useComments } from '@/app/lib/hooks/use-comments';
 import { useUser } from '@/app/lib/providers/user-provider';
-import { useContentPermissions } from '@/app/lib/hooks/use-content-permissions';
-import { useContentDelete } from '@/app/lib/hooks/use-content-delete';
 import { CommentIcon } from '@iam/ui';
 import type { CommentRefType } from '@/app/lib/definitions/comment';
 import { toCommentRefType, getContentImageUrl, getContentImageAlt, getContentImage } from '@/app/lib/utils/content-helpers';
@@ -25,10 +21,7 @@ interface ContentDetailViewProps {
 }
 
 export default function ContentDetailView({ item }: ContentDetailViewProps) {
-    const router = useRouter();
     const { user } = useUser();
-    const { canDelete } = useContentPermissions(item.author.id);
-    const handleDelete = useContentDelete('entries', () => router.back());
     const [showCommentForm, setShowCommentForm] = useState(false);
     const [showImageModal, setShowImageModal] = useState(false);
     const previousCountRef = useRef(item.commentCount || 0);
@@ -121,24 +114,21 @@ export default function ContentDetailView({ item }: ContentDetailViewProps) {
                     </div>
                 )}
 
-                <div className='flex flex-row items-center justify-between text-sm text-gray-600'>
-                    <div className='flex items-center gap-2'>
-                        <LikeButton
-                            itemId={item.id}
-                            itemType={refType}
-                            initialLiked={item.likedByCurrentUser}
-                            initialLikeCount={item.likes?.length || 0}
-                        />
-                        <button
-                            className='flex items-center gap-2 rounded transition-colors cursor-pointer'
-                            onClick={handleOpenCommentForm}
-                            aria-label='Add comment'
-                        >
-                            <CommentIcon className='w-5 h-5 text-gray-600 hover:text-blue-300' />
-                        </button>
-                        <span className='text-sm font-medium text-gray-700'>{commentCount}</span>
-                    </div>
-                    {canDelete && <DeleteButtonWithConfirm onDelete={() => handleDelete(item.id)} />}
+                <div className='flex items-center gap-2 text-sm text-gray-600'>
+                    <LikeButton
+                        itemId={item.id}
+                        itemType={refType}
+                        initialLiked={item.likedByCurrentUser}
+                        initialLikeCount={item.likes?.length || 0}
+                    />
+                    <button
+                        className='flex items-center gap-2 rounded transition-colors cursor-pointer'
+                        onClick={handleOpenCommentForm}
+                        aria-label='Add comment'
+                    >
+                        <CommentIcon className='w-5 h-5 text-gray-600 hover:text-blue-300' />
+                    </button>
+                    <span className='text-sm font-medium text-gray-700'>{commentCount}</span>
                 </div>
 
                 <div className='pb-4'>
@@ -180,6 +170,7 @@ export default function ContentDetailView({ item }: ContentDetailViewProps) {
                 refType={refType}
                 onSubmit={handleCommentSubmit}
             />
+
         </div>
     );
 }
