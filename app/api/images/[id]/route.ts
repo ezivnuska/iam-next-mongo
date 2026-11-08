@@ -2,6 +2,7 @@
 
 import { NextResponse } from "next/server";
 import { deleteImage } from "@/app/lib/actions/images";
+import { isValidObjectId } from "@iam/shared-types";
 
 export async function DELETE(req: Request) {
   try {
@@ -9,6 +10,9 @@ export async function DELETE(req: Request) {
     const id = url.pathname.split("/").pop();
     if (!id) {
       return NextResponse.json({ error: "Missing image ID" }, { status: 400 });
+    }
+    if (!isValidObjectId(id)) {
+      return NextResponse.json({ error: "Invalid image ID" }, { status: 400 });
     }
 
     await deleteImage(id);

@@ -10,6 +10,7 @@ import UserModel from '@/app/lib/models/user'
 import { loginRateLimit, registerRateLimit } from '../../middleware/rate-limit'
 import { signMobileToken } from '@/app/lib/jwt'
 import { loginRequestSchema, registerRequestSchema } from '../../lib/schemas/auth'
+import { VERIFICATION_CUTOFF } from '@/app/lib/constants'
 
 const auth = new Hono()
 
@@ -25,6 +26,9 @@ auth.post('/api/mobile/login', loginRateLimit, async (c) => {
     const isValid = await bcrypt.compare(password, userDoc.password)
     if (!isValid)
       return c.json({ error: 'Invalid email or password' }, 401)
+
+    if (userDoc.createdAt >= VERIFICATION_CUTOFF && !userDoc.verified)
+      return c.json({ error: 'Email not verified' }, 403)
 
     const token = await signMobileToken({
       id: userDoc._id.toString(),

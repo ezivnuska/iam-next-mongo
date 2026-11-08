@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 
 type OptimisticMutationResult<T> = {
 	data: T
@@ -19,9 +19,13 @@ export function useOptimisticMutation<T>(
 	const [isLoading, setIsLoading] = useState(false)
 	const [error, setError] = useState<Error | null>(null)
 
+	// Always reflects the latest data without needing it as a useCallback dep
+	const dataRef = useRef(data)
+	dataRef.current = data
+
 	const mutate = useCallback(
 		async (optimisticValue: T, action: () => Promise<T>): Promise<T | undefined> => {
-			const previousValue = data
+			const previousValue = dataRef.current
 			setData(optimisticValue)
 			setIsLoading(true)
 			setError(null)
@@ -40,7 +44,7 @@ export function useOptimisticMutation<T>(
 				setIsLoading(false)
 			}
 		},
-		[data]
+		[] // stable — reads latest data via ref, not closure
 	)
 
 	return { data, isLoading, error, mutate, setData }

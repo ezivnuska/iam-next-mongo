@@ -11,69 +11,72 @@ import { requireAuth } from "@/app/lib/utils/auth";
 
 type LikeableType = 'Image' | 'Post' | 'Memory';
 
-async function resolveEntryModel(itemId: string) {
-	return EntryModel.findById(itemId).select('likes').lean();
-}
-
 export async function toggleLike(itemId: string, itemType: LikeableType) {
 	const user = await requireAuth();
 	const userId = user.id;
 
 	await connectToDatabase();
-	let item: any;
 	let updated: any;
 	let likePayload: any;
 
 	switch (itemType) {
 		case 'Image': {
-			item = await ImageModel.findById(itemId).select('likes').lean();
-			if (!item) throw new Error('Image not found');
-
-			const isLiked = (item.likes || []).some((id: any) => id.toString() === userId);
+			const userId_oid = new Types.ObjectId(userId);
 			updated = await ImageModel.findByIdAndUpdate(
 				itemId,
-				isLiked ? { $pull: { likes: userId } } : { $addToSet: { likes: userId } },
+				[{ $set: { likes: { $cond: {
+					if: { $in: [userId_oid, '$likes'] },
+					then: { $filter: { input: '$likes', as: 'like', cond: { $ne: ['$$like', userId_oid] } } },
+					else: { $concatArrays: ['$likes', [userId_oid]] },
+				} } } }],
 				{ new: true, select: 'likes' }
 			);
+			if (!updated) throw new Error('Image not found');
+
+			const nowLiked = (updated.likes || []).some((id: any) => id.toString() === userId);
 
 			await logActivity({
 				userId,
-				action: isLiked ? 'delete' : 'create',
+				action: nowLiked ? 'create' : 'delete',
 				entityType: 'like',
 				entityId: itemId,
-				entityData: { itemType: 'Image', isUnlike: isLiked },
+				entityData: { itemType: 'Image', isUnlike: !nowLiked },
 			});
 
 			likePayload = { itemId, itemType: 'Image' as const, userId, username: user.name || user.email || 'Unknown' };
-			await (isLiked ? emitLikeRemoved(likePayload) : emitLikeAdded(likePayload));
+			await (nowLiked ? emitLikeAdded(likePayload) : emitLikeRemoved(likePayload));
 
-			return { liked: !isLiked, likeCount: updated?.likes?.length || 0 };
+			return { liked: nowLiked, likeCount: updated?.likes?.length || 0 };
 		}
 
 		case 'Post':
 		case 'Memory': {
-			item = await resolveEntryModel(itemId);
-			if (!item) throw new Error(`${itemType} not found`);
-
-			const isLiked = (item.likes || []).some((id: any) => id.toString() === userId);
+			const userId_oid = new Types.ObjectId(userId);
 			updated = await EntryModel.findByIdAndUpdate(
 				itemId,
-				isLiked ? { $pull: { likes: userId } } : { $addToSet: { likes: userId } },
+				[{ $set: { likes: { $cond: {
+					if: { $in: [userId_oid, '$likes'] },
+					then: { $filter: { input: '$likes', as: 'like', cond: { $ne: ['$$like', userId_oid] } } },
+					else: { $concatArrays: ['$likes', [userId_oid]] },
+				} } } }],
 				{ new: true, select: 'likes' }
 			);
+			if (!updated) throw new Error(`${itemType} not found`);
+
+			const nowLiked = (updated.likes || []).some((id: any) => id.toString() === userId);
 
 			await logActivity({
 				userId,
-				action: isLiked ? 'delete' : 'create',
+				action: nowLiked ? 'create' : 'delete',
 				entityType: 'like',
 				entityId: itemId,
-				entityData: { itemType, isUnlike: isLiked },
+				entityData: { itemType, isUnlike: !nowLiked },
 			});
 
 			likePayload = { itemId, itemType: itemType as 'Post' | 'Memory', userId, username: user.name || user.email || 'Unknown' };
-			await (isLiked ? emitLikeRemoved(likePayload) : emitLikeAdded(likePayload));
+			await (nowLiked ? emitLikeAdded(likePayload) : emitLikeRemoved(likePayload));
 
-			return { liked: !isLiked, likeCount: updated?.likes?.length || 0 };
+			return { liked: nowLiked, likeCount: updated?.likes?.length || 0 };
 		}
 
 		default:

@@ -12,7 +12,9 @@ function escapeHtml(str: string): string {
 }
 
 export async function sendVerificationEmail(email: string, token: string, username: string) {
-  const verifyUrl = `${process.env.NEXTAUTH_URL}/verify?token=${token}`;
+  const verifyUrl = new URL('/verify', process.env.NEXTAUTH_URL);
+  verifyUrl.searchParams.set('token', token);
+  const verifyUrlStr = verifyUrl.toString();
   const safeUsername = escapeHtml(username);
 
   const { error } = await resend.emails.send({
@@ -22,7 +24,7 @@ export async function sendVerificationEmail(email: string, token: string, userna
     html: `
       <p>Hi ${safeUsername},</p>
       <p>Thanks for signing up. Click the link below to verify your email address:</p>
-      <p><a href="${verifyUrl}">${verifyUrl}</a></p>
+      <p><a href="${verifyUrlStr}">${verifyUrlStr}</a></p>
       <p>This link expires in 24 hours.</p>
       <p>If you didn't create an account, you can ignore this email.</p>
     `,

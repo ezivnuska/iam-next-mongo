@@ -307,6 +307,9 @@ sub.post('/api/mobile/issues/:id/reports', authMiddleware, async (c) => {
     if (issue.status !== 'open') return c.json({ error: 'Issue is not open' }, 409)
 
     issue.reports = issue.reports ?? []
+    if (issue.reports.some((r: any) => r.userId.toString() === token.id))
+      return c.json({ error: 'Already reported' }, 409)
+
     issue.reports.push({
       userId: token.id,
       ...(imageId ? { imageId } : {}),

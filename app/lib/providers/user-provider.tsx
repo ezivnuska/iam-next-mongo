@@ -29,7 +29,8 @@ export function UserProvider({ children, initialUser }: UserProviderProps) {
     const [user, setUser] = useState<User | null>(null);
     const [status, setStatus] = useState<AuthStatus>(initialUser ? "loading" : "unauthenticated");
 
-    const [userCache] = useState<Map<string, User>>(new Map());
+    const [idCache] = useState<Map<string, User>>(new Map());
+    const [usernameCache] = useState<Map<string, User>>(new Map());
 
     useEffect(() => {
         async function fetchFullUser() {
@@ -61,13 +62,13 @@ export function UserProvider({ children, initialUser }: UserProviderProps) {
     }, [initialUser]);
 
     async function fetchUserById(id: string): Promise<User | null> {
-        if (userCache.has(id)) return userCache.get(id)!;
+        if (idCache.has(id)) return idCache.get(id)!;
 
         try {
             const res = await fetch(`/api/users/${id}`);
             if (!res.ok) throw new Error("Failed to fetch user profile");
             const data: User = await res.json();
-            userCache.set(id, data);
+            idCache.set(id, data);
             return data;
         } catch (err) {
             console.error("fetchUserById error:", err);
@@ -76,14 +77,14 @@ export function UserProvider({ children, initialUser }: UserProviderProps) {
     }
 
     async function fetchUserByUsername(username: string): Promise<User | null> {
-        if (userCache.has(username)) return userCache.get(username)!;
+        if (usernameCache.has(username)) return usernameCache.get(username)!;
 
         try {
             const res = await fetch(`/api/users/${username}`);
             if (!res.ok) throw new Error(`Failed to fetch user profile (username: ${username})`);
 
             const data: User = await res.json();
-            userCache.set(username, data);
+            usernameCache.set(username, data);
             return data;
         } catch (err) {
             console.error("fetchUserByUsername error:", err);

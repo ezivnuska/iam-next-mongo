@@ -28,7 +28,11 @@ export async function getActivities({
   limit = 50,
   offset = 0
 }: GetActivitiesParams = {}): Promise<ActivityType[]> {
-  await requireAuth();
+  const caller = await requireAuth();
+
+  if (userId && userId !== caller.id && caller.role !== 'admin') {
+    throw new Error('Forbidden');
+  }
 
   await connectToDatabase();
 
