@@ -5,6 +5,7 @@
 import { connectToDatabase } from "@/app/lib/mongoose";
 import ImageModel from "@/app/lib/models/image";
 import EntryModel from "@/app/lib/models/entry";
+import { Types } from "mongoose";
 import { logActivity } from "@/app/lib/utils/activity-logger";
 import { emitLikeAdded, emitLikeRemoved } from "@/app/lib/socket/emit";
 import { requireAuth } from "@/app/lib/utils/auth";
