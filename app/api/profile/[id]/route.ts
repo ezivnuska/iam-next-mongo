@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
 
         const user = await UserModel.findByIdAndUpdate(userId, { avatar: imageId }, { new: true })
             .populate("avatar", "_id variants");
+        if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
         return NextResponse.json({ user: normalizeUser(user) });
     } catch (err) {
         console.error("Profile update error:", err);
