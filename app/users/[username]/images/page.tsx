@@ -2,18 +2,16 @@
 
 export const dynamic = 'force-dynamic';
 
-import ImagesClient from '@/app/ui/images/images-client';
-import { fetchUserByUsername } from '@/app/lib/actions/users';
 import { auth } from '@/app/lib/auth';
 import { redirect } from 'next/navigation';
 import { PageContent } from '@iam/ui';
+import UserImagesPanel from '@/app/ui/user/user-images-panel';
 
 interface Props {
     params: Promise<{ username: string }>;
 }
 
 export default async function Page({ params }: Props) {
-    // Server-side authentication check
     const session = await auth();
     const { username } = await params;
 
@@ -21,16 +19,11 @@ export default async function Page({ params }: Props) {
         redirect(`/?auth=required&callbackUrl=/users/${username}/images`);
     }
 
-    const user = await fetchUserByUsername(username);
-    if (!user) return null;
-    const { id } = user;
-
-    // Check if viewing own images
     const isOwnImages = session.user?.username === username;
 
     return (
         <PageContent>
-            <ImagesClient userId={id} authorized={isOwnImages} username={username} />
+            <UserImagesPanel username={username} authorized={isOwnImages} />
         </PageContent>
     );
 }

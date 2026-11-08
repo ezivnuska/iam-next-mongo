@@ -9,7 +9,7 @@ interface UserBioProps {
 
 export default function UserBio({ bio, editable }: UserBioProps) {
     return (
-        <div className='flex flex-row items-start gap-4'>
+        <div className='flex flex-row items-start gap-4 py-3 px-2'>
             <p className='flex flex-1 text-gray-600'>{bio || ''}</p>
             {editable && <BioForm />}
         </div>

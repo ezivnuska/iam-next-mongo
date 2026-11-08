@@ -4,12 +4,14 @@
 
 import { Suspense } from 'react';
 import Link from 'next/link';
-import { Screen, useHorizontalLayout } from '@iam/ui';
+import { Screen } from '@iam/ui';
 import UserButton from '@/app/ui/header/user-button';
+import SignOutButton from '@/app/ui/auth/signout-button';
 import SigninButton from '@/app/ui/auth/signin-button';
 import AuthRedirectHandler from '@/app/ui/auth/auth-redirect-handler';
 import { NewspaperIcon } from '@heroicons/react/24/solid';
 import { useUser } from '@/app/lib/providers/user-provider';
+import { useHorizontalLayout } from '@iam/ui';
 
 function PuzzleIcon({ className }: { className?: string }) {
     return (
@@ -26,14 +28,19 @@ interface SimpleScreenProps {
 
 export default function SimpleScreen({ children, showLoading = true }: SimpleScreenProps) {
     const { user } = useUser();
-    const loggedIn = !!user && !user.isGuest;
     const horizontalLayout = useHorizontalLayout();
+    const loggedIn = !!user && !user.isGuest;
 
     return (
         <Screen
-            userControls={loggedIn ? <UserButton /> : undefined}
+            userControls={loggedIn ? (
+                <div className={horizontalLayout ? 'flex flex-col items-center gap-1' : 'flex flex-row items-center gap-3'}>
+                    <UserButton />
+                    <SignOutButton />
+                </div>
+            ) : undefined}
             nav={loggedIn ? (
-                <div className={horizontalLayout ? 'flex flex-col items-center gap-2' : 'flex items-center gap-2'}>
+                <>
                     <Link
                         href='/feed'
                         className='flex items-center justify-center text-gray-700 hover:text-gray-500 transition-colors'
@@ -48,7 +55,7 @@ export default function SimpleScreen({ children, showLoading = true }: SimpleScr
                     >
                         <PuzzleIcon className='w-7 h-7' />
                     </a>
-                </div>
+                </>
             ) : (
                 <SigninButton />
             )}

@@ -3,25 +3,18 @@
 "use client";
 
 import { useUser } from "@/app/lib/providers/user-provider";
-import { Button } from "@iam/ui";
 
 export default function SignOutButton() {
     const { status, signOut } = useUser();
     const isSigningOut = status === 'signing-out';
 
-    const handleSignOut = async () => {
-        await signOut(); // UserProvider handles clearing state + next-auth
-    };
-
     return (
-        <Button
-            onClick={handleSignOut}
-            variant='link'
-            size='sm'
+        <button
+            onClick={() => signOut()}
             disabled={isSigningOut}
-            className='text-blue-300'
+            className='py-1.5 text-base font-medium rounded-full text-blue-600 hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-default whitespace-nowrap'
         >
             Sign Out
-        </Button>
+        </button>
     );
 }

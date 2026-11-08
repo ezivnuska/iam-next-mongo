@@ -12,7 +12,7 @@ export default function PageContent({ children, header, fullscreen = false }: Pa
             'max-w-content': !fullscreen,
         })}>
             {header && (
-                <div className='shrink-0 px-4 py-2'>
+                <div className='shrink-0 px-4'>
                     {header}
                 </div>
             )}
