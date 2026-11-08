@@ -50,7 +50,7 @@ lists.get('/api/mobile/issues/feed', authMiddleware, async (c) => {
     if (!['open', 'completed'].includes(status))
       return c.json({ error: 'Invalid status' }, 400)
     const query = status === 'open'
-      ? { $or: [{ status: 'open' }, { status: 'completed' }, { status: { $exists: false } }], flagged: { $ne: true } }
+      ? { $or: [{ status: 'open' }, { status: { $exists: false } }], flagged: { $ne: true } }
       : { status, flagged: { $ne: true } }
 
     const limit = Math.min(parseInt(c.req.query('limit') ?? '100'), 200)

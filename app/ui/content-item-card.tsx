@@ -126,7 +126,7 @@ export default function ContentItemCard({
             <div className='flex flex-col gap-1 py-1 text-gray-900'>
               <p>{item.content}</p>
               {item.linkUrl && (
-                <a href={item.linkUrl} target='_blank' className='text-blue-500 underline' onClick={e => e.stopPropagation()}>
+                <a href={item.linkUrl} target='_blank' rel='noopener noreferrer' className='text-blue-500 underline' onClick={e => e.stopPropagation()}>
                   [source]
                 </a>
               )}

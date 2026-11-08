@@ -213,7 +213,7 @@ export async function getCommentCounts(refIds: string[], refType: CommentRefType
 	const counts = await Comment.aggregate([
 		{
 			$match: {
-				refId: { $in: refIds.map(id => new Types.ObjectId(id)) },
+				refId: { $in: refIds.filter(id => isValidObjectId(id)).map(id => new Types.ObjectId(id)) },
 				refType
 			}
 		},
@@ -246,7 +246,7 @@ export async function getCommentCountsForItems(itemIds: string[]): Promise<Recor
 	const counts = await Comment.aggregate([
 		{
 			$match: {
-				refId: { $in: itemIds.map(id => new Types.ObjectId(id)) }
+				refId: { $in: itemIds.filter(id => isValidObjectId(id)).map(id => new Types.ObjectId(id)) }
 			}
 		},
 		{

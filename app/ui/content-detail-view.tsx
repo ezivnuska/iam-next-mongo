@@ -99,7 +99,7 @@ export default function ContentDetailView({ item }: ContentDetailViewProps) {
                             <div className='text-gray-900'>
                                 <p>{item.content}</p>
                                 {item.linkUrl && (
-                                    <a href={item.linkUrl} target='_blank' className='text-blue-500 underline mt-2 block'>
+                                    <a href={item.linkUrl} target='_blank' rel='noopener noreferrer' className='text-blue-500 underline mt-2 block'>
                                         [source]
                                     </a>
                                 )}
