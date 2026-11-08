@@ -43,7 +43,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                     <button
                         key={tab.value}
                         onClick={() => setActiveTab(tab.value)}
-                        className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${
+                        className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
                             activeTab === tab.value
                                 ? 'bg-blue-600 text-white cursor-default'
                                 : 'text-gray-600 hover:bg-gray-100 cursor-pointer'
