@@ -53,20 +53,16 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                     </button>
                 ))}
             </div>
-            {showAddEntry && (
+            {(showAddEntry || showUpload) && (
                 <button
-                    onClick={() => setEntryTrigger(n => n + 1)}
-                    className='px-4 py-1.5 text-sm font-medium rounded-full text-blue-600 hover:bg-gray-100 transition-colors cursor-pointer'
+                    onClick={() => showAddEntry ? setEntryTrigger(n => n + 1) : setUploadTrigger(n => n + 1)}
+                    aria-label={showAddEntry ? 'New entry' : 'Upload file'}
+                    className='p-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors cursor-pointer shadow-sm'
                 >
-                    + New Entry
-                </button>
-            )}
-            {showUpload && (
-                <button
-                    onClick={() => setUploadTrigger(n => n + 1)}
-                    className='px-4 py-1.5 text-sm font-medium rounded-full text-blue-600 hover:bg-gray-100 transition-colors cursor-pointer'
-                >
-                    Upload File
+                    <svg xmlns='http://www.w3.org/2000/svg' className='w-5 h-5' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'>
+                        <line x1='12' y1='5' x2='12' y2='19' />
+                        <line x1='5' y1='12' x2='19' y2='12' />
+                    </svg>
                 </button>
             )}
         </div>

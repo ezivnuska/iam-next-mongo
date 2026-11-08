@@ -20,6 +20,8 @@ commissions.get('/api/mobile/commissions', authMiddleware, async (c) => {
     await connectToDatabase()
 
     const rawId = c.req.query('userId') ?? token.id
+    if (rawId !== token.id && token.role !== 'admin')
+      return c.json({ error: 'Forbidden' }, 403)
     if (!mongoose.Types.ObjectId.isValid(rawId))
       return c.json({ issues: [] })
 

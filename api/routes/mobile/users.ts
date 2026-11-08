@@ -50,7 +50,7 @@ users.get('/api/mobile/users', authMiddleware, async (c) => {
   }
 })
 
-users.get('/api/mobile/users/by-username/:username', async (c) => {
+users.get('/api/mobile/users/by-username/:username', authMiddleware, async (c) => {
   const username = c.req.param('username')
   try {
     await connectToDatabase()

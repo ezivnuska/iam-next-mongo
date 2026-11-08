@@ -762,11 +762,16 @@ sub.post('/api/mobile/issues/:id/commission/rating', authMiddleware, async (c) =
       { upsert: true }
     )
 
-    const existingReview = activeCompletion.reviews.find((r: any) => r.userId.toString() === token.id)
-    if (!existingReview) {
-      await Completion.findByIdAndUpdate(commissionId, {
-        $push: { reviews: { userId: token.id, vote } },
-      })
+    // Update existing review vote atomically, or push if not yet reviewed
+    const reviewUpdate = await Completion.updateOne(
+      { _id: commissionId, 'reviews.userId': token.id },
+      { $set: { 'reviews.$.vote': vote } }
+    )
+    if (reviewUpdate.matchedCount === 0) {
+      await Completion.updateOne(
+        { _id: commissionId, 'reviews.userId': { $ne: token.id } },
+        { $push: { reviews: { userId: token.id, vote } } }
+      )
     }
 
     // Withdraw pledge immediately if requested (contributor deny only)
