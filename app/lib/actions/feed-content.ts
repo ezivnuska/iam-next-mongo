@@ -35,14 +35,8 @@ export async function getFeedContent(): Promise<ContentItem[]> {
   );
 
   const entries = await EntryModel.find({
-    $or: [
-      // All posts from self or friends
-      { contentType: 'post', author: { $in: [userId, ...friendIds] } },
-      // Shared memories from friends
-      { contentType: 'memory', shared: true, author: { $in: friendIds } },
-      // Own memories (shared or private)
-      { contentType: 'memory', author: userId },
-    ],
+    contentType: 'post',
+    author: { $in: [userId, ...friendIds] },
   })
     .populate(CONTENT_POPULATE_CONFIG)
     .sort({ createdAt: -1 })

@@ -26,16 +26,10 @@ interface EntryListProps {
     triggerAdd?: number;
 }
 
-const FILTER_OPTIONS: { type: ContentType; label: string }[] = [
-    { type: 'post', label: 'Posts' },
-    { type: 'memory', label: 'Memories' },
-];
-
 export default function EntryList({ initialContent, editable = false, contentType, triggerAdd }: EntryListProps) {
     const { user } = useUser();
     const { socket } = useSocket();
     const [content, setContent] = useState<ContentItem[]>(initialContent);
-    const [filters, setFilters] = useState<Record<ContentType, boolean>>({ post: true, memory: true });
     const [modalOpen, setModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<Entry | undefined>(undefined);
     const [selectedImage, setSelectedImage] = useState<Image | null>(null);
@@ -66,9 +60,6 @@ export default function EntryList({ initialContent, editable = false, contentTyp
             setModalOpen(true);
         }
     }, [triggerAdd]);
-
-    const toggleFilter = (type: ContentType) =>
-        setFilters(prev => ({ ...prev, [type]: !prev[type] }));
 
     const isCurrentUserAuthor = (item: ContentItem) => {
         if (!user?.id) return false;
@@ -125,29 +116,11 @@ export default function EntryList({ initialContent, editable = false, contentTyp
     }, [selectedImage, handleCloseLightbox]);
 
     const filteredContent = filterCommentableContent(content).filter(item =>
-        contentType
-            ? item.contentType === contentType
-            : (filters[item.contentType as ContentType] ?? true)
+        contentType ? item.contentType === contentType : true
     );
 
     return (
         <div className='w-full max-w-[600px] pb-4'>
-            {!contentType && (
-                <div className='flex items-center gap-4 mb-4'>
-                    {FILTER_OPTIONS.map(({ type, label }) => (
-                        <label key={type} className='flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer select-none'>
-                            <input
-                                type='checkbox'
-                                checked={filters[type]}
-                                onChange={() => toggleFilter(type)}
-                                className='rounded border-gray-300 text-blue-600'
-                            />
-                            {label}
-                        </label>
-                    ))}
-                </div>
-            )}
-
             <div className='space-y-4'>
                 {filteredContent.length === 0 ? (
                     <p className='text-gray-500'>No content to display</p>
