@@ -66,6 +66,7 @@ auth.post('/api/mobile/register', registerRateLimit, async (c) => {
       password: hashedPassword,
       username,
       role: 'user',
+      verified: true,
       createdAt: new Date(),
       updatedAt: new Date(),
     })

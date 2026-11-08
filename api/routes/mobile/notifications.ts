@@ -50,6 +50,10 @@ notifications.delete('/api/mobile/notifications/token', authMiddleware, async (c
 const STRIP_TAGS = (s: string) => s.replace(/<[^>]*>/g, '').trim()
 
 notifications.post('/api/mobile/notifications/notify', authMiddleware, async (c) => {
+  const caller = c.get('token')
+  if (caller.role !== 'admin')
+    return c.json({ error: 'Forbidden' }, 403)
+
   try {
     const { userId, title, body } = sendNotificationRequestSchema.parse(await c.req.json())
 

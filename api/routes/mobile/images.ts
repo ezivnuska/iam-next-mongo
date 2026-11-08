@@ -142,16 +142,19 @@ images.post('/api/mobile/images/:id/like', authMiddleware, async (c) => {
 
   try {
     await connectToDatabase()
-    const image = await ImageModel.findById(imageId).select('likes').lean() as any
-    if (!image) return c.json({ error: 'Image not found' }, 404)
-
-    const isLiked = (image.likes ?? []).some((id: any) => id.toString() === token.id)
+    const userId_oid = new Types.ObjectId(token.id)
     const updated = await ImageModel.findByIdAndUpdate(
       imageId,
-      isLiked ? { $pull: { likes: token.id } } : { $addToSet: { likes: token.id } },
+      [{ $set: { likes: { $cond: {
+        if: { $in: [userId_oid, '$likes'] },
+        then: { $filter: { input: '$likes', as: 'like', cond: { $ne: ['$$like', userId_oid] } } },
+        else: { $concatArrays: ['$likes', [userId_oid]] },
+      } } } }],
       { new: true, select: 'likes' }
     )
-    return c.json({ liked: !isLiked, likeCount: updated?.likes?.length ?? 0 })
+    if (!updated) return c.json({ error: 'Image not found' }, 404)
+    const nowLiked = (updated.likes ?? []).some((id: any) => id.toString() === token.id)
+    return c.json({ liked: nowLiked, likeCount: updated.likes?.length ?? 0 })
   } catch (err) {
     console.error('[mobile/images like POST]', err)
     return c.json({ error: 'Failed to toggle like' }, 500)

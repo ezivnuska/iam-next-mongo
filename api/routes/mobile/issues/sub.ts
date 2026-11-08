@@ -301,6 +301,9 @@ sub.post('/api/mobile/issues/:id/reports', authMiddleware, async (c) => {
     if (imageId !== undefined && imageId !== null && !isValidObjectId(imageId))
       return c.json({ error: 'Invalid image ID' }, 400)
 
+    if (content && content.length > 1000)
+      return c.json({ error: 'Report content must be 1000 characters or less' }, 400)
+
     await connectToDatabase()
     const issue = await Issue.findById(id)
     if (!issue) return c.json({ error: 'Issue not found' }, 404)
