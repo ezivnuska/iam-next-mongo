@@ -4,8 +4,12 @@ import UserModel from "@/app/lib/models/user";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { sendVerificationEmail } from "@/app/lib/email";
+import { checkRegisterRateLimit, getIp } from "@/app/lib/utils/rate-limit";
 
 export async function POST(req: NextRequest) {
+  if (!checkRegisterRateLimit(getIp(req))) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
   try {
     const formData = await req.formData();
     const email = formData.get("email")?.toString().trim();

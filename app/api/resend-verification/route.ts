@@ -3,8 +3,12 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
 import crypto from "crypto";
 import { sendVerificationEmail } from "@/app/lib/email";
+import { checkResendRateLimit, getIp } from "@/app/lib/utils/rate-limit";
 
 export async function POST(req: NextRequest) {
+  if (!checkResendRateLimit(getIp(req))) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
   try {
     const { email } = await req.json();
 

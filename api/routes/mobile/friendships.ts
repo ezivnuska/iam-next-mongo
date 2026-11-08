@@ -16,6 +16,7 @@ import {
   emitFriendshipRemoved,
 } from '../../lib/socketEmit'
 import { createFriendshipRequestSchema, patchFriendshipRequestSchema } from '../../lib/schemas/friendship'
+import { isValidObjectId } from '@iam/shared-types'
 
 const friendships = new Hono<{ Variables: { token: TokenPayload } }>()
 
@@ -81,6 +82,7 @@ friendships.post('/api/mobile/friendships', authMiddleware, async (c) => {
 friendships.patch('/api/mobile/friendships/:id', authMiddleware, async (c) => {
   const token = c.get('token')
   const id = c.req.param('id')
+  if (!isValidObjectId(id)) return c.json({ error: 'Invalid friendship ID' }, 400)
   try {
     const { action } = patchFriendshipRequestSchema.parse(await c.req.json())
     await connectToDatabase()
@@ -117,6 +119,7 @@ friendships.patch('/api/mobile/friendships/:id', authMiddleware, async (c) => {
 friendships.delete('/api/mobile/friendships/:id', authMiddleware, async (c) => {
   const token = c.get('token')
   const id = c.req.param('id')
+  if (!isValidObjectId(id)) return c.json({ error: 'Invalid friendship ID' }, 400)
   try {
     await connectToDatabase()
     const friendship = await FriendshipModel.findById(id)

@@ -143,11 +143,11 @@ export default function CreateEntryForm({ onSuccess, onClose, editItem }: Create
           onChange={(e) => setContent(e.target.value)}
           required={contentType === 'memory'}
           rows={contentType === 'memory' ? 6 : 4}
-          maxLength={2000}
+          maxLength={contentType === 'memory' ? 5000 : 1000}
           placeholder={contentType === 'memory' ? 'Write about this memory...' : 'Share your thoughts...'}
           className="w-full px-3 py-2 border border-gray-300 bg-white text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-500"
         />
-        <div className="text-sm text-gray-500 mt-1">{content.length}/2000</div>
+        <div className="text-sm text-gray-500 mt-1">{content.length}/{contentType === 'memory' ? 5000 : 1000}</div>
       </div>
 
       {/* Memory-only: shared toggle */}
