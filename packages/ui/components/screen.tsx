@@ -79,7 +79,7 @@ export default function Screen({
             ) : (
                 <>
                     <header ref={navRef} className='sticky top-0 z-10 bg-gray-100 border-b border-gray-200'>
-                        <div className='flex flex-row items-center justify-between py-2 gap-4 px-4'>
+                        <div className='flex flex-row items-center justify-between py-2 gap-4 px-4 max-w-[900px] mx-auto w-full'>
                             {loggedIn ? (
                                 <>
                                     <div>{userControls}</div>
