@@ -41,7 +41,7 @@ export default function AppShell({ children, showLoading = true }: AppShellProps
     return (
         <Screen
             userControls={loggedIn ? (
-                <div className={horizontalLayout ? 'flex flex-col items-center gap-1' : 'flex flex-row items-center gap-3'}>
+                <div className={horizontalLayout ? 'flex flex-col items-center gap-4' : 'flex flex-row items-center gap-3'}>
                     <UserButton />
                     <SignOutButton />
                 </div>

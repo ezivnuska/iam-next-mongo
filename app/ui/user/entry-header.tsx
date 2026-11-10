@@ -1,6 +1,6 @@
 // app/ui/user/entry-header.tsx
 
-import UserAvatar from './user-avatar';
+import { UserAvatar } from '@iam/ui';
 import { formatRelativeTime } from '@/app/lib/utils/format-date';
 import type { Image as ImageType } from '@/app/lib/definitions/image';
 

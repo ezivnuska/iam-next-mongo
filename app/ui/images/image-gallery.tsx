@@ -58,7 +58,7 @@ export default function ImageGallery({ authorized, images, onDeleted, onImageUpd
 
   return (
     <>
-      <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4'>
+      <div className='grid grid-cols-2 mid:grid-cols-3 wide:grid-cols-4 gap-4 mb-4'>
         {images.length ? (
           images.map((img, index) => {
             const medium = img.variants.find(v => v.size === 'medium');
@@ -79,7 +79,7 @@ export default function ImageGallery({ authorized, images, onDeleted, onImageUpd
                     alt={img.alt || 'Uploaded image'}
                     fill
                     style={{ objectFit: 'cover' }}
-                    sizes='(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw'
+                    sizes='(max-width: 600px) 50vw, (max-width: 1024px) 33vw, 25vw'
                   />
                 ) : (
                   <div className='w-full h-full flex items-center justify-center bg-gray-200 text-gray-500 text-sm'>

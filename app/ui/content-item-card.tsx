@@ -2,7 +2,6 @@
 
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
 import type { ContentItem } from '@/app/lib/definitions/content';
 import type { Entry } from '@/app/lib/definitions/entry';
 import type { Image as ImageType } from '@/app/lib/definitions/image';
@@ -13,8 +12,7 @@ import { isMemory, isPost } from '@/app/lib/utils/content-helpers';
 import { useContentPermissions } from '@/app/lib/hooks/use-content-permissions';
 import { useContentDelete } from '@/app/lib/hooks/use-content-delete';
 import { IMAGE_SIZES } from '@/app/lib/utils/images';
-
-const COMPACT_THRESHOLD = 460;
+import { useHorizontalLayout } from '@iam/ui';
 
 type ContentItemCardProps = {
   item: ContentItem;
@@ -37,21 +35,10 @@ export default function ContentItemCard({
   onDeleted,
   onFlag,
 }: ContentItemCardProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [isCompact, setIsCompact] = useState(false);
+  const isCompact = useHorizontalLayout();
   const authorId = isMemory(item) || isPost(item) ? item.author.id : '';
   const { canEdit, canDelete } = useContentPermissions(authorId);
   const handleDelete = useContentDelete('entries', onDeleted || (() => {}));
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const obs = new ResizeObserver(([entry]) => {
-      setIsCompact(entry.contentRect.width >= COMPACT_THRESHOLD);
-    });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
 
   if (isMemory(item)) {
     if (isCompact) {
@@ -59,7 +46,6 @@ export default function ContentItemCard({
         ? new Date(item.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
         : '';
       return (
-        <div ref={containerRef}>
           <ContentCard
             author={item.author}
             avatar={item.author.avatar}
@@ -83,12 +69,10 @@ export default function ContentItemCard({
               {item.content && <p className='text-sm text-gray-700 truncate'>{item.content}</p>}
             </div>
           </ContentCard>
-        </div>
       );
     }
 
     return (
-      <div ref={containerRef}>
         <MemoryPolaroid
           entry={item}
           onImageClick={item.image && onImageClick ? () => onImageClick(item.image!) : undefined}
@@ -112,13 +96,11 @@ export default function ContentItemCard({
           canEdit={canEdit}
           onEdit={onEdit ? () => onEdit(item) : undefined}
         />
-      </div>
     );
   }
 
   if (isPost(item)) {
     return (
-      <div ref={containerRef}>
         <ContentCard
           author={item.author}
           avatar={item.author.avatar}
@@ -158,7 +140,6 @@ export default function ContentItemCard({
             />
           )}
         </ContentCard>
-      </div>
     );
   }
 

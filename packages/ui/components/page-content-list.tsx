@@ -5,7 +5,7 @@ interface PageContentListProps {
 
 export default function PageContentList({ children, className = '' }: PageContentListProps) {
     return (
-        <div className={`px-4 py-4 w-full max-w-[900px] mx-auto ${className}`.trim()}>
+        <div className={`px-4 py-4 w-full max-w-content mx-auto ${className}`.trim()}>
             {children}
         </div>
     );

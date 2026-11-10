@@ -91,13 +91,13 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                 </PageContentList>
             )}
             {activeTab === 'images' && (
-                <PageContentRow className='py-4'>
+                <PageContentList>
                     <ImagesClient
                         userId={userId}
                         authorized={isOwnProfile}
                         triggerUpload={uploadTrigger}
                     />
-                </PageContentRow>
+                </PageContentList>
             )}
             {activeTab === 'details' && (
                 <PageContentList>

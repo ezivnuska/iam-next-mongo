@@ -1,13 +1,13 @@
 // app/not-found.tsx
 
 import Link from 'next/link';
-import { PageContent } from '@iam/ui';
-import { Button } from '@iam/ui';
+import { PageContent, PageContentList, Button } from '@iam/ui';
 
 export default function NotFound() {
     return (
         <PageContent>
-            <div className='flex flex-col items-center justify-center min-h-[60vh] gap-6 px-4'>
+            <PageContentList>
+            <div className='flex flex-col items-center justify-center min-h-[60vh] gap-6'>
                 <div className='text-center space-y-4'>
                     <h1 className='text-9xl font-bold text-gray-300'>
                         404
@@ -28,6 +28,7 @@ export default function NotFound() {
                     </Link>
                 </div>
             </div>
+            </PageContentList>
         </PageContent>
     );
 }

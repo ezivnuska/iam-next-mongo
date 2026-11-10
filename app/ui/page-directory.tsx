@@ -1,6 +1,7 @@
 // app/ui/page-directory.tsx
 
 import Link from 'next/link';
+import type { FC, SVGProps } from 'react';
 import {
     NewspaperIcon,
     UserGroupIcon,
@@ -8,7 +9,17 @@ import {
     UserCircleIcon,
 } from '@heroicons/react/24/outline';
 
-const PAGES = [
+type IconComponent = FC<SVGProps<SVGSVGElement>>;
+
+interface PageEntry {
+    href: string;
+    icon: IconComponent;
+    title: string;
+    description: string;
+    auth: boolean;
+}
+
+const PAGES: PageEntry[] = [
     {
         href: '/feed',
         icon: NewspaperIcon,

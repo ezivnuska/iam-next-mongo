@@ -2,6 +2,8 @@
 
 @theme {
     --max-width-content: 900px;
+    --breakpoint-mid: 600px;
+    --breakpoint-wide: 1024px;
 }
 
 @keyframes fade-in {
