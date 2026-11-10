@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@theme {
+    --max-width-content: 600px;
+}
+
 @keyframes fade-in {
     0% {
         opacity: 0;

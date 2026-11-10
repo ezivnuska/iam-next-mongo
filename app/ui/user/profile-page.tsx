@@ -3,7 +3,7 @@
 'use client';
 
 import { useState } from 'react';
-import { PageContent } from '@iam/ui';
+import { PageContent, PageContentRow } from '@iam/ui';
 import EntryList from '@/app/ui/user/entry-list';
 import UserBio from '@/app/ui/user/user-bio';
 import UserProfileCard from '@/app/ui/user/user-profile-card';
@@ -37,7 +37,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
     const showUpload = isOwnProfile && activeTab === 'images';
 
     const header = (
-        <div className='flex items-center justify-between py-2'>
+        <PageContentRow><div className='flex items-center justify-between py-2'>
             <div className='flex'>
                 {TABS.map(tab => (
                     <button
@@ -65,7 +65,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                     </svg>
                 </button>
             )}
-        </div>
+        </div></PageContentRow>
     );
 
     return (

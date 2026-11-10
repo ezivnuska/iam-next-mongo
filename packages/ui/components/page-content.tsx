@@ -26,7 +26,7 @@ export default function PageContent({ children, header, fullscreen = false }: Pa
     }, [header]);
 
     return (
-        <div className={clsx('flex flex-1 flex-col min-h-0 min-w-0 w-full mx-auto', {
+        <div className={clsx('@container/page flex flex-1 flex-col min-h-0 min-w-0 w-full mx-auto', {
             'max-w-content': !fullscreen,
         })}>
             {header && (
@@ -34,7 +34,7 @@ export default function PageContent({ children, header, fullscreen = false }: Pa
                     className='grid transition-[grid-template-rows] duration-[933ms] ease-in-out'
                     style={{ gridTemplateRows: headerVisible ? '1fr' : '0fr' }}
                 >
-                    <div className={`overflow-hidden px-4 transition-transform duration-[933ms] ease-in-out ${headerVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+                    <div className={`overflow-hidden transition-transform duration-[933ms] ease-in-out ${headerVisible ? 'translate-y-0' : '-translate-y-full'}`}>
                         {header}
                     </div>
                 </div>

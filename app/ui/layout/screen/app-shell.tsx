@@ -1,4 +1,4 @@
-// app/ui/layout/screen/simple-screen.tsx
+// app/ui/layout/screen/app-shell.tsx
 
 'use client';
 
@@ -21,12 +21,12 @@ function PuzzleIcon({ className }: { className?: string }) {
     );
 }
 
-interface SimpleScreenProps {
+interface AppShellProps {
     children: React.ReactNode;
     showLoading?: boolean;
 }
 
-export default function SimpleScreen({ children, showLoading = true }: SimpleScreenProps) {
+export default function AppShell({ children, showLoading = true }: AppShellProps) {
     const { user } = useUser();
     const horizontalLayout = useHorizontalLayout();
 
