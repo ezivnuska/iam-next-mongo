@@ -14,7 +14,7 @@ interface UserContentFeedProps {
 
 export default function UserContentFeed({ initialContent, editable = false, username }: UserContentFeedProps) {
     return (
-        <div className='w-full max-w-[600px]'>
+        <div>
             {username && editable && (
                 <div className='flex justify-end mb-2'>
                     <Link

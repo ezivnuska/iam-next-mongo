@@ -3,7 +3,7 @@
 'use client';
 
 import { useState } from 'react';
-import { PageContent, PageContentRow } from '@iam/ui';
+import { PageContent, PageContentRow, PageContentList } from '@iam/ui';
 import EntryList from '@/app/ui/user/entry-list';
 import UserBio from '@/app/ui/user/user-bio';
 import UserProfileCard from '@/app/ui/user/user-profile-card';
@@ -71,32 +71,41 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
     return (
         <PageContent header={header}>
             {activeTab === 'posts' && (
-                <EntryList
-                    initialContent={initialContent}
-                    editable={isOwnProfile}
-                    contentType='post'
-                    triggerAdd={entryTrigger}
-                />
+                <PageContentList>
+                    <EntryList
+                        initialContent={initialContent}
+                        editable={isOwnProfile}
+                        contentType='post'
+                        triggerAdd={entryTrigger}
+                    />
+                </PageContentList>
             )}
             {activeTab === 'memories' && (
-                <EntryList
-                    initialContent={initialContent}
-                    editable={isOwnProfile}
-                    contentType='memory'
-                    triggerAdd={entryTrigger}
-                />
+                <PageContentList>
+                    <EntryList
+                        initialContent={initialContent}
+                        editable={isOwnProfile}
+                        contentType='memory'
+                        triggerAdd={entryTrigger}
+                    />
+                </PageContentList>
             )}
             {activeTab === 'images' && (
-                <ImagesClient
-                    userId={userId}
-                    authorized={isOwnProfile}
-                    triggerUpload={uploadTrigger}
-                />
+                <PageContentRow className='py-4'>
+                    <ImagesClient
+                        userId={userId}
+                        authorized={isOwnProfile}
+                        triggerUpload={uploadTrigger}
+                    />
+                </PageContentRow>
             )}
             {activeTab === 'details' && (
-                isOwnProfile
-                    ? <UserBio bio={user?.bio} editable />
-                    : <UserProfileCard username={username} />
+                <PageContentList>
+                    {isOwnProfile
+                        ? <UserBio bio={user?.bio} editable />
+                        : <UserProfileCard username={username} />
+                    }
+                </PageContentList>
             )}
         </PageContent>
     );
