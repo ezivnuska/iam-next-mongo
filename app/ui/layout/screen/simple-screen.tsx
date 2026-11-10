@@ -2,7 +2,7 @@
 
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import Link from 'next/link';
 import { Screen } from '@iam/ui';
 import UserButton from '@/app/ui/header/user-button';
@@ -29,6 +29,13 @@ interface SimpleScreenProps {
 export default function SimpleScreen({ children, showLoading = true }: SimpleScreenProps) {
     const { user } = useUser();
     const horizontalLayout = useHorizontalLayout();
+
+    useEffect(() => {
+        const sync = () => document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+        sync();
+        window.addEventListener('resize', sync);
+        return () => window.removeEventListener('resize', sync);
+    }, []);
     const loggedIn = !!user && !user.isGuest;
 
     return (

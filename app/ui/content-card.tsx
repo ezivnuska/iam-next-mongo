@@ -43,22 +43,25 @@ export default function ContentCard({
     if (compact) {
         return (
             <div
-                className={`flex flex-row items-start gap-3${href ? ' cursor-pointer' : ''}`}
+                className={`flex flex-col gap-1${href ? ' cursor-pointer' : ''}`}
                 onClick={handleCardClick}
             >
-                {thumbnail && <div className='shrink-0'>{thumbnail}</div>}
-                <div className='flex flex-col flex-1 min-w-0'>
-                    <div className='flex items-center justify-between'>
+                {/* Row 1: header + actions (left), thumbnail (right) */}
+                <div className='flex items-start justify-between gap-3'>
+                    <div className='flex items-start gap-2 min-w-0 flex-1'>
                         <EntryHeader
                             username={author.username}
                             avatar={avatar}
-                            avatarSize={28}
+                            avatarSize={36}
                             createdAt={createdAt}
                         />
                         {actionsNode}
                     </div>
-                    <div className='flex-1 min-w-0'>{children}</div>
+                    <div className='w-[84px] shrink-0'>{thumbnail}</div>
                 </div>
+
+                {/* Row 2: content */}
+                <div className='min-w-0'>{children}</div>
             </div>
         );
     }

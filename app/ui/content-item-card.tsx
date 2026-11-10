@@ -59,7 +59,7 @@ export default function ContentItemCard({
               ? <ContentImage
                   image={item.image}
                   size={IMAGE_SIZES.THUMBNAIL}
-                  className='w-14 h-14 rounded object-cover'
+                  className='w-[84px] h-[84px] rounded object-cover'
                 />
               : undefined
           }
@@ -114,7 +114,7 @@ export default function ContentItemCard({
             ? <ContentImage
                 image={item.image}
                 size={IMAGE_SIZES.THUMBNAIL}
-                className='w-14 h-14 rounded object-cover'
+                className='w-[84px] h-[84px] rounded object-cover'
               />
             : undefined
         }

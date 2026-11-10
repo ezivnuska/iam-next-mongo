@@ -120,7 +120,7 @@ export default function EntryList({ initialContent, editable = false, contentTyp
     );
 
     return (
-        <div className='w-full max-w-[600px] pb-4'>
+        <div className='w-full max-w-[600px] py-4'>
             <div className='space-y-4'>
                 {filteredContent.length === 0 ? (
                     <p className='text-gray-500'>No content to display</p>

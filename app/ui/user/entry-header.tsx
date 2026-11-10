@@ -17,9 +17,8 @@ export default function EntryHeader({ username, avatar, avatarSize = 36, created
             <div className='shrink-0' style={{ width: avatarSize, height: avatarSize }}>
                 <UserAvatar username={username} avatar={avatar} size={avatarSize} />
             </div>
-            <div className='flex items-center gap-1.5 min-w-0'>
+            <div className='flex flex-col min-w-0'>
                 <span className='font-semibold text-sm text-gray-900 leading-tight truncate'>{username}</span>
-                <span className='text-gray-300 leading-tight select-none'>·</span>
                 <span className='text-xs text-gray-400 leading-tight whitespace-nowrap'>{formatRelativeTime(createdAt)}</span>
             </div>
         </div>
