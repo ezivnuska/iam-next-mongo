@@ -3,7 +3,6 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import Link from 'next/link';
 import { Screen, useHorizontalLayout } from '@iam/ui';
 import UserButton from '@/app/ui/header/user-button';
 import SignOutButton from '@/app/ui/auth/signout-button';
@@ -11,7 +10,6 @@ import SigninButton from '@/app/ui/auth/signin-button';
 import AuthRedirectHandler from '@/app/ui/auth/auth-redirect-handler';
 import { useUser } from '@/app/lib/providers/user-provider';
 import { getBestVariant } from '@iam/shared-types';
-import { NewspaperIcon } from '@heroicons/react/24/solid';
 
 function PuzzleIcon({ className }: { className?: string }) {
     return (
@@ -70,13 +68,6 @@ export default function AppShell({ children, showLoading = true }: AppShellProps
             ) : undefined}
             nav={loggedIn ? (
                 <>
-                    <Link
-                        href='/feed'
-                        className='flex items-center justify-center text-gray-700 hover:text-gray-500 transition-colors'
-                        aria-label='Feed'
-                    >
-                        <NewspaperIcon className='w-7 h-7' />
-                    </Link>
                     <a
                         href='https://games.iameric.me'
                         className='flex items-center justify-center text-gray-700 hover:text-gray-500 transition-colors'
