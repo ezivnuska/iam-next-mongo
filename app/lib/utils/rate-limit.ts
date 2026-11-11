@@ -5,6 +5,15 @@ interface RateEntry { count: number; resetAt: number }
 function makeRateLimiter(maxRequests: number, windowMs: number) {
   const store = new Map<string, RateEntry>()
 
+  // Prune expired entries once per window to prevent unbounded memory growth.
+  // .unref() so the interval doesn't keep the process alive on shutdown.
+  setInterval(() => {
+    const now = Date.now()
+    for (const [key, entry] of store) {
+      if (now > entry.resetAt) store.delete(key)
+    }
+  }, windowMs).unref()
+
   return function checkRateLimit(ip: string): boolean {
     const now = Date.now()
     const entry = store.get(ip)

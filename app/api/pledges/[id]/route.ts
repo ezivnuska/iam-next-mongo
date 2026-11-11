@@ -10,6 +10,7 @@ import '@/app/lib/models/image'
 import { serializePledge } from '@/app/lib/mobile/serializers'
 import { logActivity, getRequestMetadata } from '@/app/lib/utils/activity-logger'
 import { requireAuthFlexible } from '@/app/lib/utils/auth/flexible'
+import { UnauthorizedError } from '@/app/lib/utils/auth'
 
 const POPULATE_CONFIG = {
   path: 'userId',
@@ -39,7 +40,7 @@ export async function GET(
 
     return NextResponse.json({ pledge: serializePledge(pledge) })
   } catch (err: any) {
-    if (err.message === 'Unauthorized') {
+    if (err instanceof UnauthorizedError) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     console.error('Error fetching pledge:', err)
@@ -96,7 +97,7 @@ export async function PATCH(
 
     return NextResponse.json({ pledge: serialized })
   } catch (err: any) {
-    if (err.message === 'Unauthorized') {
+    if (err instanceof UnauthorizedError) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     console.error('Error updating pledge:', err)
@@ -146,7 +147,7 @@ export async function DELETE(
 
     return NextResponse.json({ ok: true })
   } catch (err: any) {
-    if (err.message === 'Unauthorized') {
+    if (err instanceof UnauthorizedError) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     console.error('Error deleting pledge:', err)

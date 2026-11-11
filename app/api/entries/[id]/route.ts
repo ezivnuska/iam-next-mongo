@@ -6,7 +6,7 @@ import EntryModel from "@/app/lib/models/entry";
 import "@/app/lib/models/image";
 import { transformPopulatedImage, transformPopulatedAuthor } from "@iam/db";
 import { logActivity, getRequestMetadata } from "@/app/lib/utils/activity-logger";
-import { requireAuth } from "@/app/lib/utils/auth";
+import { requireAuth, UnauthorizedError } from "@/app/lib/utils/auth";
 import { CONTENT_POPULATE_CONFIG } from "@/app/lib/utils/db-query-config";
 import { isValidObjectId } from "@iam/shared-types";
 
@@ -88,7 +88,7 @@ export async function PUT(req: Request) {
     });
   } catch (err: any) {
     console.error("Error updating entry:", err);
-    if (err.message === "Unauthorized") {
+    if (err instanceof UnauthorizedError) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -127,7 +127,7 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (err: any) {
     console.error("Error deleting entry:", err);
-    if (err.message === "Unauthorized") {
+    if (err instanceof UnauthorizedError) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

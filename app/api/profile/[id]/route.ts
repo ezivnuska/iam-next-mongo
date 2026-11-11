@@ -5,7 +5,7 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
 import bcrypt from "bcrypt";
 import ImageModel from "@/app/lib/models/image";
-import { requireAuth } from "@/app/lib/utils/auth";
+import { requireAuth, UnauthorizedError } from "@/app/lib/utils/auth";
 import { isValidObjectId } from "@iam/shared-types";
 import { normalizeUser } from "@iam/db";
 
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ user: normalizeUser(user) });
     } catch (err) {
         console.error("Profile update error:", err);
-        if (err instanceof Error && err.message === "Unauthorized") {
+        if (err instanceof UnauthorizedError) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
         return NextResponse.json({ error: "Failed to update user" }, { status: 500 });

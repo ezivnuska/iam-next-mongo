@@ -3,6 +3,13 @@
 import { auth } from "@/app/lib/auth";
 import { UserRole } from "@/app/lib/definitions/user";
 
+export class UnauthorizedError extends Error {
+  constructor(message = "Unauthorized") {
+    super(message);
+    this.name = "UnauthorizedError";
+  }
+}
+
 /**
  * Requires authentication and returns the authenticated user
  * @throws Error if user is not authenticated
@@ -11,7 +18,7 @@ import { UserRole } from "@/app/lib/definitions/user";
 export async function requireAuth() {
   const session = await auth();
   if (!session?.user?.id) {
-    throw new Error("Unauthorized");
+    throw new UnauthorizedError();
   }
   return session.user;
 }
@@ -24,7 +31,7 @@ export async function requireAuth() {
 export async function requireAuthWithUsername() {
   const session = await auth();
   if (!session?.user?.id || !session?.user?.username) {
-    throw new Error("Unauthorized");
+    throw new UnauthorizedError();
   }
   return session.user as typeof session.user & { username: string };
 }

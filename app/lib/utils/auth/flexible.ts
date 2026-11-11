@@ -4,6 +4,7 @@
 import { jwtVerify } from 'jose'
 import { auth } from '@/app/lib/auth'
 import { getMobileSecret } from '@/app/lib/jwt'
+import { UnauthorizedError } from './utils'
 
 export async function requireAuthFlexible(req: Request): Promise<{ id: string; role?: string }> {
   const authHeader = req.headers.get('authorization')
@@ -21,5 +22,5 @@ export async function requireAuthFlexible(req: Request): Promise<{ id: string; r
     return { id: session.user.id, role: session.user.role as string | undefined }
   }
 
-  throw new Error('Unauthorized')
+  throw new UnauthorizedError()
 }

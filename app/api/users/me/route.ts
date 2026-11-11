@@ -5,7 +5,7 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
 import "@/app/lib/models/image"; // Required for populate("avatar")
 import { normalizeUser } from '@iam/db';
-import { requireAuth } from "@/app/lib/utils/auth";
+import { requireAuth, UnauthorizedError } from "@/app/lib/utils/auth";
 
 export async function GET() {
     try {
@@ -25,7 +25,7 @@ export async function GET() {
         return NextResponse.json(normalizeUser(userDoc));
     } catch (err) {
         console.error("Failed to fetch full user:", err);
-        if (err instanceof Error && err.message === "Unauthorized") {
+        if (err instanceof UnauthorizedError) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
         return NextResponse.json(
