@@ -9,7 +9,7 @@ interface PageContentProps {
     fullscreen?: boolean;
 }
 
-const ANIMATION_DURATION = 250;
+const ANIMATION_DURATION = 400;
 
 export default function PageContent({ children, header, fullscreen = false }: PageContentProps) {
     const lastScrollRef = useRef(0);
@@ -41,7 +41,7 @@ export default function PageContent({ children, header, fullscreen = false }: Pa
         })}>
             {header && (
                 <div
-                    className='overflow-hidden transition-[max-height,opacity] duration-[250ms] ease-in-out'
+                    className='overflow-hidden transition-[max-height,opacity] duration-[400ms] ease-in-out'
                     style={{ maxHeight: headerVisible ? '200px' : '0', opacity: headerVisible ? 1 : 0 }}
                 >
                     {header}
