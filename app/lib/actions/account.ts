@@ -4,6 +4,7 @@ import { Types } from "mongoose";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import { requireAuthWithUsername } from "@/app/lib/utils/auth/utils";
 import { deleteS3File } from "@/app/lib/aws/s3";
+import { extractS3KeyFromUrl } from "@/app/lib/utils/images";
 import UserModel from "@/app/lib/models/user";
 import ImageModel from "@/app/lib/models/image";
 import EntryModel from "@/app/lib/models/entry";
@@ -30,12 +31,8 @@ export async function deleteAccount() {
 
     for (const img of images) {
         for (const v of img.variants) {
-            if (v.url) {
-                const key = v.url.split(
-                    `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`
-                )[1];
-                if (key) await deleteS3File(key);
-            }
+            const key = extractS3KeyFromUrl(v.url);
+            if (key) await deleteS3File(key);
         }
     }
     await ImageModel.deleteMany({ userId: oid });

@@ -13,7 +13,7 @@ import { auth } from "@/app/lib/auth";
 import { getCommentCounts } from "@/app/lib/actions/comments";
 import { Types } from "mongoose";
 import { logActivity } from "@/app/lib/utils/activity-logger";
-import { getS3ImageUrl } from "@/app/lib/utils/images";
+import { getS3ImageUrl, extractS3KeyFromUrl } from "@/app/lib/utils/images";
 import { requireAuth } from "@/app/lib/utils/auth";
 /**
  * Fetch images from the database
@@ -144,13 +144,9 @@ export async function deleteImage(imageId: string) {
       console.log(`Removed image reference from ${postsToUpdate.length} posts`);
     }
 
-    // Delete each variant from S3
     for (const v of image.variants) {
-      if (v.url) {
-        // Extract S3 key from URL
-        const key = v.url.split(`https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`)[1];
-        if (key) await deleteS3File(key);
-      }
+      const key = extractS3KeyFromUrl(v.url);
+      if (key) await deleteS3File(key);
     }
 
     // Delete image document from MongoDB (this also removes likes since they're on the image document)

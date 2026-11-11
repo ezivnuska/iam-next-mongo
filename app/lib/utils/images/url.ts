@@ -18,3 +18,16 @@ export function getS3ImageUrl(username: string, filename: string): string {
 export function getS3UrlFromKey(key: string): string {
   return `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
 }
+
+/**
+ * Extracts and validates the S3 key from a full image URL.
+ * Returns null if the URL is not from our bucket or the key looks unsafe.
+ * All user image keys have the form "users/{username}/{filename}".
+ */
+export function extractS3KeyFromUrl(url: string): string | null {
+  const prefix = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
+  if (!url.startsWith(prefix)) return null;
+  const key = url.slice(prefix.length);
+  if (!key || key.includes('..') || !key.startsWith('users/')) return null;
+  return key;
+}
