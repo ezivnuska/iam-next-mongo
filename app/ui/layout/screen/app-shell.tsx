@@ -2,7 +2,7 @@
 
 'use client';
 
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Screen, useHorizontalLayout } from '@iam/ui';
 import UserButton from '@/app/ui/header/user-button';
@@ -10,6 +10,7 @@ import SignOutButton from '@/app/ui/auth/signout-button';
 import SigninButton from '@/app/ui/auth/signin-button';
 import AuthRedirectHandler from '@/app/ui/auth/auth-redirect-handler';
 import { useUser } from '@/app/lib/providers/user-provider';
+import { getBestVariant } from '@iam/shared-types';
 import { NewspaperIcon } from '@heroicons/react/24/solid';
 
 function PuzzleIcon({ className }: { className?: string }) {
@@ -28,6 +29,28 @@ interface AppShellProps {
 export default function AppShell({ children, showLoading = true }: AppShellProps) {
     const { user } = useUser();
     const horizontalLayout = useHorizontalLayout();
+    const loggedIn = !!user && !user.isGuest;
+    const [headerReady, setHeaderReady] = useState(false);
+
+    useEffect(() => {
+        if (!loggedIn) {
+            setHeaderReady(true);
+            return;
+        }
+        setHeaderReady(false);
+        const isFullUser = !!(user?.createdAt);
+        if (!isFullUser) return;
+        const avatarUrl = user?.avatar ? getBestVariant(user.avatar, 36)?.url : null;
+        if (!avatarUrl) {
+            setHeaderReady(true);
+            return;
+        }
+        const img = new window.Image();
+        img.onload = () => setHeaderReady(true);
+        img.onerror = () => setHeaderReady(true);
+        img.src = avatarUrl;
+        return () => { img.onload = null; img.onerror = null; };
+    }, [loggedIn, user?.createdAt, user?.avatar]);
 
     useEffect(() => {
         const sync = () => document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
@@ -35,10 +58,10 @@ export default function AppShell({ children, showLoading = true }: AppShellProps
         window.addEventListener('resize', sync);
         return () => window.removeEventListener('resize', sync);
     }, []);
-    const loggedIn = !!user && !user.isGuest;
 
     return (
         <Screen
+            headerReady={headerReady}
             userControls={loggedIn ? (
                 <div className={horizontalLayout ? 'flex flex-col items-center gap-4' : 'flex flex-row items-center gap-3'}>
                     <UserButton />

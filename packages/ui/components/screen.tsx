@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useRef, useEffect } from 'react';
+import { Suspense, useRef, useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { useHorizontalLayout } from '../hooks/use-horizontal-layout';
 import { useContentLoaded } from '../hooks/use-content-loaded';
@@ -15,6 +15,7 @@ interface ScreenProps {
     extras?: React.ReactNode;
     showLoading?: boolean;
     brandHref?: string;
+    headerReady?: boolean;
 }
 
 export default function Screen({
@@ -24,11 +25,21 @@ export default function Screen({
     extras,
     showLoading = true,
     brandHref,
+    headerReady = true,
 }: ScreenProps) {
     const horizontalLayout = useHorizontalLayout();
     const isContentLoaded = useContentLoaded();
     const loggedIn = !!userControls;
     const navRef = useRef<HTMLElement>(null);
+    const [headerVisible, setHeaderVisible] = useState(false);
+
+    useEffect(() => {
+        if (horizontalLayout === false) {
+            const raf = requestAnimationFrame(() => setHeaderVisible(true));
+            return () => cancelAnimationFrame(raf);
+        }
+        setHeaderVisible(false);
+    }, [horizontalLayout]);
 
     useEffect(() => {
         if (horizontalLayout) {
@@ -92,7 +103,7 @@ export default function Screen({
                 </>
             ) : (
                 <>
-                    <header ref={navRef} className='sticky top-0 z-10 bg-gray-100 border-b border-gray-200'>
+                    <header ref={navRef} className={clsx('sticky top-0 z-10 bg-gray-100 border-b border-gray-200 transition-opacity duration-300', headerVisible && headerReady ? 'opacity-100' : 'opacity-0')}>
                         <div className='flex flex-row items-center justify-between py-2 gap-4 px-4 max-w-[900px] mx-auto w-full'>
                             {loggedIn ? (
                                 <>
