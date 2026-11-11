@@ -6,6 +6,7 @@ import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { searchUserByEmail } from '@/app/lib/actions/users';
 import { sendInviteAction } from '@/app/lib/actions/invitations';
+import FriendshipButton from '@/app/ui/friendship/friendship-button';
 
 type PublicUser = { id: string; username: string; bio?: string };
 
@@ -72,9 +73,14 @@ export default function FindOrInviteForm() {
             </form>
 
             {state.kind === 'found' && (
-                <div className='mt-3 flex items-center justify-between text-sm'>
-                    <span className='text-gray-600'>Found: <Link href={`/users/${state.user.username}`} className='font-medium text-blue-600 hover:underline'>{state.user.username}</Link></span>
-                    <button onClick={reset} className='text-xs text-gray-400 hover:text-gray-600'>Clear</button>
+                <div className='mt-3 flex items-center justify-between gap-3'>
+                    <div className='flex items-center gap-3 min-w-0'>
+                        <Link href={`/users/${state.user.username}`} className='text-sm font-medium text-blue-600 hover:underline truncate'>
+                            {state.user.username}
+                        </Link>
+                        <FriendshipButton userId={state.user.id} username={state.user.username} />
+                    </div>
+                    <button onClick={reset} className='text-xs text-gray-400 hover:text-gray-600 shrink-0'>Clear</button>
                 </div>
             )}
 
