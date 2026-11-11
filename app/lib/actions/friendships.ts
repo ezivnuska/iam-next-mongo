@@ -4,9 +4,25 @@
 
 import { connectToDatabase } from "@/app/lib/mongoose"
 import Friendship from "@/app/lib/models/friendship"
+import { Types } from "mongoose"
 import "@/app/lib/models/user"; // Required for populate("requester") and populate("recipient")
 import "@/app/lib/models/image"; // Required for populate("requester.avatar") and populate("recipient.avatar")
 import type { Friendship as FriendshipType, Friend } from "@/app/lib/definitions/friendship"
+import type { ImageVariant } from "@iam/shared-types"
+
+interface PopulatedUser {
+	_id: Types.ObjectId
+	username: string
+	avatar?: { _id: Types.ObjectId; variants: ImageVariant[] } | null
+}
+interface FriendshipLean {
+	_id: Types.ObjectId
+	requester: PopulatedUser
+	recipient: PopulatedUser
+	status: 'pending' | 'accepted' | 'rejected'
+	createdAt?: Date
+	updatedAt?: Date
+}
 import {
 	emitFriendRequest,
 	emitFriendRequestAccepted,
@@ -282,9 +298,9 @@ export async function getFriends(): Promise<Friend[]> {
 			}
 		})
 		.sort({ createdAt: -1 })
-		.lean()
+		.lean<FriendshipLean[]>()
 
-	return friendships.map((f: any) => {
+	return friendships.map((f) => {
 		const isRequester = f.requester._id.toString() === session.user.id
 		const friend = isRequester ? f.recipient : f.requester
 
@@ -330,9 +346,9 @@ export async function getPendingRequests(): Promise<FriendshipType[]> {
 			}
 		})
 		.sort({ createdAt: -1 })
-		.lean()
+		.lean<FriendshipLean[]>()
 
-	return requests.map((r: any) => ({
+	return requests.map((r) => ({
 		id: r._id.toString(),
 		requester: {
 			id: r.requester._id.toString(),

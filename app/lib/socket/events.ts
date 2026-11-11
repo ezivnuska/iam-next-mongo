@@ -1,5 +1,7 @@
 // app/lib/socket/events.ts
 
+import type { ImageVariant } from '@iam/shared-types'
+
 export const SOCKET_EVENTS = {
 	// Connection events
 	CONNECTION: 'connection',
@@ -128,7 +130,7 @@ export interface CommentPayload {
 			username: string
 			avatar: {
 				id?: string
-				variants: string[]
+				variants: ImageVariant[]
 			} | null
 		}
 		content: string

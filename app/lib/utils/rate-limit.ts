@@ -21,7 +21,17 @@ export const checkRegisterRateLimit = makeRateLimiter(3, 3_600_000)   // 3 req/h
 export const checkResendRateLimit = makeRateLimiter(5, 3_600_000)      // 5 req/hr per IP
 
 export function getIp(req: Request): string {
+  // Prefer x-real-ip (set by trusted proxies like nginx).
+  // For x-forwarded-for, take the LAST entry — the nearest proxy appends
+  // to the right, so the last IP cannot be spoofed by the client.
+  const realIp = req.headers.get('x-real-ip')
+  if (realIp) return realIp.trim()
+
   const forwarded = req.headers.get('x-forwarded-for')
-  if (forwarded) return forwarded.split(',')[0].trim()
-  return req.headers.get('x-real-ip') ?? 'unknown'
+  if (forwarded) {
+    const ips = forwarded.split(',').map(s => s.trim()).filter(Boolean)
+    return ips[ips.length - 1] ?? 'unknown'
+  }
+
+  return 'unknown'
 }

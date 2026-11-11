@@ -33,9 +33,9 @@ export async function setAvatar(imageId: string | null) {
       }
 
       if (imageId !== null) {
-        const image = await ImageModel.findById(imageId).select('userId').lean();
+        const image = await ImageModel.findById(imageId).select('userId').lean<{ userId: { toString(): string } }>();
         if (!image) return { success: false, error: "Image not found" };
-        if ((image as any).userId.toString() !== userId) {
+        if (image.userId.toString() !== userId) {
           return { success: false, error: "Forbidden" };
         }
       }

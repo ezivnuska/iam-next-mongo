@@ -6,9 +6,9 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import Comment from "@/app/lib/models/comment";
 import "@/app/lib/models/image"; // Required for populate("author.avatar")
 import type { CommentRefType } from "@/app/lib/definitions/comment";
-import { Types } from "mongoose";
+import { Types, type HydratedDocument } from "mongoose";
 import { logActivity } from "@/app/lib/utils/activity-logger";
-import { isValidObjectId } from "@iam/shared-types";
+import { isValidObjectId, type ImageVariant } from "@iam/shared-types";
 import { emitCommentAdded, emitCommentDeleted } from "@/app/lib/socket/emit";
 import { requireAuth } from "@/app/lib/utils/auth";
 
@@ -104,15 +104,15 @@ export async function createComment(
 }
 
 interface CommentDocument {
-	_id: any;
-	refId: any;
+	_id: Types.ObjectId;
+	refId: Types.ObjectId;
 	refType: string;
 	author: {
-		_id: any;
+		_id: Types.ObjectId;
 		username: string;
 		avatar?: {
-			_id: any;
-			variants: any[];
+			_id: Types.ObjectId;
+			variants: ImageVariant[];
 		} | null;
 	};
 	content: string;
