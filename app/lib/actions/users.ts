@@ -5,7 +5,7 @@
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "../models/user";
 import "@/app/lib/models/image"; // Required for populate("avatar")
-import { normalizeUser, normalizeUsers } from '@iam/db';
+import { normalizeUser, normalizeUsers, normalizePublicUser } from '@iam/db';
 import { auth } from "@/app/lib/auth";
 
 // ------------------------------
@@ -23,6 +23,15 @@ export async function getUsers() {
         console.error("Error fetching users:", e);
         return null;
     }
+}
+
+export async function searchUserByEmail(email: string) {
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Unauthorized");
+    await connectToDatabase();
+    const user = await UserModel.findOne({ email: email.toLowerCase().trim() }).populate('avatar', '_id variants');
+    if (!user) return null;
+    return normalizePublicUser(user);
 }
 
 export async function fetchUserByUsername(username: string) {

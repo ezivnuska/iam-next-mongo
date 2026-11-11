@@ -32,3 +32,18 @@ export async function sendVerificationEmail(email: string, token: string, userna
 
   if (error) throw new Error(error.message);
 }
+
+export async function sendInvitationEmail(to: string, inviterUsername: string) {
+  const signupUrl = new URL('/signup', process.env.NEXTAUTH_URL).toString();
+  const safeUsername = escapeHtml(inviterUsername);
+  const { error } = await resend.emails.send({
+    from: process.env.EMAIL_FROM!,
+    to,
+    subject: `${inviterUsername} invited you to join`,
+    html: `
+      <p>${safeUsername} thought you'd enjoy the site.</p>
+      <p><a href="${signupUrl}">Create your account</a></p>
+    `,
+  });
+  if (error) throw new Error(error.message);
+}
