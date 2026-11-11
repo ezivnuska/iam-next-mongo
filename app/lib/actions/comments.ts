@@ -119,6 +119,7 @@ interface CommentDocument {
 	createdAt?: Date;
 }
 
+// Intentionally unauthenticated: comments on public content are publicly readable.
 export async function getComments(refId: string, refType: CommentRefType) {
 	await connectToDatabase();
 

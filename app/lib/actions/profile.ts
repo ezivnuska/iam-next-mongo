@@ -69,6 +69,7 @@ export async function updateBio(bio: string) {
         return { success: false, error: "Bio must be 500 characters or less" };
       }
 
+      // Strip HTML tags — bio is rendered via React JSX which auto-escapes text.
       const sanitizedBio = trimmedBio.replace(/<[^>]*>/g, '');
 
       const user = await UserModel.findByIdAndUpdate(
