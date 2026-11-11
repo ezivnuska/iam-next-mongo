@@ -19,6 +19,7 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
   const searchParams = useSearchParams();
   const callbackUrl = propCallbackUrl || searchParams.get('callbackUrl') || '/';
   const inviteToken = searchParams.get('invite') || '';
+  const inviteEmail = searchParams.get('email') || '';
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -94,6 +95,7 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
               required
               minLength={2}
               maxLength={20}
+              autoFocus
               className='peer block w-full rounded-md border border-gray-200 bg-white text-gray-900 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500'
             />
             <UserIcon className='pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900' />
@@ -112,7 +114,9 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
               type='email'
               placeholder='Enter your email address'
               required
-              className='peer block w-full rounded-md border border-gray-200 bg-white text-gray-900 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500'
+              defaultValue={inviteEmail}
+              disabled={!!inviteEmail}
+              className='peer block w-full rounded-md border border-gray-200 bg-white text-gray-900 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed'
             />
             <AtSymbolIcon className='pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900' />
           </div>
@@ -169,6 +173,7 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
 
         <input type='hidden' name='redirectTo' value={callbackUrl} />
         {inviteToken && <input type='hidden' name='inviteToken' value={inviteToken} />}
+        {inviteEmail && <input type='hidden' name='email' value={inviteEmail} />}
 
         <Button
           className='mt-4 w-full'
