@@ -7,6 +7,10 @@ import UserModel from "@/app/lib/models/user";
 import bcrypt from "bcrypt";
 import { VERIFICATION_CUTOFF } from "@/app/lib/constants";
 
+export async function authenticateWithToken(autoLoginToken: string): Promise<void> {
+  await signIn("credentials", { autoLoginToken, redirectTo: "/" });
+}
+
 export async function authenticate(formData: FormData): Promise<string | undefined> {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;

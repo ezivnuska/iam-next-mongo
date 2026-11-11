@@ -46,7 +46,7 @@ export default async function VerifyPage({ searchParams }: Props) {
   const result = await verifyAndGetLoginToken(token);
 
   if (typeof result === "object") {
-    redirect(`/api/auth/auto-login?token=${result.autoLoginToken}`);
+    redirect(`/verify/complete?token=${result.autoLoginToken}`);
   }
 
   if (result === "invalid") {
