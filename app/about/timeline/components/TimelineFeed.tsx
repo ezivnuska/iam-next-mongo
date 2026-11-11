@@ -30,15 +30,13 @@ export function TimelineFeed() {
   useEffect(() => {
     if (reposLoading) return;
 
-    if (reposError) {
-      setLines(prev => [...prev, line('error', 'Failed to load projects')]);
-      return;
-    }
+    const repoLine = reposError
+      ? line('found-repos', 'Projects unavailable')
+      : line('found-repos', `Found ${repos.length} projects`);
 
-    // "Fetching projects" fades out as "Found N projects" fades in
     setLines(prev => [
       ...prev.map(l => l.id === 'fetching' ? { ...l, fading: true } : l),
-      line('found-repos', `Found ${repos.length} projects`),
+      repoLine,
       line('loading-events', 'Loading employment', 2000),
     ]);
     const removeFetching = setTimeout(() => {
