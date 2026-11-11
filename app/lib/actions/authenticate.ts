@@ -2,12 +2,15 @@
 
 import { signIn } from "@/app/lib/auth";
 import { AuthError } from "next-auth";
+import { redirect } from "next/navigation";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
 import bcrypt from "bcrypt";
 import { VERIFICATION_CUTOFF } from "@/app/lib/constants";
 
-export async function authenticateWithToken(autoLoginToken: string): Promise<void> {
+export async function authenticateWithToken(formData: FormData): Promise<void> {
+  const autoLoginToken = formData.get("autoLoginToken") as string;
+  if (!autoLoginToken) redirect("/signin");
   await signIn("credentials", { autoLoginToken, redirectTo: "/" });
 }
 

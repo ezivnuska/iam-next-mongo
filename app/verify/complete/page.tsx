@@ -1,25 +1,27 @@
 'use client';
 
 import { Suspense, useEffect, useRef } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { authenticateWithToken } from '@/app/lib/actions/authenticate';
 
 function AutoLogin() {
     const searchParams = useSearchParams();
-    const router = useRouter();
-    const attempted = useRef(false);
+    const formRef = useRef<HTMLFormElement>(null);
+    const token = searchParams.get('token') || '';
 
     useEffect(() => {
-        if (attempted.current) return;
-        attempted.current = true;
+        if (token && formRef.current) {
+            formRef.current.requestSubmit();
+        } else if (!token) {
+            window.location.href = '/signin';
+        }
+    }, [token]);
 
-        const token = searchParams.get('token');
-        if (!token) { router.replace('/signin'); return; }
-
-        authenticateWithToken(token).catch(() => router.replace('/signin'));
-    }, [searchParams, router]);
-
-    return null;
+    return (
+        <form ref={formRef} action={authenticateWithToken}>
+            <input type="hidden" name="autoLoginToken" value={token} />
+        </form>
+    );
 }
 
 export default function VerifyCompletePage() {
