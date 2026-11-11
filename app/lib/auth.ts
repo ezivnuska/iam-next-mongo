@@ -38,14 +38,36 @@ export const authOptions: NextAuthConfig = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
+        await connectToDatabase();
+
+        const creds = credentials as Partial<Record<string, unknown>>;
+
+        // One-time auto-login token (issued after email verification)
+        if (creds?.autoLoginToken) {
+          const token = String(creds.autoLoginToken);
+          const userDoc = await UserModel.findOne({
+            autoLoginToken: token,
+            autoLoginTokenExpires: { $gt: new Date() },
+          });
+          if (!userDoc) return null;
+          userDoc.autoLoginToken = undefined;
+          userDoc.autoLoginTokenExpires = undefined;
+          await userDoc.save();
+          return {
+            id: userDoc._id.toString(),
+            username: userDoc.username,
+            email: userDoc.email,
+            role: userDoc.role,
+            emailVerified: userDoc.emailVerified ?? null,
+          };
+        }
+
         if (!credentials?.email || !credentials.password) return null;
 
         const email = String(credentials.email);
         const password = String(credentials.password);
 
-        await connectToDatabase();
-        const userDoc = await UserModel.findOne({ email })
-        .populate("avatar");
+        const userDoc = await UserModel.findOne({ email }).populate("avatar");
         if (!userDoc) return null;
 
         const isValid = await bcrypt.compare(password, userDoc.password);

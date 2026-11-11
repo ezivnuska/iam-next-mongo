@@ -17,6 +17,8 @@ export interface UserDocument extends Document {
   verifyTokenExpires?: Date
   resetPasswordToken?: string
   resetPasswordExpires?: Date
+  autoLoginToken?: string
+  autoLoginTokenExpires?: Date
   stripeCustomerId?: string
   stripeDefaultPaymentMethodId?: string
   stripeAccountId?: string
@@ -40,6 +42,8 @@ const UserSchema = new Schema<UserDocument>(
     verifyTokenExpires:             Date,
     resetPasswordToken:             String,
     resetPasswordExpires:           Date,
+    autoLoginToken:                 String,
+    autoLoginTokenExpires:          Date,
     stripeCustomerId:               { type: String },
     stripeDefaultPaymentMethodId:   { type: String },
     stripeAccountId:                { type: String },

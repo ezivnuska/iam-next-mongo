@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import crypto from "crypto";
 
 interface Props {
   searchParams: Promise<{ token?: string }>;
 }
 
-async function verifyToken(token: string): Promise<"success" | "invalid" | "error"> {
+async function verifyToken(token: string): Promise<"invalid" | "error" | { autoLoginToken: string }> {
   try {
     const { connectToDatabase } = await import("@/app/lib/mongoose");
     const { default: UserModel } = await import("@/app/lib/models/user");
@@ -18,13 +20,17 @@ async function verifyToken(token: string): Promise<"success" | "invalid" | "erro
 
     if (!user) return "invalid";
 
+    const autoLoginToken = crypto.randomBytes(32).toString("hex");
+
     user.verified = true;
     user.emailVerified = new Date();
     user.verifyToken = undefined;
     user.verifyTokenExpires = undefined;
+    user.autoLoginToken = autoLoginToken;
+    user.autoLoginTokenExpires = new Date(Date.now() + 5 * 60 * 1000);
     await user.save();
 
-    return "success";
+    return { autoLoginToken };
   } catch {
     return "error";
   }
@@ -39,14 +45,8 @@ export default async function VerifyPage({ searchParams }: Props) {
 
   const result = await verifyToken(token);
 
-  if (result === "success") {
-    return (
-      <VerifyLayout
-        title="Email verified"
-        message="Your email address has been verified. You can now sign in."
-        showSignIn
-      />
-    );
+  if (typeof result === "object") {
+    redirect(`/verify/complete?token=${result.autoLoginToken}`);
   }
 
   if (result === "invalid") {
