@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 
-export default function VerifyCompletePage() {
+function AutoLogin() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const attempted = useRef(false);
@@ -23,4 +23,12 @@ export default function VerifyCompletePage() {
     }, [searchParams, router]);
 
     return null;
+}
+
+export default function VerifyCompletePage() {
+    return (
+        <Suspense>
+            <AutoLogin />
+        </Suspense>
+    );
 }
