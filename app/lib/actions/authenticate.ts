@@ -11,7 +11,14 @@ import { VERIFICATION_CUTOFF } from "@/app/lib/constants";
 export async function authenticateWithToken(formData: FormData): Promise<void> {
   const autoLoginToken = formData.get("autoLoginToken") as string;
   if (!autoLoginToken) redirect("/signin");
-  await signIn("credentials", { autoLoginToken, redirectTo: "/" });
+  try {
+    await signIn("credentials", { autoLoginToken, redirectTo: "/" });
+  } catch (error) {
+    // AuthError means the token was invalid/expired — fall back to sign-in page.
+    // Any other throw (including NEXT_REDIRECT from signIn on success) is re-thrown.
+    if (error instanceof AuthError) redirect("/signin");
+    throw error;
+  }
 }
 
 export async function authenticate(formData: FormData): Promise<string | undefined> {
