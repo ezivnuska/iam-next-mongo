@@ -18,6 +18,7 @@ interface SignupFormProps {
 export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl }: SignupFormProps = {}) {
   const searchParams = useSearchParams();
   const callbackUrl = propCallbackUrl || searchParams.get('callbackUrl') || '/';
+  const inviteToken = searchParams.get('invite') || '';
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -167,6 +168,7 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
         </div>
 
         <input type='hidden' name='redirectTo' value={callbackUrl} />
+        {inviteToken && <input type='hidden' name='inviteToken' value={inviteToken} />}
 
         <Button
           className='mt-4 w-full'

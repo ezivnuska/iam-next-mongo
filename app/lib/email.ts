@@ -37,8 +37,10 @@ export async function sendVerificationEmail(email: string, token: string, userna
   if (error) throw new Error(error.message);
 }
 
-export async function sendInvitationEmail(to: string, inviterUsername: string) {
-  const signupUrl = new URL('/signup', emailBaseUrl()).toString();
+export async function sendInvitationEmail(to: string, inviterUsername: string, inviteToken: string) {
+  const url = new URL('/signup', emailBaseUrl());
+  url.searchParams.set('invite', inviteToken);
+  const signupUrl = url.toString();
   const safeUsername = escapeHtml(inviterUsername);
   const { error } = await resend.emails.send({
     from: process.env.EMAIL_FROM!,

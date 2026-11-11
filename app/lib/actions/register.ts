@@ -4,6 +4,8 @@
 
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
+import Invitation from "@/app/lib/models/invitation";
+import Friendship from "@/app/lib/models/friendship";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { sendVerificationEmail } from "@/app/lib/email";
@@ -15,6 +17,7 @@ export async function register(formData: FormData): Promise<RegisterResult> {
     const email = formData.get("email")?.toString().trim();
     const password = formData.get("password")?.toString();
     const username = formData.get("username")?.toString().trim();
+    const inviteToken = formData.get("inviteToken")?.toString().trim() || null;
 
     if (!email || !password) return { error: "Email and password are required" };
     if (password.length < 8) return { error: "Password must be at least 8 characters" };
@@ -44,6 +47,28 @@ export async function register(formData: FormData): Promise<RegisterResult> {
     });
 
     await newUser.save();
+
+    // Auto-accept friendship if user signed up via invitation
+    if (inviteToken) {
+      try {
+        const invitation = await Invitation.findOne({
+          token: inviteToken,
+          inviteeEmail: email.toLowerCase(),
+          used: false,
+        });
+        if (invitation) {
+          await Friendship.create({
+            requester: invitation.inviterId,
+            recipient: newUser._id,
+            status: 'accepted',
+          });
+          invitation.used = true;
+          await invitation.save();
+        }
+      } catch (err) {
+        console.error("Failed to process invitation friendship:", err);
+      }
+    }
 
     try {
       await sendVerificationEmail(email, verifyToken, username);
