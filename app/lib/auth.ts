@@ -36,6 +36,7 @@ export const authOptions: NextAuthConfig = {
       credentials: {
         email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
+        autoLoginToken: { label: "Auto Login Token", type: "text" },
       },
       async authorize(credentials) {
         await connectToDatabase();
