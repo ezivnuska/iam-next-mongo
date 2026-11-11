@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import crypto from "crypto";
+import { signIn } from "@/app/lib/auth";
 
 interface Props {
   searchParams: Promise<{ token?: string }>;
 }
 
-async function verifyToken(token: string): Promise<"invalid" | "error" | { autoLoginToken: string }> {
+async function verifyAndGetLoginToken(token: string): Promise<"invalid" | "error" | { autoLoginToken: string }> {
   try {
     const { connectToDatabase } = await import("@/app/lib/mongoose");
     const { default: UserModel } = await import("@/app/lib/models/user");
@@ -43,10 +43,10 @@ export default async function VerifyPage({ searchParams }: Props) {
     return <VerifyLayout title="Invalid link" message="No verification token was provided." showSignIn={false} />;
   }
 
-  const result = await verifyToken(token);
+  const result = await verifyAndGetLoginToken(token);
 
   if (typeof result === "object") {
-    redirect(`/verify/complete?token=${result.autoLoginToken}`);
+    await signIn("credentials", { autoLoginToken: result.autoLoginToken, redirectTo: "/" });
   }
 
   if (result === "invalid") {
