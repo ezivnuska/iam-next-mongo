@@ -1,6 +1,6 @@
 import Link from "next/link";
 import crypto from "crypto";
-import { signIn } from "@/app/lib/auth";
+import { redirect } from "next/navigation";
 
 interface Props {
   searchParams: Promise<{ token?: string }>;
@@ -46,7 +46,7 @@ export default async function VerifyPage({ searchParams }: Props) {
   const result = await verifyAndGetLoginToken(token);
 
   if (typeof result === "object") {
-    await signIn("credentials", { autoLoginToken: result.autoLoginToken, redirectTo: "/" });
+    redirect(`/api/auth/auto-login?token=${result.autoLoginToken}`);
   }
 
   if (result === "invalid") {
