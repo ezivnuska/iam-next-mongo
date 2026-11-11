@@ -35,7 +35,7 @@ export default function ContentItemCard({
   onDeleted,
   onFlag,
 }: ContentItemCardProps) {
-  const isCompact = useHorizontalLayout();
+  const isCompact = useHorizontalLayout() ?? false;
   const authorId = isMemory(item) || isPost(item) ? item.author.id : '';
   const { canEdit, canDelete } = useContentPermissions(authorId);
   const handleDelete = useContentDelete('entries', onDeleted || (() => {}));

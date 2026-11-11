@@ -9,7 +9,7 @@ import { useHorizontalLayout } from '@iam/ui';
 
 export default function UserButton() {
     const { user } = useUser();
-    const horizontalLayout = useHorizontalLayout();
+    const horizontalLayout = useHorizontalLayout() ?? false;
 
     if (!user || user.isGuest) return null;
 
