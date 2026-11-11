@@ -4,8 +4,12 @@ import UserModel from "@/app/lib/models/user";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { sendVerificationEmail } from "@/app/lib/email";
+import { checkRegisterRateLimit, getIp } from "@/app/lib/utils/rate-limit";
 
 export async function POST(req: NextRequest) {
+  if (!checkRegisterRateLimit(getIp(req))) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
   try {
     const formData = await req.formData();
     const email = formData.get("email")?.toString().trim();
@@ -16,13 +20,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
     }
 
+    if (password.length < 8) {
+      return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
+    }
+
     if (!username) {
       return NextResponse.json({ error: "Username is required" }, { status: 400 });
     }
 
-    // Validate username length
-    if (username.length < 2 || username.length > 20) {
-      return NextResponse.json({ error: "Username must be between 2 and 20 characters" }, { status: 400 });
+    if (!/^[a-zA-Z0-9_.-]{2,20}$/.test(username)) {
+      return NextResponse.json({ error: "Username must be 2–20 characters and contain only letters, numbers, underscores, hyphens, or dots" }, { status: 400 });
     }
 
     await connectToDatabase();

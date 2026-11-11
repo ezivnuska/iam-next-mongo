@@ -1,11 +1,12 @@
-// app/ui/layout/screen/simple-screen.tsx
+// app/ui/layout/screen/app-shell.tsx
 
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import Link from 'next/link';
 import { Screen, useHorizontalLayout } from '@iam/ui';
 import UserButton from '@/app/ui/header/user-button';
+import SignOutButton from '@/app/ui/auth/signout-button';
 import SigninButton from '@/app/ui/auth/signin-button';
 import AuthRedirectHandler from '@/app/ui/auth/auth-redirect-handler';
 import { useUser } from '@/app/lib/providers/user-provider';
@@ -19,21 +20,33 @@ function PuzzleIcon({ className }: { className?: string }) {
     );
 }
 
-interface SimpleScreenProps {
+interface AppShellProps {
     children: React.ReactNode;
     showLoading?: boolean;
 }
 
-export default function SimpleScreen({ children, showLoading = true }: SimpleScreenProps) {
+export default function AppShell({ children, showLoading = true }: AppShellProps) {
     const { user } = useUser();
-    const loggedIn = !!user && !user.isGuest;
     const horizontalLayout = useHorizontalLayout();
+
+    useEffect(() => {
+        const sync = () => document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+        sync();
+        window.addEventListener('resize', sync);
+        return () => window.removeEventListener('resize', sync);
+    }, []);
+    const loggedIn = !!user && !user.isGuest;
 
     return (
         <Screen
-            userControls={loggedIn ? <UserButton /> : undefined}
+            userControls={loggedIn ? (
+                <div className={horizontalLayout ? 'flex flex-col items-center gap-4' : 'flex flex-row items-center gap-3'}>
+                    <UserButton />
+                    <SignOutButton />
+                </div>
+            ) : undefined}
             nav={loggedIn ? (
-                <div className={horizontalLayout ? 'flex flex-col items-center gap-2' : 'flex items-center gap-2'}>
+                <>
                     <Link
                         href='/feed'
                         className='flex items-center justify-center text-gray-700 hover:text-gray-500 transition-colors'
@@ -48,7 +61,7 @@ export default function SimpleScreen({ children, showLoading = true }: SimpleScr
                     >
                         <PuzzleIcon className='w-7 h-7' />
                     </a>
-                </div>
+                </>
             ) : (
                 <SigninButton />
             )}

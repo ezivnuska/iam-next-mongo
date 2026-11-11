@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 import { auth } from '@/app/lib/auth';
 import { redirect, notFound } from 'next/navigation';
 import { getContentDetailByUsername } from '@/app/lib/actions/content-detail';
-import { PageContent, SetBreadcrumbLabel } from '@iam/ui';
+import { PageContent, PageContentRow, PageContentList, SetBreadcrumbLabel } from '@iam/ui';
 import ContentDetailView from '@/app/ui/content-detail-view';
 import ContentDetailHeader from '@/app/ui/content-detail-header';
 import type { Metadata } from 'next';
@@ -74,13 +74,17 @@ export default async function ContentDetailPage({ params }: Props) {
 
     return (
         <PageContent header={
-            <ContentDetailHeader
-                item={content}
-                avatar={content.author.avatar}
-            />
+            <PageContentRow>
+                <ContentDetailHeader
+                    item={content}
+                    avatar={content.author.avatar}
+                />
+            </PageContentRow>
         }>
-            <SetBreadcrumbLabel segment={id} label={contentLabel} />
-            <ContentDetailView item={content} />
+            <PageContentList>
+                <SetBreadcrumbLabel segment={id} label={contentLabel} />
+                <ContentDetailView item={content} />
+            </PageContentList>
         </PageContent>
     );
 }

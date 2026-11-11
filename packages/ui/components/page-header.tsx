@@ -14,12 +14,12 @@ export default function PageHeader({ title, subtitle, className, actions }: Page
         <header className={clsx('flex items-center justify-between border-b py-3', className)}>
             <div>
                 {title && (
-                    <h1 className='leading-none text-xl font-bold md:text-xl text-gray-900'>
+                    <h1 className='leading-none text-xl font-bold text-gray-900'>
                         {title}
                     </h1>
                 )}
                 {subtitle && (
-                    <p className='mt-0.5 text-lg md:text-lg px-2 text-gray-600'>
+                    <p className='mt-0.5 text-lg px-2 text-gray-600'>
                         {subtitle}
                     </p>
                 )}

@@ -11,8 +11,8 @@ import MemoryPolaroid from '@/app/ui/memories/memory-polaroid';
 import { isMemory, isPost } from '@/app/lib/utils/content-helpers';
 import { useContentPermissions } from '@/app/lib/hooks/use-content-permissions';
 import { useContentDelete } from '@/app/lib/hooks/use-content-delete';
-import { useScreenOrientation } from '@iam/ui';
 import { IMAGE_SIZES } from '@/app/lib/utils/images';
+import { useHorizontalLayout } from '@iam/ui';
 
 type ContentItemCardProps = {
   item: ContentItem;
@@ -35,112 +35,111 @@ export default function ContentItemCard({
   onDeleted,
   onFlag,
 }: ContentItemCardProps) {
+  const isCompact = useHorizontalLayout();
   const authorId = isMemory(item) || isPost(item) ? item.author.id : '';
   const { canEdit, canDelete } = useContentPermissions(authorId);
   const handleDelete = useContentDelete('entries', onDeleted || (() => {}));
-  const orientation = useScreenOrientation();
-  const isLandscape = orientation === 'landscape';
 
   if (isMemory(item)) {
-    if (isLandscape) {
+    if (isCompact) {
       const memoryDate = item.date
         ? new Date(item.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
         : '';
       return (
+          <ContentCard
+            author={item.author}
+            avatar={item.author.avatar}
+            createdAt={item.createdAt}
+            actions={editable && onFlag ? { onFlag: () => onFlag(item) } : undefined}
+            href={`/users/${item.author.username}/${item.id}`}
+            compact
+            thumbnail={
+              item.image
+                ? <ContentImage
+                    image={item.image}
+                    size={IMAGE_SIZES.THUMBNAIL}
+                    className='w-[84px] h-[84px] rounded object-cover'
+                  />
+                : undefined
+            }
+          >
+            <div className='flex flex-col min-w-0'>
+              {item.title && <p className='text-sm font-semibold text-gray-900 truncate'>{item.title}</p>}
+              {memoryDate && <p className='text-xs text-gray-500 truncate'>{memoryDate}</p>}
+              {item.content && <p className='text-sm text-gray-700 truncate'>{item.content}</p>}
+            </div>
+          </ContentCard>
+      );
+    }
+
+    return (
+        <MemoryPolaroid
+          entry={item}
+          onImageClick={item.image && onImageClick ? () => onImageClick(item.image!) : undefined}
+          actions={editable ? {
+            onDelete: () => handleDelete(item.id),
+            onFlag: onFlag ? () => onFlag(item) : undefined,
+            canDelete,
+          } : undefined}
+          interactions={{
+            initialLiked: item.likedByCurrentUser,
+            initialLikeCount: item.likes?.length || 0,
+            initialCommentCount: item.commentCount || 0,
+            autoExpandComments,
+            onCommentClick: item.image
+              ? (onCommentImageClick
+                  ? () => onCommentImageClick(item.image!, item.id, 'Memory')
+                  : onImageClick ? () => onImageClick(item.image!) : undefined)
+              : undefined,
+          }}
+          editable={editable}
+          canEdit={canEdit}
+          onEdit={onEdit ? () => onEdit(item) : undefined}
+        />
+    );
+  }
+
+  if (isPost(item)) {
+    return (
         <ContentCard
           author={item.author}
           avatar={item.author.avatar}
           createdAt={item.createdAt}
           actions={editable && onFlag ? { onFlag: () => onFlag(item) } : undefined}
           href={`/users/${item.author.username}/${item.id}`}
-          compact
+          compact={isCompact}
           thumbnail={
-            item.image
+            isCompact && item.image
               ? <ContentImage
                   image={item.image}
                   size={IMAGE_SIZES.THUMBNAIL}
-                  className='w-14 h-14 rounded object-cover'
+                  className='w-[84px] h-[84px] rounded object-cover'
                 />
               : undefined
           }
         >
-          <div className='flex flex-col min-w-0'>
-            {item.title && <p className='text-sm font-semibold text-gray-900 truncate'>{item.title}</p>}
-            {memoryDate && <p className='text-xs text-gray-500 truncate'>{memoryDate}</p>}
-            {item.content && <p className='text-sm text-gray-700 truncate'>{item.content}</p>}
-          </div>
+          {item.content && (
+            isCompact ? (
+              <p className='text-sm text-gray-900 truncate'>{item.content}</p>
+            ) : (
+              <div className='flex flex-col gap-1 py-1 text-gray-900'>
+                <p>{item.content}</p>
+                {item.linkUrl && (
+                  <a href={item.linkUrl} target='_blank' rel='noopener noreferrer' className='text-blue-500 underline' onClick={e => e.stopPropagation()}>
+                    [source]
+                  </a>
+                )}
+              </div>
+            )
+          )}
+          {!isCompact && (
+            <ContentImage
+              image={item.image}
+              alt='Post image'
+              className='rounded mt-2 object-cover'
+            />
+          )}
         </ContentCard>
-      );
-    }
-
-    return (
-      <MemoryPolaroid
-        entry={item}
-        onImageClick={item.image && onImageClick ? () => onImageClick(item.image!) : undefined}
-        actions={editable ? {
-          onDelete: () => handleDelete(item.id),
-          onFlag: onFlag ? () => onFlag(item) : undefined,
-          canDelete,
-        } : undefined}
-        interactions={{
-          initialLiked: item.likedByCurrentUser,
-          initialLikeCount: item.likes?.length || 0,
-          initialCommentCount: item.commentCount || 0,
-          autoExpandComments,
-          onCommentClick: item.image
-            ? (onCommentImageClick
-                ? () => onCommentImageClick(item.image!, item.id, 'Memory')
-                : onImageClick ? () => onImageClick(item.image!) : undefined)
-            : undefined,
-        }}
-        editable={editable}
-        canEdit={canEdit}
-        onEdit={onEdit ? () => onEdit(item) : undefined}
-      />
-    );
-  }
-
-  if (isPost(item)) {
-    return (
-      <ContentCard
-        author={item.author}
-        avatar={item.author.avatar}
-        createdAt={item.createdAt}
-        actions={editable && onFlag ? { onFlag: () => onFlag(item) } : undefined}
-        href={`/users/${item.author.username}/${item.id}`}
-        compact={isLandscape}
-        thumbnail={
-          isLandscape && item.image
-            ? <ContentImage
-                image={item.image}
-                size={IMAGE_SIZES.THUMBNAIL}
-                className='w-14 h-14 rounded object-cover'
-              />
-            : undefined
-        }
-      >
-        {item.content && (
-          isLandscape ? (
-            <p className='text-sm text-gray-900 truncate'>{item.content}</p>
-          ) : (
-            <div className='flex flex-col gap-1 py-1 text-gray-900'>
-              <p>{item.content}</p>
-              {item.linkUrl && (
-                <a href={item.linkUrl} target='_blank' className='text-blue-500 underline' onClick={e => e.stopPropagation()}>
-                  [source]
-                </a>
-              )}
-            </div>
-          )
-        )}
-        {!isLandscape && (
-          <ContentImage
-            image={item.image}
-            alt='Post image'
-            className='rounded mt-2 object-cover'
-          />
-        )}
-      </ContentCard>
     );
   }
 

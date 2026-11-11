@@ -44,21 +44,21 @@ export default function LikeButton({
 
 		const handleLikeAdded = (payload: LikePayload) => {
 			if (payload.itemId === itemId && payload.itemType === itemType) {
-				setData(prev => ({
-					liked: prev.liked,
-					likeCount: prev.likeCount + 1
-				}))
-				onLikeChange?.(data.liked, data.likeCount + 1)
+				setData(prev => {
+					const newCount = prev.likeCount + 1
+					onLikeChange?.(prev.liked, newCount)
+					return { liked: prev.liked, likeCount: newCount }
+				})
 			}
 		}
 
 		const handleLikeRemoved = (payload: LikePayload) => {
 			if (payload.itemId === itemId && payload.itemType === itemType) {
-				setData(prev => ({
-					liked: prev.liked,
-					likeCount: Math.max(0, prev.likeCount - 1)
-				}))
-				onLikeChange?.(data.liked, Math.max(0, data.likeCount - 1))
+				setData(prev => {
+					const newCount = Math.max(0, prev.likeCount - 1)
+					onLikeChange?.(prev.liked, newCount)
+					return { liked: prev.liked, likeCount: newCount }
+				})
 			}
 		}
 
@@ -69,7 +69,7 @@ export default function LikeButton({
 			socket.off(SOCKET_EVENTS.LIKE_ADDED, handleLikeAdded)
 			socket.off(SOCKET_EVENTS.LIKE_REMOVED, handleLikeRemoved)
 		}
-	}, [socket, itemId, itemType, data.liked, data.likeCount, onLikeChange, setData])
+	}, [socket, itemId, itemType, onLikeChange, setData])
 
 	const handleToggleLike = async (e: React.MouseEvent) => {
 		e.stopPropagation()

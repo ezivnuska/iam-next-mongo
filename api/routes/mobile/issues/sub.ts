@@ -301,12 +301,18 @@ sub.post('/api/mobile/issues/:id/reports', authMiddleware, async (c) => {
     if (imageId !== undefined && imageId !== null && !isValidObjectId(imageId))
       return c.json({ error: 'Invalid image ID' }, 400)
 
+    if (content && content.length > 1000)
+      return c.json({ error: 'Report content must be 1000 characters or less' }, 400)
+
     await connectToDatabase()
     const issue = await Issue.findById(id)
     if (!issue) return c.json({ error: 'Issue not found' }, 404)
     if (issue.status !== 'open') return c.json({ error: 'Issue is not open' }, 409)
 
     issue.reports = issue.reports ?? []
+    if (issue.reports.some((r: any) => r.userId.toString() === token.id))
+      return c.json({ error: 'Already reported' }, 409)
+
     issue.reports.push({
       userId: token.id,
       ...(imageId ? { imageId } : {}),
@@ -756,11 +762,16 @@ sub.post('/api/mobile/issues/:id/commission/rating', authMiddleware, async (c) =
       { upsert: true }
     )
 
-    const existingReview = activeCompletion.reviews.find((r: any) => r.userId.toString() === token.id)
-    if (!existingReview) {
-      await Completion.findByIdAndUpdate(commissionId, {
-        $push: { reviews: { userId: token.id, vote } },
-      })
+    // Update existing review vote atomically, or push if not yet reviewed
+    const reviewUpdate = await Completion.updateOne(
+      { _id: commissionId, 'reviews.userId': token.id },
+      { $set: { 'reviews.$.vote': vote } }
+    )
+    if (reviewUpdate.matchedCount === 0) {
+      await Completion.updateOne(
+        { _id: commissionId, 'reviews.userId': { $ne: token.id } },
+        { $push: { reviews: { userId: token.id, vote } } }
+      )
     }
 
     // Withdraw pledge immediately if requested (contributor deny only)

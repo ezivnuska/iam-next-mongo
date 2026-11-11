@@ -6,12 +6,12 @@ import '@/app/ui/global.css';
 import { ubuntu } from '@iam/ui';
 import { auth } from '@/app/lib/auth';
 import { UserProvider } from '@/app/lib/providers/user-provider';
-import { ThemeProvider } from '@/app/lib/providers/theme-provider';
+import { ThemeProvider } from '@iam/ui';
 import { AuthModalProvider } from '@/app/lib/providers/auth-modal-provider';
 import { SocketProvider } from '@/app/lib/providers/socket-provider';
 import { TileProvider } from '@/app/lib/providers/tile-provider';
 import type { Viewport } from 'next';
-import SimpleScreen from './ui/layout/screen/simple-screen';
+import AppShell from './ui/layout/screen/app-shell';
 
 export const viewport: Viewport = {
     width: 'device-width',
@@ -37,15 +37,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     }}
                 />
             </head>
-            <body className={`${ubuntu.className} antialiased h-dvh overflow-hidden flex flex-col`}>
+            <body className={`${ubuntu.className} antialiased overflow-hidden flex flex-col`} style={{ height: 'var(--app-height, 100dvh)' }}>
                 <UserProvider initialUser={session?.user ?? null}>
                     <ThemeProvider>
                         <AuthModalProvider>
                             <SocketProvider>
                                 <TileProvider>
-                                    <SimpleScreen>
+                                    <AppShell>
                                         {children}
-                                    </SimpleScreen>
+                                    </AppShell>
                                 </TileProvider>
                             </SocketProvider>
                         </AuthModalProvider>

@@ -5,7 +5,7 @@
 import { formatRelativeTime } from '@/app/lib/utils/format-date';
 import { useUserNavigation } from '@/app/lib/hooks/use-user-navigation';
 import FlagContentButton from '../flag-content-button';
-import UserAvatar from './user-avatar';
+import { UserAvatar } from '@iam/ui';
 import DeleteButtonWithConfirm from '../delete-button-with-confirm';
 import OnlineStatusIndicator from './online-status-indicator';
 import type { Image as ImageType } from '@/app/lib/definitions/image';

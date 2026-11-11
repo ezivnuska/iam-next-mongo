@@ -17,8 +17,9 @@ export async function register(formData: FormData): Promise<RegisterResult> {
     const username = formData.get("username")?.toString().trim();
 
     if (!email || !password) return { error: "Email and password are required" };
+    if (password.length < 8) return { error: "Password must be at least 8 characters" };
     if (!username) return { error: "Username is required" };
-    if (username.length < 2 || username.length > 20) return { error: "Username must be between 2 and 20 characters" };
+    if (!/^[a-zA-Z0-9_.-]{2,20}$/.test(username)) return { error: "Username must be 2–20 characters and contain only letters, numbers, underscores, hyphens, or dots" };
 
     await connectToDatabase();
 

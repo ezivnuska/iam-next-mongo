@@ -347,7 +347,10 @@ stripeRoutes.post('/api/mobile/stripe/payout-card', authMiddleware, async (c) =>
       }
     }
 
-    await UserModel.findByIdAndUpdate(userId, { stripeAccountEnabled: true })
+    const updatedAccount = await stripeClient.accounts.retrieve(accountId)
+    if (updatedAccount.capabilities?.transfers === 'active') {
+      await UserModel.findByIdAndUpdate(userId, { stripeAccountEnabled: true })
+    }
     if (!card) return c.json({ error: 'Card not attached' }, 500)
     return c.json({ payoutCard: serializeCard(card) })
   } catch (err: any) {

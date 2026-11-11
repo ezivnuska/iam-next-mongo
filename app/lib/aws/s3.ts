@@ -29,6 +29,7 @@ export async function uploadFileToS3(file: File | Blob, folder = "uploads") {
     Key: `${folder}/${fileName}`,
     Body: buffer,
     ContentType: (file as any).type || "application/octet-stream",
+    ACL: 'public-read',
   });
 
   await getS3Client().send(command);
@@ -69,6 +70,7 @@ export async function uploadImageVariants(
       Key: key,
       Body: outputBuffer,
       ContentType: IMAGE_MIME[meta.format ?? ''] ?? 'application/octet-stream',
+      ACL: 'public-read',
     }))
     variants.push({ size: name, filename, width: meta.width ?? 0, height: meta.height ?? 0, url: getS3UrlFromKey(key) })
   }

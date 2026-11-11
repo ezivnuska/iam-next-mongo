@@ -2,7 +2,7 @@
 
 'use client';
 
-import UserAvatar from '@/app/ui/user/user-avatar';
+import { UserAvatar } from '@iam/ui';
 import { Button } from '@iam/ui';
 
 interface FriendCardProps {

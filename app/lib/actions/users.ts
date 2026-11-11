@@ -13,10 +13,11 @@ import { auth } from "@/app/lib/auth";
 // ------------------------------
 export async function getUsers() {
     const session = await auth()
+    if (!session?.user?.id) return [];
     try {
         await connectToDatabase();
         const users = await UserModel.find({}).populate('avatar', '_id variants');
-        const otherUsers = users.filter(user => user.id !== session?.user.id)
+        const otherUsers = users.filter(user => user.id !== session.user.id)
         return normalizeUsers(otherUsers);
     } catch (e) {
         console.error("Error fetching users:", e);

@@ -1,0 +1,27 @@
+// app/lib/utils/rate-limit.ts
+
+interface RateEntry { count: number; resetAt: number }
+
+function makeRateLimiter(maxRequests: number, windowMs: number) {
+  const store = new Map<string, RateEntry>()
+
+  return function checkRateLimit(ip: string): boolean {
+    const now = Date.now()
+    const entry = store.get(ip)
+    if (!entry || now > entry.resetAt) {
+      store.set(ip, { count: 1, resetAt: now + windowMs })
+      return true
+    }
+    entry.count++
+    return entry.count <= maxRequests
+  }
+}
+
+export const checkRegisterRateLimit = makeRateLimiter(3, 3_600_000)   // 3 req/hr per IP
+export const checkResendRateLimit = makeRateLimiter(5, 3_600_000)      // 5 req/hr per IP
+
+export function getIp(req: Request): string {
+  const forwarded = req.headers.get('x-forwarded-for')
+  if (forwarded) return forwarded.split(',')[0].trim()
+  return req.headers.get('x-real-ip') ?? 'unknown'
+}

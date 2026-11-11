@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import stripe from '@/app/lib/stripe'
 import UserModel from '@/app/lib/models/user'
+import { isValidObjectId } from '@iam/shared-types'
 
 export async function POST(req: NextRequest) {
   const body = await req.text()
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
       if (accountId) {
         const account = await stripe.accounts.retrieve(accountId)
         const userId = account.metadata?.userId
-        if (userId) {
+        if (userId && isValidObjectId(userId)) {
           await UserModel.findByIdAndUpdate(userId, {
             stripeAccountEnabled: account.payouts_enabled ?? false,
           })

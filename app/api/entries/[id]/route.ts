@@ -39,8 +39,10 @@ export async function PUT(req: Request) {
       if (content.length > 5000) return NextResponse.json({ error: "Content must be 5000 characters or less" }, { status: 400 });
       if (title && title.length > 200) return NextResponse.json({ error: "Title must be 200 characters or less" }, { status: 400 });
       if (!date) return NextResponse.json({ error: "Memory must have a date" }, { status: 400 });
+      const parsedDate = new Date(date);
+      if (isNaN(parsedDate.getTime())) return NextResponse.json({ error: "Invalid date" }, { status: 400 });
 
-      entry.date = new Date(date);
+      entry.date = parsedDate;
       entry.title = title?.trim() || "Untitled";
       entry.content = content.trim();
       entry.shared = shared ?? false;

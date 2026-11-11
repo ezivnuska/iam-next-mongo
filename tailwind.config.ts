@@ -36,6 +36,8 @@ module.exports = {
           'content': '600px',
         },
         screens: {
+          'mid': '600px',
+          'wide': '1024px',
           'portrait': { 'raw': '(orientation: portrait)' },
           'landscape': { 'raw': '(orientation: landscape)' },
         },

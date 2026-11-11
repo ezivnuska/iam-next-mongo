@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { Repo } from '@/app/about/timeline/types';
+import { requireAuth } from '@/app/lib/utils/auth';
 
 const OWNER = 'ezivnuska';
 const TOKEN = process.env.GITHUB_TOKEN ?? '';
@@ -49,6 +50,10 @@ async function withConcurrency<T>(tasks: (() => Promise<T>)[], limit: number): P
 }
 
 export async function GET() {
+    try { await requireAuth() } catch {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const res = await fetch(
         `https://api.github.com/users/${OWNER}/repos?per_page=100&sort=updated`,
         { headers, next: { revalidate: 3600 } }

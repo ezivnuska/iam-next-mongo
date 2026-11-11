@@ -25,6 +25,7 @@ export async function getImages(
   currentUserId?: string
 ): Promise<Image[]> {
     const session = await auth();
+    if (!userId && !session?.user?.id) return [];
   try {
     await connectToDatabase();
 

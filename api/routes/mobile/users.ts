@@ -10,6 +10,7 @@ import UserModel from '@/app/lib/models/user'
 import FriendshipModel from '@/app/lib/models/friendship'
 import Rating from '@/app/lib/models/rating'
 import '@/app/lib/models/image'
+import { isValidObjectId } from '@iam/shared-types'
 
 const users = new Hono<{ Variables: { token: TokenPayload } }>()
 
@@ -49,7 +50,7 @@ users.get('/api/mobile/users', authMiddleware, async (c) => {
   }
 })
 
-users.get('/api/mobile/users/by-username/:username', async (c) => {
+users.get('/api/mobile/users/by-username/:username', authMiddleware, async (c) => {
   const username = c.req.param('username')
   try {
     await connectToDatabase()
@@ -86,6 +87,7 @@ users.get('/api/mobile/users/by-username/:username', async (c) => {
 users.get('/api/mobile/users/:id', authMiddleware, async (c) => {
   const token = c.get('token')
   const userId = c.req.param('id')
+  if (!isValidObjectId(userId)) return c.json({ error: 'Invalid user ID' }, 400)
   try {
     await connectToDatabase()
 

@@ -1,6 +1,6 @@
 'use client';
 
-import UserAvatar from '@/app/ui/user/user-avatar';
+import { UserAvatar } from '@iam/ui';
 import type { Image as ImageType } from '@/app/lib/definitions/image';
 
 interface UserIdentityProps {

@@ -64,10 +64,13 @@ membershipRoutes.post('/api/mobile/membership', authMiddleware, async (c) => {
     await connectToDatabase()
 
     if (tier === 'free') {
-      // Downgrade: remove membership document
       await MembershipModel.findOneAndDelete({ userId: token.id })
       return c.json(FREE_RESPONSE)
     }
+
+    // Paid tier upgrades must go through Stripe webhooks
+    if (token.role !== 'admin')
+      return c.json({ error: 'Forbidden' }, 403)
 
     const paidTier = tier as 'basic' | 'pro'
     const now = new Date()

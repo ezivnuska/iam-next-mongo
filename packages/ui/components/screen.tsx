@@ -53,10 +53,13 @@ export default function Screen({
             {extras}
             {horizontalLayout ? (
                 <>
-                    <aside className={clsx(
-                        'fixed left-0 top-0 h-dvh w-24 flex flex-col pt-2 pb-4 px-2 bg-gray-100 z-10',
-                        { 'justify-between': loggedIn || !!nav },
-                    )}>
+                    <aside
+                        style={{ width: 'clamp(100px, 16vw, 200px)', paddingTop: 'clamp(8px, 2vw, 16px)', paddingBottom: 'clamp(12px, 3vw, 24px)' }}
+                        className={clsx(
+                            'fixed left-0 top-0 h-dvh flex flex-col px-2 bg-gray-100 z-10',
+                            { 'justify-between': loggedIn || !!nav },
+                        )}
+                    >
                         {loggedIn ? (
                             <>
                                 <div>{userControls}</div>
@@ -72,14 +75,14 @@ export default function Screen({
                             </>
                         )}
                     </aside>
-                    <main className='ml-24 flex flex-col flex-1 min-h-0 overflow-x-hidden bg-white'>
+                    <main style={{ marginLeft: 'clamp(100px, 16vw, 200px)' }} className='@container/main flex flex-col flex-1 min-h-0 overflow-x-hidden bg-white max-w-[900px]'>
                         {content}
                     </main>
                 </>
             ) : (
                 <>
                     <header ref={navRef} className='sticky top-0 z-10 bg-gray-100 border-b border-gray-200'>
-                        <div className='flex flex-row items-center justify-between py-2 gap-4 px-4'>
+                        <div className='flex flex-row items-center justify-between py-2 gap-4 px-4 max-w-[900px] mx-auto w-full'>
                             {loggedIn ? (
                                 <>
                                     <div>{userControls}</div>
@@ -96,7 +99,7 @@ export default function Screen({
                             )}
                         </div>
                     </header>
-                    <main className='flex flex-col flex-1 min-h-0 overflow-x-hidden bg-white'>
+                    <main className='@container/main flex flex-col flex-1 min-h-0 overflow-x-hidden bg-white max-w-[900px] mx-auto w-full'>
                         {content}
                     </main>
                 </>

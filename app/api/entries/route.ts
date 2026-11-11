@@ -37,6 +37,9 @@ export async function POST(req: Request) {
       if (!date) {
         return NextResponse.json({ error: "Memory must have a date" }, { status: 400 });
       }
+      if (isNaN(new Date(date).getTime())) {
+        return NextResponse.json({ error: "Invalid date" }, { status: 400 });
+      }
     } else {
       if (!content?.trim() && !imageId) {
         return NextResponse.json({ error: "Post must have either content or an image" }, { status: 400 });

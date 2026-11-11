@@ -91,7 +91,7 @@ export async function getCommentCountsForContent(
 }
 
 export function sortContentByDate<T extends { createdAt?: string }>(content: T[]): T[] {
-  return content.sort((a, b) =>
+  return [...content].sort((a, b) =>
     new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
   )
 }

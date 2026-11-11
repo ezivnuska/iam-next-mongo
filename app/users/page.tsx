@@ -6,7 +6,7 @@ import { getUsers } from '@/app/lib/actions/users';
 import UserList from '@/app/ui/user/user-list';
 import { auth } from '@/app/lib/auth';
 import { redirect } from 'next/navigation';
-import { PageContent } from '@iam/ui';
+import { PageContent, PageContentList } from '@iam/ui';
 
 export default async function Page() {
     // Server-side authentication check
@@ -19,7 +19,9 @@ export default async function Page() {
 
     return (
         <PageContent>
-            <UserList users={users || []} />
+            <PageContentList>
+                <UserList users={users || []} />
+            </PageContentList>
         </PageContent>
     );
 }

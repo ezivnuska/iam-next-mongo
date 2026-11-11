@@ -5,7 +5,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeftIcon, EllipsisIcon, Modal } from '@iam/ui';
-import UserAvatar from './user/user-avatar';
+import { UserAvatar } from '@iam/ui';
 import DeleteButtonWithConfirm from './delete-button-with-confirm';
 import { Button } from '@iam/ui';
 import CreateEntryForm from './entries/create-entry-form';

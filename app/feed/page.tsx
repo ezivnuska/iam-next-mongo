@@ -3,22 +3,22 @@
 export const dynamic = 'force-dynamic';
 
 import { Metadata } from 'next';
-import { getPublicContent } from '@/app/lib/actions/public-content';
+import { getFeedContent } from '@/app/lib/actions/feed-content';
 import UserContentFeed from '@/app/ui/user/user-content-feed';
-import { PageContent } from '@iam/ui';
+import { PageContent, PageHeader, PageContentList } from '@iam/ui';
 
 export const metadata: Metadata = {
     title: 'Feed',
-    description: 'User Posts',
+    description: 'Posts and memories from you and your friends',
 };
 
 export default async function FeedPage() {
-    const content = await getPublicContent();
+    const content = await getFeedContent();
     return (
-        <PageContent>
-            <div className='space-y-8 pb-8'>
+        <PageContent header={<PageHeader subtitle='Feed' />}>
+            <PageContentList>
                 <UserContentFeed initialContent={content} />
-            </div>
+            </PageContentList>
         </PageContent>
     );
 }

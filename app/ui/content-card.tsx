@@ -46,19 +46,22 @@ export default function ContentCard({
                 className={`flex flex-row items-start gap-3${href ? ' cursor-pointer' : ''}`}
                 onClick={handleCardClick}
             >
-                {thumbnail && <div className='shrink-0'>{thumbnail}</div>}
-                <div className='flex flex-col flex-1 min-w-0'>
-                    <div className='flex items-center justify-between'>
+                {/* Left column: header + content */}
+                <div className='flex flex-col flex-1 min-w-0 gap-1'>
+                    <div className='flex items-start justify-between'>
                         <EntryHeader
                             username={author.username}
                             avatar={avatar}
-                            avatarSize={28}
+                            avatarSize={36}
                             createdAt={createdAt}
                         />
                         {actionsNode}
                     </div>
-                    <div className='flex-1 min-w-0'>{children}</div>
+                    <div className='min-w-0 pl-[44px]'>{children}</div>
                 </div>
+
+                {/* Right column: thumbnail */}
+                <div className='w-[84px] shrink-0'>{thumbnail}</div>
             </div>
         );
     }

@@ -3,21 +3,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Modal } from '@iam/ui';
+import { Modal, Button } from '@iam/ui';
 import UploadForm from '@/app/ui/images/upload-form';
 import ImageGallery from './image-gallery';
 import type { Image } from '@/app/lib/definitions/image';
-import { Button } from '@iam/ui';
 import { getImages } from '@/app/lib/actions/images';
-import ProfileTabBar from '@/app/ui/user/profile-tab-bar';
-
 interface ImagesClientProps {
   authorized?: boolean;
   userId?: string;
-  username?: string;
+  triggerUpload?: number;
+  showUploadButton?: boolean;
 }
 
-export default function ImagesClient({ userId, authorized, username }: ImagesClientProps) {
+export default function ImagesClient({ userId, authorized, triggerUpload, showUploadButton = false }: ImagesClientProps) {
     const [images, setImages] = useState<Image[]>([]);
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -33,6 +31,10 @@ export default function ImagesClient({ userId, authorized, username }: ImagesCli
         initImages()
     }, [])
 
+    useEffect(() => {
+        if (triggerUpload) setIsModalOpen(true);
+    }, [triggerUpload])
+
     const handleUploadSuccess = (uploadedImage: Image) => {
         setImages((prev) => [uploadedImage, ...prev]);
         setIsModalOpen(false);
@@ -46,15 +48,11 @@ export default function ImagesClient({ userId, authorized, username }: ImagesCli
 
     return (
         <div className='flex flex-col w-full gap-4'>
-            {username && (
-                <ProfileTabBar username={username} activeTab='images' isOwnProfile={authorized} />
-            )}
-            {authorized && (
+            {showUploadButton && (
                 <Button onClick={() => setIsModalOpen(true)}>
                     Upload File
                 </Button>
             )}
-
             {!loading
                 ? (
                     <ImageGallery

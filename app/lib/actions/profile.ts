@@ -4,7 +4,7 @@
 
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "../models/user";
-import "@/app/lib/models/image"; // Required for populate("avatar")
+import ImageModel from "../models/image";
 import { normalizeUser } from '@iam/db';
 import { requireAuth } from "@/app/lib/utils/auth";
 import { isValidObjectId } from "@iam/shared-types";
@@ -13,8 +13,9 @@ export async function getProfile() {
     const { id: userId } = await requireAuth();
     await connectToDatabase()
     try {
-        const user = await UserModel.findById(userId).populate('avatar', '_id, variants');
-        return user;
+        const user = await UserModel.findById(userId).populate('avatar', '_id variants');
+        if (!user) return null;
+        return normalizeUser(user);
     } catch (e) {
         console.error(e);
         return null;
@@ -27,9 +28,16 @@ export async function setAvatar(imageId: string | null) {
     await connectToDatabase();
 
     try {
-      // Validate imageId format if provided
       if (imageId !== null && !isValidObjectId(imageId)) {
         return { success: false, error: "Invalid imageId format" };
+      }
+
+      if (imageId !== null) {
+        const image = await ImageModel.findById(imageId).select('userId').lean();
+        if (!image) return { success: false, error: "Image not found" };
+        if ((image as any).userId.toString() !== userId) {
+          return { success: false, error: "Forbidden" };
+        }
       }
 
       const user = await UserModel.findByIdAndUpdate(
