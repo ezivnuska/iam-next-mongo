@@ -8,6 +8,7 @@ import UserButton from '@/app/ui/header/user-button';
 import SignOutButton from '@/app/ui/auth/signout-button';
 import SigninButton from '@/app/ui/auth/signin-button';
 import AuthRedirectHandler from '@/app/ui/auth/auth-redirect-handler';
+import FriendsNavLink from '@/app/ui/friendship/friends-nav-link';
 import { useUser } from '@/app/lib/providers/user-provider';
 import { getBestVariant } from '@iam/shared-types';
 
@@ -68,6 +69,7 @@ export default function AppShell({ children, showLoading = true }: AppShellProps
             ) : undefined}
             nav={loggedIn ? (
                 <>
+                    <FriendsNavLink />
                     <a
                         href='https://games.iameric.me'
                         className='flex items-center justify-center text-gray-700 hover:text-gray-500 transition-colors'
