@@ -2,23 +2,24 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { UserGroupIcon } from '@heroicons/react/24/solid';
 import { getPendingRequests } from '@/app/lib/actions/friendships';
 import { useFriendshipSocketEvents } from '@/app/lib/hooks/useFriendshipSocketEvents';
-import type { FriendRequestPayload, FriendshipStatusPayload } from '@/app/lib/socket/events';
+import type { FriendRequestPayload } from '@/app/lib/socket/events';
 
 export default function FriendsNavLink() {
     const [count, setCount] = useState(0);
+    const pathname = usePathname();
 
+    // Re-fetch on route change to pick up accepts/rejects made on the friends page
     useEffect(() => {
         getPendingRequests().then(r => setCount(r.length)).catch(() => {});
-    }, []);
+    }, [pathname]);
 
     useFriendshipSocketEvents({
         isCurrentUser: true,
         onFriendRequestSent: (_payload: FriendRequestPayload) => setCount(n => n + 1),
-        onFriendRequestAccepted: (_payload: FriendshipStatusPayload) => setCount(n => Math.max(0, n - 1)),
-        onFriendshipRemoved: (_payload: FriendshipStatusPayload) => setCount(n => Math.max(0, n - 1)),
     });
 
     return (
