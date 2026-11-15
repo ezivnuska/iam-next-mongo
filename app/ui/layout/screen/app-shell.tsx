@@ -5,7 +5,6 @@
 import { Suspense, useEffect, useState } from 'react';
 import { Screen, useHorizontalLayout } from '@iam/ui';
 import UserButton from '@/app/ui/header/user-button';
-import SignOutButton from '@/app/ui/auth/signout-button';
 import SigninButton from '@/app/ui/auth/signin-button';
 import AuthRedirectHandler from '@/app/ui/auth/auth-redirect-handler';
 import { useUser } from '@/app/lib/providers/user-provider';
@@ -61,10 +60,7 @@ export default function AppShell({ children, showLoading = true }: AppShellProps
         <Screen
             headerReady={headerReady}
             userControls={loggedIn ? (
-                <div className={horizontalLayout ? 'flex flex-col items-center gap-4' : 'flex flex-row items-center gap-3'}>
-                    <UserButton />
-                    <SignOutButton />
-                </div>
+                <UserButton />
             ) : undefined}
             nav={loggedIn ? (
                 <a
