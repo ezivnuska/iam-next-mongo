@@ -14,16 +14,17 @@ import UserIdentity from '@/app/ui/user/user-identity';
 import FindOrInviteForm from '@/app/ui/find-or-invite-form';
 import { getPendingRequests } from '@/app/lib/actions/friendships';
 import { useFriendshipSocketEvents } from '@/app/lib/hooks/useFriendshipSocketEvents';
+import { MemoriesIcon, PostsIcon, ImagesIcon } from '@/app/ui/icons/tab-icons';
 import type { ContentItem } from '@/app/lib/definitions/content';
 import type { FriendRequestPayload } from '@/app/lib/socket/events';
 import type { Image as ImageType } from '@/app/lib/definitions/image';
 
 type Tab = 'posts' | 'memories' | 'images';
 
-const CONTENT_TABS: { value: Tab; label: string }[] = [
-    { value: 'posts', label: 'Posts' },
-    { value: 'memories', label: 'Memories' },
-    { value: 'images', label: 'Images' },
+const CONTENT_TABS: { value: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { value: 'posts', label: 'Posts', icon: PostsIcon },
+    { value: 'memories', label: 'Memories', icon: MemoriesIcon },
+    { value: 'images', label: 'Images', icon: ImagesIcon },
 ];
 
 interface ProfilePageProps {
@@ -59,20 +60,23 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
             return;
         }
         setRightPanel(
-            <div className='flex flex-col gap-1 p-3 pt-4'>
-                {CONTENT_TABS.map(tab => (
-                    <button
-                        key={tab.value}
-                        onClick={() => setActiveTab(tab.value)}
-                        className={`w-full px-3 py-2 text-sm font-medium rounded-lg text-left transition-colors ${
-                            activeTab === tab.value
-                                ? 'bg-blue-600 text-white cursor-default'
-                                : 'text-gray-600 hover:bg-gray-100 cursor-pointer'
-                        }`}
-                    >
-                        {tab.label}
-                    </button>
-                ))}
+            <div className='@container h-full'>
+                <div className='flex flex-col gap-1 p-2 pt-4'>
+                    {CONTENT_TABS.map(tab => (
+                        <button
+                            key={tab.value}
+                            onClick={() => setActiveTab(tab.value)}
+                            className={`w-full py-3 font-medium rounded-lg transition-colors flex flex-col items-center gap-1.5 ${
+                                activeTab === tab.value
+                                    ? 'bg-blue-600 text-white cursor-default'
+                                    : 'text-gray-600 hover:bg-gray-100 cursor-pointer'
+                            }`}
+                        >
+                            <tab.icon className='w-6 h-6 shrink-0' />
+                            <span className='text-xs hidden @[120px]:block'>{tab.label}</span>
+                        </button>
+                    ))}
+                </div>
             </div>
         );
         return () => setRightPanel(null);
@@ -91,13 +95,14 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                     <button
                         key={tab.value}
                         onClick={() => setActiveTab(tab.value)}
-                        className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
+                        className={`flex flex-col items-center gap-0.5 px-3 py-1.5 font-medium rounded-full transition-colors ${
                             activeTab === tab.value
                                 ? 'bg-blue-600 text-white cursor-default'
                                 : 'text-gray-600 hover:bg-gray-100 cursor-pointer'
                         }`}
                     >
-                        {tab.label}
+                        <tab.icon className='w-5 h-5 shrink-0' />
+                        <span className='text-xs hidden min-[360px]:block'>{tab.label}</span>
                     </button>
                 ))}
             </div>
