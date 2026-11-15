@@ -2,18 +2,22 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PageContent, PageContentRow, PageContentList } from '@iam/ui';
 import EntryList from '@/app/ui/user/entry-list';
 import ImagesClient from '@/app/ui/images/images-client';
+import FriendsView from '@/app/friends/friends-view';
 import { useUser } from '@/app/lib/providers/user-provider';
 import FriendshipButton from '@/app/ui/friendship/friendship-button';
+import { getPendingRequests } from '@/app/lib/actions/friendships';
+import { useFriendshipSocketEvents } from '@/app/lib/hooks/useFriendshipSocketEvents';
 import type { ContentItem } from '@/app/lib/definitions/content';
+import type { FriendRequestPayload } from '@/app/lib/socket/events';
 
-type Tab = 'posts' | 'memories' | 'images';
+type Tab = 'posts' | 'memories' | 'images' | 'friends';
 
-const TABS: { value: Tab; label: string }[] = [
+const CONTENT_TABS: { value: Tab; label: string }[] = [
     { value: 'posts', label: 'Posts' },
     { value: 'memories', label: 'Memories' },
     { value: 'images', label: 'Images' },
@@ -30,7 +34,18 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
     const [activeTab, setActiveTab] = useState<Tab>('posts');
     const [entryTrigger, setEntryTrigger] = useState(0);
     const [uploadTrigger, setUploadTrigger] = useState(0);
+    const [pendingCount, setPendingCount] = useState(0);
     const { user } = useUser();
+
+    useEffect(() => {
+        if (!isOwnProfile) return;
+        getPendingRequests().then(r => setPendingCount(r.length)).catch(() => {});
+    }, [isOwnProfile]);
+
+    useFriendshipSocketEvents({
+        isCurrentUser: isOwnProfile,
+        onFriendRequestSent: (_payload: FriendRequestPayload) => setPendingCount(n => n + 1),
+    });
 
     const showAddEntry = isOwnProfile && (activeTab === 'posts' || activeTab === 'memories');
     const showUpload = isOwnProfile && activeTab === 'images';
@@ -38,7 +53,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
     const header = (
         <PageContentRow><div className='flex items-center justify-between py-2'>
             <div className='flex'>
-                {TABS.map(tab => (
+                {CONTENT_TABS.map(tab => (
                     <button
                         key={tab.value}
                         onClick={() => setActiveTab(tab.value)}
@@ -51,6 +66,23 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                         {tab.label}
                     </button>
                 ))}
+                {isOwnProfile && (
+                    <button
+                        onClick={() => { setActiveTab('friends'); setPendingCount(0); }}
+                        className={`relative px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
+                            activeTab === 'friends'
+                                ? 'bg-blue-600 text-white cursor-default'
+                                : 'text-gray-600 hover:bg-gray-100 cursor-pointer'
+                        }`}
+                    >
+                        Friends
+                        {pendingCount > 0 && activeTab !== 'friends' && (
+                            <span className='absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none'>
+                                {pendingCount}
+                            </span>
+                        )}
+                    </button>
+                )}
             </div>
             <div className='flex items-center gap-2'>
             {!isOwnProfile && (
@@ -111,7 +143,11 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                     />
                 </PageContentList>
             )}
-
+            {activeTab === 'friends' && (
+                <PageContentList>
+                    <FriendsView />
+                </PageContentList>
+            )}
         </PageContent>
     );
 }
