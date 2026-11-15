@@ -6,11 +6,9 @@ import { createContext, useContext, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import AuthModal from '@/app/ui/auth/auth-modal';
 
-type AuthMode = 'signin' | 'signup';
-
 interface AuthModalContextValue {
   isOpen: boolean;
-  openAuthModal: (mode?: AuthMode) => void;
+  openAuthModal: () => void;
   closeAuthModal: () => void;
 }
 
@@ -23,12 +21,10 @@ interface AuthModalProviderProps {
 export function AuthModalProvider({ children }: AuthModalProviderProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [initialMode, setInitialMode] = useState<AuthMode>('signin');
   const [callbackUrl, setCallbackUrl] = useState<string>('/');
   const [isFromProtectedRoute, setIsFromProtectedRoute] = useState(false);
 
-  function openAuthModal(mode: AuthMode = 'signin') {
-    setInitialMode(mode);
+  function openAuthModal() {
     // Check if there's a stored callback URL from a server redirect
     let storedCallbackUrl: string | null = null;
     if (typeof window !== 'undefined') {
@@ -85,7 +81,6 @@ export function AuthModalProvider({ children }: AuthModalProviderProps) {
       <AuthModal
         isOpen={isOpen}
         onClose={closeAuthModal}
-        initialMode={initialMode}
         callbackUrl={callbackUrl}
       />
     </AuthModalContext.Provider>

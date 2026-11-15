@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
+import Invitation from "@/app/lib/models/invitation";
+import Friendship from "@/app/lib/models/friendship";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { sendVerificationEmail } from "@/app/lib/email";
@@ -15,6 +17,7 @@ export async function POST(req: NextRequest) {
     const email = formData.get("email")?.toString().trim();
     const password = formData.get("password")?.toString();
     const username = formData.get("username")?.toString().trim();
+    const inviteToken = formData.get("inviteToken")?.toString().trim() || null;
 
     if (!email || !password) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
@@ -32,15 +35,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Username must be 2–20 characters and contain only letters, numbers, underscores, hyphens, or dots" }, { status: 400 });
     }
 
+    if (!inviteToken) {
+      return NextResponse.json({ error: "An invitation is required to create an account." }, { status: 403 });
+    }
+
     await connectToDatabase();
 
-    // Check if email already exists
+    const invitation = await Invitation.findOneAndUpdate(
+      { token: inviteToken, used: false },
+      { $set: { used: true } },
+      { new: false }
+    );
+    if (!invitation) {
+      return NextResponse.json({ error: "This invitation link is invalid or has already been used." }, { status: 403 });
+    }
+    if (invitation.inviteeEmail !== email.toLowerCase()) {
+      await Invitation.findByIdAndUpdate(invitation._id, { $set: { used: false } });
+      return NextResponse.json({ error: "This invitation was sent to a different email address." }, { status: 403 });
+    }
+    const inviter = await UserModel.findById(invitation.inviterId).select('_id').lean();
+    if (!inviter) {
+      return NextResponse.json({ error: "The person who invited you no longer has an account." }, { status: 403 });
+    }
+
     const existingEmail = await UserModel.findOne({ email });
     if (existingEmail) {
       return NextResponse.json({ error: "Email is already registered" }, { status: 400 });
     }
 
-    // Check if username already exists
     const existingUsername = await UserModel.findOne({ username });
     if (existingUsername) {
       return NextResponse.json({ error: "Username is already taken" }, { status: 400 });
@@ -61,6 +83,16 @@ export async function POST(req: NextRequest) {
     });
 
     await newUser.save();
+
+    try {
+      await Friendship.create({
+        requester: invitation.inviterId,
+        recipient: newUser._id,
+        status: 'pending',
+      });
+    } catch (err) {
+      console.error("Failed to create invitation friendship:", err);
+    }
 
     try {
       await sendVerificationEmail(email, verifyToken, newUser.username);

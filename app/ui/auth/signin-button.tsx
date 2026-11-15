@@ -14,7 +14,7 @@ export default function SigninButton() {
 
     return (
         <Button
-            onClick={() => openAuthModal('signin')}
+            onClick={() => openAuthModal()}
             variant="link"
         >
             Sign In

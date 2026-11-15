@@ -27,7 +27,7 @@ export async function sendVerificationEmail(email: string, token: string, userna
     subject: "Verify your email address",
     html: `
       <p>Hi ${safeUsername},</p>
-      <p>Thanks for signing up. Click the link below to verify your email address:</p>
+      <p>Click the link below to verify your email address:</p>
       <p><a href="${verifyUrlStr}">${verifyUrlStr}</a></p>
       <p>This link expires in 24 hours.</p>
       <p>If you didn't create an account, you can ignore this email.</p>
@@ -46,9 +46,9 @@ export async function sendInvitationEmail(to: string, inviterUsername: string, i
   const { error } = await resend.emails.send({
     from: process.env.EMAIL_FROM!,
     to,
-    subject: `${inviterUsername} invited you to join`,
+    subject: `An invitation from ${inviterUsername}`,
     html: `
-      <p>${safeUsername} thought you'd enjoy the site.</p>
+      <p>${safeUsername} has vouched for your character, giving you priority access to this exclusive platform.</p>
       <p><a href="${signupUrl}">Create your account</a></p>
     `,
   });

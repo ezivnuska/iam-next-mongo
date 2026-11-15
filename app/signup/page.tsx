@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { auth } from '@/app/lib/auth';
 import { connectToDatabase } from '@/app/lib/mongoose';
 import Invitation from '@/app/lib/models/invitation';
@@ -8,24 +9,27 @@ import AuthPanel from '@/app/signin/AuthPanel';
 
 export const metadata = { title: 'Sign Up' };
 
-export default async function SignupPage({ searchParams }: { searchParams: Promise<{ invite?: string }> }) {
+export default async function SignupPage({ searchParams }: { searchParams: Promise<{ invite?: string; email?: string }> }) {
   const session = await auth();
   if (session?.user?.id) redirect('/');
 
-  const { invite: inviteToken } = await searchParams;
+  const { invite: inviteToken, email: emailParam } = await searchParams;
+
+  if (!inviteToken) redirect('/signin');
 
   let inviteError: string | null = null;
+  let invitation: { inviterId: { toString(): string }; inviteeEmail: string } | null = null;
 
-  if (inviteToken) {
-    await connectToDatabase();
-    const invitation = await Invitation.findOne({ token: inviteToken, used: false }).lean<{ inviterId: { toString(): string } }>();
-    if (!invitation) {
-      inviteError = 'This invitation link is invalid or has already been used.';
-    } else {
-      const inviter = await UserModel.findById(invitation.inviterId).select('_id').lean();
-      if (!inviter) {
-        inviteError = 'The person who invited you no longer has an account.';
-      }
+  await connectToDatabase();
+  invitation = await Invitation.findOne({ token: inviteToken, used: false }).lean<{ inviterId: { toString(): string }; inviteeEmail: string }>();
+  if (!invitation) {
+    inviteError = 'This invitation link is invalid or has already been used.';
+  } else {
+    const inviter = await UserModel.findById(invitation.inviterId).select('_id').lean();
+    if (!inviter) {
+      inviteError = 'The person who invited you no longer has an account.';
+    } else if (emailParam && invitation.inviteeEmail !== emailParam.toLowerCase()) {
+      inviteError = 'This invitation was sent to a different email address.';
     }
   }
 
@@ -40,6 +44,9 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
         {inviteError ? (
           <div className='rounded-lg bg-gray-50 px-4 py-6'>
             <p className='text-sm text-red-600'>{inviteError}</p>
+            <Link href='/signin' className='mt-3 inline-block text-sm text-blue-600 underline'>
+              Return to sign in
+            </Link>
           </div>
         ) : (
           <Suspense>

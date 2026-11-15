@@ -24,7 +24,22 @@ export async function register(formData: FormData): Promise<RegisterResult> {
     if (!username) return { error: "Username is required" };
     if (!/^[a-zA-Z0-9_.-]{2,20}$/.test(username)) return { error: "Username must be 2–20 characters and contain only letters, numbers, underscores, hyphens, or dots" };
 
+    if (!inviteToken) return { error: "An invitation is required to create an account." };
+
     await connectToDatabase();
+
+    const invitation = await Invitation.findOneAndUpdate(
+      { token: inviteToken, used: false },
+      { $set: { used: true } },
+      { new: false }
+    );
+    if (!invitation) return { error: "This invitation link is invalid or has already been used." };
+    if (invitation.inviteeEmail !== email.toLowerCase()) {
+      await Invitation.findByIdAndUpdate(invitation._id, { $set: { used: false } });
+      return { error: "This invitation was sent to a different email address." };
+    }
+    const inviter = await UserModel.findById(invitation.inviterId).select('_id').lean();
+    if (!inviter) return { error: "The person who invited you no longer has an account." };
 
     const existingEmail = await UserModel.findOne({ email });
     if (existingEmail) return { error: "Email is already registered" };
@@ -48,26 +63,14 @@ export async function register(formData: FormData): Promise<RegisterResult> {
 
     await newUser.save();
 
-    // Auto-accept friendship if user signed up via invitation
-    if (inviteToken) {
-      try {
-        const invitation = await Invitation.findOne({
-          token: inviteToken,
-          inviteeEmail: email.toLowerCase(),
-          used: false,
-        });
-        if (invitation) {
-          await Friendship.create({
-            requester: invitation.inviterId,
-            recipient: newUser._id,
-            status: 'pending',
-          });
-          invitation.used = true;
-          await invitation.save();
-        }
-      } catch (err) {
-        console.error("Failed to process invitation friendship:", err);
-      }
+    try {
+      await Friendship.create({
+        requester: invitation.inviterId,
+        recipient: newUser._id,
+        status: 'pending',
+      });
+    } catch (err) {
+      console.error("Failed to create invitation friendship:", err);
     }
 
     try {

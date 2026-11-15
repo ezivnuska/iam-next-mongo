@@ -27,7 +27,7 @@ export default function AuthRedirectHandler() {
       // Store the callback URL for after authentication
       sessionStorage.setItem('authCallbackUrl', callbackUrl);
       // Open the signin modal (will clear sessionStorage immediately after reading)
-      openAuthModal('signin');
+      openAuthModal();
 
       // Clean up the URL without reloading the page
       const url = new URL(window.location.href);

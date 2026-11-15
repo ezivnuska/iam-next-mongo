@@ -10,11 +10,10 @@ import { authenticate } from '@/app/lib/actions/authenticate';
 import { useSearchParams } from 'next/navigation';
 
 interface SigninFormProps {
-  onToggleMode?: () => void;
   callbackUrl?: string;
 }
 
-export default function SigninForm({ onToggleMode, callbackUrl: propCallbackUrl }: SigninFormProps = {}) {
+export default function SigninForm({ callbackUrl: propCallbackUrl }: SigninFormProps = {}) {
   const searchParams = useSearchParams();
   const callbackUrl = propCallbackUrl || searchParams.get('callbackUrl') || '/';
   const emailRef = useRef<HTMLInputElement>(null);
@@ -124,18 +123,7 @@ export default function SigninForm({ onToggleMode, callbackUrl: propCallbackUrl 
           </div>
         )}
 
-        {onToggleMode && (
-          <div className='mt-4 text-center text-sm text-gray-600'>
-            Don&apos;t have an account?{' '}
-            <button
-              type='button'
-              onClick={onToggleMode}
-              className='text-blue-600 hover:text-blue-500 font-medium underline'
-            >
-              Sign up
-            </button>
-          </div>
-        )}
+
       </div>
     </form>
   );
