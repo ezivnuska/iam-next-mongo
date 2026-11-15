@@ -8,7 +8,6 @@ import { useRightPanel } from '@/app/lib/providers/right-panel-provider';
 import EntryList from '@/app/ui/user/entry-list';
 import ImagesClient from '@/app/ui/images/images-client';
 import FriendsView from '@/app/friends/friends-view';
-import { useUser } from '@/app/lib/providers/user-provider';
 import FriendshipButton from '@/app/ui/friendship/friendship-button';
 import UserIdentity from '@/app/ui/user/user-identity';
 import FindOrInviteForm from '@/app/ui/find-or-invite-form';
@@ -40,7 +39,6 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
     const [entryTrigger, setEntryTrigger] = useState(0);
     const [uploadTrigger, setUploadTrigger] = useState(0);
     const [pendingCount, setPendingCount] = useState(0);
-    const { user } = useUser();
     const horizontalLayout = useHorizontalLayout();
     const { setRightPanel } = useRightPanel();
 
@@ -65,14 +63,25 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                     {CONTENT_TABS.map(tab => (
                         <button
                             key={tab.value}
-                            onClick={() => setActiveTab(tab.value)}
-                            className={`w-full py-3 font-medium rounded-lg transition-colors flex flex-col items-center gap-1.5 ${
+                            onClick={() => {
+                                if (tab.value === activeTab) {
+                                    tab.value === 'images' ? setUploadTrigger(n => n + 1) : setEntryTrigger(n => n + 1);
+                                } else {
+                                    setActiveTab(tab.value);
+                                }
+                            }}
+                            className={`w-full py-3 font-medium rounded-lg transition-colors flex flex-col items-center gap-1.5 cursor-pointer ${
                                 activeTab === tab.value
-                                    ? 'bg-blue-600 text-white cursor-default'
-                                    : 'text-gray-600 hover:bg-gray-100 cursor-pointer'
+                                    ? 'bg-blue-600 text-white'
+                                    : 'text-gray-600 hover:bg-gray-100'
                             }`}
                         >
-                            <tab.icon className='w-6 h-6 shrink-0' />
+                            <div className='relative'>
+                                <tab.icon className='w-6 h-6 shrink-0' />
+                                {tab.value === activeTab && (
+                                    <span className='absolute -top-1 -right-1 w-3 h-3 bg-white text-blue-600 rounded-full text-[8px] font-bold flex items-center justify-center leading-none'>+</span>
+                                )}
+                            </div>
                             <span className='text-xs hidden @[120px]:block'>{tab.label}</span>
                         </button>
                     ))}
@@ -80,10 +89,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
             </div>
         );
         return () => setRightPanel(null);
-    }, [isOwnProfile, horizontalLayout, activeTab, setRightPanel]);
-
-    const showAddEntry = isOwnProfile && (activeTab === 'posts' || activeTab === 'memories');
-    const showUpload = isOwnProfile && activeTab === 'images';
+    }, [isOwnProfile, horizontalLayout, activeTab, setRightPanel, setEntryTrigger, setUploadTrigger]);
 
     const contentHeader = (
         <PageContentRow><div className='flex items-center justify-between py-2'>
@@ -94,14 +100,25 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                 {isOwnProfile && !horizontalLayout && CONTENT_TABS.map(tab => (
                     <button
                         key={tab.value}
-                        onClick={() => setActiveTab(tab.value)}
-                        className={`flex flex-col items-center gap-0.5 px-3 py-1.5 font-medium rounded-full transition-colors ${
+                        onClick={() => {
+                            if (tab.value === activeTab) {
+                                tab.value === 'images' ? setUploadTrigger(n => n + 1) : setEntryTrigger(n => n + 1);
+                            } else {
+                                setActiveTab(tab.value);
+                            }
+                        }}
+                        className={`flex flex-col items-center gap-0.5 px-3 py-1.5 font-medium rounded-full transition-colors cursor-pointer ${
                             activeTab === tab.value
-                                ? 'bg-blue-600 text-white cursor-default'
-                                : 'text-gray-600 hover:bg-gray-100 cursor-pointer'
+                                ? 'bg-blue-600 text-white'
+                                : 'text-gray-600 hover:bg-gray-100'
                         }`}
                     >
-                        <tab.icon className='w-5 h-5 shrink-0' />
+                        <div className='relative'>
+                            <tab.icon className='w-5 h-5 shrink-0' />
+                            {tab.value === activeTab && (
+                                <span className='absolute -top-1 -right-1 w-3 h-3 bg-white text-blue-600 rounded-full text-[8px] font-bold flex items-center justify-center leading-none'>+</span>
+                            )}
+                        </div>
                         <span className='text-xs hidden min-[360px]:block'>{tab.label}</span>
                     </button>
                 ))}
@@ -109,19 +126,6 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
             <div className='flex items-center gap-2'>
             {!isOwnProfile && (
                 <FriendshipButton userId={userId} username={username} />
-            )}
-
-            {(showAddEntry || showUpload) && (
-                <button
-                    onClick={() => showAddEntry ? setEntryTrigger(n => n + 1) : setUploadTrigger(n => n + 1)}
-                    aria-label={showAddEntry ? 'New entry' : 'Upload file'}
-                    className='p-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors cursor-pointer shadow-sm'
-                >
-                    <svg xmlns='http://www.w3.org/2000/svg' className='w-5 h-5' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'>
-                        <line x1='12' y1='5' x2='12' y2='19' />
-                        <line x1='5' y1='12' x2='19' y2='12' />
-                    </svg>
-                </button>
             )}
             </div>
         </div></PageContentRow>
