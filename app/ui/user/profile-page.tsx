@@ -11,6 +11,7 @@ import FriendsView from '@/app/friends/friends-view';
 import { useUser } from '@/app/lib/providers/user-provider';
 import FriendshipButton from '@/app/ui/friendship/friendship-button';
 import UserIdentity from '@/app/ui/user/user-identity';
+import FindOrInviteForm from '@/app/ui/find-or-invite-form';
 import { getPendingRequests } from '@/app/lib/actions/friendships';
 import { useFriendshipSocketEvents } from '@/app/lib/hooks/useFriendshipSocketEvents';
 import type { ContentItem } from '@/app/lib/definitions/content';
@@ -151,6 +152,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
             )}
             {activeTab === 'friends' && (
                 <PageContentList>
+                    <FindOrInviteForm />
                     <FriendsView />
                 </PageContentList>
             )}
