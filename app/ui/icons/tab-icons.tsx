@@ -26,6 +26,17 @@ export function PostsIcon({ className }: { className?: string }) {
     );
 }
 
+export function FriendsIcon({ className }: { className?: string }) {
+    return (
+        <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round' className={className}>
+            <circle cx='8' cy='7' r='2.5' />
+            <path d='M 2 21 C 2 15.5 14 15.5 14 21' />
+            <circle cx='16' cy='7' r='2.5' />
+            <path d='M 10 21 C 10 15.5 22 15.5 22 21' />
+        </svg>
+    );
+}
+
 export function ImagesIcon({ className }: { className?: string }) {
     return (
         <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round' className={className}>
