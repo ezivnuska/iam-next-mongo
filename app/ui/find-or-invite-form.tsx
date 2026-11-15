@@ -8,7 +8,7 @@ import { searchUserByEmail } from '@/app/lib/actions/users';
 import { sendInviteAction, checkExistingInvitation } from '@/app/lib/actions/invitations';
 import FriendshipButton from '@/app/ui/friendship/friendship-button';
 
-type PublicUser = { id: string; username: string; bio?: string };
+type PublicUser = { id: string; username: string };
 
 type State =
     | { kind: 'idle' }

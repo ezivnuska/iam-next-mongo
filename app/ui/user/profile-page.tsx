@@ -6,20 +6,17 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { PageContent, PageContentRow, PageContentList } from '@iam/ui';
 import EntryList from '@/app/ui/user/entry-list';
-import UserBio from '@/app/ui/user/user-bio';
-import UserProfileCard from '@/app/ui/user/user-profile-card';
 import ImagesClient from '@/app/ui/images/images-client';
 import { useUser } from '@/app/lib/providers/user-provider';
 import FriendshipButton from '@/app/ui/friendship/friendship-button';
 import type { ContentItem } from '@/app/lib/definitions/content';
 
-type Tab = 'posts' | 'memories' | 'images' | 'details';
+type Tab = 'posts' | 'memories' | 'images';
 
 const TABS: { value: Tab; label: string }[] = [
     { value: 'posts', label: 'Posts' },
     { value: 'memories', label: 'Memories' },
     { value: 'images', label: 'Images' },
-    { value: 'details', label: 'Details' },
 ];
 
 interface ProfilePageProps {
@@ -114,14 +111,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                     />
                 </PageContentList>
             )}
-            {activeTab === 'details' && (
-                <PageContentList>
-                    {isOwnProfile
-                        ? <UserBio bio={user?.bio} editable />
-                        : <UserProfileCard username={username} />
-                    }
-                </PageContentList>
-            )}
+
         </PageContent>
     );
 }

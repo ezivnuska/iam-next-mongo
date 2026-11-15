@@ -21,7 +21,6 @@ interface UnifiedUserHeaderProps {
 
   subtitle?: string;
   timestamp?: string;
-  bio?: string;
 
   clickable?: boolean;
   onUsernameClick?: () => void;
@@ -45,7 +44,6 @@ export default function UnifiedUserHeader({
   avatar,
   subtitle,
   timestamp,
-  bio,
   clickable = false,
   onUsernameClick,
   avatarSize = 40,
@@ -73,7 +71,6 @@ export default function UnifiedUserHeader({
   const getSecondaryText = () => {
     if (timestamp) return formatRelativeTime(timestamp);
     if (subtitle) return subtitle;
-    if (bio) return bio;
     return null;
   };
 
@@ -85,7 +82,7 @@ export default function UnifiedUserHeader({
 
   const secondaryClasses = `text-xs text-gray-500 ${
     variant === 'compact' ? 'leading-tight' : ''
-  } ${bio ? 'truncate' : ''}`;
+  }`;
 
   const containerClasses = {
     compact: 'flex flex-row items-center gap-3 shrink-0',
