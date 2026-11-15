@@ -18,7 +18,7 @@ import type { ContentItem } from '@/app/lib/definitions/content';
 import type { FriendRequestPayload } from '@/app/lib/socket/events';
 import type { Image as ImageType } from '@/app/lib/definitions/image';
 
-type Tab = 'posts' | 'memories' | 'images' | 'friends';
+type Tab = 'posts' | 'memories' | 'images';
 
 const CONTENT_TABS: { value: Tab; label: string }[] = [
     { value: 'posts', label: 'Posts' },
@@ -54,7 +54,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
     const showAddEntry = isOwnProfile && (activeTab === 'posts' || activeTab === 'memories');
     const showUpload = isOwnProfile && activeTab === 'images';
 
-    const header = (
+    const contentHeader = (
         <PageContentRow><div className='flex items-center justify-between py-2'>
             <div className='flex'>
                 {!isOwnProfile && (
@@ -73,23 +73,6 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                         {tab.label}
                     </button>
                 ))}
-                {isOwnProfile && (
-                    <button
-                        onClick={() => { setActiveTab('friends'); setPendingCount(0); }}
-                        className={`relative px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
-                            activeTab === 'friends'
-                                ? 'bg-blue-600 text-white cursor-default'
-                                : 'text-gray-600 hover:bg-gray-100 cursor-pointer'
-                        }`}
-                    >
-                        Friends
-                        {pendingCount > 0 && activeTab !== 'friends' && (
-                            <span className='absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none'>
-                                {pendingCount}
-                            </span>
-                        )}
-                    </button>
-                )}
             </div>
             <div className='flex items-center gap-2'>
             {!isOwnProfile && (
@@ -119,8 +102,23 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
         </div></PageContentRow>
     );
 
+    const friendsHeader = isOwnProfile ? (
+        <PageContentRow>
+            <div className='flex items-center justify-between py-2'>
+                <div className='relative flex items-center gap-1 px-3 py-1.5'>
+                    <span className='text-sm font-medium text-gray-600'>Friends</span>
+                    {pendingCount > 0 && (
+                        <span className='bg-red-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none'>
+                            {pendingCount}
+                        </span>
+                    )}
+                </div>
+            </div>
+        </PageContentRow>
+    ) : null;
+
     return (
-        <PageContent header={header}>
+        <PageContent header={contentHeader}>
             {activeTab === 'posts' && (
                 <PageContentList>
                     <EntryList
@@ -150,11 +148,14 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                     />
                 </PageContentList>
             )}
-            {activeTab === 'friends' && (
-                <PageContentList>
-                    <FindOrInviteForm />
-                    <FriendsView />
-                </PageContentList>
+            {isOwnProfile && (
+                <>
+                    {friendsHeader}
+                    <PageContentList>
+                        <FindOrInviteForm />
+                        <FriendsView />
+                    </PageContentList>
+                </>
             )}
         </PageContent>
     );
