@@ -30,6 +30,17 @@ async function verifyAndGetLoginToken(token: string): Promise<"invalid" | "error
     user.autoLoginTokenExpires = new Date(Date.now() + 5 * 60 * 1000);
     await user.save();
 
+    // Accept the pending friendship created when this user signed up via invitation.
+    const { default: Invitation } = await import("@/app/lib/models/invitation");
+    const { default: Friendship } = await import("@/app/lib/models/friendship");
+    const invitation = await Invitation.findOne({ inviteeEmail: user.email.toLowerCase(), used: true }).lean<{ inviterId: unknown }>();
+    if (invitation) {
+      await Friendship.updateOne(
+        { requester: invitation.inviterId, recipient: user._id, status: 'pending' },
+        { $set: { status: 'accepted' } }
+      );
+    }
+
     return { autoLoginToken };
   } catch {
     return "error";
