@@ -10,10 +10,12 @@ import ImagesClient from '@/app/ui/images/images-client';
 import FriendsView from '@/app/friends/friends-view';
 import { useUser } from '@/app/lib/providers/user-provider';
 import FriendshipButton from '@/app/ui/friendship/friendship-button';
+import UserIdentity from '@/app/ui/user/user-identity';
 import { getPendingRequests } from '@/app/lib/actions/friendships';
 import { useFriendshipSocketEvents } from '@/app/lib/hooks/useFriendshipSocketEvents';
 import type { ContentItem } from '@/app/lib/definitions/content';
 import type { FriendRequestPayload } from '@/app/lib/socket/events';
+import type { Image as ImageType } from '@/app/lib/definitions/image';
 
 type Tab = 'posts' | 'memories' | 'images' | 'friends';
 
@@ -28,9 +30,10 @@ interface ProfilePageProps {
     userId: string;
     isOwnProfile: boolean;
     initialContent: ContentItem[];
+    avatar?: ImageType | null;
 }
 
-export default function ProfilePage({ username, userId, isOwnProfile, initialContent }: ProfilePageProps) {
+export default function ProfilePage({ username, userId, isOwnProfile, initialContent, avatar }: ProfilePageProps) {
     const [activeTab, setActiveTab] = useState<Tab>('posts');
     const [entryTrigger, setEntryTrigger] = useState(0);
     const [uploadTrigger, setUploadTrigger] = useState(0);
@@ -53,7 +56,10 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
     const header = (
         <PageContentRow><div className='flex items-center justify-between py-2'>
             <div className='flex'>
-                {CONTENT_TABS.map(tab => (
+                {!isOwnProfile && (
+                    <UserIdentity username={username} avatar={avatar} size={40} />
+                )}
+                {isOwnProfile && CONTENT_TABS.map(tab => (
                     <button
                         key={tab.value}
                         onClick={() => setActiveTab(tab.value)}

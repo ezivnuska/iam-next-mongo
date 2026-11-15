@@ -33,6 +33,7 @@ export default async function UserProfilePage({ params }: Props) {
             userId={profileUser.id}
             isOwnProfile={isOwnProfile}
             initialContent={content}
+            avatar={profileUser.avatar}
         />
     );
 }
