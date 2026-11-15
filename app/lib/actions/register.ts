@@ -60,7 +60,7 @@ export async function register(formData: FormData): Promise<RegisterResult> {
           await Friendship.create({
             requester: invitation.inviterId,
             recipient: newUser._id,
-            status: 'accepted',
+            status: 'pending',
           });
           invitation.used = true;
           await invitation.save();

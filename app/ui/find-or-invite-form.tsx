@@ -5,7 +5,7 @@
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { searchUserByEmail } from '@/app/lib/actions/users';
-import { sendInviteAction } from '@/app/lib/actions/invitations';
+import { sendInviteAction, checkExistingInvitation } from '@/app/lib/actions/invitations';
 import FriendshipButton from '@/app/ui/friendship/friendship-button';
 
 type PublicUser = { id: string; username: string; bio?: string };
@@ -13,7 +13,7 @@ type PublicUser = { id: string; username: string; bio?: string };
 type State =
     | { kind: 'idle' }
     | { kind: 'found'; user: PublicUser }
-    | { kind: 'not-found'; email: string }
+    | { kind: 'not-found'; email: string; alreadyInvited: boolean }
     | { kind: 'invited'; email: string }
     | { kind: 'error'; message: string };
 
@@ -26,9 +26,12 @@ export default function FindOrInviteForm() {
         e.preventDefault();
         setLoading(true);
         try {
-            const user = await searchUserByEmail(email);
+            const [user, alreadyInvited] = await Promise.all([
+                searchUserByEmail(email),
+                checkExistingInvitation(email),
+            ]);
             if (user) setState({ kind: 'found', user });
-            else setState({ kind: 'not-found', email });
+            else setState({ kind: 'not-found', email, alreadyInvited });
         } catch {
             setState({ kind: 'error', message: 'Something went wrong. Try again.' });
         } finally {
@@ -88,8 +91,12 @@ export default function FindOrInviteForm() {
                 <div className='mt-3 flex items-center justify-between text-sm'>
                     <span className='text-gray-500'>No account found.</span>
                     <div className='flex gap-2'>
-                        <button onClick={handleInvite} disabled={loading} className='text-sm font-medium text-blue-600 hover:underline disabled:opacity-50'>
-                            Send invitation
+                        <button
+                            onClick={handleInvite}
+                            disabled={loading || state.alreadyInvited}
+                            className='text-sm font-medium text-blue-600 hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline'
+                        >
+                            {state.alreadyInvited ? 'Invitation sent' : 'Send invitation'}
                         </button>
                         <button onClick={reset} className='text-xs text-gray-400 hover:text-gray-600'>Clear</button>
                     </div>
