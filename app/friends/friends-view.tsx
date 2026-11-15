@@ -8,13 +8,13 @@ import { showError } from '@/app/lib/utils/error-handler';
 import { Button } from '@iam/ui';
 import UnifiedUserHeader from '@/app/ui/user/unified-user-header';
 import type { Friend, Friendship } from '@/app/lib/definitions/friendship';
-import type { FriendRequestPayload, FriendshipStatusPayload } from '@/app/lib/socket/events';
+import type { FriendRequestPayload } from '@/app/lib/socket/events';
 
 export default function FriendsView() {
     const [friends, setFriends] = useState<Friend[]>([]);
     const [pendingRequests, setPendingRequests] = useState<Friendship[]>([]);
     const [loading, setLoading] = useState(true);
-    const { actionLoading, handleAcceptRequest, handleRejectRequest, handleRemoveFriend } = useFriendshipActions();
+    const { actionLoading, handleAcceptRequest, handleRejectRequest } = useFriendshipActions();
 
     useEffect(() => { loadData(); }, []);
 
@@ -30,8 +30,8 @@ export default function FriendsView() {
                 updatedAt: new Date().toISOString(),
             }, ...prev]);
         },
-        onFriendshipRemoved: (payload: FriendshipStatusPayload) => {
-            setFriends(prev => prev.filter(f => f.friendshipId !== payload.friendshipId));
+        onFriendshipRemoved: () => {
+            loadData();
         },
     });
 
@@ -64,15 +64,6 @@ export default function FriendsView() {
             setPendingRequests(prev => prev.filter(r => r.id !== friendshipId));
         } catch (error) {
             showError(error, 'Failed to reject friend request');
-        }
-    };
-
-    const handleRemove = async (friendshipId: string) => {
-        try {
-            await handleRemoveFriend(friendshipId);
-            setFriends(prev => prev.filter(f => f.friendshipId !== friendshipId));
-        } catch (error) {
-            showError(error, 'Failed to remove friend');
         }
     };
 
@@ -116,9 +107,6 @@ export default function FriendsView() {
             )}
 
             <section className='flex flex-col gap-3'>
-                <h2 className='text-sm font-semibold text-gray-500 uppercase tracking-wide'>
-                    Friends ({friends.length})
-                </h2>
                 {friends.length === 0 ? (
                     <p className='text-sm text-gray-400'>No friends yet.</p>
                 ) : (
@@ -130,14 +118,9 @@ export default function FriendsView() {
                                     key={friend.id}
                                     user={{ id: friend.id, username: friend.username }}
                                     avatar={avatarUrl}
-                                    subtitle={`Friends since ${new Date(friend.friendsSince).toLocaleDateString()}`}
                                     variant='card'
                                     avatarSize={40}
-                                    actions={
-                                        <Button size='sm' variant='warn' onClick={() => handleRemove(friend.friendshipId)} disabled={!!actionLoading}>
-                                            Remove
-                                        </Button>
-                                    }
+                                    clickable
                                 />
                             );
                         })}
