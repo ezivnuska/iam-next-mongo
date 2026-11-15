@@ -96,7 +96,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
         return () => setRightPanel(null);
     }, [isOwnProfile, horizontalLayout, activeTab, pendingCount, setRightPanel, setEntryTrigger, setUploadTrigger]);
 
-    const contentHeader = (
+    const contentHeader = isOwnProfile && horizontalLayout ? null : (
         <PageContentRow><div className='flex items-center justify-between py-2'>
             <div className='flex'>
                 {!isOwnProfile && (
