@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
 import Friendship from "@/app/lib/models/friendship";
+import Invitation from "@/app/lib/models/invitation";
 
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token");
@@ -28,13 +29,17 @@ export async function GET(req: NextRequest) {
     user.verifyTokenExpires = undefined;
     await user.save();
 
-    // Auto-accept any pending friend requests for this newly verified user.
-    // The only source of pending requests at this point is an invitation sent
-    // before the account existed, created in the register action.
-    await Friendship.updateMany(
-      { recipient: user._id, status: 'pending' },
-      { $set: { status: 'accepted' } }
-    );
+    // Auto-accept the specific pending friendship created from the invitation
+    // that brought this user to signup. The invitation is marked used:true at
+    // registration time, so we use it to identify the exact inviter.
+    const invitation = await Invitation.findOne({ inviteeEmail: user.email, used: true })
+      .lean<{ inviterId: unknown }>();
+    if (invitation) {
+      await Friendship.updateOne(
+        { requester: invitation.inviterId, recipient: user._id, status: 'pending' },
+        { $set: { status: 'accepted' } }
+      );
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {
