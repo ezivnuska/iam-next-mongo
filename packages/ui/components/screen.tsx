@@ -13,6 +13,7 @@ interface ScreenProps {
     userControls?: React.ReactNode;
     nav?: React.ReactNode;
     extras?: React.ReactNode;
+    rightPanel?: React.ReactNode;
     showLoading?: boolean;
     brandHref?: string;
     headerReady?: boolean;
@@ -23,6 +24,7 @@ export default function Screen({
     userControls,
     nav,
     extras,
+    rightPanel,
     showLoading = true,
     brandHref,
     headerReady = true,
@@ -97,7 +99,13 @@ export default function Screen({
                             </>
                         )}
                     </aside>
-                    <main style={{ marginLeft: 'clamp(100px, 16vw, 200px)' }} className={clsx('@container/main flex flex-col flex-1 min-h-0 overflow-x-hidden bg-white max-w-[900px] transition-opacity duration-300', headerReady ? 'opacity-100' : 'opacity-0')}>
+                    <aside
+                        style={{ width: 'clamp(100px, 16vw, 200px)' }}
+                        className='fixed right-0 top-0 h-dvh bg-gray-100 z-10'
+                    >
+                        {rightPanel}
+                    </aside>
+                    <main style={{ marginLeft: 'clamp(100px, 16vw, 200px)', marginRight: 'clamp(100px, 16vw, 200px)' }} className={clsx('@container/main flex flex-col flex-1 min-h-0 overflow-x-hidden bg-white max-w-[900px] transition-opacity duration-300', headerReady ? 'opacity-100' : 'opacity-0')}>
                         {content}
                     </main>
                 </>

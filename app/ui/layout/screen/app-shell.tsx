@@ -8,6 +8,7 @@ import UserButton from '@/app/ui/header/user-button';
 import SigninButton from '@/app/ui/auth/signin-button';
 import AuthRedirectHandler from '@/app/ui/auth/auth-redirect-handler';
 import { useUser } from '@/app/lib/providers/user-provider';
+import { RightPanelProvider, useRightPanel } from '@/app/lib/providers/right-panel-provider';
 import { getBestVariant } from '@iam/shared-types';
 
 function PuzzleIcon({ className }: { className?: string }) {
@@ -24,6 +25,15 @@ interface AppShellProps {
 }
 
 export default function AppShell({ children, showLoading = true }: AppShellProps) {
+    return (
+        <RightPanelProvider>
+            <AppShellInner showLoading={showLoading}>{children}</AppShellInner>
+        </RightPanelProvider>
+    );
+}
+
+function AppShellInner({ children, showLoading = true }: AppShellProps) {
+    const { rightPanel } = useRightPanel();
     const { user } = useUser();
     const horizontalLayout = useHorizontalLayout();
     const loggedIn = !!user && !user.isGuest;
@@ -59,6 +69,7 @@ export default function AppShell({ children, showLoading = true }: AppShellProps
     return (
         <Screen
             headerReady={headerReady}
+            rightPanel={rightPanel}
             userControls={loggedIn ? (
                 <div className={horizontalLayout ? 'flex flex-col items-center gap-4' : 'flex flex-row items-center gap-3'}>
                     <UserButton />

@@ -3,7 +3,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PageContent, PageContentRow, PageContentList } from '@iam/ui';
+import { PageContent, PageContentRow, PageContentList, useHorizontalLayout } from '@iam/ui';
+import { useRightPanel } from '@/app/lib/providers/right-panel-provider';
 import EntryList from '@/app/ui/user/entry-list';
 import ImagesClient from '@/app/ui/images/images-client';
 import FriendsView from '@/app/friends/friends-view';
@@ -39,6 +40,8 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
     const [uploadTrigger, setUploadTrigger] = useState(0);
     const [pendingCount, setPendingCount] = useState(0);
     const { user } = useUser();
+    const horizontalLayout = useHorizontalLayout();
+    const { setRightPanel } = useRightPanel();
 
     useEffect(() => {
         if (!isOwnProfile) return;
@@ -50,6 +53,31 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
         onFriendRequestSent: (_payload: FriendRequestPayload) => setPendingCount(n => n + 1),
     });
 
+    useEffect(() => {
+        if (!isOwnProfile || !horizontalLayout) {
+            setRightPanel(null);
+            return;
+        }
+        setRightPanel(
+            <div className='flex flex-col gap-1 p-3 pt-4'>
+                {CONTENT_TABS.map(tab => (
+                    <button
+                        key={tab.value}
+                        onClick={() => setActiveTab(tab.value)}
+                        className={`w-full px-3 py-2 text-sm font-medium rounded-lg text-left transition-colors ${
+                            activeTab === tab.value
+                                ? 'bg-blue-600 text-white cursor-default'
+                                : 'text-gray-600 hover:bg-gray-100 cursor-pointer'
+                        }`}
+                    >
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
+        );
+        return () => setRightPanel(null);
+    }, [isOwnProfile, horizontalLayout, activeTab, setRightPanel]);
+
     const showAddEntry = isOwnProfile && (activeTab === 'posts' || activeTab === 'memories');
     const showUpload = isOwnProfile && activeTab === 'images';
 
@@ -59,7 +87,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                 {!isOwnProfile && (
                     <UserIdentity username={username} avatar={avatar} size={40} />
                 )}
-                {isOwnProfile && CONTENT_TABS.map(tab => (
+                {isOwnProfile && !horizontalLayout && CONTENT_TABS.map(tab => (
                     <button
                         key={tab.value}
                         onClick={() => setActiveTab(tab.value)}
