@@ -1,9 +1,14 @@
 import { Suspense } from 'react';
+import { redirect } from 'next/navigation';
+import { auth } from '@/app/lib/auth';
 import AuthPanel from '@/app/signin/AuthPanel';
 
 export const metadata = { title: 'Sign Up' };
 
-export default function SignupPage() {
+export default async function SignupPage() {
+  const session = await auth();
+  if (session?.user?.id) redirect('/');
+
   return (
     <main className='flex items-center justify-center wide:h-screen'>
       <div className='relative mx-auto flex w-full max-w-[400px] flex-col space-y-2.5 p-4 wide:-mt-32'>
