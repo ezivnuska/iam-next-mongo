@@ -2,9 +2,7 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import FriendsMenu from '@/app/ui/friendship/friends-menu'
-import { Modal } from '@iam/ui'
+import { useState, useEffect } from 'react'
 import { getFriendshipStatus } from '@/app/lib/actions/friendships'
 import { useFriendshipSocketEvents } from '@/app/lib/hooks/useFriendshipSocketEvents'
 import { useFriendshipActions } from '@/app/lib/hooks/useFriendshipActions'
@@ -15,46 +13,32 @@ import { Button } from '@iam/ui'
 type FriendshipButtonProps = {
 	userId: string
 	username: string
-	isCurrentUser?: boolean
 }
 
-export default function FriendshipButton({ userId, username, isCurrentUser }: FriendshipButtonProps) {
-	const [showFriendsMenu, setShowFriendsMenu] = useState(false)
+export default function FriendshipButton({ userId, username }: FriendshipButtonProps) {
 	const [status, setStatus] = useState<'none' | 'pending_sent' | 'pending_received' | 'accepted'>('none')
 	const [friendshipId, setFriendshipId] = useState<string | undefined>()
 	const [loading, setLoading] = useState(true)
-	const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
 	const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
 	const { actionLoading, handleSendRequest, handleAcceptRequest, handleRejectRequest, handleRemoveFriend } = useFriendshipActions()
 
-	// Load friendship status
 	useEffect(() => {
-		if (!isCurrentUser) {
-			loadStatus()
-		} else {
-			setLoading(false)
-		}
-	}, [userId, isCurrentUser])
+		loadStatus()
+	}, [userId])
 
-	// Socket event listeners
 	useFriendshipSocketEvents({
 		userId,
 		friendshipId,
-		isCurrentUser,
 		onFriendRequestAccepted: (payload: FriendshipStatusPayload) => {
 			setStatus('accepted')
-			if (payload.friendshipId) {
-				setFriendshipId(payload.friendshipId)
-			}
+			if (payload.friendshipId) setFriendshipId(payload.friendshipId)
 		},
 		onFriendshipEnded: () => {
 			setStatus('none')
 			setFriendshipId(undefined)
 		},
 		onFriendRequestSent: (payload: FriendRequestPayload) => {
-			if (isCurrentUser) {
-				setPendingRequestsCount(prev => prev + 1)
-			} else if (payload.requester.id === userId) {
+			if (payload.requester.id === userId) {
 				setStatus('pending_received')
 				setFriendshipId(payload.friendshipId)
 			}
@@ -128,52 +112,11 @@ export default function FriendshipButton({ userId, username, isCurrentUser }: Fr
 		}
 	}
 
-	const handleMenuClose = useCallback(() => {
-		setShowFriendsMenu(false)
-		setPendingRequestsCount(0) // Reset count when menu is closed
-	}, [])
-
-	// If it's the current user, show a button to open their friends menu
-	if (isCurrentUser) {
-		return (
-			<>
-				<Button
-                    variant='secondary'
-					onClick={() => setShowFriendsMenu(true)}
-					// className='px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors relative'
-				>
-					My Friends
-					{pendingRequestsCount > 0 && (
-						<span className='absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center'>
-							{pendingRequestsCount}
-						</span>
-					)}
-				</Button>
-
-				{showFriendsMenu && (
-					<Modal
-						onClose={handleMenuClose}
-						contentClassName='bg-white rounded-lg p-0 max-w-md w-full'
-					>
-						<FriendsMenu onUpdate={handleMenuClose} />
-					</Modal>
-				)}
-			</>
-		)
-	}
-
-	// Otherwise, show the add friend button with different states
-	if (loading) {
-		return <span className='text-gray-400 lading-none px-2'>. . .</span>
-	}
+	if (loading) return <span className='text-gray-400 lading-none px-2'>. . .</span>
 
 	if (status === 'none') {
 		return (
-			<Button
-				onClick={handleSend}
-				disabled={!!actionLoading}
-				variant='default'
-			>
+			<Button onClick={handleSend} disabled={!!actionLoading} variant='default'>
 				{actionLoading === 'send' ? 'Sending...' : 'Add Friend'}
 			</Button>
 		)
@@ -181,11 +124,7 @@ export default function FriendshipButton({ userId, username, isCurrentUser }: Fr
 
 	if (status === 'pending_sent') {
 		return (
-			<Button
-				onClick={handleCancel}
-				disabled={!!actionLoading}
-				variant='secondary'
-			>
+			<Button onClick={handleCancel} disabled={!!actionLoading} variant='secondary'>
 				{actionLoading === 'remove' ? 'Canceling...' : 'Cancel Request'}
 			</Button>
 		)
@@ -195,23 +134,15 @@ export default function FriendshipButton({ userId, username, isCurrentUser }: Fr
 		return (
 			<div className='flex gap-2'>
 				{actionLoading !== 'reject' && (
-                    <Button
-                        onClick={handleAccept}
-                        disabled={!!actionLoading}
-                        variant='confirm'
-                    >
-                        {actionLoading === 'accept' ? 'Accepting...' : 'Accept'}
-                    </Button>
-                )}
+					<Button onClick={handleAccept} disabled={!!actionLoading} variant='confirm'>
+						{actionLoading === 'accept' ? 'Accepting...' : 'Accept'}
+					</Button>
+				)}
 				{actionLoading !== 'accept' && (
-                    <Button
-                        onClick={handleReject}
-                        disabled={!!actionLoading}
-                        variant='secondary'
-                    >
-                        {actionLoading === 'reject' ? 'Declining...' : 'Decline'}
-                    </Button>
-                )}
+					<Button onClick={handleReject} disabled={!!actionLoading} variant='secondary'>
+						{actionLoading === 'reject' ? 'Declining...' : 'Decline'}
+					</Button>
+				)}
 			</div>
 		)
 	}
@@ -220,30 +151,19 @@ export default function FriendshipButton({ userId, username, isCurrentUser }: Fr
 		if (showRemoveConfirm) {
 			return (
 				<div className='flex gap-2'>
-					<Button
-						onClick={handleRemove}
-						disabled={!!actionLoading}
-						variant='warn'
-					>
+					<Button onClick={handleRemove} disabled={!!actionLoading} variant='warn'>
 						{actionLoading === 'remove' ? 'Removing...' : 'Remove'}
 					</Button>
 					{!actionLoading && (
-						<Button
-							onClick={() => setShowRemoveConfirm(false)}
-							variant='secondary'
-						>
+						<Button onClick={() => setShowRemoveConfirm(false)} variant='secondary'>
 							Cancel
 						</Button>
 					)}
 				</div>
 			)
 		}
-
 		return (
-			<Button
-				onClick={() => setShowRemoveConfirm(true)}
-				variant='ghost'
-			>
+			<Button onClick={() => setShowRemoveConfirm(true)} variant='ghost'>
 				✓ Friends
 			</Button>
 		)

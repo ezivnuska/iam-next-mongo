@@ -25,11 +25,6 @@ export default function UserList({ users }: UserListProps) {
 			{users.map((user) => {
 				const isCurrentUser = currentUser?.id === user.id
 				const isOnline = onlineUsers.has(user.id)
-                const props = {
-                    userId: user.id,
-                    username: user.username,
-                    isCurrentUser,
-                };
 				return (
                     <div
                         key={`user-${user.id}`}
@@ -43,7 +38,7 @@ export default function UserList({ users }: UserListProps) {
                             isOnline={isOnline}
                             variant='card'
                             clickable
-                            actions={<FriendshipButton {...props} />}
+                            actions={isCurrentUser ? undefined : <FriendshipButton userId={user.id} username={user.username} />}
                         />
                     </div>
 				)

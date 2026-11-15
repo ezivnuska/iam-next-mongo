@@ -11,7 +11,7 @@ interface PageHeaderProps {
 
 export default function PageHeader({ title, subtitle, className, actions }: PageHeaderProps) {
     return (
-        <header className={clsx('flex items-center justify-between border-b py-3', className)}>
+        <header className={clsx('flex items-center justify-between border-b py-3 px-4', className)}>
             <div>
                 {title && (
                     <h1 className='leading-none text-xl font-bold text-gray-900'>
@@ -19,7 +19,7 @@ export default function PageHeader({ title, subtitle, className, actions }: Page
                     </h1>
                 )}
                 {subtitle && (
-                    <p className='mt-0.5 text-lg px-2 text-gray-600'>
+                    <p className='mt-0.5 text-lg text-gray-600'>
                         {subtitle}
                     </p>
                 )}

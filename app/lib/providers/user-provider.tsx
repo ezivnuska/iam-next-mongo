@@ -66,7 +66,7 @@ export function UserProvider({ children, initialUser }: UserProviderProps) {
                 setUser(null);
                 setStatus("unauthenticated");
             });
-    }, [initialUser]);
+    }, [initialUser?.id]);
 
     async function fetchUserByUsername(username: string): Promise<User | null> {
         if (usernameCache.has(username)) return usernameCache.get(username)!;
