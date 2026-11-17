@@ -2,7 +2,8 @@
 
 import { Types } from "mongoose";
 import { connectToDatabase } from "@/app/lib/mongoose";
-import { requireAuthWithUsername } from "@/app/lib/utils/auth/utils";
+import { requireAuthWithUsername, requireRole } from "@/app/lib/utils/auth/utils";
+import { UserRole } from "@iam/shared-types";
 import { deleteS3File } from "@/app/lib/aws/s3";
 import { extractS3KeyFromUrl } from "@/app/lib/utils/images";
 import UserModel from "@/app/lib/models/user";
@@ -19,11 +20,8 @@ import Pledge from "@/app/lib/models/pledge";
 import Fee from "@/app/lib/models/fee";
 import { TetrisScoreModel, TileScoreModel, WordDuelScoreModel } from "@iam/db";
 
-export async function deleteAccount() {
-    const { id: userId } = await requireAuthWithUsername();
+async function deleteUserData(userId: string) {
     const oid = new Types.ObjectId(userId);
-
-    await connectToDatabase();
 
     // --- Images: delete S3 variants then documents ---
     const images = await ImageModel.find({ userId: oid }).lean<{ _id: Types.ObjectId; variants: { url: string }[] }[]>();
@@ -78,4 +76,16 @@ export async function deleteAccount() {
 
     // --- Finally, delete the user ---
     await UserModel.findByIdAndDelete(oid);
+}
+
+export async function deleteAccount() {
+    const { id: userId } = await requireAuthWithUsername();
+    await connectToDatabase();
+    await deleteUserData(userId);
+}
+
+export async function adminDeleteAccount(targetUserId: string) {
+    await requireRole(UserRole.Admin);
+    await connectToDatabase();
+    await deleteUserData(targetUserId);
 }

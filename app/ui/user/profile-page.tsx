@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { PageContent, PageContentRow, PageContentList } from '@iam/ui';
 import { useFooter } from '@/app/lib/providers/footer-provider';
+import { useUser } from '@/app/lib/providers/user-provider';
 import EntryList from '@/app/ui/user/entry-list';
 import ImagesClient from '@/app/ui/images/images-client';
 import FriendsView from '@/app/friends/friends-view';
@@ -18,6 +19,8 @@ import { useFriendshipSocketEvents } from '@/app/lib/hooks/useFriendshipSocketEv
 import { MemoriesIcon, PostsIcon, ImagesIcon, FriendsIcon, SettingsIcon } from '@/app/ui/icons/tab-icons';
 import SignOutButton from '@/app/ui/auth/signout-button';
 import DeleteAccountSection from '@/app/settings/delete-account-section';
+import AdminDeleteAccountSection from '@/app/settings/admin-delete-account-section';
+import { UserRole } from '@iam/shared-types';
 import type { ContentItem } from '@/app/lib/definitions/content';
 import type { FriendRequestPayload } from '@/app/lib/socket/events';
 import type { Image as ImageType } from '@/app/lib/definitions/image';
@@ -44,6 +47,8 @@ interface ProfilePageProps {
 
 export default function ProfilePage({ username, userId, isOwnProfile, initialContent, avatar }: ProfilePageProps) {
     const router = useRouter();
+    const { user: currentUser } = useUser();
+    const isAdmin = currentUser?.role === UserRole.Admin;
     const searchParams = useSearchParams();
     const rawTab = searchParams.get('t') as Tab | null;
     const activeTab: Tab = rawTab && VALID_TABS.has(rawTab) ? rawTab : 'posts';
@@ -112,6 +117,11 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                     <FriendshipButton userId={userId} username={username} />
                 </div>
             </div>
+            {isAdmin && (
+                <div className='mt-4 pt-4 border-t border-gray-200'>
+                    <AdminDeleteAccountSection userId={userId} username={username} />
+                </div>
+            )}
         </PageContentRow>
     );
 
