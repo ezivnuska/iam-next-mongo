@@ -3,6 +3,7 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Screen } from '@iam/ui';
 import UserButton from '@/app/ui/header/user-button';
 import SigninButton from '@/app/ui/auth/signin-button';
@@ -10,6 +11,19 @@ import AuthRedirectHandler from '@/app/ui/auth/auth-redirect-handler';
 import { useUser } from '@/app/lib/providers/user-provider';
 import { FooterProvider, useFooter } from '@/app/lib/providers/footer-provider';
 import { getBestVariant } from '@iam/shared-types';
+import { useSocket } from '@/app/lib/providers/socket-provider';
+import { useSocketListener } from '@/app/lib/hooks/use-socket-listener';
+import { SOCKET_EVENTS } from '@/app/lib/socket/events';
+import { getUnreadCount } from '@/app/lib/actions/messages';
+import type { MessageSentPayload } from '@/app/lib/socket/events';
+
+function ChatIcon({ className }: { className?: string }) {
+    return (
+        <svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' strokeWidth={1.5} stroke='currentColor' className={className}>
+            <path strokeLinecap='round' strokeLinejoin='round' d='M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 0 1 .778-.332 48.294 48.294 0 0 0 5.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z' />
+        </svg>
+    );
+}
 
 function PuzzleIcon({ className }: { className?: string }) {
     return (
@@ -37,6 +51,9 @@ function AppShellInner({ children, showLoading = true }: AppShellProps) {
     const { user } = useUser();
     const loggedIn = !!user && !user.isGuest;
     const [headerReady, setHeaderReady] = useState(false);
+    const [unreadMessages, setUnreadMessages] = useState(0);
+    const { socket } = useSocket();
+    const pathname = usePathname();
 
     useEffect(() => {
         if (!loggedIn) {
@@ -59,6 +76,19 @@ function AppShellInner({ children, showLoading = true }: AppShellProps) {
     }, [loggedIn, user?.createdAt, user?.avatar]);
 
     useEffect(() => {
+        if (!loggedIn) return;
+        getUnreadCount().then(setUnreadMessages).catch(() => {});
+    }, [loggedIn]);
+
+    useSocketListener<MessageSentPayload>(socket, SOCKET_EVENTS.MESSAGE_SENT, () => {
+        if (pathname !== '/messages') setUnreadMessages((n) => n + 1);
+    });
+
+    useEffect(() => {
+        if (pathname === '/messages') setUnreadMessages(0);
+    }, [pathname]);
+
+    useEffect(() => {
         const sync = () => document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
         sync();
         window.addEventListener('resize', sync);
@@ -71,13 +101,27 @@ function AppShellInner({ children, showLoading = true }: AppShellProps) {
             footer={footer}
             userControls={loggedIn ? <UserButton /> : undefined}
             nav={loggedIn ? (
-                <a
-                    href='https://games.iameric.me'
-                    className='flex items-center justify-center text-gray-700 hover:text-gray-500 transition-colors'
-                    aria-label='Games'
-                >
-                    <PuzzleIcon className='w-7 h-7' />
-                </a>
+                <>
+                    <a
+                        href='/messages'
+                        className='relative flex items-center justify-center text-gray-700 hover:text-gray-500 transition-colors'
+                        aria-label='Messages'
+                    >
+                        <ChatIcon className='w-7 h-7' />
+                        {unreadMessages > 0 && (
+                            <span className='absolute -top-1 -right-1 w-3 h-3 bg-red-500 text-white rounded-full text-[8px] font-bold flex items-center justify-center leading-none'>
+                                {unreadMessages > 9 ? '9+' : unreadMessages}
+                            </span>
+                        )}
+                    </a>
+                    <a
+                        href='https://games.iameric.me'
+                        className='flex items-center justify-center text-gray-700 hover:text-gray-500 transition-colors'
+                        aria-label='Games'
+                    >
+                        <PuzzleIcon className='w-7 h-7' />
+                    </a>
+                </>
             ) : (
                 <SigninButton />
             )}

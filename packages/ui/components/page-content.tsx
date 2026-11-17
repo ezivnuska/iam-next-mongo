@@ -26,12 +26,12 @@ export default function PageContent({ children, header, fullscreen = false, scro
     const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
         if (!header) return;
         const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-        const scrollable = scrollHeight - clientHeight;
-        const clamped = Math.max(0, Math.min(scrollTop, scrollable));
+        const scrollableHeight = scrollHeight - clientHeight;
+        const clamped = Math.max(0, Math.min(scrollTop, scrollableHeight));
         const delta = clamped - lastScrollRef.current;
         lastScrollRef.current = clamped;
         if (clamped === 0) { setHeaderVisibleLocked(true); return; }
-        if (lockedRef.current || scrollable < 120) return;
+        if (lockedRef.current || scrollableHeight < 120) return;
         if (delta > 4) setHeaderVisibleLocked(false);
         else if (delta < -4) setHeaderVisibleLocked(true);
     }, [header, setHeaderVisibleLocked]);
@@ -48,7 +48,7 @@ export default function PageContent({ children, header, fullscreen = false, scro
                     {header}
                 </div>
             )}
-            <div className={clsx('flex-1 min-h-0', scrollable ? 'overflow-y-auto' : 'overflow-hidden')} onScroll={handleScroll}>
+            <div className={clsx('flex-1 min-h-0 flex flex-col', scrollable ? 'overflow-y-auto' : 'overflow-hidden')} onScroll={handleScroll}>
                 {children}
             </div>
         </div>

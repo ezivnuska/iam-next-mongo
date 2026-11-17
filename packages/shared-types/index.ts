@@ -417,6 +417,42 @@ export const IMAGE_SIZES = {
 } as const;
 
 // ---------------------------------------------------------------------------
+// Messaging
+// ---------------------------------------------------------------------------
+
+export interface MessageParticipant {
+  id: string;
+  username: string;
+  avatar: ApiAvatar | null;
+}
+
+export interface Message {
+  id: string;
+  threadId: string;
+  from: MessageParticipant;
+  to: MessageParticipant;
+  text: string;
+  readAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MessageThread {
+  threadId: string;
+  unreadCount: number;
+  lastMessage: Message;
+}
+
+export interface SendMessageRequest {
+  toId: string;
+  text: string;
+}
+
+export interface SendMessageResponse { message: Message; }
+export interface MessageThreadsResponse { threads: MessageThread[]; }
+export interface MessageThreadResponse { messages: Message[]; total: number; }
+
+// ---------------------------------------------------------------------------
 // Poker primitives (wire-format — no Mongoose, no game-engine deps)
 // ---------------------------------------------------------------------------
 

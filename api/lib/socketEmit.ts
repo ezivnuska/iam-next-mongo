@@ -105,3 +105,13 @@ export async function emitIssueAllocationUpdated(payload: { issueId: string; tot
 export async function emitPoolUpdated(payload: { sharePerIssue: number }): Promise<void> {
   await emit('pool:updated', payload)
 }
+
+// ─── Message events ──────────────────────────────────────────────────────────
+
+export async function emitMessageSent(payload: { messageId: string; threadId: string; fromId: string; toId: string }): Promise<void> {
+  await emit('message:sent', payload, `user:${payload.toId}`)
+}
+
+export async function emitMessageDeleted(payload: { messageId: string; threadId: string; toId: string }): Promise<void> {
+  await emit('message:deleted', payload, `user:${payload.toId}`)
+}

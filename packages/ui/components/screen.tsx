@@ -77,7 +77,7 @@ export default function Screen({
 
     const content = showLoading && !isContentLoaded
         ? <LoadingSpinner />
-        : <Suspense fallback={<LoadingSpinner />}>{children}</Suspense>;
+        : <Suspense fallback={null}>{children}</Suspense>;
 
     return (
         <BreadcrumbProvider>

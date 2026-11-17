@@ -12,6 +12,7 @@ import avatar from './routes/mobile/avatar'
 import images from './routes/mobile/images'
 import users from './routes/mobile/users'
 import friendships from './routes/mobile/friendships'
+import messages from './routes/mobile/messages'
 import ratings from './routes/mobile/ratings'
 import commissions from './routes/mobile/commissions'
 import notifications from './routes/mobile/notifications'
@@ -40,6 +41,7 @@ app.route('/', avatar)
 app.route('/', images)
 app.route('/', users)
 app.route('/', friendships)
+app.route('/', messages)
 app.route('/', ratings)
 app.route('/', commissions)
 app.route('/', notifications)
