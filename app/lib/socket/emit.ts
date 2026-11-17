@@ -8,6 +8,8 @@ import type {
 	CommentPayload,
 	LikePayload,
 	ActivityPayload,
+	MessageSentPayload,
+	MessageDeletedPayload,
 	IssueCreatedPayload,
 	IssueApplicantPayload,
 	IssueApplicantRemovedPayload,
@@ -103,3 +105,13 @@ export async function emitIssuePledgeRemoved(payload: IssuePledgeRemovedPayload)
 }
 
 // Note: Poker events are now handled by PokerSocketEmitter in socket-helper.ts
+
+// ─── Message events ───────────────────────────────────────────────────────────
+
+export async function emitMessageSent(payload: MessageSentPayload): Promise<void> {
+	await emitViaAPI(SOCKET_EVENTS.MESSAGE_SENT, payload, `user:${payload.toId}`)
+}
+
+export async function emitMessageDeleted(payload: MessageDeletedPayload): Promise<void> {
+	await emitViaAPI(SOCKET_EVENTS.MESSAGE_DELETED, payload, `user:${payload.toId}`)
+}

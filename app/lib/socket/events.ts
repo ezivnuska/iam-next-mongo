@@ -28,6 +28,10 @@ export const SOCKET_EVENTS = {
 	// Activity events
 	ACTIVITY_CREATED: 'activity:created',
 
+	// Message events
+	MESSAGE_SENT: 'message:sent',
+	MESSAGE_DELETED: 'message:deleted',
+
 	// Issue events
 	ISSUE_CREATED: 'issue:created',
 	ISSUE_APPLICANT_ADDED: 'issue:applicant_added',
@@ -152,6 +156,19 @@ export interface ActivityPayload {
 	entityType: 'entry' | 'post' | 'memory' | 'issue' | 'image' | 'comment' | 'like' | 'friendship' | 'pledge'
 	entityId: string
 	createdAt: string
+}
+
+export interface MessageSentPayload {
+	messageId: string
+	threadId: string
+	fromId: string
+	toId: string
+}
+
+export interface MessageDeletedPayload {
+	messageId: string
+	threadId: string
+	toId: string
 }
 
 export interface IssueApplicantPayload {
