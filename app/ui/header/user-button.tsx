@@ -14,11 +14,9 @@ export default function UserButton() {
     if (!user || user.isGuest) return null;
 
     const profilePath = user.username ? `/users/${user.username}` : '/profile';
-    const avatarSize = horizontalLayout ? 48 : 36;
-
     return (
         <Link href={profilePath} className='text-gray-700 hover:text-gray-500 transition-colors'>
-            <UserIdentity username={user.username} avatar={user.avatar} size={avatarSize} stacked={horizontalLayout} />
+            <UserIdentity username={user.username} avatar={user.avatar} size={40} stacked={horizontalLayout} />
         </Link>
     );
 }

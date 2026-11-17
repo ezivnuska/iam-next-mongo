@@ -46,7 +46,7 @@ function AppShellInner({ children, showLoading = true }: AppShellProps) {
         setHeaderReady(false);
         const isFullUser = !!(user?.createdAt);
         if (!isFullUser) return;
-        const avatarUrl = user?.avatar ? getBestVariant(user.avatar, 36)?.url : null;
+        const avatarUrl = user?.avatar ? getBestVariant(user.avatar, 40)?.url : null;
         if (!avatarUrl) {
             setHeaderReady(true);
             return;

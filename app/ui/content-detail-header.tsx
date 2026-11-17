@@ -52,8 +52,8 @@ export default function ContentDetailHeader({ item, avatar }: ContentDetailHeade
             </button>
 
             <div className='flex items-center gap-2 flex-1 px-3'>
-                <div className='shrink-0' style={{ width: 36, height: 36 }}>
-                    <UserAvatar username={item.author.username} avatar={avatar} size={36} />
+                <div className='shrink-0' style={{ width: 40, height: 40 }}>
+                    <UserAvatar username={item.author.username} avatar={avatar} size={40} />
                 </div>
                 <div className='flex items-center gap-1.5 min-w-0'>
                     <span className='font-semibold text-sm text-gray-900 leading-tight truncate'>{item.author.username}</span>

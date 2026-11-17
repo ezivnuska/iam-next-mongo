@@ -10,7 +10,7 @@ interface UserIdentityProps {
     stacked?: boolean;
 }
 
-export default function UserIdentity({ username, avatar, size = 36, stacked = false }: UserIdentityProps) {
+export default function UserIdentity({ username, avatar, size = 40, stacked = false }: UserIdentityProps) {
     if (stacked) {
         return (
             <div className='flex flex-col items-center gap-1'>

@@ -55,7 +55,7 @@ export default function MemoryPolaroid({
         onFlag={actions?.onFlag}
         onDelete={actions?.onDelete}
         canDelete={actions?.canDelete}
-        avatarSize={36}
+        avatarSize={40}
         clickable
       />
 
