@@ -152,7 +152,7 @@ export default function FriendshipButton({ userId, username }: FriendshipButtonP
 			return (
 				<div className='flex gap-2'>
 					<Button onClick={handleRemove} disabled={!!actionLoading} variant='warn'>
-						{actionLoading === 'remove' ? 'Removing...' : 'Remove'}
+						{actionLoading === 'remove' ? 'Confirming...' : 'Confirm'}
 					</Button>
 					{!actionLoading && (
 						<Button onClick={() => setShowRemoveConfirm(false)} variant='secondary'>
@@ -163,8 +163,8 @@ export default function FriendshipButton({ userId, username }: FriendshipButtonP
 			)
 		}
 		return (
-			<Button onClick={() => setShowRemoveConfirm(true)} variant='ghost'>
-				✓ Friends
+			<Button onClick={() => setShowRemoveConfirm(true)} variant='warn'>
+				Estrange
 			</Button>
 		)
 	}
