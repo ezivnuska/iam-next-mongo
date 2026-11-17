@@ -5,7 +5,9 @@
 import type { Entry } from '@/app/lib/definitions/entry';
 import ContentImage from '@/app/ui/content-image';
 import ContentInteractions from '@/app/ui/content-interactions';
-import UnifiedUserHeader from '@/app/ui/user/unified-user-header';
+import EntryHeader from '@/app/ui/user/entry-header';
+import FlagContentButton from '@/app/ui/flag-content-button';
+import DeleteButtonWithConfirm from '@/app/ui/delete-button-with-confirm';
 import EditContentButton from '@/app/ui/edit-content-button';
 
 interface MemoryPolaroidProps {
@@ -49,15 +51,20 @@ export default function MemoryPolaroid({
 
   return (
     <div className='flex flex-col w-full'>
-      <UnifiedUserHeader
-        user={entry.author}
-        avatar={entry.author.avatar}
-        onFlag={actions?.onFlag}
-        onDelete={actions?.onDelete}
-        canDelete={actions?.canDelete}
-        avatarSize={40}
-        clickable
-      />
+      <div className='flex items-center justify-between'>
+        <EntryHeader
+          username={entry.author.username}
+          avatar={entry.author.avatar}
+          avatarSize={40}
+          createdAt={entry.createdAt}
+        />
+        {(actions?.onFlag || (actions?.canDelete && actions?.onDelete)) && (
+          <div className='flex items-center gap-2 shrink-0'>
+            {actions?.onFlag && <FlagContentButton onFlag={actions.onFlag} />}
+            {actions?.canDelete && actions?.onDelete && <DeleteButtonWithConfirm onDelete={actions.onDelete} />}
+          </div>
+        )}
+      </div>
 
       <div
         className={`
