@@ -41,7 +41,7 @@ export default function PageContent({ children, header, fullscreen = false }: Pa
         })}>
             {header && (
                 <div
-                    className='transition-[max-height,opacity] duration-[400ms] ease-in-out'
+                    className='py-4 transition-[max-height,opacity] duration-[400ms] ease-in-out'
                     style={{ maxHeight: headerVisible ? '200px' : '0', opacity: headerVisible ? 1 : 0, pointerEvents: headerVisible ? 'auto' : 'none', overflow: 'visible' }}
                 >
                     {header}
