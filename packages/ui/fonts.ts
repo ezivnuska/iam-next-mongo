@@ -2,5 +2,5 @@ import { Ubuntu } from 'next/font/google';
 
 export const ubuntu = Ubuntu({
     subsets: ['latin'],
-    weight: '700',
+    weight: ['400', '500', '700'],
 });

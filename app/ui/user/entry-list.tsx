@@ -4,7 +4,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { ContentItem } from '@/app/lib/definitions/content';
-import type { Entry } from '@/app/lib/definitions/entry';
 import type { Image } from '@/app/lib/definitions/image';
 import { Modal } from '@iam/ui';
 import ContentItemCard from '@/app/ui/content-item-card';
@@ -31,7 +30,6 @@ export default function EntryList({ initialContent, editable = false, contentTyp
     const { socket } = useSocket();
     const [content, setContent] = useState<ContentItem[]>(initialContent);
     const [modalOpen, setModalOpen] = useState(false);
-    const [editingItem, setEditingItem] = useState<Entry | undefined>(undefined);
     const [selectedImage, setSelectedImage] = useState<Image | null>(null);
     const [openWithComments, setOpenWithComments] = useState(false);
 
@@ -55,10 +53,7 @@ export default function EntryList({ initialContent, editable = false, contentTyp
     useCommentCountSocket(socket, setContent);
 
     useEffect(() => {
-        if (triggerAdd) {
-            setEditingItem(undefined);
-            setModalOpen(true);
-        }
+        if (triggerAdd) setModalOpen(true);
     }, [triggerAdd]);
 
     const isCurrentUserAuthor = (item: ContentItem) => {
@@ -67,25 +62,10 @@ export default function EntryList({ initialContent, editable = false, contentTyp
         return item.author.id === user.id;
     };
 
-    const handleDeleted = (id: string) =>
-        setContent(prev => prev.filter(item => item.id !== id));
+    const handleCloseModal = () => setModalOpen(false);
 
-    const handleEdit = (item: Entry) => {
-        setEditingItem(item);
-        setModalOpen(true);
-    };
-
-    const handleCloseModal = () => {
-        setModalOpen(false);
-        setEditingItem(undefined);
-    };
-
-    const handleEntrySuccess = (entry: Entry) => {
-        setContent(prev =>
-            editingItem
-                ? prev.map(item => item.id === entry.id ? entry : item)
-                : [entry, ...prev]
-        );
+    const handleEntrySuccess = (entry: ContentItem) => {
+        setContent(prev => [entry as ContentItem, ...prev]);
         handleCloseModal();
     };
 
@@ -130,10 +110,7 @@ export default function EntryList({ initialContent, editable = false, contentTyp
                             key={`${item.contentType}-${item.id}`}
                             item={item}
                             editable={editable && isCurrentUserAuthor(item)}
-                            onDeleted={handleDeleted}
-                            onEdit={handleEdit}
                             onImageClick={setSelectedImage}
-                            onCommentImageClick={handleCommentImageClick}
                         />
                     ))
                 )}
@@ -142,9 +119,7 @@ export default function EntryList({ initialContent, editable = false, contentTyp
             {modalOpen && (
                 <Modal isOpen onClose={handleCloseModal}>
                     <div className='flex items-center justify-between mb-4'>
-                        <h1 className='text-2xl font-semibold text-gray-900'>
-                            {editingItem ? `Edit ${editingItem.contentType}` : 'New Entry'}
-                        </h1>
+                        <h1 className='text-2xl font-semibold text-gray-900'>New Entry</h1>
                         <button
                             onClick={handleCloseModal}
                             className='text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer'
@@ -154,7 +129,6 @@ export default function EntryList({ initialContent, editable = false, contentTyp
                     <CreateEntryForm
                         onSuccess={handleEntrySuccess}
                         onClose={handleCloseModal}
-                        editItem={editingItem}
                     />
                 </Modal>
             )}

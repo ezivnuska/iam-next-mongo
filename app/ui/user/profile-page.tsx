@@ -98,7 +98,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
 
     const contentHeader = isOwnProfile ? null : (
         <PageContentRow>
-            <div className='flex items-center justify-between py-2'>
+            <div className='flex items-center justify-between'>
                 <UserIdentity username={username} avatar={avatar} size={40} />
                 <div className='flex items-center gap-2'>
                     <FriendshipButton userId={userId} username={username} />

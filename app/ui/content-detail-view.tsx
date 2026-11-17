@@ -7,6 +7,7 @@ import Image from 'next/image';
 import type { Entry } from '@/app/lib/definitions/entry';
 import type { Image as ImageType } from '@/app/lib/definitions/image';
 import ContentImage from './content-image';
+import MemoryContent from './memories/memory-content';
 import LikeButton from './like-button';
 import CommentFormModal from './comments/comment-form-modal';
 import CommentSection from './comments/comment-section';
@@ -76,21 +77,14 @@ export default function ContentDetailView({ item }: ContentDetailViewProps) {
         <div className='flex flex-col gap-2'>
             <div className='flex flex-col flex-1'>
                 {item.contentType === 'memory' && (
-                    <div className='flex flex-1 flex-col gap-2'>
-                        <div className='flex flex-1 flex-col gap-2'>
-                            <p className='text-lg font-bold text-gray-900'>
-                                {item.date ? new Date(item.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : ''}
-                            </p>
-                            {item.title && <p className='text-lg font-light text-gray-600'>{item.title}</p>}
-                        </div>
-                        <ContentImage
-                            image={item.image}
-                            alt='Memory image'
-                            className='max-w-full max-h-96 rounded object-cover cursor-pointer'
-                            onClick={item.image ? () => handleImageClick(item.image) : undefined}
-                        />
-                        {item.content && <p className='whitespace-pre-wrap text-gray-900'>{item.content}</p>}
-                    </div>
+                    <MemoryContent
+                        date={item.date}
+                        title={item.title}
+                        content={item.content}
+                        image={item.image}
+                        onImageClick={item.image ? () => handleImageClick(item.image) : undefined}
+                        variant='detail'
+                    />
                 )}
 
                 {item.contentType === 'post' && (
