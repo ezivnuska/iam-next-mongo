@@ -81,7 +81,7 @@ export default function ContentDetailHeader({ item, avatar }: ContentDetailHeade
                                     </Button>
                                 )}
                                 {canDelete && (
-                                    <DeleteButtonWithConfirm onDelete={() => handleDelete(item.id)} label />
+                                    <DeleteButtonWithConfirm onDelete={() => handleDelete(item.id)} />
                                 )}
                             </div>
                         </div>

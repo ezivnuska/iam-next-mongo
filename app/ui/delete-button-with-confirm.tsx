@@ -9,10 +9,9 @@ import { XMarkIcon } from "@heroicons/react/24/outline";
 
 interface DeleteButtonWithConfirmProps {
   onDelete: () => Promise<void>;
-  label?: boolean;
 }
 
-export default function DeleteButtonWithConfirm({ onDelete, label = false }: DeleteButtonWithConfirmProps) {
+export default function DeleteButtonWithConfirm({ onDelete }: DeleteButtonWithConfirmProps) {
   const [loading, setLoading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -74,7 +73,7 @@ export default function DeleteButtonWithConfirm({ onDelete, label = false }: Del
       onClick={handleShowConfirm}
       variant='warn'
     >
-      {label ? 'Delete' : <TrashIcon className='w-5 h-5' strokeWidth={2} />}
+      <TrashIcon className='w-5 h-5' strokeWidth={2} />
     </Button>
   );
 }
