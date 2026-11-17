@@ -32,6 +32,10 @@ const nextConfig: NextConfig = {
                         key: 'Cache-Control',
                         value: 'no-cache, no-store, must-revalidate',
                     },
+                    {
+                        key: 'Content-Security-Policy',
+                        value: "default-src 'self' http: https: data: blob: 'unsafe-inline'; connect-src 'self' http: https: ws: wss:;",
+                    },
                 ],
             },
         ];
