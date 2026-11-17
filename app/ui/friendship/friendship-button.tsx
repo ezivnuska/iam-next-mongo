@@ -3,6 +3,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useModal } from '@/app/lib/hooks/use-modal'
 import { getFriendshipStatus } from '@/app/lib/actions/friendships'
 import { useFriendshipSocketEvents } from '@/app/lib/hooks/useFriendshipSocketEvents'
 import { useFriendshipActions } from '@/app/lib/hooks/useFriendshipActions'
@@ -19,7 +20,7 @@ export default function FriendshipButton({ userId, username }: FriendshipButtonP
 	const [status, setStatus] = useState<'none' | 'pending_sent' | 'pending_received' | 'accepted'>('none')
 	const [friendshipId, setFriendshipId] = useState<string | undefined>()
 	const [loading, setLoading] = useState(true)
-	const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
+	const { isOpen: showRemoveConfirm, open: openRemoveConfirm, close: closeRemoveConfirm } = useModal()
 	const { actionLoading, handleSendRequest, handleAcceptRequest, handleRejectRequest, handleRemoveFriend } = useFriendshipActions()
 
 	useEffect(() => {
@@ -106,7 +107,7 @@ export default function FriendshipButton({ userId, username }: FriendshipButtonP
 			await handleRemoveFriend(friendshipId)
 			setStatus('none')
 			setFriendshipId(undefined)
-			setShowRemoveConfirm(false)
+			closeRemoveConfirm()
 		} catch (error) {
 			showError(error, 'Failed to remove friend')
 		}
@@ -155,7 +156,7 @@ export default function FriendshipButton({ userId, username }: FriendshipButtonP
 						{actionLoading === 'remove' ? 'Confirming...' : 'Confirm'}
 					</Button>
 					{!actionLoading && (
-						<Button onClick={() => setShowRemoveConfirm(false)} variant='secondary'>
+						<Button onClick={closeRemoveConfirm} variant='secondary'>
 							Cancel
 						</Button>
 					)}
@@ -163,7 +164,7 @@ export default function FriendshipButton({ userId, username }: FriendshipButtonP
 			)
 		}
 		return (
-			<Button onClick={() => setShowRemoveConfirm(true)} variant='warn'>
+			<Button onClick={openRemoveConfirm} variant='warn'>
 				Estrange
 			</Button>
 		)

@@ -3,6 +3,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useModal } from '@/app/lib/hooks/use-modal'
 import CommentSection from '@/app/ui/comments/comment-section'
 import { useComments } from '@/app/lib/hooks/use-comments'
 import type { CommentRefType } from '@/app/lib/definitions/comment'
@@ -26,7 +27,7 @@ export default function CommentPanel({
 	currentUserRole,
 	onCommentCountChange,
 }: CommentPanelProps) {
-	const [inputOpen, setInputOpen] = useState(false)
+	const { isOpen: inputOpen, open: openInput, close: closeInput } = useModal()
 	const [commentText, setCommentText] = useState('')
 	const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -48,30 +49,30 @@ export default function CommentPanel({
 
 	// Reset when item changes
 	useEffect(() => {
-		setInputOpen(false)
+		closeInput()
 		setCommentText('')
 		resetComments()
-	}, [itemId, resetComments])
+	}, [itemId, resetComments, closeInput])
 
 	// Collapse input when panel closes
 	useEffect(() => {
 		if (!expanded) {
-			setInputOpen(false)
+			closeInput()
 			setCommentText('')
 		}
-	}, [expanded])
+	}, [expanded, closeInput])
 
 	// Load comments when panel first opens
 	useEffect(() => {
 		if (expanded && !commentsLoaded) loadComments()
 	}, [expanded, commentsLoaded, loadComments])
 
-	const handleOpenInput = useCallback(() => setInputOpen(true), [])
+	const handleOpenInput = useCallback(() => openInput(), [openInput])
 
 	const handleCancelInput = useCallback(() => {
-		setInputOpen(false)
+		closeInput()
 		setCommentText('')
-	}, [])
+	}, [closeInput])
 
 	const handleSubmit = useCallback(async (e: React.FormEvent) => {
 		e.preventDefault()
@@ -80,7 +81,7 @@ export default function CommentPanel({
 		try {
 			await createComment(commentText.trim())
 			setCommentText('')
-			setInputOpen(false)
+			closeInput()
 		} finally {
 			setIsSubmitting(false)
 		}

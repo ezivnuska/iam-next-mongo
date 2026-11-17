@@ -6,6 +6,7 @@ import { Button } from "@iam/ui";
 import { useState } from "react";
 import { TrashIcon } from '@iam/ui'
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import { useModal } from "@/app/lib/hooks/use-modal";
 
 interface DeleteButtonWithConfirmProps {
   onDelete: () => Promise<void>;
@@ -13,7 +14,7 @@ interface DeleteButtonWithConfirmProps {
 
 export default function DeleteButtonWithConfirm({ onDelete }: DeleteButtonWithConfirmProps) {
   const [loading, setLoading] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const { isOpen: showConfirm, open: openConfirm, close: closeConfirm } = useModal();
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -23,20 +24,20 @@ export default function DeleteButtonWithConfirm({ onDelete }: DeleteButtonWithCo
       await onDelete();
     } finally {
       setLoading(false);
-      setShowConfirm(false);
+      closeConfirm();
     }
   };
 
   const handleShowConfirm = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    setShowConfirm(true);
+    openConfirm();
   };
 
   const handleCancel = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    setShowConfirm(false);
+    closeConfirm();
   };
 
   if (showConfirm) {

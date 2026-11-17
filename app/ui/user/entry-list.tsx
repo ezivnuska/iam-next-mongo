@@ -3,6 +3,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useModal } from '@/app/lib/hooks/use-modal';
 import type { ContentItem } from '@/app/lib/definitions/content';
 import type { Image } from '@/app/lib/definitions/image';
 import { Modal } from '@iam/ui';
@@ -29,7 +30,7 @@ export default function EntryList({ initialContent, editable = false, contentTyp
     const { user } = useUser();
     const { socket } = useSocket();
     const [content, setContent] = useState<ContentItem[]>(initialContent);
-    const [modalOpen, setModalOpen] = useState(false);
+    const { isOpen: modalOpen, open: openModal, close: closeModal } = useModal();
     const [selectedImage, setSelectedImage] = useState<Image | null>(null);
     const [openWithComments, setOpenWithComments] = useState(false);
 
@@ -53,7 +54,7 @@ export default function EntryList({ initialContent, editable = false, contentTyp
     useCommentCountSocket(socket, setContent);
 
     useEffect(() => {
-        if (triggerAdd) setModalOpen(true);
+        if (triggerAdd) openModal();
     }, [triggerAdd]);
 
     const isCurrentUserAuthor = (item: ContentItem) => {
@@ -62,11 +63,9 @@ export default function EntryList({ initialContent, editable = false, contentTyp
         return item.author.id === user.id;
     };
 
-    const handleCloseModal = () => setModalOpen(false);
-
     const handleEntrySuccess = (entry: ContentItem) => {
         setContent(prev => [entry as ContentItem, ...prev]);
-        handleCloseModal();
+        closeModal();
     };
 
     const handleCloseLightbox = useCallback(() => {
@@ -117,18 +116,18 @@ export default function EntryList({ initialContent, editable = false, contentTyp
             </div>
 
             {modalOpen && (
-                <Modal isOpen onClose={handleCloseModal}>
+                <Modal isOpen onClose={closeModal}>
                     <div className='flex items-center justify-between mb-4'>
                         <h1 className='text-2xl font-semibold text-gray-900'>New Entry</h1>
                         <button
-                            onClick={handleCloseModal}
+                            onClick={closeModal}
                             className='text-gray-500 hover:text-gray-700 text-2xl leading-none cursor-pointer'
                             aria-label='Close'
                         >✕</button>
                     </div>
                     <CreateEntryForm
                         onSuccess={handleEntrySuccess}
-                        onClose={handleCloseModal}
+                        onClose={closeModal}
                     />
                 </Modal>
             )}

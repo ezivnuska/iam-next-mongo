@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from 'react';
 import { Modal, Button } from '@iam/ui';
+import { useModal } from '@/app/lib/hooks/use-modal';
 import UploadForm from '@/app/ui/images/upload-form';
 import ImageGallery from './image-gallery';
 import type { Image } from '@/app/lib/definitions/image';
@@ -18,7 +19,7 @@ interface ImagesClientProps {
 export default function ImagesClient({ userId, authorized, triggerUpload, showUploadButton = false }: ImagesClientProps) {
     const [images, setImages] = useState<Image[]>([]);
     const [loading, setLoading] = useState(false);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const { isOpen: isModalOpen, open: openModal, close: closeModal } = useModal();
 
     async function initImages() {
         setLoading(true)
@@ -32,12 +33,12 @@ export default function ImagesClient({ userId, authorized, triggerUpload, showUp
     }, [])
 
     useEffect(() => {
-        if (triggerUpload) setIsModalOpen(true);
+        if (triggerUpload) openModal();
     }, [triggerUpload])
 
     const handleUploadSuccess = (uploadedImage: Image) => {
         setImages((prev) => [uploadedImage, ...prev]);
-        setIsModalOpen(false);
+        closeModal();
     };
 
     const handleImageUpdate = (imageId: string, updates: Partial<Image>) => {
@@ -49,7 +50,7 @@ export default function ImagesClient({ userId, authorized, triggerUpload, showUp
     return (
         <div className='flex flex-col w-full gap-4'>
             {showUploadButton && (
-                <Button onClick={() => setIsModalOpen(true)}>
+                <Button onClick={openModal}>
                     Upload File
                 </Button>
             )}
@@ -65,11 +66,11 @@ export default function ImagesClient({ userId, authorized, triggerUpload, showUp
                 : <p>Loading images...</p>
             }
 
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+            <Modal isOpen={isModalOpen} onClose={closeModal}>
                 <h1 className='mb-4 text-2xl font-semibold'>Upload a File</h1>
                 <UploadForm
                     onUploadSuccess={handleUploadSuccess}
-                    onClose={() => setIsModalOpen(false)}
+                    onClose={closeModal}
                 />
             </Modal>
         </div>

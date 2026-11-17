@@ -2,7 +2,8 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
+import { useModal } from '@/app/lib/hooks/use-modal';
 import { useRouter } from 'next/navigation';
 import { ChevronLeftIcon, EllipsisIcon, Modal } from '@iam/ui';
 import { UserAvatar } from '@iam/ui';
@@ -24,20 +25,20 @@ export default function ContentDetailHeader({ item, avatar }: ContentDetailHeade
     const router = useRouter();
     const { canEdit, canDelete } = useContentPermissions(item.author.id);
     const handleDelete = useContentDelete('entries', () => router.back());
-    const [menuOpen, setMenuOpen] = useState(false);
-    const [showEditModal, setShowEditModal] = useState(false);
+    const { isOpen: menuOpen, open: openMenu, close: closeMenu, toggle: toggleMenu } = useModal();
+    const { isOpen: showEditModal, open: openEditModal, close: closeEditModal } = useModal();
     const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (!menuOpen) return;
         const handleClickOutside = (e: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-                setMenuOpen(false);
+                closeMenu();
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [menuOpen]);
+    }, [menuOpen, closeMenu]);
 
     const hasActions = canEdit || canDelete;
 
@@ -65,7 +66,7 @@ export default function ContentDetailHeader({ item, avatar }: ContentDetailHeade
             {hasActions ? (
                 <div className='relative' ref={menuRef}>
                     <button
-                        onClick={() => setMenuOpen(v => !v)}
+                        onClick={toggleMenu}
                         className='flex items-center justify-center text-gray-500 hover:text-gray-900 transition-colors cursor-pointer'
                         aria-label='More options'
                     >
@@ -76,7 +77,7 @@ export default function ContentDetailHeader({ item, avatar }: ContentDetailHeade
                         <div className='absolute right-0 top-full mt-1 bg-white border border-gray-100 rounded-lg shadow-lg py-1 z-50'>
                             <div className='flex flex-col px-2 py-1'>
                                 {canEdit && (
-                                    <Button size='sm' variant='ghost' onClick={() => { setMenuOpen(false); setShowEditModal(true); }}>
+                                    <Button size='sm' variant='ghost' onClick={() => { closeMenu(); openEditModal(); }}>
                                         Edit
                                     </Button>
                                 )}
@@ -92,11 +93,11 @@ export default function ContentDetailHeader({ item, avatar }: ContentDetailHeade
             )}
 
             {showEditModal && (
-                <Modal isOpen={true} onClose={() => setShowEditModal(false)}>
+                <Modal isOpen={true} onClose={closeEditModal}>
                     <CreateEntryForm
                         editItem={item}
-                        onSuccess={() => { setShowEditModal(false); router.refresh(); }}
-                        onClose={() => setShowEditModal(false)}
+                        onSuccess={() => { closeEditModal(); router.refresh(); }}
+                        onClose={closeEditModal}
                     />
                 </Modal>
             )}

@@ -2,7 +2,8 @@
 
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
+import { useModal } from '@/app/lib/hooks/use-modal';
 import Image from 'next/image';
 import type { Entry } from '@/app/lib/definitions/entry';
 import type { Image as ImageType } from '@/app/lib/definitions/image';
@@ -23,8 +24,8 @@ interface ContentDetailViewProps {
 
 export default function ContentDetailView({ item }: ContentDetailViewProps) {
     const { user } = useUser();
-    const [showCommentForm, setShowCommentForm] = useState(false);
-    const [showImageModal, setShowImageModal] = useState(false);
+    const { isOpen: showCommentForm, open: openCommentForm, close: closeCommentForm } = useModal();
+    const { isOpen: showImageModal, open: openImageModal, close: closeImageModal } = useModal();
     const previousCountRef = useRef(item.commentCount || 0);
 
     const refType: CommentRefType = toCommentRefType(item.contentType);
@@ -50,19 +51,17 @@ export default function ContentDetailView({ item }: ContentDetailViewProps) {
 
     const handleOpenCommentForm = (e: React.MouseEvent) => {
         e.stopPropagation();
-        setShowCommentForm(true);
+        openCommentForm();
     };
 
     const handleCommentSubmit = async (content: string) => {
         await createComment(content);
-        setShowCommentForm(false);
+        closeCommentForm();
     };
 
     const handleImageClick = (image: ImageType | null | undefined) => {
-        if (image) setShowImageModal(true);
+        if (image) openImageModal();
     };
-
-    const closeImageModal = () => setShowImageModal(false);
 
     useEffect(() => {
         if (!showImageModal) return;
@@ -71,7 +70,7 @@ export default function ContentDetailView({ item }: ContentDetailViewProps) {
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [showImageModal]);
+    }, [showImageModal, closeImageModal]);
 
     return (
         <div className='flex flex-col gap-2'>
@@ -159,7 +158,7 @@ export default function ContentDetailView({ item }: ContentDetailViewProps) {
 
             <CommentFormModal
                 isOpen={showCommentForm}
-                onClose={() => setShowCommentForm(false)}
+                onClose={closeCommentForm}
                 refId={item.id}
                 refType={refType}
                 onSubmit={handleCommentSubmit}
