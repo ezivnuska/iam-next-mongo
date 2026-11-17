@@ -44,7 +44,7 @@ interface ProfilePageProps {
 export default function ProfilePage({ username, userId, isOwnProfile, initialContent, avatar }: ProfilePageProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const rawTab = searchParams.get('tab') as Tab | null;
+    const rawTab = searchParams.get('t') as Tab | null;
     const activeTab: Tab = rawTab && VALID_TABS.has(rawTab) ? rawTab : 'posts';
     const [entryTrigger, setEntryTrigger] = useState(0);
     const [uploadTrigger, setUploadTrigger] = useState(0);
@@ -76,7 +76,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                                 if (tab.value === 'images') setUploadTrigger(n => n + 1);
                                 else if (tab.value !== 'friends' && tab.value !== 'settings') setEntryTrigger(n => n + 1);
                             } else {
-                                router.push(`?tab=${tab.value}`, { scroll: false });
+                                router.push(`?t=${tab.value}`, { scroll: false });
                             }
                         }}
                         className={`flex flex-1 flex-col items-center gap-0.5 py-3 @min-[220px]:py-1.5 font-medium transition-colors cursor-pointer ${
