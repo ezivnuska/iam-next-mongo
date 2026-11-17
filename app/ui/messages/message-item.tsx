@@ -16,37 +16,15 @@ export default function MessageItem({ message, isSelf, onDelete }: MessageItemPr
 
   const avatarUrl = message.from.avatar?.variants.find((v) => v.size === 'small')?.url
 
-  return (
-    <div
-      className={`flex flex-col group ${isSelf ? 'items-end' : 'items-start'}`}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      {!isSelf && (
-        <span className='text-xs text-gray-500 mb-1 ml-9'>{message.from.username}</span>
-      )}
-
-      <div className={`flex items-end gap-2 max-w-[72%] ${isSelf ? 'flex-row-reverse' : 'flex-row'}`}>
-        {!isSelf && (
-          <div className='w-7 h-7 shrink-0'>
-            <UserAvatar username={message.from.username} avatarUrl={avatarUrl} size={28} />
-          </div>
-        )}
-
-        <div
-          className={`px-3 py-2 rounded-2xl text-sm break-words ${
-            isSelf
-              ? 'bg-blue-500 text-white rounded-br-sm'
-              : 'bg-gray-100 text-gray-900 rounded-bl-sm'
-          }`}
-        >
-          {message.text}
-        </div>
-
-        {isSelf && onDelete && (
-          <div
-            className={`transition-opacity ${hovered ? 'opacity-100' : 'opacity-0'}`}
-          >
+  if (isSelf) {
+    return (
+      <div
+        className='flex gap-2 justify-end group'
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+      >
+        {onDelete && (
+          <div className={`self-center transition-opacity ${hovered ? 'opacity-100' : 'opacity-0'}`}>
             <button
               onClick={() => onDelete(message.id)}
               className='p-1 text-gray-400 hover:text-red-500 transition-colors'
@@ -59,11 +37,30 @@ export default function MessageItem({ message, isSelf, onDelete }: MessageItemPr
             </button>
           </div>
         )}
+        <div className='flex flex-col max-w-[72%] items-end'>
+          <div className='px-3 py-2 rounded-2xl rounded-br-sm text-sm break-words bg-blue-500 text-white'>
+            {message.text}
+          </div>
+          <span className='text-xs text-gray-400 mt-1 mr-1'>{formatRelativeTime(message.createdAt)}</span>
+        </div>
       </div>
+    )
+  }
 
-      <span className={`text-xs text-gray-400 mt-1 ${isSelf ? 'mr-1' : 'ml-9'}`}>
-        {formatRelativeTime(message.createdAt)}
-      </span>
+  return (
+    <div className='flex gap-2 group max-w-[72%]'>
+      <div className='w-7 h-7 shrink-0'>
+        <UserAvatar username={message.from.username} avatarUrl={avatarUrl} size={28} />
+      </div>
+      <div className='flex flex-col min-w-0'>
+        <div className='flex items-baseline gap-2 mb-1'>
+          <span className='text-xs font-medium text-gray-700'>{message.from.username}</span>
+          <span className='text-xs text-gray-400'>{formatRelativeTime(message.createdAt)}</span>
+        </div>
+        <div className='px-3 py-2 rounded-2xl rounded-bl-sm text-sm break-words bg-gray-100 text-gray-900'>
+          {message.text}
+        </div>
+      </div>
     </div>
   )
 }
