@@ -208,37 +208,6 @@ export async function deleteComment(commentId: string) {
 	return { success: true };
 }
 
-export async function getCommentCounts(refIds: string[], refType: CommentRefType) {
-	await connectToDatabase();
-
-	const counts = await Comment.aggregate([
-		{
-			$match: {
-				refId: { $in: refIds.filter(id => isValidObjectId(id)).map(id => new Types.ObjectId(id)) },
-				refType
-			}
-		},
-		{
-			$group: {
-				_id: '$refId',
-				count: { $sum: 1 }
-			}
-		}
-	]);
-
-	// Convert to map for easy lookup
-	const countMap: Record<string, number> = {};
-	counts.forEach((item: any) => {
-		countMap[item._id.toString()] = item.count;
-	});
-
-	return countMap;
-}
-
-/**
- * Get comment counts for multiple content items (memories and posts)
- * Returns a map of itemId -> commentCount
- */
 export async function getCommentCountsForItems(itemIds: string[]): Promise<Record<string, number>> {
 	if (itemIds.length === 0) return {};
 
@@ -258,7 +227,6 @@ export async function getCommentCountsForItems(itemIds: string[]): Promise<Recor
 		}
 	]);
 
-	// Convert to map for easy lookup
 	const countMap: Record<string, number> = {};
 	counts.forEach((item: any) => {
 		countMap[item._id.toString()] = item.count;

@@ -7,9 +7,9 @@ import EntryModel from "@/app/lib/models/entry";
 import User from "@/app/lib/models/user";
 import {
   transformEntry,
-  getCommentCountsForContent,
   sortContentByDate,
 } from "@/app/lib/utils/transformers/content";
+import { getCommentCountsForItems } from "@/app/lib/actions/comments";
 import type { ContentItem } from "@/app/lib/definitions/content";
 import { requireAuth } from "@/app/lib/utils/auth";
 import { CONTENT_POPULATE_CONFIG } from "@/app/lib/utils/db-query-config";
@@ -41,7 +41,7 @@ export async function getUserContent(username?: string): Promise<ContentItem[]> 
     .sort({ createdAt: -1 })
     .lean();
 
-  const commentCounts = await getCommentCountsForContent(entries);
+  const commentCounts = await getCommentCountsForItems(entries.map((e: any) => e._id.toString()));
 
   const transformedEntries = entries.map((e: any) =>
     transformEntry(e, commentCounts, userId)

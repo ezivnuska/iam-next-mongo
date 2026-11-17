@@ -1,7 +1,6 @@
 // app/lib/utils/transformers/content.ts
 
 import { transformPopulatedImage, transformPopulatedAuthor } from '@iam/db'
-import { getCommentCounts } from '@/app/lib/actions/comments'
 import type { Entry } from '@/app/lib/definitions/entry'
 import type { Image as ImageType } from '@/app/lib/definitions/image'
 
@@ -76,19 +75,6 @@ export function transformImage(
   }
 }
 
-export async function getCommentCountsForContent(
-  entries: any[]
-): Promise<Record<string, number>> {
-  const memoryIds = entries.filter(e => e.contentType === 'memory').map((e: any) => e._id.toString())
-  const postIds = entries.filter(e => e.contentType === 'post').map((e: any) => e._id.toString())
-
-  const [memoryCounts, postCounts] = await Promise.all([
-    memoryIds.length > 0 ? getCommentCounts(memoryIds, 'Memory') : Promise.resolve({} as Record<string, number>),
-    postIds.length > 0 ? getCommentCounts(postIds, 'Post') : Promise.resolve({} as Record<string, number>),
-  ])
-
-  return { ...memoryCounts, ...postCounts }
-}
 
 export function sortContentByDate<T extends { createdAt?: string }>(content: T[]): T[] {
   return [...content].sort((a, b) =>

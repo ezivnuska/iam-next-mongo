@@ -10,7 +10,7 @@ import EntryModel from "@/app/lib/models/entry";
 import { Image } from "@/app/lib/definitions/image";
 import { deleteS3File } from "@/app/lib/aws/s3";
 import { auth } from "@/app/lib/auth";
-import { getCommentCounts } from "@/app/lib/actions/comments";
+import { getCommentCountsForItems } from "@/app/lib/actions/comments";
 import { Types } from "mongoose";
 import { logActivity } from "@/app/lib/utils/activity-logger";
 import { getS3ImageUrl, extractS3KeyFromUrl } from "@/app/lib/utils/images";
@@ -39,7 +39,7 @@ export async function getImages(
     // Batch fetch comment counts and entry references in parallel
     const imageObjectIds = images.map((img: any) => img._id);
     const [commentCounts, entriesWithImages] = await Promise.all([
-      getCommentCounts(imageIds, 'Image'),
+      getCommentCountsForItems(imageIds),
       EntryModel.find({ image: { $in: imageObjectIds } })
         .select('_id contentType title image')
         .lean(),

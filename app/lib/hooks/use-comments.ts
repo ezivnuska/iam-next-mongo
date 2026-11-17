@@ -8,6 +8,7 @@ import { SOCKET_EVENTS } from '@/app/lib/socket/events';
 import type { CommentPayload } from '@/app/lib/socket/events';
 import type { Comment } from '@/app/lib/definitions/comment';
 import type { CommentRefType } from '@/app/lib/definitions/comment';
+import { useSocketListener } from './use-socket-listener';
 
 export type UseCommentsOptions = {
   itemId: string;
@@ -118,65 +119,34 @@ export function useComments({
     // Don't call onCommentCountChange here - parent already knows the initial count
   }, [initialCommentCount]);
 
-  // Listen for socket events to update comments in real-time
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleCommentAdded = (payload: CommentPayload) => {
-      if (payload.refId === itemId && payload.refType === itemType) {
-        // Skip if comment is from current user (handled by optimistic update)
-        if (currentUserId && payload.author.id === currentUserId) {
-          return;
-        }
-
-        // Check if comment already exists
-        setComments(prev => {
-          const commentExists = prev.some(c => c.id === payload.commentId);
-
-          // If comment doesn't exist and we have full comment data, add it
-          if (!commentExists && payload.comment) {
-            setCommentCount(current => current + 1);
-            return [payload.comment as Comment, ...prev];
-          }
-
-          // If comment doesn't exist but no full data, just update count
-          if (!commentExists && !payload.comment) {
-            setCommentCount(current => current + 1);
-          }
-
-          // Comment already exists, don't change anything
-          return prev;
-        });
+  useSocketListener<CommentPayload>(socket, SOCKET_EVENTS.COMMENT_ADDED, payload => {
+    if (payload.refId !== itemId || payload.refType !== itemType) return;
+    if (currentUserId && payload.author.id === currentUserId) return;
+    setComments(prev => {
+      const commentExists = prev.some(c => c.id === payload.commentId);
+      if (!commentExists && payload.comment) {
+        setCommentCount(current => current + 1);
+        return [payload.comment as Comment, ...prev];
       }
-    };
-
-    const handleCommentDeleted = (payload: CommentPayload) => {
-      if (payload.refId === itemId && payload.refType === itemType) {
-        // If comments are loaded, check if comment exists before updating
-        if (commentsLoaded) {
-          setComments(prev => {
-            const commentExists = prev.some(c => c.id === payload.commentId);
-            // Only decrement count if comment actually exists (wasn't optimistically deleted by us)
-            if (commentExists) {
-              setCommentCount(current => Math.max(0, current - 1));
-            }
-            return prev.filter(c => c.id !== payload.commentId);
-          });
-        } else {
-          // If comments not loaded, update count from socket event
-          setCommentCount(prev => Math.max(0, prev - 1));
-        }
+      if (!commentExists && !payload.comment) {
+        setCommentCount(current => current + 1);
       }
-    };
+      return prev;
+    });
+  });
 
-    socket.on(SOCKET_EVENTS.COMMENT_ADDED, handleCommentAdded);
-    socket.on(SOCKET_EVENTS.COMMENT_DELETED, handleCommentDeleted);
-
-    return () => {
-      socket.off(SOCKET_EVENTS.COMMENT_ADDED, handleCommentAdded);
-      socket.off(SOCKET_EVENTS.COMMENT_DELETED, handleCommentDeleted);
-    };
-  }, [socket, itemId, itemType, commentsLoaded, currentUserId]);
+  useSocketListener<CommentPayload>(socket, SOCKET_EVENTS.COMMENT_DELETED, payload => {
+    if (payload.refId !== itemId || payload.refType !== itemType) return;
+    if (commentsLoaded) {
+      setComments(prev => {
+        const commentExists = prev.some(c => c.id === payload.commentId);
+        if (commentExists) setCommentCount(current => Math.max(0, current - 1));
+        return prev.filter(c => c.id !== payload.commentId);
+      });
+    } else {
+      setCommentCount(prev => Math.max(0, prev - 1));
+    }
+  });
 
   // Keep callback ref up to date
   useEffect(() => {
