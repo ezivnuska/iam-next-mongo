@@ -17,6 +17,7 @@ import { useUser } from '@/app/lib/providers/user-provider';
 import { CommentIcon } from '@iam/ui';
 import type { CommentRefType } from '@/app/lib/definitions/comment';
 import { toCommentRefType, getContentImageUrl, getContentImageAlt, getContentImage } from '@/app/lib/utils/content-helpers';
+import LinkPreviewCard from './link-preview-card';
 
 interface ContentDetailViewProps {
     item: Entry;
@@ -91,7 +92,13 @@ export default function ContentDetailView({ item }: ContentDetailViewProps) {
                         {item.content && (
                             <div className='text-gray-900'>
                                 <p>{item.content}</p>
-                                {item.linkUrl && (
+                                {item.linkUrl && item.linkPreview ? (
+                                    <LinkPreviewCard
+                                        linkUrl={item.linkUrl}
+                                        linkPreview={item.linkPreview}
+                                        compact={false}
+                                    />
+                                ) : item.linkUrl && (
                                     <a href={item.linkUrl} target='_blank' rel='noopener noreferrer' className='text-blue-500 underline mt-2 block'>
                                         [source]
                                     </a>

@@ -9,6 +9,7 @@ import { logActivity, getRequestMetadata } from "@/app/lib/utils/activity-logger
 import { requireAuth, UnauthorizedError } from "@/app/lib/utils/auth";
 import { CONTENT_POPULATE_CONFIG } from "@/app/lib/utils/db-query-config";
 import { isValidObjectId } from "@iam/shared-types";
+import { fetchLinkPreview } from "@/app/lib/utils/scrape-link-preview";
 
 export async function POST(req: Request) {
   try {
@@ -61,6 +62,11 @@ export async function POST(req: Request) {
 
     await connectToDatabase();
 
+    let linkPreview: Awaited<ReturnType<typeof fetchLinkPreview>> = null;
+    if (contentType === 'post' && linkUrl) {
+      linkPreview = await fetchLinkPreview(linkUrl);
+    }
+
     const newEntry = await EntryModel.create({
       author: userId,
       contentType,
@@ -72,6 +78,7 @@ export async function POST(req: Request) {
         shared: shared ?? false,
       }),
       ...(contentType === 'post' && linkUrl && { linkUrl }),
+      ...(linkPreview && { linkPreview }),
     });
 
     await newEntry.populate(CONTENT_POPULATE_CONFIG);
@@ -102,6 +109,7 @@ export async function POST(req: Request) {
         shared: doc.shared ?? false,
       }),
       ...(contentType === 'post' && doc.linkUrl && { linkUrl: doc.linkUrl }),
+      ...(contentType === 'post' && doc.linkPreview && { linkPreview: doc.linkPreview }),
     });
   } catch (err: any) {
     console.error("Error creating entry:", err);

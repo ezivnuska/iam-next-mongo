@@ -24,6 +24,7 @@ export default function CreateEntryForm({ onSuccess, onClose, editItem }: Create
   const [title, setTitle] = useState(editItem?.title ?? "");
   const [content, setContent] = useState(editItem?.content ?? "");
   const [shared, setShared] = useState(editItem?.shared ?? false);
+  const [linkUrl, setLinkUrl] = useState(editItem?.linkUrl ?? "");
   const [file, setFile] = useState<File | null>(null);
   const [removeExistingImage, setRemoveExistingImage] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -59,6 +60,9 @@ export default function CreateEntryForm({ onSuccess, onClose, editItem }: Create
         body.date = new Date(date + 'T12:00:00').toISOString();
         body.title = title;
         body.shared = shared;
+      }
+      if (contentType === 'post' && linkUrl.trim()) {
+        body.linkUrl = linkUrl.trim();
       }
 
       const response = await fetch(url, {
@@ -149,6 +153,21 @@ export default function CreateEntryForm({ onSuccess, onClose, editItem }: Create
         />
         <div className="text-sm text-gray-500 mt-1">{content.length}/{contentType === 'memory' ? 5000 : 1000}</div>
       </div>
+
+      {/* Post-only: link URL */}
+      {contentType === 'post' && (
+        <div>
+          <label htmlFor="linkUrl" className="block text-sm font-medium text-gray-700 mb-2">Link (optional)</label>
+          <input
+            id="linkUrl"
+            type="url"
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
+            placeholder="https://..."
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      )}
 
       {/* Memory-only: shared toggle */}
       {contentType === 'memory' && (

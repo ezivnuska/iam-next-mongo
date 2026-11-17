@@ -24,7 +24,8 @@ interface ContentDetailHeaderProps {
 export default function ContentDetailHeader({ item, avatar }: ContentDetailHeaderProps) {
     const router = useRouter();
     const { canEdit, canDelete } = useContentPermissions(item.author.id);
-    const handleDelete = useContentDelete('entries', () => router.back());
+    const tab = item.contentType === 'memory' ? 'memories' : 'posts';
+    const handleDelete = useContentDelete('entries', () => router.push(`/users/${item.author.username}?t=${tab}`));
     const { isOpen: menuOpen, open: openMenu, close: closeMenu, toggle: toggleMenu } = useModal();
     const { isOpen: showEditModal, open: openEditModal, close: closeEditModal } = useModal();
     const menuRef = useRef<HTMLDivElement>(null);

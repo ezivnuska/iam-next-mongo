@@ -10,6 +10,7 @@ import MemoryContent from '@/app/ui/memories/memory-content';
 import { isMemory, isPost } from '@/app/lib/utils/content-helpers';
 import { IMAGE_SIZES } from '@/app/lib/utils/images';
 import { useHorizontalLayout } from '@iam/ui';
+import LinkPreviewCard from '@/app/ui/link-preview-card';
 
 type ContentItemCardProps = {
   item: ContentItem;
@@ -75,19 +76,38 @@ export default function ContentItemCard({
             : undefined
         }
       >
-        {item.content && (
-          isCompact ? (
-            <p className='text-sm text-gray-900 truncate'>{item.content}</p>
-          ) : (
-            <div className='flex flex-col gap-1 py-1 text-gray-900'>
-              <p>{item.content}</p>
-              {item.linkUrl && (
-                <a href={item.linkUrl} target='_blank' rel='noopener noreferrer' className='text-blue-500 underline' onClick={e => e.stopPropagation()}>
-                  [source]
-                </a>
-              )}
-            </div>
-          )
+        {isCompact ? (
+          <>
+            {item.content && <p className='text-sm text-gray-900 truncate'>{item.content}</p>}
+            {item.linkUrl && item.linkPreview ? (
+              <LinkPreviewCard
+                linkUrl={item.linkUrl}
+                linkPreview={item.linkPreview}
+                compact={true}
+                onClick={e => e.stopPropagation()}
+              />
+            ) : item.linkUrl && (
+              <a href={item.linkUrl} target='_blank' rel='noopener noreferrer' className='text-xs text-blue-500 underline truncate' onClick={e => e.stopPropagation()}>
+                {item.linkUrl}
+              </a>
+            )}
+          </>
+        ) : (
+          <div className='flex flex-col gap-1 py-1 text-gray-900'>
+            {item.content && <p>{item.content}</p>}
+            {item.linkUrl && item.linkPreview ? (
+              <LinkPreviewCard
+                linkUrl={item.linkUrl}
+                linkPreview={item.linkPreview}
+                compact={false}
+                onClick={e => e.stopPropagation()}
+              />
+            ) : item.linkUrl && (
+              <a href={item.linkUrl} target='_blank' rel='noopener noreferrer' className='text-blue-500 underline' onClick={e => e.stopPropagation()}>
+                [source]
+              </a>
+            )}
+          </div>
         )}
         {!isCompact && (
           <ContentImage
