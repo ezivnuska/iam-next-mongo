@@ -2,11 +2,13 @@
 
 export const dynamic = 'force-dynamic';
 
+import { Suspense } from 'react';
 import { auth } from '@/app/lib/auth';
 import { redirect } from 'next/navigation';
 import { getUserContent } from '@/app/lib/actions/user-content';
 import { fetchUserByUsername } from '@/app/lib/actions/users';
 import ProfilePage from '@/app/ui/user/profile-page';
+import { LoadingSpinner } from '@iam/ui';
 
 interface Props {
     params: Promise<{ username: string }>;
@@ -28,12 +30,14 @@ export default async function UserProfilePage({ params }: Props) {
     if (!profileUser) redirect('/whois');
 
     return (
-        <ProfilePage
-            username={username}
-            userId={profileUser.id}
-            isOwnProfile={isOwnProfile}
-            initialContent={content}
-            avatar={profileUser.avatar}
-        />
+        <Suspense fallback={<LoadingSpinner />}>
+            <ProfilePage
+                username={username}
+                userId={profileUser.id}
+                isOwnProfile={isOwnProfile}
+                initialContent={content}
+                avatar={profileUser.avatar}
+            />
+        </Suspense>
     );
 }
