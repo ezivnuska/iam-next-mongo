@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useModal } from '@/app/lib/hooks/use-modal'
 import CommentSection from '@/app/ui/comments/comment-section'
 import { useComments } from '@/app/lib/hooks/use-comments'
+import { useUser } from '@/app/lib/providers/user-provider'
 import type { CommentRefType } from '@/app/lib/definitions/comment'
 
 type CommentPanelProps = {
@@ -13,8 +14,6 @@ type CommentPanelProps = {
 	itemId: string
 	itemType: CommentRefType
 	initialCommentCount?: number
-	currentUserId?: string
-	currentUserRole?: string
 	onCommentCountChange?: (count: number) => void
 }
 
@@ -23,10 +22,9 @@ export default function CommentPanel({
 	itemId,
 	itemType,
 	initialCommentCount = 0,
-	currentUserId,
-	currentUserRole,
 	onCommentCountChange,
 }: CommentPanelProps) {
+	const { user } = useUser()
 	const { isOpen: inputOpen, open: openInput, close: closeInput } = useModal()
 	const [commentText, setCommentText] = useState('')
 	const [isSubmitting, setIsSubmitting] = useState(false)
@@ -44,7 +42,7 @@ export default function CommentPanel({
 		itemType,
 		initialCommentCount,
 		onCommentCountChange,
-		currentUserId,
+		currentUserId: user?.id,
 	})
 
 	// Reset when item changes
@@ -132,8 +130,6 @@ export default function CommentPanel({
 						<CommentSection
 							comments={comments}
 							loading={loadingComments}
-							currentUserId={currentUserId}
-							currentUserRole={currentUserRole}
 							onDelete={deleteComment}
 							loadingMessage='Loading comments...'
 						/>

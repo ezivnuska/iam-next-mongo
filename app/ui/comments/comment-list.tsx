@@ -4,21 +4,21 @@ import { TrashIcon } from '@iam/ui'
 import { UserAvatar } from '@iam/ui'
 import { formatRelativeTime } from '@/app/lib/utils/format-date'
 import { canDeleteComment } from '@/app/lib/utils/auth/permissions'
+import { useUser } from '@/app/lib/providers/user-provider'
 import type { Comment } from '@/app/lib/definitions/comment'
 
 type CommentListProps = {
 	comments: Comment[]
-	currentUserId?: string
-	currentUserRole?: string
 	onDelete?: (commentId: string) => void
 }
 
-export default function CommentList({ comments, currentUserId, currentUserRole, onDelete }: CommentListProps) {
+export default function CommentList({ comments, onDelete }: CommentListProps) {
+	const { user } = useUser()
 	return (
 		<div className='space-y-4 py-2'>
 			{comments.map((comment) => {
 				const avatarUrl = comment.author.avatar?.variants.find((v) => v.size === 'small')?.url
-				const canDelete = canDeleteComment(comment.author.id, currentUserId, currentUserRole)
+				const canDelete = canDeleteComment(comment.author.id, user?.id, user?.role)
 				return (
 					<div key={comment.id} className='flex gap-3'>
 						<div className='w-8 h-8'>

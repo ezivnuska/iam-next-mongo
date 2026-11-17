@@ -27,35 +27,6 @@ export default function ContentItemCard({
   const isCompact = useHorizontalLayout() ?? false;
 
   if (isMemory(item)) {
-
-    if (isCompact) {
-      return (
-        <ContentCard
-          author={item.author}
-          avatar={item.author.avatar}
-          createdAt={item.createdAt}
-          actions={editable && onFlag ? { onFlag: () => onFlag(item) } : undefined}
-          href={`/users/${item.author.username}/${item.id}`}
-          compact
-          thumbnail={
-            item.image
-              ? <ContentImage
-                  image={item.image}
-                  size={IMAGE_SIZES.THUMBNAIL}
-                  className='w-[84px] h-[84px] rounded object-cover'
-                />
-              : undefined
-          }
-        >
-          <MemoryContent
-            date={item.date}
-            title={item.title}
-            variant='compact'
-          />
-        </ContentCard>
-      );
-    }
-
     return (
       <ContentCard
         author={item.author}
@@ -63,12 +34,23 @@ export default function ContentItemCard({
         createdAt={item.createdAt}
         actions={editable && onFlag ? { onFlag: () => onFlag(item) } : undefined}
         href={`/users/${item.author.username}/${item.id}`}
+        compact={isCompact}
+        thumbnail={
+          isCompact && item.image
+            ? <ContentImage
+                image={item.image}
+                size={IMAGE_SIZES.THUMBNAIL}
+                className='w-[84px] h-[84px] rounded object-cover'
+              />
+            : undefined
+        }
       >
         <MemoryContent
           date={item.date}
           title={item.title}
           content={item.content}
           image={item.image}
+          variant={isCompact ? 'compact' : 'list'}
         />
       </ContentCard>
     );

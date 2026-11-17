@@ -127,8 +127,6 @@ export default function ImageGallery({ authorized, images, onDeleted, onImageUpd
         >
           <ImageModalMenu
             imageId={selectedImage.id}
-            currentUserId={user?.id}
-            currentUserRole={user?.role}
             initialLiked={selectedImage.likedByCurrentUser}
             initialLikeCount={selectedImage.likes?.length || 0}
             initialCommentCount={selectedImage.commentCount || 0}

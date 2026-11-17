@@ -128,8 +128,6 @@ export default function ContentDetailView({ item }: ContentDetailViewProps) {
                     <CommentSection
                         comments={comments}
                         loading={loadingComments}
-                        currentUserId={user?.id}
-                        currentUserRole={user?.role}
                         onDelete={deleteComment}
                     />
                 </div>
