@@ -36,7 +36,16 @@ const MessageSchema = new Schema<MessageDocument>(
               id: u._id.toString(),
               username: u.username,
               avatar: u.avatar && typeof u.avatar === 'object' && '_id' in u.avatar
-                ? { id: u.avatar._id.toString(), variants: u.avatar.variants ?? [] }
+                ? {
+                    id: u.avatar._id.toString(),
+                    variants: (u.avatar.variants ?? []).map((v: any) => ({
+                      size: v.size,
+                      filename: v.filename,
+                      width: v.width,
+                      height: v.height,
+                      url: v.url,
+                    })),
+                  }
                 : null,
             }
           } else if (ret[field]) {

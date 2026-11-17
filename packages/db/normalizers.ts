@@ -57,7 +57,16 @@ export function normalizePublicUser(doc: UserDocument) {
 function normalizeMessageParticipant(user: any): MessageParticipant {
   const avatar: ApiAvatar | null =
     user?.avatar && typeof user.avatar === 'object' && '_id' in user.avatar
-      ? { id: user.avatar._id.toString(), variants: user.avatar.variants ?? [] }
+      ? {
+          id: user.avatar._id.toString(),
+          variants: (user.avatar.variants ?? []).map((v: any) => ({
+            size: v.size,
+            filename: v.filename,
+            width: v.width,
+            height: v.height,
+            url: v.url,
+          })),
+        }
       : null
   return {
     id: user?._id?.toString() ?? user?.id ?? '',
