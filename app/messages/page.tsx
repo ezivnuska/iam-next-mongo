@@ -20,7 +20,7 @@ export default async function MessagesPage({ searchParams }: Props) {
 
   return (
     <PageContent header={<PageHeader subtitle='Messages' />}>
-      <div className='flex flex-col flex-1 min-h-0 p-4'>
+      <div className='flex-1 min-h-0 p-4 flex flex-col'>
         <Inbox
           initialThreads={threads}
           withUserId={withUserId}

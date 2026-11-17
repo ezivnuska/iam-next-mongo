@@ -47,7 +47,7 @@ export default function PageContent({ children, header, fullscreen = false }: Pa
                     {header}
                 </div>
             )}
-            <div className='flex-1 overflow-y-auto min-h-0' onScroll={handleScroll}>
+            <div className='flex-1 overflow-y-auto min-h-0 flex flex-col' onScroll={handleScroll}>
                 {children}
             </div>
         </div>

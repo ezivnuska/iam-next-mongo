@@ -3,6 +3,7 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Screen } from '@iam/ui';
 import UserButton from '@/app/ui/header/user-button';
 import SigninButton from '@/app/ui/auth/signin-button';
@@ -10,6 +11,11 @@ import AuthRedirectHandler from '@/app/ui/auth/auth-redirect-handler';
 import { useUser } from '@/app/lib/providers/user-provider';
 import { FooterProvider, useFooter } from '@/app/lib/providers/footer-provider';
 import { getBestVariant } from '@iam/shared-types';
+import { useSocket } from '@/app/lib/providers/socket-provider';
+import { useSocketListener } from '@/app/lib/hooks/use-socket-listener';
+import { SOCKET_EVENTS } from '@/app/lib/socket/events';
+import { getUnreadCount } from '@/app/lib/actions/messages';
+import type { MessageSentPayload } from '@/app/lib/socket/events';
 
 function ChatIcon({ className }: { className?: string }) {
     return (
@@ -45,6 +51,9 @@ function AppShellInner({ children, showLoading = true }: AppShellProps) {
     const { user } = useUser();
     const loggedIn = !!user && !user.isGuest;
     const [headerReady, setHeaderReady] = useState(false);
+    const [unreadMessages, setUnreadMessages] = useState(0);
+    const { socket } = useSocket();
+    const pathname = usePathname();
 
     useEffect(() => {
         if (!loggedIn) {
@@ -67,6 +76,19 @@ function AppShellInner({ children, showLoading = true }: AppShellProps) {
     }, [loggedIn, user?.createdAt, user?.avatar]);
 
     useEffect(() => {
+        if (!loggedIn) return;
+        getUnreadCount().then(setUnreadMessages).catch(() => {});
+    }, [loggedIn]);
+
+    useSocketListener<MessageSentPayload>(socket, SOCKET_EVENTS.MESSAGE_SENT, () => {
+        if (pathname !== '/messages') setUnreadMessages((n) => n + 1);
+    });
+
+    useEffect(() => {
+        if (pathname === '/messages') setUnreadMessages(0);
+    }, [pathname]);
+
+    useEffect(() => {
         const sync = () => document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
         sync();
         window.addEventListener('resize', sync);
@@ -82,10 +104,15 @@ function AppShellInner({ children, showLoading = true }: AppShellProps) {
                 <>
                     <a
                         href='/messages'
-                        className='flex items-center justify-center text-gray-700 hover:text-gray-500 transition-colors'
+                        className='relative flex items-center justify-center text-gray-700 hover:text-gray-500 transition-colors'
                         aria-label='Messages'
                     >
                         <ChatIcon className='w-7 h-7' />
+                        {unreadMessages > 0 && (
+                            <span className='absolute -top-1 -right-1 w-3 h-3 bg-red-500 text-white rounded-full text-[8px] font-bold flex items-center justify-center leading-none'>
+                                {unreadMessages > 9 ? '9+' : unreadMessages}
+                            </span>
+                        )}
                     </a>
                     <a
                         href='https://games.iameric.me'

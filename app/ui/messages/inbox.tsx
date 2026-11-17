@@ -47,7 +47,7 @@ export default function Inbox({ initialThreads, withUserId, withUsername }: Inbo
   const handleBack = () => setSelectedThreadId(null)
 
   return (
-    <div className='flex h-full border border-gray-200 rounded-xl overflow-hidden bg-white'>
+    <div className='flex flex-1 min-h-0 border border-gray-200 rounded-xl overflow-hidden bg-white'>
       {/* Thread list */}
       <div
         className={`${

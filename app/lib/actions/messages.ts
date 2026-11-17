@@ -136,6 +136,13 @@ export async function markMessageRead(messageId: string): Promise<void> {
   await (doc as any).save()
 }
 
+export async function getUnreadCount(): Promise<number> {
+  const { id: userId } = await requireAuth()
+  await connectToDatabase()
+  const uid = new Types.ObjectId(userId)
+  return MessageModel.countDocuments({ to: uid, readAt: null })
+}
+
 export async function deleteMessage(messageId: string): Promise<void> {
   const { id: userId } = await requireAuth()
 
