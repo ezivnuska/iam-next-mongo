@@ -19,6 +19,7 @@ import AllocationModel from "@/app/lib/models/allocation";
 import Pledge from "@/app/lib/models/pledge";
 import Fee from "@/app/lib/models/fee";
 import { TetrisScoreModel, TileScoreModel, WordDuelScoreModel } from "@iam/db";
+import MessageModel from "@/packages/db/models/message";
 
 async function deleteUserData(userId: string) {
     const oid = new Types.ObjectId(userId);
@@ -73,6 +74,9 @@ async function deleteUserData(userId: string) {
     await AllocationModel.deleteMany({ userId: oid });
     await Pledge.deleteMany({ userId: oid });
     await Fee.deleteMany({ userId: oid });
+
+    // --- Messages ---
+    await MessageModel.deleteMany({ $or: [{ from: oid }, { to: oid }] });
 
     // --- Finally, delete the user ---
     await UserModel.findByIdAndDelete(oid);
