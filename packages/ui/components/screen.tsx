@@ -129,7 +129,6 @@ export default function Screen({
             <main
                 style={{
                     ...(isLandscape ? { marginLeft: 'clamp(100px, 16vw, 200px)', marginRight: 'clamp(100px, 16vw, 200px)' } : {}),
-                    ...((isLandscape || isPortrait) ? { paddingTop: 'clamp(8px, 2vw, 16px)' } : {}),
                     ...(isPortrait && footer ? { paddingBottom: 'var(--footer-height)' } : {}),
                 }}
                 className={clsx(
