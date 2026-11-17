@@ -7,11 +7,12 @@ interface PageContentProps {
     children: React.ReactNode;
     header?: React.ReactNode;
     fullscreen?: boolean;
+    scrollable?: boolean;
 }
 
 const ANIMATION_DURATION = 400;
 
-export default function PageContent({ children, header, fullscreen = false }: PageContentProps) {
+export default function PageContent({ children, header, fullscreen = false, scrollable = true }: PageContentProps) {
     const lastScrollRef = useRef(0);
     const lockedRef = useRef(false);
     const [headerVisible, setHeaderVisible] = useState(true);
@@ -47,7 +48,7 @@ export default function PageContent({ children, header, fullscreen = false }: Pa
                     {header}
                 </div>
             )}
-            <div className='flex-1 overflow-y-auto min-h-0' onScroll={handleScroll}>
+            <div className={clsx('flex-1 min-h-0', scrollable ? 'overflow-y-auto' : 'overflow-hidden')} onScroll={handleScroll}>
                 {children}
             </div>
         </div>
