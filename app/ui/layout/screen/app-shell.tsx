@@ -3,7 +3,7 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import { Screen, useHorizontalLayout } from '@iam/ui';
+import { Screen } from '@iam/ui';
 import UserButton from '@/app/ui/header/user-button';
 import SigninButton from '@/app/ui/auth/signin-button';
 import AuthRedirectHandler from '@/app/ui/auth/auth-redirect-handler';
@@ -35,7 +35,6 @@ export default function AppShell({ children, showLoading = true }: AppShellProps
 function AppShellInner({ children, showLoading = true }: AppShellProps) {
     const { footer } = useFooter();
     const { user } = useUser();
-    const horizontalLayout = useHorizontalLayout();
     const loggedIn = !!user && !user.isGuest;
     const [headerReady, setHeaderReady] = useState(false);
 
@@ -47,7 +46,7 @@ function AppShellInner({ children, showLoading = true }: AppShellProps) {
         setHeaderReady(false);
         const isFullUser = !!(user?.createdAt);
         if (!isFullUser) return;
-        const avatarUrl = user?.avatar ? getBestVariant(user.avatar, 36)?.url : null;
+        const avatarUrl = user?.avatar ? getBestVariant(user.avatar, 40)?.url : null;
         if (!avatarUrl) {
             setHeaderReady(true);
             return;
@@ -70,21 +69,7 @@ function AppShellInner({ children, showLoading = true }: AppShellProps) {
         <Screen
             headerReady={headerReady}
             footer={footer}
-            userControls={loggedIn ? (
-                <div className={horizontalLayout ? 'flex flex-col items-center gap-4' : 'flex flex-row items-center gap-3'}>
-                    <UserButton />
-                    <a
-                        href='/settings'
-                        className='flex items-center justify-center text-gray-700 hover:text-gray-500 transition-colors'
-                        aria-label='Settings'
-                    >
-                        <svg xmlns='http://www.w3.org/2000/svg' className='w-6 h-6' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'>
-                            <circle cx='12' cy='12' r='3' />
-                            <path d='M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z' />
-                        </svg>
-                    </a>
-                </div>
-            ) : undefined}
+            userControls={loggedIn ? <UserButton /> : undefined}
             nav={loggedIn ? (
                 <a
                     href='https://games.iameric.me'

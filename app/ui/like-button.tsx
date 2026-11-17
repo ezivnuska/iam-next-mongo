@@ -2,12 +2,12 @@
 
 'use client'
 
-import { useEffect } from 'react'
 import { useOptimisticMutation } from '@/app/lib/hooks/use-optimistic-mutation'
 import { toggleLike } from '@/app/lib/actions/likes'
 import { useSocket } from '@/app/lib/providers/socket-provider'
 import { SOCKET_EVENTS } from '@/app/lib/socket/events'
 import type { LikePayload } from '@/app/lib/socket/events'
+import { useSocketListener } from '@/app/lib/hooks/use-socket-listener'
 import { HeartIcon } from '@iam/ui'
 
 type LikeButtonProps = {
@@ -38,38 +38,23 @@ export default function LikeButton({
 		likeCount: initialLikeCount,
 	})
 
-	// Listen for socket events to update like count in real-time
-	useEffect(() => {
-		if (!socket) return
+	useSocketListener<LikePayload>(socket, SOCKET_EVENTS.LIKE_ADDED, payload => {
+		if (payload.itemId !== itemId || payload.itemType !== itemType) return
+		setData(prev => {
+			const newCount = prev.likeCount + 1
+			onLikeChange?.(prev.liked, newCount)
+			return { liked: prev.liked, likeCount: newCount }
+		})
+	})
 
-		const handleLikeAdded = (payload: LikePayload) => {
-			if (payload.itemId === itemId && payload.itemType === itemType) {
-				setData(prev => {
-					const newCount = prev.likeCount + 1
-					onLikeChange?.(prev.liked, newCount)
-					return { liked: prev.liked, likeCount: newCount }
-				})
-			}
-		}
-
-		const handleLikeRemoved = (payload: LikePayload) => {
-			if (payload.itemId === itemId && payload.itemType === itemType) {
-				setData(prev => {
-					const newCount = Math.max(0, prev.likeCount - 1)
-					onLikeChange?.(prev.liked, newCount)
-					return { liked: prev.liked, likeCount: newCount }
-				})
-			}
-		}
-
-		socket.on(SOCKET_EVENTS.LIKE_ADDED, handleLikeAdded)
-		socket.on(SOCKET_EVENTS.LIKE_REMOVED, handleLikeRemoved)
-
-		return () => {
-			socket.off(SOCKET_EVENTS.LIKE_ADDED, handleLikeAdded)
-			socket.off(SOCKET_EVENTS.LIKE_REMOVED, handleLikeRemoved)
-		}
-	}, [socket, itemId, itemType, onLikeChange, setData])
+	useSocketListener<LikePayload>(socket, SOCKET_EVENTS.LIKE_REMOVED, payload => {
+		if (payload.itemId !== itemId || payload.itemType !== itemType) return
+		setData(prev => {
+			const newCount = Math.max(0, prev.likeCount - 1)
+			onLikeChange?.(prev.liked, newCount)
+			return { liked: prev.liked, likeCount: newCount }
+		})
+	})
 
 	const handleToggleLike = async (e: React.MouseEvent) => {
 		e.stopPropagation()

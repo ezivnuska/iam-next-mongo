@@ -52,7 +52,7 @@ export default function ContentCard({
                         <EntryHeader
                             username={author.username}
                             avatar={avatar}
-                            avatarSize={36}
+                            avatarSize={40}
                             createdAt={createdAt}
                         />
                         {actionsNode}
@@ -75,7 +75,7 @@ export default function ContentCard({
                 <EntryHeader
                     username={author.username}
                     avatar={avatar}
-                    avatarSize={36}
+                    avatarSize={40}
                     createdAt={createdAt}
                 />
                 {actionsNode}

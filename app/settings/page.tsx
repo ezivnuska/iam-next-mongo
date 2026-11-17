@@ -17,11 +17,11 @@ export default async function SettingsPage() {
         <PageContent header={<PageHeader subtitle='Settings' />}>
             <div className='px-4 py-6 flex flex-col gap-8 max-w-lg'>
                 <section className='flex flex-col gap-3'>
-                    <h2 className='text-sm font-semibold text-gray-500 uppercase tracking-wide'>Account</h2>
+                    <h2 className='text-sm font-semibold text-gray-500 uppercase tracking-wide'>Sign Out</h2>
                     <SignOutButton variant='labeled' />
                 </section>
                 <section className='flex flex-col gap-3'>
-                    <h2 className='text-sm font-semibold text-gray-500 uppercase tracking-wide'>Danger zone</h2>
+                    <h2 className='text-sm font-semibold text-gray-500 uppercase tracking-wide'>Delete Account</h2>
                     <DeleteAccountSection />
                 </section>
             </div>

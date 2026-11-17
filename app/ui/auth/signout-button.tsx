@@ -2,20 +2,20 @@
 
 "use client";
 
-import { useState } from "react";
 import { Modal } from "@iam/ui";
 import { useUser } from "@/app/lib/providers/user-provider";
+import { useModal } from "@/app/lib/hooks/use-modal";
 
 export default function SignOutButton({ variant = 'icon' }: { variant?: 'icon' | 'labeled' }) {
     const { status, signOut } = useUser();
-    const [showConfirm, setShowConfirm] = useState(false);
+    const { isOpen: showConfirm, open: openConfirm, close: closeConfirm } = useModal();
     const isSigningOut = status === 'signing-out';
 
     return (
         <>
             {variant === 'labeled' ? (
                 <button
-                    onClick={() => setShowConfirm(true)}
+                    onClick={openConfirm}
                     disabled={isSigningOut}
                     className='self-start px-4 py-2 text-sm font-medium rounded-full border border-gray-300 text-gray-700 hover:border-red-400 hover:text-red-600 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-default'
                 >
@@ -23,7 +23,7 @@ export default function SignOutButton({ variant = 'icon' }: { variant?: 'icon' |
                 </button>
             ) : (
                 <button
-                    onClick={() => setShowConfirm(true)}
+                    onClick={openConfirm}
                     disabled={isSigningOut}
                     aria-label='Sign out'
                     className='flex items-center justify-center text-gray-700 hover:text-red-600 active:text-red-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-default'
@@ -35,18 +35,18 @@ export default function SignOutButton({ variant = 'icon' }: { variant?: 'icon' |
                 </button>
             )}
 
-            <Modal isOpen={showConfirm} onClose={() => setShowConfirm(false)}>
+            <Modal isOpen={showConfirm} onClose={closeConfirm}>
                 <div className='flex flex-col gap-4 p-2'>
                     <p className='text-base font-medium text-gray-800'>Sign out?</p>
                     <div className='flex gap-3 justify-end'>
                         <button
-                            onClick={() => setShowConfirm(false)}
+                            onClick={closeConfirm}
                             className='px-4 py-1.5 text-sm font-medium rounded-full text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer'
                         >
                             Cancel
                         </button>
                         <button
-                            onClick={() => { setShowConfirm(false); signOut(); }}
+                            onClick={() => { closeConfirm(); signOut(); }}
                             disabled={isSigningOut}
                             className='px-4 py-1.5 text-sm font-medium rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-default'
                         >

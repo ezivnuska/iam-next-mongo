@@ -3,8 +3,10 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useModal } from '@/app/lib/hooks/use-modal'
 import CommentSection from '@/app/ui/comments/comment-section'
 import { useComments } from '@/app/lib/hooks/use-comments'
+import { useUser } from '@/app/lib/providers/user-provider'
 import type { CommentRefType } from '@/app/lib/definitions/comment'
 
 type CommentPanelProps = {
@@ -12,8 +14,6 @@ type CommentPanelProps = {
 	itemId: string
 	itemType: CommentRefType
 	initialCommentCount?: number
-	currentUserId?: string
-	currentUserRole?: string
 	onCommentCountChange?: (count: number) => void
 }
 
@@ -22,11 +22,10 @@ export default function CommentPanel({
 	itemId,
 	itemType,
 	initialCommentCount = 0,
-	currentUserId,
-	currentUserRole,
 	onCommentCountChange,
 }: CommentPanelProps) {
-	const [inputOpen, setInputOpen] = useState(false)
+	const { user } = useUser()
+	const { isOpen: inputOpen, open: openInput, close: closeInput } = useModal()
 	const [commentText, setCommentText] = useState('')
 	const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -43,35 +42,35 @@ export default function CommentPanel({
 		itemType,
 		initialCommentCount,
 		onCommentCountChange,
-		currentUserId,
+		currentUserId: user?.id,
 	})
 
 	// Reset when item changes
 	useEffect(() => {
-		setInputOpen(false)
+		closeInput()
 		setCommentText('')
 		resetComments()
-	}, [itemId, resetComments])
+	}, [itemId, resetComments, closeInput])
 
 	// Collapse input when panel closes
 	useEffect(() => {
 		if (!expanded) {
-			setInputOpen(false)
+			closeInput()
 			setCommentText('')
 		}
-	}, [expanded])
+	}, [expanded, closeInput])
 
 	// Load comments when panel first opens
 	useEffect(() => {
 		if (expanded && !commentsLoaded) loadComments()
 	}, [expanded, commentsLoaded, loadComments])
 
-	const handleOpenInput = useCallback(() => setInputOpen(true), [])
+	const handleOpenInput = useCallback(() => openInput(), [openInput])
 
 	const handleCancelInput = useCallback(() => {
-		setInputOpen(false)
+		closeInput()
 		setCommentText('')
-	}, [])
+	}, [closeInput])
 
 	const handleSubmit = useCallback(async (e: React.FormEvent) => {
 		e.preventDefault()
@@ -80,7 +79,7 @@ export default function CommentPanel({
 		try {
 			await createComment(commentText.trim())
 			setCommentText('')
-			setInputOpen(false)
+			closeInput()
 		} finally {
 			setIsSubmitting(false)
 		}
@@ -131,8 +130,6 @@ export default function CommentPanel({
 						<CommentSection
 							comments={comments}
 							loading={loadingComments}
-							currentUserId={currentUserId}
-							currentUserRole={currentUserRole}
 							onDelete={deleteComment}
 							loadingMessage='Loading comments...'
 						/>

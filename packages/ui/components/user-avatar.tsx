@@ -19,7 +19,7 @@ export default function UserAvatar({
     username,
     avatar,
     avatarUrl,
-    size = 20,
+    size = 40,
     className = '',
     isAI = false,
 }: UserAvatarProps) {

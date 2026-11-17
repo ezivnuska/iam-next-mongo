@@ -6,7 +6,7 @@ import { connectToDatabase } from "@/app/lib/mongoose";
 import EntryModel from "@/app/lib/models/entry";
 import Image from "@/app/lib/models/image";
 import { transformEntry } from "@/app/lib/utils/transformers/content";
-import { getCommentCounts } from "@/app/lib/actions/comments";
+import { getCommentCountsForItems } from "@/app/lib/actions/comments";
 import type { ContentItem } from "@/app/lib/definitions/content";
 import { auth } from "@/app/lib/auth";
 import { CONTENT_POPULATE_CONFIG } from "@/app/lib/utils/db-query-config";
@@ -40,7 +40,6 @@ export async function getContentDetailByUsername(
     if (!entry.shared && !isAuthor) return null;
   }
 
-  const refType = entry.contentType === 'memory' ? 'Memory' : 'Post';
-  const commentCounts = await getCommentCounts([id], refType);
+  const commentCounts = await getCommentCountsForItems([id]);
   return transformEntry(entry, commentCounts, currentUserId);
 }

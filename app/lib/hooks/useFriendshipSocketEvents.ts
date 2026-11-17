@@ -1,9 +1,9 @@
 // app/lib/hooks/useFriendshipSocketEvents.ts
 
-import { useEffect } from 'react';
 import { useSocket } from '@/app/lib/providers/socket-provider';
 import { SOCKET_EVENTS } from '@/app/lib/socket/events';
 import type { FriendshipStatusPayload, FriendRequestPayload } from '@/app/lib/socket/events';
+import { useSocketListener } from './use-socket-listener';
 
 interface UseFriendshipSocketEventsOptions {
     userId?: string;
@@ -27,44 +27,28 @@ export function useFriendshipSocketEvents(options: UseFriendshipSocketEventsOpti
         onFriendshipRemoved,
     } = options;
 
-    useEffect(() => {
-        if (!socket) return;
+    useSocketListener<FriendshipStatusPayload>(socket, SOCKET_EVENTS.FRIEND_REQUEST_ACCEPTED, payload => {
+        if (userId && (payload.otherUserId === userId || payload.friendshipId === friendshipId)) {
+            onFriendRequestAccepted?.(payload);
+        }
+    });
 
-        const handleFriendRequestAccepted = (payload: FriendshipStatusPayload) => {
-            if (userId && (payload.otherUserId === userId || payload.friendshipId === friendshipId)) {
-                onFriendRequestAccepted?.(payload);
-            }
-        };
+    useSocketListener<FriendshipStatusPayload>(socket, SOCKET_EVENTS.FRIEND_REQUEST_REJECTED, payload => {
+        if (userId && (payload.otherUserId === userId || payload.friendshipId === friendshipId)) {
+            onFriendshipEnded?.(payload);
+        }
+    });
 
-        const handleFriendRequestRejected = (payload: FriendshipStatusPayload) => {
-            if (userId && (payload.otherUserId === userId || payload.friendshipId === friendshipId)) {
-                onFriendshipEnded?.(payload);
-            }
-        };
+    useSocketListener<FriendshipStatusPayload>(socket, SOCKET_EVENTS.FRIENDSHIP_REMOVED, payload => {
+        if (userId && (payload.otherUserId === userId || payload.friendshipId === friendshipId)) {
+            onFriendshipEnded?.(payload);
+        }
+        onFriendshipRemoved?.(payload);
+    });
 
-        const handleFriendshipRemoved = (payload: FriendshipStatusPayload) => {
-            if (userId && (payload.otherUserId === userId || payload.friendshipId === friendshipId)) {
-                onFriendshipEnded?.(payload);
-            }
-            onFriendshipRemoved?.(payload);
-        };
-
-        const handleFriendRequestSent = (payload: FriendRequestPayload) => {
-            if (isCurrentUser || (userId && payload.requester.id === userId)) {
-                onFriendRequestSent?.(payload);
-            }
-        };
-
-        socket.on(SOCKET_EVENTS.FRIEND_REQUEST_ACCEPTED, handleFriendRequestAccepted);
-        socket.on(SOCKET_EVENTS.FRIEND_REQUEST_REJECTED, handleFriendRequestRejected);
-        socket.on(SOCKET_EVENTS.FRIENDSHIP_REMOVED, handleFriendshipRemoved);
-        socket.on(SOCKET_EVENTS.FRIEND_REQUEST_SENT, handleFriendRequestSent);
-
-        return () => {
-            socket.off(SOCKET_EVENTS.FRIEND_REQUEST_ACCEPTED, handleFriendRequestAccepted);
-            socket.off(SOCKET_EVENTS.FRIEND_REQUEST_REJECTED, handleFriendRequestRejected);
-            socket.off(SOCKET_EVENTS.FRIENDSHIP_REMOVED, handleFriendshipRemoved);
-            socket.off(SOCKET_EVENTS.FRIEND_REQUEST_SENT, handleFriendRequestSent);
-        };
-    }, [socket, userId, friendshipId, isCurrentUser, onFriendRequestAccepted, onFriendshipEnded, onFriendRequestSent, onFriendshipRemoved]);
+    useSocketListener<FriendRequestPayload>(socket, SOCKET_EVENTS.FRIEND_REQUEST_SENT, payload => {
+        if (isCurrentUser || (userId && payload.requester.id === userId)) {
+            onFriendRequestSent?.(payload);
+        }
+    });
 }

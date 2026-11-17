@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useModal } from '@/app/lib/hooks/use-modal';
 import Image from 'next/image';
 import { useUser } from '@/app/lib/providers/user-provider';
 import { useCarousel } from '@/app/lib/hooks/use-carousel';
@@ -18,13 +19,13 @@ interface ImageGalleryProps {
 
 export default function ImageGallery({ authorized, images, onDeleted, onImageUpdate }: ImageGalleryProps) {
   const { user } = useUser();
-  const [isOpen, setIsOpen] = useState(false);
+  const { isOpen, open, close } = useModal();
   const [openIndex, setOpenIndex] = useState(0);
 
   const carousel = useCarousel({
     items: images,
     initialIndex: openIndex,
-    onClose: () => setIsOpen(false),
+    onClose: close,
     enabled: isOpen,
   });
 
@@ -33,7 +34,7 @@ export default function ImageGallery({ authorized, images, onDeleted, onImageUpd
 
   const openAt = (index: number) => {
     setOpenIndex(index);
-    setIsOpen(true);
+    open();
   };
 
   const handleLikeChange = useCallback((newLiked: boolean, _newCount: number) => {
@@ -53,8 +54,8 @@ export default function ImageGallery({ authorized, images, onDeleted, onImageUpd
 
   const handleDeletion = useCallback(() => {
     if (onDeleted && selectedImage) onDeleted(selectedImage.id);
-    setIsOpen(false);
-  }, [onDeleted, selectedImage]);
+    close();
+  }, [onDeleted, selectedImage, close]);
 
   return (
     <>
@@ -120,14 +121,12 @@ export default function ImageGallery({ authorized, images, onDeleted, onImageUpd
         <Lightbox
           src={selectedImage.variants.find(v => v.size === 'original')?.url || selectedImage.variants[0].url}
           alt={selectedImage.alt || 'Full image'}
-          onClose={() => setIsOpen(false)}
+          onClose={close}
           positionText={carousel.positionText}
           touchHandlers={carousel.touchHandlers}
         >
           <ImageModalMenu
             imageId={selectedImage.id}
-            currentUserId={user?.id}
-            currentUserRole={user?.role}
             initialLiked={selectedImage.likedByCurrentUser}
             initialLikeCount={selectedImage.likes?.length || 0}
             initialCommentCount={selectedImage.commentCount || 0}

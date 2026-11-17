@@ -2,11 +2,13 @@
 
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
+import { useModal } from '@/app/lib/hooks/use-modal';
 import Image from 'next/image';
 import type { Entry } from '@/app/lib/definitions/entry';
 import type { Image as ImageType } from '@/app/lib/definitions/image';
 import ContentImage from './content-image';
+import MemoryContent from './memories/memory-content';
 import LikeButton from './like-button';
 import CommentFormModal from './comments/comment-form-modal';
 import CommentSection from './comments/comment-section';
@@ -15,6 +17,7 @@ import { useUser } from '@/app/lib/providers/user-provider';
 import { CommentIcon } from '@iam/ui';
 import type { CommentRefType } from '@/app/lib/definitions/comment';
 import { toCommentRefType, getContentImageUrl, getContentImageAlt, getContentImage } from '@/app/lib/utils/content-helpers';
+import LinkPreviewCard from './link-preview-card';
 
 interface ContentDetailViewProps {
     item: Entry;
@@ -22,8 +25,8 @@ interface ContentDetailViewProps {
 
 export default function ContentDetailView({ item }: ContentDetailViewProps) {
     const { user } = useUser();
-    const [showCommentForm, setShowCommentForm] = useState(false);
-    const [showImageModal, setShowImageModal] = useState(false);
+    const { isOpen: showCommentForm, open: openCommentForm, close: closeCommentForm } = useModal();
+    const { isOpen: showImageModal, open: openImageModal, close: closeImageModal } = useModal();
     const previousCountRef = useRef(item.commentCount || 0);
 
     const refType: CommentRefType = toCommentRefType(item.contentType);
@@ -49,19 +52,17 @@ export default function ContentDetailView({ item }: ContentDetailViewProps) {
 
     const handleOpenCommentForm = (e: React.MouseEvent) => {
         e.stopPropagation();
-        setShowCommentForm(true);
+        openCommentForm();
     };
 
     const handleCommentSubmit = async (content: string) => {
         await createComment(content);
-        setShowCommentForm(false);
+        closeCommentForm();
     };
 
     const handleImageClick = (image: ImageType | null | undefined) => {
-        if (image) setShowImageModal(true);
+        if (image) openImageModal();
     };
-
-    const closeImageModal = () => setShowImageModal(false);
 
     useEffect(() => {
         if (!showImageModal) return;
@@ -70,27 +71,20 @@ export default function ContentDetailView({ item }: ContentDetailViewProps) {
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [showImageModal]);
+    }, [showImageModal, closeImageModal]);
 
     return (
         <div className='flex flex-col gap-2'>
             <div className='flex flex-col flex-1'>
                 {item.contentType === 'memory' && (
-                    <div className='flex flex-1 flex-col gap-2'>
-                        <div className='flex flex-1 flex-col gap-2'>
-                            <p className='text-lg font-bold text-gray-900'>
-                                {item.date ? new Date(item.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : ''}
-                            </p>
-                            {item.title && <p className='text-lg font-light text-gray-600'>{item.title}</p>}
-                        </div>
-                        <ContentImage
-                            image={item.image}
-                            alt='Memory image'
-                            className='max-w-full max-h-96 rounded object-cover cursor-pointer'
-                            onClick={item.image ? () => handleImageClick(item.image) : undefined}
-                        />
-                        {item.content && <p className='whitespace-pre-wrap text-gray-900'>{item.content}</p>}
-                    </div>
+                    <MemoryContent
+                        date={item.date}
+                        title={item.title}
+                        content={item.content}
+                        image={item.image}
+                        onImageClick={item.image ? () => handleImageClick(item.image) : undefined}
+                        variant='detail'
+                    />
                 )}
 
                 {item.contentType === 'post' && (
@@ -98,7 +92,13 @@ export default function ContentDetailView({ item }: ContentDetailViewProps) {
                         {item.content && (
                             <div className='text-gray-900'>
                                 <p>{item.content}</p>
-                                {item.linkUrl && (
+                                {item.linkUrl && item.linkPreview ? (
+                                    <LinkPreviewCard
+                                        linkUrl={item.linkUrl}
+                                        linkPreview={item.linkPreview}
+                                        compact={false}
+                                    />
+                                ) : item.linkUrl && (
                                     <a href={item.linkUrl} target='_blank' rel='noopener noreferrer' className='text-blue-500 underline mt-2 block'>
                                         [source]
                                     </a>
@@ -135,8 +135,6 @@ export default function ContentDetailView({ item }: ContentDetailViewProps) {
                     <CommentSection
                         comments={comments}
                         loading={loadingComments}
-                        currentUserId={user?.id}
-                        currentUserRole={user?.role}
                         onDelete={deleteComment}
                     />
                 </div>
@@ -165,7 +163,7 @@ export default function ContentDetailView({ item }: ContentDetailViewProps) {
 
             <CommentFormModal
                 isOpen={showCommentForm}
-                onClose={() => setShowCommentForm(false)}
+                onClose={closeCommentForm}
                 refId={item.id}
                 refType={refType}
                 onSubmit={handleCommentSubmit}

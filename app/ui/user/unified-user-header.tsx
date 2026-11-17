@@ -77,8 +77,8 @@ export default function UnifiedUserHeader({
   const secondaryText = getSecondaryText();
 
   const usernameClasses = `font-semibold text-md text-gray-900 ${
-    clickable ? 'cursor-pointer hover:underline' : ''
-  } ${variant === 'compact' ? 'text-sm leading-tight' : ''}`;
+    variant === 'compact' ? 'text-sm leading-tight' : ''
+  }`;
 
   const secondaryClasses = `text-xs text-gray-500 ${
     variant === 'compact' ? 'leading-tight' : ''
@@ -117,7 +117,7 @@ export default function UnifiedUserHeader({
 
   const renderActions = () => {
     if (actions) {
-      return <div className='flex gap-2 shrink-0'>{actions}</div>;
+      return <div className='flex gap-2 shrink-0' onClick={e => e.stopPropagation()}>{actions}</div>;
     }
 
     if (variant === 'default' && canDelete && onDelete) {
@@ -140,16 +140,17 @@ export default function UnifiedUserHeader({
   };
 
   return (
-    <div className={`${containerClasses[variant]} ${className}`}>
+    <div
+      className={`${containerClasses[variant]} ${clickable ? 'cursor-pointer p-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors' : ''} ${className}`}
+      onClick={clickable ? handleUsernameClick : undefined}
+    >
       {renderAvatar()}
 
       <div className={textContainerClasses[variant]}>
         {variant === 'default' ? (
           <div className='flex flex-row items-center justify-between'>
             <div className='flex flex-col flex-1 gap-1'>
-              <p className={usernameClasses} onClick={handleUsernameClick}>
-                {user.username}
-              </p>
+              <p className={usernameClasses}>{user.username}</p>
               {secondaryText && (
                 <span className={secondaryClasses}>{secondaryText}</span>
               )}
@@ -158,9 +159,7 @@ export default function UnifiedUserHeader({
           </div>
         ) : (
           <div className='flex flex-col flex-1 gap-1'>
-            <p className={usernameClasses} onClick={handleUsernameClick}>
-              {user.username}
-            </p>
+            <p className={usernameClasses}>{user.username}</p>
             {secondaryText && (
               <span className={secondaryClasses}>{secondaryText}</span>
             )}

@@ -12,8 +12,6 @@ import { CommentIcon } from '@iam/ui'
 
 type ImageModalMenuProps = {
 	imageId: string
-	currentUserId?: string
-	currentUserRole?: string
 	initialLiked?: boolean
 	initialLikeCount?: number
 	initialCommentCount?: number
@@ -28,8 +26,6 @@ type ImageModalMenuProps = {
 
 export default function ImageModalMenu({
 	imageId,
-	currentUserId,
-	currentUserRole,
 	initialLiked = false,
 	initialLikeCount = 0,
 	initialCommentCount = 0,
@@ -65,8 +61,6 @@ export default function ImageModalMenu({
 				itemId={imageId}
 				itemType='Image'
 				initialCommentCount={initialCommentCount}
-				currentUserId={currentUserId}
-				currentUserRole={currentUserRole}
 				onCommentCountChange={handleCommentCountChange}
 			/>
 

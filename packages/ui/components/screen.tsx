@@ -86,7 +86,7 @@ export default function Screen({
                 <aside
                     style={{ width: 'clamp(100px, 16vw, 200px)', paddingTop: 'clamp(8px, 2vw, 16px)', paddingBottom: 'clamp(12px, 3vw, 24px)' }}
                     className={clsx(
-                        'fixed left-0 top-0 h-dvh flex flex-col px-2 bg-gray-100 z-10',
+                        'fixed left-0 top-0 h-dvh flex flex-col items-center px-2 bg-gray-100 z-10',
                         { 'justify-between': loggedIn || !!nav },
                     )}
                 >
