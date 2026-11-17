@@ -1,37 +1,57 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useUser } from '@/app/lib/providers/user-provider'
 import { useMessages } from '@/app/lib/hooks/use-messages'
 import ThreadList from './thread-list'
 import ConversationPanel from './conversation-panel'
-import type { MessageThread } from '@/app/lib/definitions/message'
+import type { MessageThread, MessageParticipant } from '@/app/lib/definitions/message'
 
 type InboxProps = {
   initialThreads: MessageThread[]
+  withUserId?: string
+  withUsername?: string
 }
 
-export default function Inbox({ initialThreads }: InboxProps) {
-  const { threads, markThreadRead } = useMessages({ initialThreads })
+export default function Inbox({ initialThreads, withUserId, withUsername }: InboxProps) {
+  const { user } = useUser()
+  const { threads, markThreadRead, refresh } = useMessages({ initialThreads })
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(
     initialThreads[0]?.threadId ?? null
   )
 
+  // When navigating from a profile, derive and select the thread
+  useEffect(() => {
+    if (!withUserId || !user?.id) return
+    const threadId = [user.id, withUserId].sort().join(':')
+    setSelectedThreadId(threadId)
+  }, [withUserId, user?.id])
+
   const selectedThread = threads.find((t) => t.threadId === selectedThreadId) ?? null
 
-  const handleSelect = (threadId: string) => {
-    setSelectedThreadId(threadId)
-  }
+  // Derive the participant for the selected thread
+  const participant: MessageParticipant | null = (() => {
+    if (!selectedThreadId) return null
+    if (selectedThread) {
+      const isSelf = selectedThread.lastMessage.from.id === user?.id
+      return isSelf ? selectedThread.lastMessage.to : selectedThread.lastMessage.from
+    }
+    // New conversation — use the params passed from the profile page
+    if (withUserId && withUsername) {
+      return { id: withUserId, username: withUsername, avatar: null }
+    }
+    return null
+  })()
 
-  const handleBack = () => {
-    setSelectedThreadId(null)
-  }
+  const handleSelect = (threadId: string) => setSelectedThreadId(threadId)
+  const handleBack = () => setSelectedThreadId(null)
 
   return (
     <div className='flex h-full border border-gray-200 rounded-xl overflow-hidden bg-white'>
-      {/* Thread list — full width on mobile when no thread selected, sidebar on desktop */}
+      {/* Thread list */}
       <div
         className={`${
-          selectedThread ? 'hidden md:flex' : 'flex'
+          selectedThreadId ? 'hidden md:flex' : 'flex'
         } flex-col w-full md:w-72 shrink-0 border-r border-gray-200 overflow-y-auto`}
       >
         <div className='px-4 py-3 border-b border-gray-200 shrink-0'>
@@ -45,11 +65,13 @@ export default function Inbox({ initialThreads }: InboxProps) {
       </div>
 
       {/* Conversation panel */}
-      <div className={`${selectedThread ? 'flex' : 'hidden md:flex'} flex-col flex-1 min-w-0`}>
-        {selectedThread ? (
+      <div className={`${selectedThreadId ? 'flex' : 'hidden md:flex'} flex-col flex-1 min-w-0`}>
+        {selectedThreadId && participant ? (
           <ConversationPanel
-            thread={selectedThread}
-            onRead={() => markThreadRead(selectedThread.threadId)}
+            threadId={selectedThreadId}
+            participant={participant}
+            onRead={() => markThreadRead(selectedThreadId)}
+            onSent={refresh}
             onBack={handleBack}
           />
         ) : (

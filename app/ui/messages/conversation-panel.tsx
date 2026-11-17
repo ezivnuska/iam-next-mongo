@@ -5,23 +5,30 @@ import { useUser } from '@/app/lib/providers/user-provider'
 import { useConversation } from '@/app/lib/hooks/use-conversation'
 import MessageList from './message-list'
 import ComposeForm from './compose-form'
-import type { MessageThread } from '@/app/lib/definitions/message'
+import type { MessageParticipant } from '@/app/lib/definitions/message'
 
 type ConversationPanelProps = {
-  thread: MessageThread
+  threadId: string
+  participant: MessageParticipant
   onRead: () => void
+  onSent?: () => void
   onBack?: () => void
 }
 
-export default function ConversationPanel({ thread, onRead, onBack }: ConversationPanelProps) {
+export default function ConversationPanel({
+  threadId,
+  participant,
+  onRead,
+  onSent,
+  onBack,
+}: ConversationPanelProps) {
   const { user } = useUser()
   const { messages, loading, send, remove } = useConversation({
-    threadId: thread.threadId,
+    threadId,
     onRead,
+    onSent,
   })
 
-  const isSelf = thread.lastMessage.from.id === user?.id
-  const participant = isSelf ? thread.lastMessage.to : thread.lastMessage.from
   const avatarUrl = participant.avatar?.variants.find((v) => v.size === 'small')?.url
 
   return (

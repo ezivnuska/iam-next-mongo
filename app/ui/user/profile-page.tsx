@@ -9,7 +9,8 @@ import { useFooter } from '@/app/lib/providers/footer-provider';
 import EntryList from '@/app/ui/user/entry-list';
 import ImagesClient from '@/app/ui/images/images-client';
 import FriendsView from '@/app/friends/friends-view';
-import FriendshipButton from '@/app/ui/friendship/friendship-button';
+import FriendshipButton from '@/app/ui/friendship/friendship-button'
+import MessageButton from '@/app/ui/messages/message-button';
 import UserIdentity from '@/app/ui/user/user-identity';
 import FindOrInviteForm from '@/app/ui/find-or-invite-form';
 import { getPendingRequests } from '@/app/lib/actions/friendships';
@@ -107,6 +108,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
             <div className='flex items-center justify-between'>
                 <UserIdentity username={username} avatar={avatar} size={40} />
                 <div className='flex items-center gap-2'>
+                    <MessageButton userId={userId} username={username} />
                     <FriendshipButton userId={userId} username={username} />
                 </div>
             </div>

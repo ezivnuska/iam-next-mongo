@@ -10,12 +10,22 @@ export const metadata: Metadata = {
   description: 'Your conversations',
 }
 
-export default async function MessagesPage() {
+interface Props {
+  searchParams: Promise<{ with?: string; u?: string }>
+}
+
+export default async function MessagesPage({ searchParams }: Props) {
+  const { with: withUserId, u: withUsername } = await searchParams
   const threads = await getThreads()
+
   return (
     <PageContent header={<PageHeader subtitle='Messages' />}>
       <div className='flex flex-col flex-1 min-h-0 p-4'>
-        <Inbox initialThreads={threads} />
+        <Inbox
+          initialThreads={threads}
+          withUserId={withUserId}
+          withUsername={withUsername ? decodeURIComponent(withUsername) : undefined}
+        />
       </div>
     </PageContent>
   )

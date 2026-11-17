@@ -17,9 +17,10 @@ import type { MessageSentPayload, MessageDeletedPayload } from '@/app/lib/socket
 type UseConversationOptions = {
   threadId: string
   onRead?: () => void
+  onSent?: () => void
 }
 
-export function useConversation({ threadId, onRead }: UseConversationOptions) {
+export function useConversation({ threadId, onRead, onSent }: UseConversationOptions) {
   const { socket } = useSocket()
   const { user } = useUser()
   const [messages, setMessages] = useState<Message[]>([])
@@ -30,9 +31,11 @@ export function useConversation({ threadId, onRead }: UseConversationOptions) {
   const threadIdRef = useRef(threadId)
   const markedReadRef = useRef(false)
   const onReadRef = useRef(onRead)
+  const onSentRef = useRef(onSent)
 
   useEffect(() => { threadIdRef.current = threadId }, [threadId])
   useEffect(() => { onReadRef.current = onRead }, [onRead])
+  useEffect(() => { onSentRef.current = onSent }, [onSent])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -73,6 +76,7 @@ export function useConversation({ threadId, onRead }: UseConversationOptions) {
         text.trim()
       )
       setMessages((prev) => [...prev, message])
+      onSentRef.current?.()
     } finally {
       setSending(false)
     }
