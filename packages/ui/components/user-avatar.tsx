@@ -27,6 +27,7 @@ export default function UserAvatar({
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
+        if (isAI) return;
         if (!avatar && !avatarUrl && username && !fetchedAvatar) {
             setLoading(true);
             fetch(`/api/users/${username}/avatar`)
