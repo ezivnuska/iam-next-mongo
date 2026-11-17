@@ -75,26 +75,9 @@ export default function ContentItemCard({
     return (
         <MemoryPolaroid
           entry={item}
+          href={`/users/${item.author.username}/${item.id}`}
           onImageClick={item.image && onImageClick ? () => onImageClick(item.image!) : undefined}
-          actions={editable ? {
-            onDelete: () => handleDelete(item.id),
-            onFlag: onFlag ? () => onFlag(item) : undefined,
-            canDelete,
-          } : undefined}
-          interactions={{
-            initialLiked: item.likedByCurrentUser,
-            initialLikeCount: item.likes?.length || 0,
-            initialCommentCount: item.commentCount || 0,
-            autoExpandComments,
-            onCommentClick: item.image
-              ? (onCommentImageClick
-                  ? () => onCommentImageClick(item.image!, item.id, 'Memory')
-                  : onImageClick ? () => onImageClick(item.image!) : undefined)
-              : undefined,
-          }}
-          editable={editable}
-          canEdit={canEdit}
-          onEdit={onEdit ? () => onEdit(item) : undefined}
+          actions={editable && onFlag ? { onFlag: () => onFlag(item) } : undefined}
         />
     );
   }
