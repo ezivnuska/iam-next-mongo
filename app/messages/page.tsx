@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { PageContent, PageHeader } from '@iam/ui'
 import Inbox from '@/app/ui/messages/inbox'
 import { getThreads } from '@/app/lib/actions/messages'
 
@@ -19,14 +18,10 @@ export default async function MessagesPage({ searchParams }: Props) {
   const threads = await getThreads()
 
   return (
-    <PageContent header={<PageHeader subtitle='Messages' />}>
-      <div className='flex-1 min-h-0 p-4 flex flex-col'>
-        <Inbox
-          initialThreads={threads}
-          withUserId={withUserId}
-          withUsername={withUsername ? decodeURIComponent(withUsername) : undefined}
-        />
-      </div>
-    </PageContent>
+    <Inbox
+      initialThreads={threads}
+      withUserId={withUserId}
+      withUsername={withUsername ? decodeURIComponent(withUsername) : undefined}
+    />
   )
 }
