@@ -74,7 +74,7 @@ export default function ContentDetailView({ item }: ContentDetailViewProps) {
     }, [showImageModal, closeImageModal]);
 
     return (
-        <div className='flex flex-col gap-2'>
+        <div className='flex flex-col gap-2 px-4'>
             <div className='flex flex-col flex-1'>
                 {item.contentType === 'memory' && (
                     <MemoryContent
