@@ -74,12 +74,12 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
             return;
         }
         setFooter(
-            <nav className={`flex flex-col gap-2 @min-[220px]:flex-row @min-[220px]:justify-around @min-[220px]:gap-2 ${isLandscape ? 'p-2 gap-1' : 'p-2 py-1.5 @min-[220px]:px-2 @min-[220px]:py-1.5'}`}>
+            <nav className={`flex flex-col gap-2 @min-[220px]:flex-row @min-[220px]:justify-around @min-[220px]:gap-2 ${isLandscape ? 'px-1 py-2 gap-1' : 'p-2 py-1.5 @min-[220px]:px-2 @min-[220px]:py-1.5'}`}>
                 {CONTENT_TABS.map(tab => (
                     <button
                         key={tab.value}
                         onClick={() => { if (tab.value !== activeTab) router.push(`?t=${tab.value}`, { scroll: false }); }}
-                        className={`flex flex-1 items-center font-medium transition-colors cursor-pointer ${isLandscape ? 'flex-row justify-start gap-2 px-3 py-2 rounded-lg' : 'flex-col justify-center gap-0.5 py-3 rounded-lg @min-[220px]:py-1.5'} ${
+                        className={`flex flex-1 items-center font-medium transition-colors cursor-pointer ${isLandscape ? 'flex-row justify-start gap-2 px-1.5 py-2 rounded-lg' : 'flex-col justify-center gap-0.5 py-3 rounded-lg @min-[220px]:py-1.5'} ${
                             activeTab === tab.value
                                 ? 'text-white bg-gray-700'
                                 : 'text-white hover:bg-white/10 active:bg-white/20'

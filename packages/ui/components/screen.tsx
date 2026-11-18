@@ -84,7 +84,7 @@ export default function Screen({
             {extras}
             {isLandscape && (
                 <aside
-                    style={{ width: 'clamp(100px, 16vw, 200px)', paddingTop: 'clamp(8px, 2vw, 16px)', paddingBottom: 'clamp(12px, 3vw, 24px)' }}
+                    style={{ width: 'clamp(80px, 16.67vw, 200px)', paddingTop: 'clamp(8px, 2vw, 16px)', paddingBottom: 'clamp(12px, 3vw, 24px)' }}
                     className={clsx(
                         'fixed left-0 top-0 h-dvh flex flex-col items-center px-2 bg-gray-900 text-white z-10',
                         { 'justify-between': loggedIn || !!nav },
@@ -128,7 +128,7 @@ export default function Screen({
             )}
             <main
                 style={{
-                    ...(isLandscape ? { marginLeft: 'clamp(100px, 16vw, 200px)', marginRight: 'clamp(100px, 16vw, 200px)' } : {}),
+                    ...(isLandscape ? { marginLeft: 'clamp(80px, 16.67vw, 200px)', marginRight: 'clamp(80px, 16.67vw, 200px)' } : {}),
                     ...(isPortrait && footer ? { paddingBottom: 'var(--footer-height)' } : {}),
                 }}
                 className={clsx(
@@ -144,7 +144,7 @@ export default function Screen({
             {((footer && isPortrait) || isLandscape) && (
                 <div
                     ref={footerRef}
-                    style={isLandscape ? { width: 'clamp(100px, 16vw, 200px)' } : undefined}
+                    style={isLandscape ? { width: 'clamp(80px, 16.67vw, 200px)' } : undefined}
                     className={clsx(
                         '@container fixed z-10 bg-gray-900 text-white',
                         isPortrait ? 'bottom-0 left-0 right-0 border-t border-gray-700' : 'right-0 top-0 h-dvh',
