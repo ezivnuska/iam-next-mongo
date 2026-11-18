@@ -111,7 +111,12 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
 
     const activeTabLabel = CONTENT_TABS.find(t => t.value === activeTab)?.label ?? '';
 
-    const contentHeader = isOwnProfile ? <PageHeader subtitle={activeTabLabel} /> : (
+    const contentHeader = isOwnProfile ? (
+        <PageHeader
+            subtitle={activeTabLabel}
+            actions={activeTab === 'settings' ? <SignOutButton variant='labeled' /> : undefined}
+        />
+    ) : (
         <PageContentRow>
             <div className='flex items-center justify-between'>
                 <UserIdentity username={username} avatar={avatar} size={40} />
@@ -167,15 +172,9 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
             )}
             {activeTab === 'settings' && (
                 <PageContentList>
-                    <div className='flex flex-col gap-6 py-4'>
-                        <div className='flex flex-col gap-2'>
-                            <h3 className='text-sm font-semibold text-gray-500 uppercase tracking-wide'>Account</h3>
-                            <SignOutButton variant='labeled' />
-                        </div>
-                        <div className='flex flex-col gap-2'>
-                            <h3 className='text-sm font-semibold text-gray-500 uppercase tracking-wide'>Danger zone</h3>
-                            <DeleteAccountSection />
-                        </div>
+                    <div className='flex flex-col gap-2 py-2 px-4'>
+                        <h3 className='text-sm font-semibold text-gray-500 uppercase tracking-wide'>Delete Account</h3>
+                        <DeleteAccountSection />
                     </div>
                 </PageContentList>
             )}
