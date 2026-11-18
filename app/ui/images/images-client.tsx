@@ -21,16 +21,14 @@ export default function ImagesClient({ userId, authorized, triggerUpload, showUp
     const [loading, setLoading] = useState(false);
     const { isOpen: isModalOpen, open: openModal, close: closeModal } = useModal();
 
-    async function initImages() {
-        setLoading(true)
-        const fetchedImages = await getImages(userId);
-        setImages(fetchedImages)
-        setLoading(false)
-    }
-
     useEffect(() => {
-        initImages()
-    }, [])
+        let cancelled = false;
+        setLoading(true);
+        getImages(userId).then(imgs => {
+            if (!cancelled) { setImages(imgs); setLoading(false); }
+        });
+        return () => { cancelled = true; };
+    }, [userId])
 
     useEffect(() => {
         if (triggerUpload) openModal();
@@ -48,7 +46,7 @@ export default function ImagesClient({ userId, authorized, triggerUpload, showUp
     };
 
     return (
-        <div className='flex flex-col w-full gap-4'>
+        <div className='flex flex-col w-full gap-4 px-4'>
             {showUploadButton && (
                 <Button onClick={openModal}>
                     Upload File
