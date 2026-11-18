@@ -37,12 +37,16 @@ export default function SigninForm({ callbackUrl: propCallbackUrl }: SigninFormP
     const email = emailRef.current?.value;
     if (!email) return;
     setResendStatus('sending');
-    await fetch('/api/resend-verification', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
-    setResendStatus('sent');
+    try {
+      const res = await fetch('/api/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      setResendStatus(res.ok ? 'sent' : 'idle');
+    } catch {
+      setResendStatus('idle');
+    }
   }
 
   return (

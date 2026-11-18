@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 
 interface ModalProps {
     children: ReactNode;
@@ -20,6 +20,13 @@ export default function Modal({
     contentClassName = 'relative w-full max-w-md rounded-lg bg-white p-2 shadow-lg',
     position = 'fixed',
 }: ModalProps) {
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+        document.addEventListener('keydown', handleKey);
+        return () => document.removeEventListener('keydown', handleKey);
+    }, [isOpen, onClose]);
+
     if (!isOpen) return null;
 
     return (

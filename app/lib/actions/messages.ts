@@ -3,7 +3,7 @@
 import { Types } from 'mongoose'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import MessageModel from '@/packages/db/models/message'
-import '@/app/lib/models/user'
+import UserModel from '@/app/lib/models/user'
 import { normalizeMessage } from '@iam/db'
 import { requireAuth } from '@/app/lib/utils/auth'
 import { isValidObjectId } from '@iam/shared-types'
@@ -106,6 +106,9 @@ export async function sendMessage(toId: string, text: string): Promise<Message> 
   if (trimmed.length > 2000) throw new Error('Message too long')
 
   await connectToDatabase()
+
+  const recipient = await UserModel.findById(toId).select('_id').lean()
+  if (!recipient) throw new Error('Recipient not found')
 
   const threadId = deriveThreadId(userId, toId)
   const doc = await MessageModel.create({ threadId, from: userId, to: toId, text: trimmed })

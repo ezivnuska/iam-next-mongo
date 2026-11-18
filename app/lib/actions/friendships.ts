@@ -300,11 +300,12 @@ export async function getFriends(): Promise<Friend[]> {
 		.sort({ createdAt: -1 })
 		.lean<FriendshipLean[]>()
 
-	return friendships.map((f) => {
+	return friendships.flatMap((f) => {
 		const isRequester = f.requester._id.toString() === session.user.id
 		const friend = isRequester ? f.recipient : f.requester
+		if (!friend?._id) return []
 
-		return {
+		return [{
 			id: friend._id.toString(),
 			username: friend.username,
 			avatar: friend.avatar ? {
@@ -313,7 +314,7 @@ export async function getFriends(): Promise<Friend[]> {
 			} : null,
 			friendshipId: f._id.toString(),
 			friendsSince: f.createdAt?.toISOString() ?? new Date().toISOString(),
-		}
+		}]
 	})
 }
 

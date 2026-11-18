@@ -5,6 +5,7 @@
 import { connectToDatabase } from "@/app/lib/mongoose";
 import Comment from "@/app/lib/models/comment";
 import "@/app/lib/models/image"; // Required for populate("author.avatar")
+import EntryModel from "@/app/lib/models/entry";
 import type { CommentRefType } from "@/app/lib/definitions/comment";
 import { Types, type HydratedDocument } from "mongoose";
 import { logActivity } from "@/app/lib/utils/activity-logger";
@@ -119,9 +120,21 @@ interface CommentDocument {
 	createdAt?: Date;
 }
 
-// Intentionally unauthenticated: comments on public content are publicly readable.
 export async function getComments(refId: string, refType: CommentRefType) {
 	await connectToDatabase();
+
+	if (refType === 'Memory') {
+		const entry = await EntryModel.findById(refId).select('author shared').lean<{ author: { toString(): string }; shared: boolean }>();
+		if (!entry) return [];
+		if (!entry.shared) {
+			try {
+				const { id: userId } = await requireAuth();
+				if (entry.author.toString() !== userId) return [];
+			} catch {
+				return [];
+			}
+		}
+	}
 
 	const comments = await Comment.find({ refId, refType })
 		.populate({
@@ -185,16 +198,15 @@ export async function deleteComment(commentId: string) {
 
 	await Comment.findByIdAndDelete(commentId);
 
-	// Log activity
-	await logActivity({
+	// Non-critical: best-effort, don't let log failure affect the response
+	logActivity({
 		userId: user.id,
 		action: 'delete',
 		entityType: 'comment',
 		entityId: commentId,
 		entityData: commentData
-	});
+	}).catch(err => console.error('[deleteComment] activity log failed:', err));
 
-	// Emit socket event
 	await emitCommentDeleted({
 		commentId,
 		refId: commentData.refId,
@@ -228,7 +240,7 @@ export async function getCommentCountsForItems(itemIds: string[]): Promise<Recor
 	]);
 
 	const countMap: Record<string, number> = {};
-	counts.forEach((item: any) => {
+	(counts as { _id: Types.ObjectId; count: number }[]).forEach(item => {
 		countMap[item._id.toString()] = item.count;
 	});
 

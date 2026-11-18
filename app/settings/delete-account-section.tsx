@@ -20,10 +20,17 @@ export default function DeleteAccountSection() {
         setError('');
         try {
             await deleteAccount();
-            await signOut();
         } catch (e: any) {
             setError(e?.message ?? 'Something went wrong.');
             setLoading(false);
+            return;
+        }
+        // Account deleted — sign out regardless of whether signOut() throws.
+        try {
+            await signOut();
+        } catch {
+            // signOut failing after a successful deletion is non-fatal; force a reload.
+            window.location.href = '/';
         }
     };
 

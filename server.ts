@@ -26,6 +26,7 @@ import { Server, Socket } from 'socket.io'
 import { getRequestListener } from '@hono/node-server'
 import honoApp from './api/app'
 import { verifyMobileToken } from './app/lib/jwt'
+import { isValidObjectId } from '@iam/shared-types'
 
 interface SocketData {
   userId: string
@@ -81,12 +82,22 @@ app.prepare().then(() => {
 			const { userId, token, username } = data as Record<string, string | undefined>
 			if (!userId) return
 
-			if (!userId.startsWith('guest-') && token) {
-				try {
-					const payload = await verifyMobileToken(token)
-					if (payload.id !== userId) return
-				} catch {
-					return
+			if (userId.startsWith('guest-')) {
+				// Guests are ephemeral; limit their ID format to prevent spoofing real user IDs.
+				if (!/^guest-[a-zA-Z0-9_-]{8,64}$/.test(userId)) return
+			} else {
+				// Non-guest users must have a valid MongoDB ObjectId.
+				if (!isValidObjectId(userId)) return
+				// Mobile clients supply a JWT; verify it. Web clients have no token —
+				// they rely on cookie-based Next.js session which is validated per server
+				// action. Accepting web sockets without token is a known limitation.
+				if (token) {
+					try {
+						const payload = await verifyMobileToken(token)
+						if (payload.id !== userId) return
+					} catch {
+						return
+					}
 				}
 			}
 

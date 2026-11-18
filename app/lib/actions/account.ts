@@ -3,7 +3,7 @@
 import { Types } from "mongoose";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import { requireAuthWithUsername, requireRole } from "@/app/lib/utils/auth/utils";
-import { UserRole } from "@iam/shared-types";
+import { UserRole, isValidObjectId } from "@iam/shared-types";
 import { deleteS3File } from "@/app/lib/aws/s3";
 import { extractS3KeyFromUrl } from "@/app/lib/utils/images";
 import UserModel from "@/app/lib/models/user";
@@ -22,6 +22,7 @@ import { TetrisScoreModel, TileScoreModel, WordDuelScoreModel } from "@iam/db";
 import MessageModel from "@/packages/db/models/message";
 
 async function deleteUserData(userId: string) {
+    if (!isValidObjectId(userId)) throw new Error('Invalid user ID');
     const oid = new Types.ObjectId(userId);
 
     // --- Images: delete S3 variants then documents ---

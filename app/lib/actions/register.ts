@@ -28,16 +28,20 @@ export async function register(formData: FormData): Promise<RegisterResult> {
 
     await connectToDatabase();
 
+    // Validate before claiming to avoid having to reset used: false on mismatch,
+    // which would open a replay race window.
+    const pendingInvitation = await Invitation.findOne({ token: inviteToken, used: false });
+    if (!pendingInvitation) return { error: "This invitation link is invalid or has already been used." };
+    if (pendingInvitation.inviteeEmail !== email.toLowerCase()) {
+      return { error: "This invitation was sent to a different email address." };
+    }
+    // Atomically claim the invitation — guards against concurrent requests.
     const invitation = await Invitation.findOneAndUpdate(
-      { token: inviteToken, used: false },
+      { _id: pendingInvitation._id, used: false },
       { $set: { used: true } },
       { new: false }
     );
     if (!invitation) return { error: "This invitation link is invalid or has already been used." };
-    if (invitation.inviteeEmail !== email.toLowerCase()) {
-      await Invitation.findByIdAndUpdate(invitation._id, { $set: { used: false } });
-      return { error: "This invitation was sent to a different email address." };
-    }
     const inviter = await UserModel.findById(invitation.inviterId).select('_id').lean();
     if (!inviter) return { error: "The person who invited you no longer has an account." };
 
