@@ -35,7 +35,7 @@ const CONTENT_TABS: { value: Tab; label: string; icon: React.ComponentType<{ cla
     { value: 'settings', label: 'Settings', icon: SettingsIcon },
 ];
 
-const VALID_TABS = new Set<Tab>(['posts', 'memories', 'images', 'friends', 'settings']);
+const VALID_TABS = new Set(CONTENT_TABS.map(t => t.value));
 
 interface ProfilePageProps {
     username: string;
@@ -97,31 +97,34 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
             </nav>
         );
         return () => setFooter(null);
-    }, [isOwnProfile, activeTab, pendingCount, router, setFooter, setEntryTrigger, setUploadTrigger, isLandscape]);
+    }, [isOwnProfile, activeTab, pendingCount, router, setFooter, isLandscape]);
 
     const activeTabLabel = CONTENT_TABS.find(t => t.value === activeTab)?.label ?? '';
 
-    const headerActions = (() => {
-        if (!isOwnProfile) return undefined;
-        if (activeTab === 'settings') return <SignOutButton variant='labeled' />;
-        if (activeTab === 'posts' || activeTab === 'memories') return (
-            <button
-                onClick={() => setEntryTrigger(n => n + 1)}
-                className='px-3 py-1.5 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors'
-            >
-                + Add
-            </button>
-        );
-        if (activeTab === 'images') return (
-            <button
-                onClick={() => setUploadTrigger(n => n + 1)}
-                className='px-3 py-1.5 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors'
-            >
-                + Upload
-            </button>
-        );
-        return undefined;
-    })();
+    let headerActions: React.ReactNode;
+    if (isOwnProfile) {
+        if (activeTab === 'settings') {
+            headerActions = <SignOutButton variant='labeled' />;
+        } else if (activeTab === 'posts' || activeTab === 'memories') {
+            headerActions = (
+                <button
+                    onClick={() => setEntryTrigger(n => n + 1)}
+                    className='px-3 py-1.5 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors'
+                >
+                    + Add
+                </button>
+            );
+        } else if (activeTab === 'images') {
+            headerActions = (
+                <button
+                    onClick={() => setUploadTrigger(n => n + 1)}
+                    className='px-3 py-1.5 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors'
+                >
+                    + Upload
+                </button>
+            );
+        }
+    }
 
     const contentHeader = isOwnProfile ? (
         <PageHeader subtitle={activeTabLabel} actions={headerActions} />
@@ -144,22 +147,12 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
 
     return (
         <PageContent header={contentHeader}>
-            {activeTab === 'posts' && (
+            {(activeTab === 'posts' || activeTab === 'memories') && (
                 <PageContentList>
                     <EntryList
                         initialContent={initialContent}
                         editable={isOwnProfile}
-                        contentType='post'
-                        triggerAdd={entryTrigger}
-                    />
-                </PageContentList>
-            )}
-            {activeTab === 'memories' && (
-                <PageContentList>
-                    <EntryList
-                        initialContent={initialContent}
-                        editable={isOwnProfile}
-                        contentType='memory'
+                        contentType={activeTab === 'posts' ? 'post' : 'memory'}
                         triggerAdd={entryTrigger}
                     />
                 </PageContentList>
@@ -175,7 +168,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
             )}
             {activeTab === 'friends' && (
                 <PageContentList>
-                    <FindOrInviteForm />
+                    {isOwnProfile && <FindOrInviteForm />}
                     <FriendsView />
                 </PageContentList>
             )}
