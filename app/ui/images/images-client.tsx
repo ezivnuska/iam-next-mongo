@@ -3,7 +3,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Modal, Button } from '@iam/ui';
+import { Modal, Button, LoadingSpinner } from '@iam/ui';
 import { useModal } from '@/app/lib/hooks/use-modal';
 import UploadForm from '@/app/ui/images/upload-form';
 import ImageGallery from './image-gallery';
@@ -46,7 +46,7 @@ export default function ImagesClient({ userId, authorized, triggerUpload, showUp
     };
 
     return (
-        <div className='flex flex-col w-full gap-4 px-4'>
+        <div className='flex flex-col flex-1 min-h-0 w-full gap-4 px-4'>
             {showUploadButton && (
                 <Button onClick={openModal}>
                     Upload File
@@ -61,7 +61,7 @@ export default function ImagesClient({ userId, authorized, triggerUpload, showUp
                         authorized={authorized}
                     />
                 )
-                : <p>Loading images...</p>
+                : <LoadingSpinner fullscreen={false} />
             }
 
             <Modal isOpen={isModalOpen} onClose={closeModal}>
