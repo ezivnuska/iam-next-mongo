@@ -141,7 +141,7 @@ export default function Screen({
             >
                 {content}
             </main>
-            {footer && (isPortrait || isLandscape) && (
+            {((footer && isPortrait) || isLandscape) && (
                 <div
                     ref={footerRef}
                     style={isLandscape ? { width: 'clamp(100px, 16vw, 200px)' } : undefined}
