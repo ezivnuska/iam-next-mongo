@@ -9,7 +9,6 @@ import ContentImage from '@/app/ui/content-image';
 import MemoryContent from '@/app/ui/memories/memory-content';
 import { isMemory, isPost } from '@/app/lib/utils/content-helpers';
 import { IMAGE_SIZES } from '@/app/lib/utils/images';
-import { useHorizontalLayout } from '@iam/ui';
 import LinkPreviewCard from '@/app/ui/link-preview-card';
 
 type ContentItemCardProps = {
@@ -25,7 +24,7 @@ export default function ContentItemCard({
   editable = false,
   onFlag,
 }: ContentItemCardProps) {
-  const isCompact = useHorizontalLayout() ?? false;
+  const isCompact = true;
 
   if (isMemory(item)) {
     return (

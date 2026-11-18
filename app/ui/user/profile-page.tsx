@@ -19,7 +19,7 @@ import { useFriendshipSocketEvents } from '@/app/lib/hooks/useFriendshipSocketEv
 import { MemoriesIcon, PostsIcon, ImagesIcon, FriendsIcon, SettingsIcon } from '@/app/ui/icons/tab-icons';
 import SignOutButton from '@/app/ui/auth/signout-button';
 import DeleteAccountSection from '@/app/settings/delete-account-section';
-import AdminDeleteAccountSection from '@/app/settings/admin-delete-account-section';
+import AdminDeleteButton from '@/app/settings/admin-delete-button';
 import { UserRole } from '@iam/shared-types';
 import type { ContentItem } from '@/app/lib/definitions/content';
 import type { FriendRequestPayload } from '@/app/lib/socket/events';
@@ -131,17 +131,15 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
     ) : (
         <PageContentRow className='py-4 border-b border-gray-200'>
             <div className='flex items-center justify-between'>
-                <UserIdentity username={username} avatar={avatar} size={40} />
+                <div className='flex items-center gap-2'>
+                    <UserIdentity username={username} avatar={avatar} size={40} />
+                    {isAdmin && <AdminDeleteButton userId={userId} username={username} />}
+                </div>
                 <div className='flex items-center gap-2'>
                     <MessageButton userId={userId} username={username} />
                     <FriendshipButton userId={userId} username={username} />
                 </div>
             </div>
-            {isAdmin && (
-                <div className='mt-4 pt-4 border-t border-gray-200'>
-                    <AdminDeleteAccountSection userId={userId} username={username} />
-                </div>
-            )}
         </PageContentRow>
     );
 
