@@ -86,7 +86,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                                 router.push(`?t=${tab.value}`, { scroll: false });
                             }
                         }}
-                        className={`flex flex-1 items-center justify-center gap-2 font-medium transition-colors cursor-pointer ${isLandscape ? 'py-1.5 rounded-none' : 'py-3 rounded-lg @min-[220px]:py-1.5'} ${
+                        className={`flex flex-1 items-center justify-start gap-2 px-3 font-medium transition-colors cursor-pointer ${isLandscape ? 'py-2 rounded-none' : 'py-3 rounded-lg @min-[220px]:py-1.5'} ${
                             activeTab === tab.value
                                 ? 'text-blue-600 bg-blue-100'
                                 : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'
