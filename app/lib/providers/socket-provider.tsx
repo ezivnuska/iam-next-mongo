@@ -111,12 +111,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 		if (!socket || !isConnected) return
 
 		if (user?.id) {
-			// For guest users, include username in registration for reconnection matching
-			const registrationData = user.isGuest && user.username
-				? { userId: user.id, username: user.username }
-				: user.id;
-
-			socket.emit('register', registrationData)
+			socket.emit('register', { userId: user.id, username: user.username })
 		}
 	}, [user?.id, user?.username, user?.isGuest, socket, isConnected])
 

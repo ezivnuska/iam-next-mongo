@@ -81,8 +81,7 @@ app.prepare().then(() => {
 			const { userId, token, username } = data as Record<string, string | undefined>
 			if (!userId) return
 
-			if (!userId.startsWith('guest-')) {
-				if (!token) return
+			if (!userId.startsWith('guest-') && token) {
 				try {
 					const payload = await verifyMobileToken(token)
 					if (payload.id !== userId) return
