@@ -101,7 +101,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                                 <span className='absolute -top-1 -right-1 w-3 h-3 bg-red-500 text-white rounded-full text-[8px] font-bold flex items-center justify-center leading-none'>{pendingCount > 9 ? '9+' : pendingCount}</span>
                             )}
                         </div>
-                        <span className='text-xs'>{tab.label}</span>
+                        <span className={`text-xs ${isLandscape ? '' : 'hidden min-[375px]:block'}`}>{tab.label}</span>
                     </button>
                 ))}
             </nav>
