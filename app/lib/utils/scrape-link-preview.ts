@@ -27,7 +27,36 @@ function extractTitle(html: string): string | undefined {
   return html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim();
 }
 
+export function isSafeExternalUrl(url: string): boolean {
+  let parsed: URL;
+  try { parsed = new URL(url); } catch { return false; }
+
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+
+  const host = parsed.hostname.toLowerCase();
+
+  if (host === 'localhost' || host === '0.0.0.0') return false;
+  if (host.endsWith('.local') || host.endsWith('.internal') || host.endsWith('.localhost')) return false;
+  if (host === '[::1]' || host === '::1') return false;
+
+  const ipv4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipv4) {
+    const [a, b, c, d] = ipv4.slice(1).map(Number);
+    if (a === 127) return false;                          // loopback
+    if (a === 10) return false;                           // 10.0.0.0/8
+    if (a === 172 && b >= 16 && b <= 31) return false;   // 172.16.0.0/12
+    if (a === 192 && b === 168) return false;             // 192.168.0.0/16
+    if (a === 169 && b === 254) return false;             // link-local
+    if (a === 0 || a === 255) return false;               // unspecified/broadcast
+    if (a >= 224) return false;                           // multicast
+  }
+
+  return true;
+}
+
 export async function fetchLinkPreview(url: string): Promise<LinkPreview | null> {
+  if (!isSafeExternalUrl(url)) return null;
+
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);

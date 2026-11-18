@@ -9,7 +9,7 @@ import { logActivity, getRequestMetadata } from "@/app/lib/utils/activity-logger
 import { requireAuth, UnauthorizedError } from "@/app/lib/utils/auth";
 import { CONTENT_POPULATE_CONFIG } from "@/app/lib/utils/db-query-config";
 import { isValidObjectId } from "@iam/shared-types";
-import { fetchLinkPreview } from "@/app/lib/utils/scrape-link-preview";
+import { fetchLinkPreview, isSafeExternalUrl } from "@/app/lib/utils/scrape-link-preview";
 
 export async function POST(req: Request) {
   try {
@@ -49,12 +49,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Content must be 1000 characters or less" }, { status: 400 });
       }
       if (linkUrl) {
-        try {
-          const parsed = new URL(linkUrl);
-          if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-            return NextResponse.json({ error: "Link URL must use http or https" }, { status: 400 });
-          }
-        } catch {
+        if (!isSafeExternalUrl(linkUrl)) {
           return NextResponse.json({ error: "Invalid link URL" }, { status: 400 });
         }
       }
