@@ -17,7 +17,7 @@ export default function SignOutButton({ variant = 'icon' }: { variant?: 'icon' |
                 <button
                     onClick={openConfirm}
                     disabled={isSigningOut}
-                    className='self-start px-4 py-2 text-sm font-medium rounded-full border border-gray-300 text-gray-700 hover:border-red-400 hover:text-red-600 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-default'
+                    className='self-start px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:border-red-400 hover:text-red-600 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-default'
                 >
                     {isSigningOut ? 'Signing out…' : 'Sign out'}
                 </button>
@@ -41,14 +41,14 @@ export default function SignOutButton({ variant = 'icon' }: { variant?: 'icon' |
                     <div className='flex gap-3 justify-end'>
                         <button
                             onClick={closeConfirm}
-                            className='px-4 py-1.5 text-sm font-medium rounded-full text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer'
+                            className='px-4 py-1.5 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer'
                         >
                             Cancel
                         </button>
                         <button
                             onClick={() => { closeConfirm(); signOut(); }}
                             disabled={isSigningOut}
-                            className='px-4 py-1.5 text-sm font-medium rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-default'
+                            className='px-4 py-1.5 text-sm font-medium rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-default'
                         >
                             Sign out
                         </button>
