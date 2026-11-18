@@ -267,7 +267,7 @@ export async function removeFriend(friendshipId: string) {
 	return { success: true }
 }
 
-export async function getFriends(): Promise<Friend[]> {
+export async function getFriends(targetUserId?: string): Promise<Friend[]> {
 	const session = await auth()
 	if (!session?.user?.id) {
 		return []
@@ -275,10 +275,12 @@ export async function getFriends(): Promise<Friend[]> {
 
 	await connectToDatabase()
 
+	const lookupId = targetUserId ?? session.user.id
+
 	const friendships = await Friendship.find({
 		$or: [
-			{ requester: session.user.id, status: 'accepted' },
-			{ recipient: session.user.id, status: 'accepted' }
+			{ requester: lookupId, status: 'accepted' },
+			{ recipient: lookupId, status: 'accepted' }
 		]
 	})
 		.populate({
@@ -301,7 +303,7 @@ export async function getFriends(): Promise<Friend[]> {
 		.lean<FriendshipLean[]>()
 
 	return friendships.flatMap((f) => {
-		const isRequester = f.requester._id.toString() === session.user.id
+		const isRequester = f.requester._id.toString() === lookupId
 		const friend = isRequester ? f.recipient : f.requester
 		if (!friend?._id) return []
 

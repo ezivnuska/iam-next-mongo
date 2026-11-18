@@ -35,7 +35,7 @@ const CONTENT_TABS: { value: Tab; label: string; icon: React.ComponentType<{ cla
     { value: 'settings', label: 'Settings', icon: SettingsIcon },
 ];
 
-const VALID_TABS = new Set(CONTENT_TABS.map(t => t.value));
+const ALL_VALID_TABS = new Set(CONTENT_TABS.map(t => t.value));
 
 interface ProfilePageProps {
     username: string;
@@ -52,7 +52,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
     const isLandscape = useHorizontalLayout() === true;
     const searchParams = useSearchParams();
     const rawTab = searchParams.get('t') as Tab | null;
-    const activeTab: Tab = rawTab && VALID_TABS.has(rawTab) ? rawTab : 'posts';
+    const activeTab: Tab = isOwnProfile && rawTab && ALL_VALID_TABS.has(rawTab) ? rawTab : 'posts';
     const [entryTrigger, setEntryTrigger] = useState(0);
     const [uploadTrigger, setUploadTrigger] = useState(0);
     const [pendingCount, setPendingCount] = useState(0);
@@ -169,7 +169,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
             {activeTab === 'friends' && (
                 <PageContentList>
                     {isOwnProfile && <FindOrInviteForm />}
-                    <FriendsView />
+                    <FriendsView userId={userId} isOwnProfile={isOwnProfile} />
                 </PageContentList>
             )}
             {activeTab === 'settings' && (

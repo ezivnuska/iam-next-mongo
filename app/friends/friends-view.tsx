@@ -10,16 +10,21 @@ import UnifiedUserHeader from '@/app/ui/user/unified-user-header';
 import type { Friend, Friendship } from '@/app/lib/definitions/friendship';
 import type { FriendRequestPayload } from '@/app/lib/socket/events';
 
-export default function FriendsView() {
+interface FriendsViewProps {
+    userId?: string;
+    isOwnProfile?: boolean;
+}
+
+export default function FriendsView({ userId, isOwnProfile = true }: FriendsViewProps) {
     const [friends, setFriends] = useState<Friend[]>([]);
     const [pendingRequests, setPendingRequests] = useState<Friendship[]>([]);
     const [loading, setLoading] = useState(true);
     const { actionLoading, handleAcceptRequest, handleRejectRequest } = useFriendshipActions();
 
-    useEffect(() => { loadData(); }, []);
+    useEffect(() => { loadData(); }, [userId]);
 
     useFriendshipSocketEvents({
-        isCurrentUser: true,
+        isCurrentUser: isOwnProfile,
         onFriendRequestSent: (payload: FriendRequestPayload) => {
             setPendingRequests(prev => [{
                 id: payload.friendshipId,
@@ -38,7 +43,10 @@ export default function FriendsView() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [friendsData, requestsData] = await Promise.all([getFriends(), getPendingRequests()]);
+            const [friendsData, requestsData] = await Promise.all([
+                getFriends(userId),
+                isOwnProfile ? getPendingRequests() : Promise.resolve([]),
+            ]);
             setFriends(friendsData);
             setPendingRequests(requestsData);
         } catch (error) {
