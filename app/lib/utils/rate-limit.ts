@@ -2,17 +2,27 @@
 
 interface RateEntry { count: number; resetAt: number }
 
-function makeRateLimiter(maxRequests: number, windowMs: number) {
-  const store = new Map<string, RateEntry>()
+type LimiterState = { store: Map<string, RateEntry>; interval: ReturnType<typeof setInterval> }
 
-  // Prune expired entries once per window to prevent unbounded memory growth.
-  // .unref() so the interval doesn't keep the process alive on shutdown.
-  setInterval(() => {
-    const now = Date.now()
-    for (const [key, entry] of store) {
-      if (now > entry.resetAt) store.delete(key)
-    }
-  }, windowMs).unref()
+// Store state in global to survive Next.js hot-module reloads.
+// Without this, each re-evaluation creates a new setInterval that is never
+// cleared, while the old interval keeps running against an orphaned Map.
+function makeRateLimiter(maxRequests: number, windowMs: number, globalKey: string) {
+  const g = global as unknown as Record<string, LimiterState>
+
+  if (!g[globalKey]) {
+    const store = new Map<string, RateEntry>()
+    const interval = setInterval(() => {
+      const now = Date.now()
+      for (const [key, entry] of store) {
+        if (now > entry.resetAt) store.delete(key)
+      }
+    }, windowMs)
+    interval.unref()
+    g[globalKey] = { store, interval }
+  }
+
+  const { store } = g[globalKey]
 
   return function checkRateLimit(ip: string): boolean {
     const now = Date.now()
@@ -26,8 +36,8 @@ function makeRateLimiter(maxRequests: number, windowMs: number) {
   }
 }
 
-export const checkRegisterRateLimit = makeRateLimiter(3, 3_600_000)   // 3 req/hr per IP
-export const checkResendRateLimit = makeRateLimiter(5, 3_600_000)      // 5 req/hr per IP
+export const checkRegisterRateLimit = makeRateLimiter(3, 3_600_000, '__rl_register')  // 3 req/hr per IP
+export const checkResendRateLimit   = makeRateLimiter(5, 3_600_000, '__rl_resend')    // 5 req/hr per IP
 
 export function getIp(req: Request): string {
   // Prefer x-real-ip (set by trusted proxies like nginx).
