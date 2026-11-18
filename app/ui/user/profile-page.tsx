@@ -126,7 +126,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
     const contentHeader = isOwnProfile ? (
         <PageHeader subtitle={activeTabLabel} actions={headerActions} />
     ) : (
-        <PageContentRow className='py-3 border-b border-gray-200'>
+        <PageContentRow className='py-4 border-b border-gray-200'>
             <div className='flex items-center justify-between'>
                 <UserIdentity username={username} avatar={avatar} size={40} />
                 <div className='flex items-center gap-2'>
