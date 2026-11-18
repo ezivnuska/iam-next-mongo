@@ -15,7 +15,7 @@ export default function UserButton() {
 
     const profilePath = user.username ? `/users/${user.username}` : '/profile';
     return (
-        <Link href={profilePath} className='text-gray-700 hover:text-gray-500 transition-colors'>
+        <Link href={profilePath} className='text-gray-200 hover:text-white transition-colors'>
             <UserIdentity username={user.username} avatar={user.avatar} size={40} stacked={horizontalLayout} />
         </Link>
     );

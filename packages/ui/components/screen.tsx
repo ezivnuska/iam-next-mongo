@@ -86,7 +86,7 @@ export default function Screen({
                 <aside
                     style={{ width: 'clamp(100px, 16vw, 200px)', paddingTop: 'clamp(8px, 2vw, 16px)', paddingBottom: 'clamp(12px, 3vw, 24px)' }}
                     className={clsx(
-                        'fixed left-0 top-0 h-dvh flex flex-col items-center px-2 bg-gray-100 z-10',
+                        'fixed left-0 top-0 h-dvh flex flex-col items-center px-2 bg-gray-900 z-10',
                         { 'justify-between': loggedIn || !!nav },
                     )}
                 >
@@ -107,7 +107,7 @@ export default function Screen({
                 </aside>
             )}
             {isPortrait && (
-                <header ref={navRef} className={clsx('sticky top-0 z-10 bg-gray-100 border-b border-gray-200 transition-opacity duration-300', headerVisible && headerReady ? 'opacity-100' : 'opacity-0')}>
+                <header ref={navRef} className={clsx('sticky top-0 z-10 bg-gray-900 border-b border-gray-700 transition-opacity duration-300', headerVisible && headerReady ? 'opacity-100' : 'opacity-0')}>
                     <div className='flex flex-row items-center justify-between py-2 gap-4 px-4 max-w-[900px] mx-auto w-full'>
                         {loggedIn ? (
                             <>
@@ -146,8 +146,8 @@ export default function Screen({
                     ref={footerRef}
                     style={isLandscape ? { width: 'clamp(100px, 16vw, 200px)' } : undefined}
                     className={clsx(
-                        '@container fixed z-10 bg-gray-100',
-                        isPortrait ? 'bottom-0 left-0 right-0 border-t border-gray-200' : 'right-0 top-0 h-dvh',
+                        '@container fixed z-10 bg-gray-900',
+                        isPortrait ? 'bottom-0 left-0 right-0 border-t border-gray-700' : 'right-0 top-0 h-dvh',
                     )}
                 >
                     {footer}

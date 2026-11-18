@@ -81,8 +81,8 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                         onClick={() => { if (tab.value !== activeTab) router.push(`?t=${tab.value}`, { scroll: false }); }}
                         className={`flex flex-1 items-center font-medium transition-colors cursor-pointer ${isLandscape ? 'flex-row justify-start gap-2 px-3 py-3.5 rounded-none' : 'flex-col justify-center gap-0.5 py-3 rounded-lg @min-[220px]:py-1.5'} ${
                             activeTab === tab.value
-                                ? 'text-blue-600 bg-blue-100'
-                                : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'
+                                ? 'text-white bg-gray-700'
+                                : 'text-gray-400 hover:text-white hover:bg-gray-700'
                         }`}
                     >
                         <div className='relative shrink-0'>
@@ -131,7 +131,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
     ) : (
         <PageContentRow className='py-4 border-b border-gray-200'>
             <div className='flex items-center justify-between'>
-                <div className='flex items-center gap-2'>
+                <div className='flex items-center gap-2 text-gray-900'>
                     <UserIdentity username={username} avatar={avatar} size={40} />
                     {isAdmin && <AdminDeleteButton userId={userId} username={username} />}
                 </div>

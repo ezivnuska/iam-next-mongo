@@ -104,7 +104,7 @@ function AppShellInner({ children, showLoading = true }: AppShellProps) {
                 <>
                     <a
                         href='/messages'
-                        className='relative flex items-center justify-center text-gray-700 hover:text-gray-500 transition-colors'
+                        className='relative flex items-center justify-center text-gray-300 hover:text-white transition-colors'
                         aria-label='Messages'
                     >
                         <ChatIcon className='w-7 h-7' />
@@ -116,7 +116,7 @@ function AppShellInner({ children, showLoading = true }: AppShellProps) {
                     </a>
                     <a
                         href='https://games.iameric.me'
-                        className='flex items-center justify-center text-gray-700 hover:text-gray-500 transition-colors'
+                        className='flex items-center justify-center text-gray-300 hover:text-white transition-colors'
                         aria-label='Games'
                     >
                         <PuzzleIcon className='w-7 h-7' />

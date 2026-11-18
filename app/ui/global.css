@@ -4,6 +4,13 @@
     --max-width-content: 900px;
     --breakpoint-mid: 600px;
     --breakpoint-wide: 1024px;
+
+    /* Shift gray mid-tones one step darker for better contrast */
+    --color-gray-200: oklch(0.872 0.01 258.338);   /* was 300 */
+    --color-gray-300: oklch(0.707 0.022 264.436);  /* was 400 */
+    --color-gray-400: oklch(0.551 0.027 264.364);  /* was 500 */
+    --color-gray-500: oklch(0.446 0.03 256.802);   /* was 600 */
+    --color-gray-600: oklch(0.373 0.034 259.733);  /* was 700 */
 }
 
 @keyframes fade-in {
