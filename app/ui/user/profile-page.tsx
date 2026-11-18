@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { PageContent, PageContentRow, PageContentList } from '@iam/ui';
+import { PageContent, PageContentRow, PageContentList, useHorizontalLayout } from '@iam/ui';
 import { useFooter } from '@/app/lib/providers/footer-provider';
 import { useUser } from '@/app/lib/providers/user-provider';
 import EntryList from '@/app/ui/user/entry-list';
@@ -49,6 +49,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
     const router = useRouter();
     const { user: currentUser } = useUser();
     const isAdmin = currentUser?.role === UserRole.Admin;
+    const isLandscape = useHorizontalLayout() === true;
     const searchParams = useSearchParams();
     const rawTab = searchParams.get('t') as Tab | null;
     const activeTab: Tab = rawTab && VALID_TABS.has(rawTab) ? rawTab : 'posts';
@@ -73,7 +74,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
             return;
         }
         setFooter(
-            <nav className='flex flex-col gap-1 p-2 pt-4 @min-[220px]:flex-row @min-[220px]:justify-around @min-[220px]:gap-0 @min-[220px]:p-1'>
+            <nav className={`flex flex-col gap-1 p-2 @min-[220px]:flex-row @min-[220px]:justify-around @min-[220px]:gap-0 @min-[220px]:p-1 ${isLandscape ? 'pt-2' : 'pt-4'}`}>
                 {CONTENT_TABS.map(tab => (
                     <button
                         key={tab.value}
@@ -85,14 +86,14 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                                 router.push(`?t=${tab.value}`, { scroll: false });
                             }
                         }}
-                        className={`flex flex-1 flex-col items-center gap-0.5 py-3 @min-[220px]:py-1.5 font-medium transition-colors cursor-pointer ${
+                        className={`flex flex-1 flex-col items-center gap-0.5 @min-[220px]:py-1.5 font-medium transition-colors cursor-pointer ${isLandscape ? 'py-1.5' : 'py-3'} ${
                             activeTab === tab.value
                                 ? 'text-blue-600'
                                 : 'text-gray-400 hover:text-gray-600'
                         }`}
                     >
                         <div className='relative'>
-                            <tab.icon className='w-6 h-6 shrink-0' />
+                            <tab.icon className={`shrink-0 ${isLandscape ? 'w-5 h-5' : 'w-6 h-6'}`} />
                             {tab.value === activeTab && tab.value !== 'friends' && tab.value !== 'settings' && (
                                 <span className='absolute -top-1 -right-1 w-3 h-3 bg-green-500 text-white rounded-full text-[8px] font-bold flex items-center justify-center leading-none'>+</span>
                             )}
