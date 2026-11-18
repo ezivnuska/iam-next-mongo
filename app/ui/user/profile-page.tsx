@@ -107,7 +107,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
             </nav>
         );
         return () => setFooter(null);
-    }, [isOwnProfile, activeTab, pendingCount, router, setFooter, setEntryTrigger, setUploadTrigger]);
+    }, [isOwnProfile, activeTab, pendingCount, router, setFooter, setEntryTrigger, setUploadTrigger, isLandscape]);
 
     const contentHeader = isOwnProfile ? null : (
         <PageContentRow>
