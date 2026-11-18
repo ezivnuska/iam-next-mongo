@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { PageContent, PageContentRow, PageContentList, useHorizontalLayout } from '@iam/ui';
+import { PageContent, PageContentRow, PageContentList, PageHeader, useHorizontalLayout } from '@iam/ui';
 import { useFooter } from '@/app/lib/providers/footer-provider';
 import { useUser } from '@/app/lib/providers/user-provider';
 import EntryList from '@/app/ui/user/entry-list';
@@ -109,7 +109,9 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
         return () => setFooter(null);
     }, [isOwnProfile, activeTab, pendingCount, router, setFooter, setEntryTrigger, setUploadTrigger, isLandscape]);
 
-    const contentHeader = isOwnProfile ? null : (
+    const activeTabLabel = CONTENT_TABS.find(t => t.value === activeTab)?.label ?? '';
+
+    const contentHeader = isOwnProfile ? <PageHeader subtitle={activeTabLabel} /> : (
         <PageContentRow>
             <div className='flex items-center justify-between'>
                 <UserIdentity username={username} avatar={avatar} size={40} />
