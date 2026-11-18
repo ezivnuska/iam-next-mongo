@@ -74,7 +74,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
             return;
         }
         setFooter(
-            <nav className={`flex flex-col gap-0 @min-[220px]:flex-row @min-[220px]:justify-around ${isLandscape ? 'p-0' : 'p-2 pt-4 @min-[220px]:p-1'}`}>
+            <nav style={isLandscape ? { paddingTop: 'clamp(8px, 2vw, 16px)' } : undefined} className={`flex flex-col gap-0 @min-[220px]:flex-row @min-[220px]:justify-around ${isLandscape ? 'p-0' : 'p-2 pt-4 @min-[220px]:p-1'}`}>
                 {CONTENT_TABS.map(tab => (
                     <button
                         key={tab.value}
