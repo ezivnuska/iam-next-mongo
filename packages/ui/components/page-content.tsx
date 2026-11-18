@@ -37,7 +37,7 @@ export default function PageContent({ children, header, fullscreen = false, scro
     }, [header, setHeaderVisibleLocked]);
 
     return (
-        <div className={clsx('@container/page flex flex-1 flex-col min-h-0 min-w-0 w-full mx-auto', {
+        <div className={clsx('@container/page flex flex-1 flex-col min-h-0 min-w-0 w-full mx-auto bg-white', {
             'max-w-content': !fullscreen,
         })}>
             {header && (
