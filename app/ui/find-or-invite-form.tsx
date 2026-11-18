@@ -55,7 +55,7 @@ export default function FindOrInviteForm() {
     const reset = () => { setState({ kind: 'idle' }); setEmail(''); };
 
     return (
-        <div className='px-4 py-4'>
+        <div className='px-4 pb-4'>
             <div className='mb-4'>
                 <h2 className='text-lg font-bold text-gray-900'>Find Users. Invite Friends.</h2>
                 <p className='mt-1 text-sm text-gray-500'>Search users by email. Ask them to connect, or invite them to join.</p>

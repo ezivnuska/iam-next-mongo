@@ -43,7 +43,7 @@ export default function ContentCard({
     if (compact) {
         return (
             <div
-                className={`flex flex-row items-start gap-3${href ? ' cursor-pointer' : ''}`}
+                className={`flex flex-row items-start gap-3 px-2 py-2${href ? ' cursor-pointer' : ''}`}
                 onClick={handleCardClick}
             >
                 {/* Left column: header + content */}
