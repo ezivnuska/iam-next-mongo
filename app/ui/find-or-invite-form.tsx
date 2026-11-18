@@ -55,7 +55,11 @@ export default function FindOrInviteForm() {
     const reset = () => { setState({ kind: 'idle' }); setEmail(''); };
 
     return (
-        <div className='px-4 py-4 max-w-sm'>
+        <div className='px-4 py-4'>
+            <div className='mb-4'>
+                <h2 className='text-lg font-bold text-gray-900'>Find Users. Invite Friends.</h2>
+                <p className='mt-1 text-sm text-gray-500'>Search users by email. Ask them to connect, or invite them to join.</p>
+            </div>
             <form onSubmit={handleSearch} className='flex gap-2'>
                 <input
                     type='email'
