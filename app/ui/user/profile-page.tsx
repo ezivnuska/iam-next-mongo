@@ -78,14 +78,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                 {CONTENT_TABS.map(tab => (
                     <button
                         key={tab.value}
-                        onClick={() => {
-                            if (tab.value === activeTab) {
-                                if (tab.value === 'images') setUploadTrigger(n => n + 1);
-                                else if (tab.value !== 'friends' && tab.value !== 'settings') setEntryTrigger(n => n + 1);
-                            } else {
-                                router.push(`?t=${tab.value}`, { scroll: false });
-                            }
-                        }}
+                        onClick={() => { if (tab.value !== activeTab) router.push(`?t=${tab.value}`, { scroll: false }); }}
                         className={`flex flex-1 items-center font-medium transition-colors cursor-pointer ${isLandscape ? 'flex-row justify-start gap-2 px-3 py-3.5 rounded-none' : 'flex-col justify-center gap-0.5 py-3 rounded-lg @min-[220px]:py-1.5'} ${
                             activeTab === tab.value
                                 ? 'text-blue-600 bg-blue-100'
@@ -94,9 +87,6 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                     >
                         <div className='relative shrink-0'>
                             <tab.icon className={isLandscape ? 'w-5 h-5' : 'w-6 h-6'} />
-                            {tab.value === activeTab && tab.value !== 'friends' && tab.value !== 'settings' && (
-                                <span className='absolute -top-1 -right-1 w-3 h-3 bg-green-500 text-white rounded-full text-[8px] font-bold flex items-center justify-center leading-none'>+</span>
-                            )}
                             {tab.value === 'friends' && pendingCount > 0 && (
                                 <span className='absolute -top-1 -right-1 w-3 h-3 bg-red-500 text-white rounded-full text-[8px] font-bold flex items-center justify-center leading-none'>{pendingCount > 9 ? '9+' : pendingCount}</span>
                             )}
@@ -111,11 +101,30 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
 
     const activeTabLabel = CONTENT_TABS.find(t => t.value === activeTab)?.label ?? '';
 
+    const headerActions = (() => {
+        if (!isOwnProfile) return undefined;
+        if (activeTab === 'settings') return <SignOutButton variant='labeled' />;
+        if (activeTab === 'posts' || activeTab === 'memories') return (
+            <button
+                onClick={() => setEntryTrigger(n => n + 1)}
+                className='px-3 py-1.5 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors'
+            >
+                + Add
+            </button>
+        );
+        if (activeTab === 'images') return (
+            <button
+                onClick={() => setUploadTrigger(n => n + 1)}
+                className='px-3 py-1.5 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors'
+            >
+                + Upload
+            </button>
+        );
+        return undefined;
+    })();
+
     const contentHeader = isOwnProfile ? (
-        <PageHeader
-            subtitle={activeTabLabel}
-            actions={activeTab === 'settings' ? <SignOutButton variant='labeled' /> : undefined}
-        />
+        <PageHeader subtitle={activeTabLabel} actions={headerActions} />
     ) : (
         <PageContentRow>
             <div className='flex items-center justify-between'>
