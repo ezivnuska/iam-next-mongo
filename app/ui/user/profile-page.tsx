@@ -86,14 +86,14 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                                 router.push(`?t=${tab.value}`, { scroll: false });
                             }
                         }}
-                        className={`flex flex-1 flex-col items-center gap-0.5 @min-[220px]:py-1.5 font-medium transition-colors cursor-pointer ${isLandscape ? 'py-1.5' : 'py-3'} ${
+                        className={`flex flex-1 items-center justify-center gap-2 rounded-lg font-medium transition-colors cursor-pointer ${isLandscape ? 'py-1.5 px-2' : 'py-3 @min-[220px]:py-1.5'} ${
                             activeTab === tab.value
-                                ? 'text-blue-600'
-                                : 'text-gray-400 hover:text-gray-600'
+                                ? 'text-blue-600 bg-blue-100'
+                                : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'
                         }`}
                     >
-                        <div className='relative'>
-                            <tab.icon className={`shrink-0 ${isLandscape ? 'w-5 h-5' : 'w-6 h-6'}`} />
+                        <div className='relative shrink-0'>
+                            <tab.icon className={isLandscape ? 'w-5 h-5' : 'w-6 h-6'} />
                             {tab.value === activeTab && tab.value !== 'friends' && tab.value !== 'settings' && (
                                 <span className='absolute -top-1 -right-1 w-3 h-3 bg-green-500 text-white rounded-full text-[8px] font-bold flex items-center justify-center leading-none'>+</span>
                             )}
@@ -101,7 +101,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                                 <span className='absolute -top-1 -right-1 w-3 h-3 bg-red-500 text-white rounded-full text-[8px] font-bold flex items-center justify-center leading-none'>{pendingCount > 9 ? '9+' : pendingCount}</span>
                             )}
                         </div>
-                        <span className={`text-xs hidden @[120px]:block ${tab.value === activeTab ? 'visible' : 'invisible'}`}>{tab.label}</span>
+                        <span className='text-xs hidden @[120px]:block'>{tab.label}</span>
                     </button>
                 ))}
             </nav>
