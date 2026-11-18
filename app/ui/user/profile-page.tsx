@@ -74,7 +74,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
             return;
         }
         setFooter(
-            <nav className={`flex flex-col gap-1 p-2 @min-[220px]:flex-row @min-[220px]:justify-around @min-[220px]:gap-0 @min-[220px]:p-1 ${isLandscape ? 'pt-2' : 'pt-4'}`}>
+            <nav className={`flex flex-col gap-0 @min-[220px]:flex-row @min-[220px]:justify-around ${isLandscape ? 'p-0' : 'p-2 pt-4 @min-[220px]:p-1'}`}>
                 {CONTENT_TABS.map(tab => (
                     <button
                         key={tab.value}
@@ -86,7 +86,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                                 router.push(`?t=${tab.value}`, { scroll: false });
                             }
                         }}
-                        className={`flex flex-1 items-center justify-center gap-2 rounded-lg font-medium transition-colors cursor-pointer ${isLandscape ? 'py-1.5 px-2' : 'py-3 @min-[220px]:py-1.5'} ${
+                        className={`flex flex-1 items-center justify-center gap-2 font-medium transition-colors cursor-pointer ${isLandscape ? 'py-1.5 rounded-none' : 'py-3 rounded-lg @min-[220px]:py-1.5'} ${
                             activeTab === tab.value
                                 ? 'text-blue-600 bg-blue-100'
                                 : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200'
@@ -101,7 +101,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                                 <span className='absolute -top-1 -right-1 w-3 h-3 bg-red-500 text-white rounded-full text-[8px] font-bold flex items-center justify-center leading-none'>{pendingCount > 9 ? '9+' : pendingCount}</span>
                             )}
                         </div>
-                        <span className='text-xs hidden @[120px]:block'>{tab.label}</span>
+                        <span className='text-xs'>{tab.label}</span>
                     </button>
                 ))}
             </nav>
