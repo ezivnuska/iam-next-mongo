@@ -11,9 +11,10 @@ import { useSearchParams } from 'next/navigation';
 
 interface SigninFormProps {
   callbackUrl?: string;
+  dark?: boolean;
 }
 
-export default function SigninForm({ callbackUrl: propCallbackUrl }: SigninFormProps = {}) {
+export default function SigninForm({ callbackUrl: propCallbackUrl, dark = false }: SigninFormProps = {}) {
   const searchParams = useSearchParams();
   const callbackUrl = propCallbackUrl || searchParams.get('callbackUrl') || '/';
   const emailRef = useRef<HTMLInputElement>(null);
@@ -49,18 +50,27 @@ export default function SigninForm({ callbackUrl: propCallbackUrl }: SigninFormP
     }
   }
 
+  const labelClass = dark
+    ? 'mb-2 mt-3 block text-s font-medium text-white'
+    : 'mb-2 mt-3 block text-s font-medium text-gray-900';
+
+  const inputClass = dark
+    ? 'peer block w-full rounded-md border border-white/40 bg-transparent text-white py-[9px] pl-10 text-sm outline-2 placeholder:text-white/40'
+    : 'peer block w-full rounded-md border border-gray-200 bg-white text-gray-900 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500';
+
+  const iconClass = dark
+    ? 'pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-white/40 peer-focus:text-white'
+    : 'pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900';
+
   return (
     <form action={formAction} className='space-y-3'>
-      <div className='flex-1 rounded-lg bg-gray-50 px-4 py-2'>
-        <h1 className={`${ubuntu.className} mb-1 text-2xl text-gray-900`}>
+      <div className={dark ? 'flex-1' : 'flex-1 rounded-lg bg-gray-50 px-4 py-2'}>
+        <h1 className={`${ubuntu.className} mb-1 text-2xl ${dark ? 'text-white' : 'text-gray-900'}`}>
           Please log in to continue.
         </h1>
 
         <div className='w-full'>
-          <label
-            className='mb-2 mt-3 block text-s font-medium text-gray-900'
-            htmlFor='email'
-          >
+          <label className={labelClass} htmlFor='email'>
             Email
           </label>
           <div className='relative'>
@@ -71,15 +81,12 @@ export default function SigninForm({ callbackUrl: propCallbackUrl }: SigninFormP
               type='email'
               placeholder='Enter your email address'
               required
-              className='peer block w-full rounded-md border border-gray-200 bg-white text-gray-900 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500'
+              className={inputClass}
             />
-            <AtSymbolIcon className='pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900' />
+            <AtSymbolIcon className={iconClass} />
           </div>
 
-          <label
-            className='mb-2 mt-3 block text-s font-medium text-gray-900'
-            htmlFor='password'
-          >
+          <label className={labelClass} htmlFor='password'>
             Password
           </label>
           <div className='relative'>
@@ -90,15 +97,18 @@ export default function SigninForm({ callbackUrl: propCallbackUrl }: SigninFormP
               placeholder='Enter password'
               required
               minLength={6}
-              className='peer block w-full rounded-md border border-gray-200 bg-white text-gray-900 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500'
+              className={inputClass}
             />
-            <KeyIcon className='pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900' />
+            <KeyIcon className={iconClass} />
           </div>
         </div>
 
         <input type='hidden' name='redirectTo' value={callbackUrl} />
 
-        <Button className='mt-4 w-full' aria-disabled={isPending}>
+        <Button
+          className={dark ? 'mt-4 w-full bg-white text-gray-900 hover:bg-gray-100 active:bg-gray-200' : 'mt-4 w-full'}
+          aria-disabled={isPending}
+        >
           Sign in
         </Button>
 
@@ -109,7 +119,7 @@ export default function SigninForm({ callbackUrl: propCallbackUrl }: SigninFormP
               <p className='text-sm text-red-500'>{displayError}</p>
             </div>
             {isVerifyError && (
-              <div className='text-xs text-gray-500'>
+              <div className={`text-xs ${dark ? 'text-white/60' : 'text-gray-500'}`}>
                 {resendStatus === 'sent' ? (
                   <span>Verification email sent. Check your inbox.</span>
                 ) : (
@@ -117,7 +127,7 @@ export default function SigninForm({ callbackUrl: propCallbackUrl }: SigninFormP
                     type='button'
                     onClick={handleResend}
                     disabled={resendStatus === 'sending'}
-                    className='text-blue-600 underline disabled:opacity-50'
+                    className={dark ? 'text-blue-300 underline disabled:opacity-50' : 'text-blue-600 underline disabled:opacity-50'}
                   >
                     {resendStatus === 'sending' ? 'Sending...' : 'Resend verification email'}
                   </button>
@@ -126,7 +136,6 @@ export default function SigninForm({ callbackUrl: propCallbackUrl }: SigninFormP
             )}
           </div>
         )}
-
 
       </div>
     </form>

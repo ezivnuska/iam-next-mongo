@@ -37,7 +37,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     }}
                 />
             </head>
-            <body className={`${ubuntu.className} antialiased overflow-hidden flex flex-col`} style={{ height: 'var(--app-height, 100dvh)' }}>
+            <body className={`${ubuntu.className} antialiased overflow-hidden flex flex-col bg-black`} style={{ height: 'var(--app-height, 100dvh)' }}>
                 <UserProvider initialUser={session?.user ?? null}>
                     <ThemeProvider>
                         <AuthModalProvider>

@@ -1,12 +1,10 @@
 'use client';
 
-import { Suspense, useRef, useEffect, useState } from 'react';
+import { Suspense, useRef, useEffect } from 'react';
 import clsx from 'clsx';
 import { useHorizontalLayout } from '../hooks/use-horizontal-layout';
-import { useContentLoaded } from '../hooks/use-content-loaded';
 import { BreadcrumbProvider } from '../providers/breadcrumb-provider';
 import Brand from './brand';
-import LoadingSpinner from './loading-spinner';
 
 interface ScreenProps {
     children: React.ReactNode;
@@ -14,9 +12,9 @@ interface ScreenProps {
     nav?: React.ReactNode;
     extras?: React.ReactNode;
     footer?: React.ReactNode;
-    showLoading?: boolean;
     brandHref?: string;
     headerReady?: boolean;
+    chromeVisible?: boolean;
 }
 
 export default function Screen({
@@ -25,27 +23,19 @@ export default function Screen({
     nav,
     extras,
     footer,
-    showLoading = true,
     brandHref,
     headerReady = true,
+    chromeVisible = true,
 }: ScreenProps) {
     const horizontalLayout = useHorizontalLayout();
-    const isContentLoaded = useContentLoaded();
     const loggedIn = !!userControls;
     const navRef = useRef<HTMLElement>(null);
     const footerRef = useRef<HTMLDivElement>(null);
-    const [headerVisible, setHeaderVisible] = useState(false);
 
     const isLandscape = horizontalLayout === true;
     const isPortrait = horizontalLayout === false;
 
-    useEffect(() => {
-        if (isPortrait) {
-            const raf = requestAnimationFrame(() => setHeaderVisible(true));
-            return () => cancelAnimationFrame(raf);
-        }
-        setHeaderVisible(false);
-    }, [isPortrait]);
+    const chromeIn = chromeVisible && headerReady;
 
     useEffect(() => {
         if (isLandscape) {
@@ -75,9 +65,7 @@ export default function Screen({
         return () => obs.disconnect();
     }, [isPortrait, footer]);
 
-    const content = showLoading && !isContentLoaded
-        ? <LoadingSpinner />
-        : <Suspense fallback={null}>{children}</Suspense>;
+    const content = <Suspense fallback={null}>{children}</Suspense>;
 
     return (
         <BreadcrumbProvider>
@@ -87,6 +75,8 @@ export default function Screen({
                     style={{ width: 'clamp(80px, 16.67vw, 200px)', paddingTop: 'clamp(8px, 2vw, 16px)', paddingBottom: 'clamp(12px, 3vw, 24px)' }}
                     className={clsx(
                         'fixed left-0 top-0 h-dvh flex flex-col items-center px-2 bg-gray-900 text-white z-10',
+                        'transition-transform duration-500',
+                        chromeIn ? 'translate-x-0' : '-translate-x-full',
                         { 'justify-between': loggedIn || !!nav },
                     )}
                 >
@@ -107,7 +97,14 @@ export default function Screen({
                 </aside>
             )}
             {isPortrait && (
-                <header ref={navRef} className={clsx('sticky top-0 z-10 bg-gray-900 text-white border-b border-gray-700 transition-opacity duration-300', headerVisible && headerReady ? 'opacity-100' : 'opacity-0')}>
+                <header
+                    ref={navRef}
+                    className={clsx(
+                        'fixed top-0 left-0 right-0 z-10 bg-gray-900 text-white border-b border-gray-700',
+                        'transition-transform duration-500',
+                        chromeIn ? 'translate-y-0' : '-translate-y-full',
+                    )}
+                >
                     <div className='flex flex-row items-center justify-between py-2 gap-4 px-4 max-w-[900px] mx-auto w-full'>
                         {loggedIn ? (
                             <>
@@ -129,14 +126,14 @@ export default function Screen({
             <main
                 style={{
                     ...(isLandscape ? { marginLeft: 'clamp(80px, 16.67vw, 200px)', marginRight: 'clamp(80px, 16.67vw, 200px)' } : {}),
-                    ...(isPortrait && footer ? { paddingBottom: 'var(--footer-height)' } : {}),
+                    ...(isPortrait ? { paddingTop: chromeIn ? 'var(--nav-height)' : '0px' } : {}),
+                    ...(isPortrait && footer ? { paddingBottom: chromeIn ? 'var(--footer-height)' : '0px' } : {}),
                 }}
                 className={clsx(
-                    '@container/main flex flex-col flex-1 min-h-0 overflow-x-hidden bg-white max-w-[900px]',
+                    '@container/main flex flex-col flex-1 min-h-0 overflow-x-hidden max-w-[900px]',
                     isPortrait && 'mx-auto w-full',
-                    (isLandscape || isPortrait) && 'transition-opacity duration-300',
-                    isLandscape && (headerReady ? 'opacity-100' : 'opacity-0'),
-                    isPortrait && (headerVisible && headerReady ? 'opacity-100' : 'opacity-0'),
+                    chromeVisible && 'transition-opacity duration-300',
+                    !chromeVisible || headerReady ? 'opacity-100' : 'opacity-0',
                 )}
             >
                 {content}
@@ -147,7 +144,10 @@ export default function Screen({
                     style={isLandscape ? { width: 'clamp(80px, 16.67vw, 200px)' } : undefined}
                     className={clsx(
                         '@container fixed z-10 bg-gray-900 text-white',
-                        isPortrait ? 'bottom-0 left-0 right-0 border-t border-gray-700' : 'right-0 top-0 h-dvh',
+                        'transition-transform duration-500',
+                        isPortrait
+                            ? clsx('bottom-0 left-0 right-0 border-t border-gray-700', chromeIn ? 'translate-y-0' : 'translate-y-full')
+                            : clsx('right-0 top-0 h-dvh', chromeIn ? 'translate-x-0' : 'translate-x-full'),
                     )}
                 >
                     {footer}

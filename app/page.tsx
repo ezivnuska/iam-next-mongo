@@ -5,13 +5,13 @@ import { redirect } from 'next/navigation';
 import { getUserContent } from '@/app/lib/actions/user-content';
 import { fetchUserByUsername } from '@/app/lib/actions/users';
 import ProfilePage from '@/app/ui/user/profile-page';
-import { PageContent } from '@iam/ui';
+import WelcomeScreen from '@/app/ui/auth/welcome-screen';
 
 export default async function Page() {
     const session = await auth();
 
     if (!session?.user?.username) {
-        return <PageContent>{null}</PageContent>;
+        return <WelcomeScreen />;
     }
 
     const { username } = session.user;

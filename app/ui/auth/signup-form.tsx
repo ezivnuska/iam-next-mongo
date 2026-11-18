@@ -13,9 +13,10 @@ import { useState, useEffect } from 'react';
 interface SignupFormProps {
   onToggleMode?: () => void;
   callbackUrl?: string;
+  dark?: boolean;
 }
 
-export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl }: SignupFormProps = {}) {
+export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl, dark = false }: SignupFormProps = {}) {
   const searchParams = useSearchParams();
   const callbackUrl = propCallbackUrl || searchParams.get('callbackUrl') || '/';
   const inviteToken = searchParams.get('invite') || '';
@@ -45,22 +46,22 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
 
   if (state && 'success' in state) {
     return (
-      <div className='flex-1 rounded-lg bg-gray-50 px-4 py-6'>
-        <h1 className={`${ubuntu.className} mb-3 text-2xl text-gray-900`}>
+      <div className={dark ? 'flex-1' : 'flex-1 rounded-lg bg-gray-50 px-4 py-6'}>
+        <h1 className={`${ubuntu.className} mb-3 text-2xl ${dark ? 'text-white' : 'text-gray-900'}`}>
           Check your email
         </h1>
-        <p className='text-sm text-gray-700'>
+        <p className={`text-sm ${dark ? 'text-white/70' : 'text-gray-700'}`}>
           We sent a verification link to your email address. Click the link to activate your account, then sign in.
         </p>
-        <p className='mt-3 text-xs text-gray-500'>
+        <p className={`mt-3 text-xs ${dark ? 'text-white/40' : 'text-gray-500'}`}>
           The link expires in 24 hours. Check your spam folder if you don&apos;t see it.
         </p>
         {onToggleMode && (
-          <div className='mt-4 text-center text-sm text-gray-600'>
+          <div className={`mt-4 text-center text-sm ${dark ? 'text-white/60' : 'text-gray-600'}`}>
             <button
               type='button'
               onClick={onToggleMode}
-              className='text-blue-600 hover:text-blue-500 font-medium underline'
+              className={dark ? 'text-blue-300 hover:text-blue-200 font-medium underline' : 'text-blue-600 hover:text-blue-500 font-medium underline'}
             >
               Back to sign in
             </button>
@@ -72,20 +73,31 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
 
   const errorMessage = state && 'error' in state ? state.error : undefined;
 
+  const labelClass = dark
+    ? 'mb-2 mt-3 block text-s font-medium text-white'
+    : 'mb-2 mt-3 block text-s font-medium text-gray-900';
+
+  const inputClass = dark
+    ? 'peer block w-full rounded-md border border-white/40 bg-transparent text-white py-[9px] pl-10 text-sm outline-2 placeholder:text-white/40'
+    : 'peer block w-full rounded-md border border-gray-200 bg-white text-gray-900 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500';
+
+  const inputDisabledClass = dark
+    ? 'peer block w-full rounded-md border border-white/20 bg-white/5 text-white/40 py-[9px] pl-10 text-sm outline-2 placeholder:text-white/20 cursor-not-allowed'
+    : 'peer block w-full rounded-md border border-gray-200 bg-white text-gray-900 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed';
+
+  const iconClass = dark
+    ? 'pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-white/40 peer-focus:text-white'
+    : 'pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900';
+
   return (
     <form action={formAction} className='space-y-3'>
-      <div className='flex-1 rounded-lg bg-gray-50 px-4 py-2'>
-        <h1 className={`${ubuntu.className} mb-1 text-2xl text-gray-900`}>
+      <div className={dark ? 'flex-1' : 'flex-1 rounded-lg bg-gray-50 px-4 py-2'}>
+        <h1 className={`${ubuntu.className} mb-1 text-2xl ${dark ? 'text-white' : 'text-gray-900'}`}>
           Create an account
         </h1>
 
         <div className='w-full'>
-          <label
-            className='mb-2 mt-3 block text-s font-medium text-gray-900'
-            htmlFor='username'
-          >
-            Username
-          </label>
+          <label className={labelClass} htmlFor='username'>Username</label>
           <div className='relative'>
             <input
               id='username'
@@ -96,17 +108,12 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
               minLength={2}
               maxLength={20}
               autoFocus
-              className='peer block w-full rounded-md border border-gray-200 bg-white text-gray-900 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500'
+              className={inputClass}
             />
-            <UserIcon className='pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900' />
+            <UserIcon className={iconClass} />
           </div>
 
-          <label
-            className='mb-2 mt-3 block text-s font-medium text-gray-900'
-            htmlFor='email'
-          >
-            Email
-          </label>
+          <label className={labelClass} htmlFor='email'>Email</label>
           <div className='relative'>
             <input
               id='email'
@@ -116,17 +123,12 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
               required
               defaultValue={inviteEmail}
               disabled={!!inviteEmail}
-              className='peer block w-full rounded-md border border-gray-200 bg-white text-gray-900 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed'
+              className={!!inviteEmail ? inputDisabledClass : inputClass}
             />
-            <AtSymbolIcon className='pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900' />
+            <AtSymbolIcon className={iconClass} />
           </div>
 
-          <label
-            className='mb-2 mt-3 block text-s font-medium text-gray-900'
-            htmlFor='password'
-          >
-            Password
-          </label>
+          <label className={labelClass} htmlFor='password'>Password</label>
           <div className='relative'>
             <input
               id='password'
@@ -137,17 +139,12 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className='peer block w-full rounded-md border border-gray-200 bg-white text-gray-900 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500'
+              className={inputClass}
             />
-            <KeyIcon className='pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900' />
+            <KeyIcon className={iconClass} />
           </div>
 
-          <label
-            className='mb-2 mt-3 block text-s font-medium text-gray-900'
-            htmlFor='confirmPassword'
-          >
-            Confirm Password
-          </label>
+          <label className={labelClass} htmlFor='confirmPassword'>Confirm Password</label>
           <div className='relative'>
             <input
               id='confirmPassword'
@@ -158,9 +155,9 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
               minLength={6}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className='peer block w-full rounded-md border border-gray-200 bg-white text-gray-900 py-[9px] pl-10 text-sm outline-2 placeholder:text-gray-500'
+              className={inputClass}
             />
-            <KeyIcon className='pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900' />
+            <KeyIcon className={iconClass} />
           </div>
 
           {passwordError && (
@@ -176,7 +173,7 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
         {inviteEmail && <input type='hidden' name='email' value={inviteEmail} />}
 
         <Button
-          className='mt-4 w-full'
+          className={dark ? 'mt-4 w-full bg-white text-gray-900 hover:bg-gray-100 active:bg-gray-200' : 'mt-4 w-full'}
           aria-disabled={isPending || !!passwordError}
         >
           Sign up
@@ -190,12 +187,12 @@ export default function SignupForm({ onToggleMode, callbackUrl: propCallbackUrl 
         )}
 
         {onToggleMode && (
-          <div className='mt-4 text-center text-sm text-gray-600'>
+          <div className={`mt-4 text-center text-sm ${dark ? 'text-white/60' : 'text-gray-600'}`}>
             Already have an account?{' '}
             <button
               type='button'
               onClick={onToggleMode}
-              className='text-blue-600 hover:text-blue-500 font-medium underline'
+              className={dark ? 'text-blue-300 hover:text-blue-200 font-medium underline' : 'text-blue-600 hover:text-blue-500 font-medium underline'}
             >
               Sign in
             </button>

@@ -6,7 +6,6 @@ import { Suspense, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Screen } from '@iam/ui';
 import UserButton from '@/app/ui/header/user-button';
-import SigninButton from '@/app/ui/auth/signin-button';
 import AuthRedirectHandler from '@/app/ui/auth/auth-redirect-handler';
 import { useUser } from '@/app/lib/providers/user-provider';
 import { FooterProvider, useFooter } from '@/app/lib/providers/footer-provider';
@@ -35,18 +34,17 @@ function PuzzleIcon({ className }: { className?: string }) {
 
 interface AppShellProps {
     children: React.ReactNode;
-    showLoading?: boolean;
 }
 
-export default function AppShell({ children, showLoading = true }: AppShellProps) {
+export default function AppShell({ children }: AppShellProps) {
     return (
         <FooterProvider>
-            <AppShellInner showLoading={showLoading}>{children}</AppShellInner>
+            <AppShellInner>{children}</AppShellInner>
         </FooterProvider>
     );
 }
 
-function AppShellInner({ children, showLoading = true }: AppShellProps) {
+function AppShellInner({ children }: AppShellProps) {
     const { footer } = useFooter();
     const { user } = useUser();
     const loggedIn = !!user && !user.isGuest;
@@ -99,6 +97,7 @@ function AppShellInner({ children, showLoading = true }: AppShellProps) {
         <Screen
             headerReady={headerReady}
             footer={footer}
+            chromeVisible={loggedIn}
             userControls={loggedIn ? <UserButton /> : undefined}
             nav={loggedIn ? (
                 <>
@@ -122,16 +121,13 @@ function AppShellInner({ children, showLoading = true }: AppShellProps) {
                         <PuzzleIcon className='w-7 h-7' />
                     </a>
                 </>
-            ) : (
-                <SigninButton />
-            )}
+            ) : undefined}
             extras={
                 <Suspense fallback={null}>
                     <AuthRedirectHandler />
                 </Suspense>
             }
             brandHref='/whois'
-            showLoading={showLoading}
         >
             {children}
         </Screen>
