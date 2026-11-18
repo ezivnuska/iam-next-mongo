@@ -54,9 +54,6 @@ export default function Inbox({ initialThreads, withUserId, withUsername }: Inbo
           selectedThreadId ? 'hidden md:flex' : 'flex'
         } flex-col w-full md:w-72 shrink-0 border-r border-gray-200 overflow-y-auto`}
       >
-        <div className='px-4 py-3 border-b border-gray-200 shrink-0'>
-          <h2 className='font-semibold text-gray-900 text-sm'>Messages</h2>
-        </div>
         <ThreadList
           threads={threads}
           selectedThreadId={selectedThreadId}
