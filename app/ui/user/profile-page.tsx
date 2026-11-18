@@ -74,15 +74,15 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
             return;
         }
         setFooter(
-            <nav style={isLandscape ? { paddingTop: 'clamp(8px, 2vw, 16px)' } : undefined} className={`flex flex-col gap-0 @min-[220px]:flex-row @min-[220px]:justify-around ${isLandscape ? 'p-0' : 'p-2 pt-4 @min-[220px]:p-1'}`}>
+            <nav className={`flex flex-col gap-2 @min-[220px]:flex-row @min-[220px]:justify-around @min-[220px]:gap-2 ${isLandscape ? 'p-2 gap-1' : 'p-2 py-1.5 @min-[220px]:px-2 @min-[220px]:py-1.5'}`}>
                 {CONTENT_TABS.map(tab => (
                     <button
                         key={tab.value}
                         onClick={() => { if (tab.value !== activeTab) router.push(`?t=${tab.value}`, { scroll: false }); }}
-                        className={`flex flex-1 items-center font-medium transition-colors cursor-pointer ${isLandscape ? 'flex-row justify-start gap-2 px-3 py-3.5 rounded-none' : 'flex-col justify-center gap-0.5 py-3 rounded-lg @min-[220px]:py-1.5'} ${
+                        className={`flex flex-1 items-center font-medium transition-colors cursor-pointer ${isLandscape ? 'flex-row justify-start gap-2 px-3 py-2 rounded-lg' : 'flex-col justify-center gap-0.5 py-3 rounded-lg @min-[220px]:py-1.5'} ${
                             activeTab === tab.value
                                 ? 'text-white bg-gray-700'
-                                : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                                : 'text-white hover:bg-white/10 active:bg-white/20'
                         }`}
                     >
                         <div className='relative shrink-0'>
@@ -109,7 +109,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
             headerActions = (
                 <button
                     onClick={() => setEntryTrigger(n => n + 1)}
-                    className='px-3 py-1.5 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors'
+                    className='px-3 py-1.5 text-sm font-semibold text-white border border-white/50 rounded-lg hover:border-white hover:bg-white/10 transition-colors cursor-pointer'
                 >
                     + Add
                 </button>
@@ -118,7 +118,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
             headerActions = (
                 <button
                     onClick={() => setUploadTrigger(n => n + 1)}
-                    className='px-3 py-1.5 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors'
+                    className='px-3 py-1.5 text-sm font-semibold text-white border border-white/50 rounded-lg hover:border-white hover:bg-white/10 transition-colors cursor-pointer'
                 >
                     + Upload
                 </button>

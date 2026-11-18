@@ -17,7 +17,7 @@ export default function SignOutButton({ variant = 'icon' }: { variant?: 'icon' |
                 <button
                     onClick={openConfirm}
                     disabled={isSigningOut}
-                    className='self-start px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:border-red-400 hover:text-red-600 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-default'
+                    className='self-start px-4 py-2 text-sm font-semibold rounded-lg border border-white/50 text-white hover:border-red-400 hover:text-red-400 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-default'
                 >
                     {isSigningOut ? 'Signing out…' : 'Sign out'}
                 </button>
