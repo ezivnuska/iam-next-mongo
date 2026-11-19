@@ -49,7 +49,7 @@ export default function Screen({
         const obs = new ResizeObserver(sync);
         obs.observe(el);
         return () => obs.disconnect();
-    }, [isLandscape]);
+    }, [isLandscape, isPortrait]);
 
     useEffect(() => {
         if (!isPortrait || !footer) {
