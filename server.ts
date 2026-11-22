@@ -86,18 +86,15 @@ app.prepare().then(() => {
 				// Guests are ephemeral; limit their ID format to prevent spoofing real user IDs.
 				if (!/^guest-[a-zA-Z0-9_-]{8,64}$/.test(userId)) return
 			} else {
-				// Non-guest users must have a valid MongoDB ObjectId.
+				// Non-guest users must have a valid MongoDB ObjectId and a verified JWT.
+				// Web clients fetch /api/auth/socket-token to obtain one before registering.
 				if (!isValidObjectId(userId)) return
-				// Mobile clients supply a JWT; verify it. Web clients have no token —
-				// they rely on cookie-based Next.js session which is validated per server
-				// action. Accepting web sockets without token is a known limitation.
-				if (token) {
-					try {
-						const payload = await verifyMobileToken(token)
-						if (payload.id !== userId) return
-					} catch {
-						return
-					}
+				if (!token) return
+				try {
+					const payload = await verifyMobileToken(token)
+					if (payload.id !== userId) return
+				} catch {
+					return
 				}
 			}
 

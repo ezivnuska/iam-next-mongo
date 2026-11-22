@@ -108,11 +108,21 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
 	// Register/re-register user when user changes (including when guest user is created)
 	useEffect(() => {
-		if (!socket || !isConnected) return
+		if (!socket || !isConnected || !user?.id) return
 
-		if (user?.id) {
+		if (user.isGuest) {
 			socket.emit('register', { userId: user.id, username: user.username })
+			return
 		}
+
+		fetch('/api/auth/socket-token')
+			.then(res => res.ok ? res.json() : Promise.reject())
+			.then(({ token }: { token: string }) => {
+				socket.emit('register', { userId: user.id, username: user.username, token })
+			})
+			.catch(() => {
+				// Token fetch failed — do not register to prevent unverified connections
+			})
 	}, [user?.id, user?.username, user?.isGuest, socket, isConnected])
 
 	return (
