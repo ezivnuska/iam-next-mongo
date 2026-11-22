@@ -4,24 +4,22 @@ import { useState, useEffect } from 'react';
 
 export type ScreenOrientation = 'portrait' | 'landscape';
 
+function getOrientation(): ScreenOrientation {
+    return window.matchMedia('(orientation: landscape)').matches ? 'landscape' : 'portrait';
+}
+
 export function useScreenOrientation(): ScreenOrientation {
-  const [orientation, setOrientation] = useState<ScreenOrientation>(() => {
-    if (typeof window !== 'undefined') {
-      return window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
-    }
-    return 'portrait';
-  });
+    const [orientation, setOrientation] = useState<ScreenOrientation>(() => {
+        if (typeof window !== 'undefined') return getOrientation();
+        return 'portrait';
+    });
 
-  useEffect(() => {
-    const updateOrientation = () => {
-      const newOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
-      setOrientation(newOrientation);
-    };
+    useEffect(() => {
+        const mq = window.matchMedia('(orientation: landscape)');
+        const update = () => setOrientation(mq.matches ? 'landscape' : 'portrait');
+        mq.addEventListener('change', update);
+        return () => mq.removeEventListener('change', update);
+    }, []);
 
-    updateOrientation();
-    window.addEventListener('resize', updateOrientation);
-    return () => window.removeEventListener('resize', updateOrientation);
-  }, []);
-
-  return orientation;
+    return orientation;
 }
