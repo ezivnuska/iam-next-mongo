@@ -77,7 +77,7 @@ export async function POST(req: Request) {
     });
 
     await newEntry.populate(CONTENT_POPULATE_CONFIG);
-    const doc = newEntry.toObject() as any;
+    const doc = newEntry.toObject() as Record<string, unknown>;
 
     await logActivity({
       userId,
@@ -106,7 +106,7 @@ export async function POST(req: Request) {
       ...(contentType === 'post' && doc.linkUrl && { linkUrl: doc.linkUrl }),
       ...(contentType === 'post' && doc.linkPreview && { linkPreview: doc.linkPreview }),
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Error creating entry:", err);
     if (err instanceof UnauthorizedError) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

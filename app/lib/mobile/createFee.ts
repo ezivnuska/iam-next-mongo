@@ -11,11 +11,10 @@ export async function createIssueFee(
   issueId: string,
   amount: number
 ) {
-  const user = await UserModel.findById(userId).lean() as any
+  type LeanUser = { stripeCustomerId?: string; stripeDefaultPaymentMethodId?: string }
+  const user = await UserModel.findById(userId).lean() as LeanUser | null
   if (!user?.stripeCustomerId || !user?.stripeDefaultPaymentMethodId) {
-    const err = new Error('Payment method required') as any
-    err.code = 'NO_PAYMENT_METHOD'
-    throw err
+    throw Object.assign(new Error('Payment method required'), { code: 'NO_PAYMENT_METHOD' })
   }
 
   const paymentIntent = await stripe.paymentIntents.create({

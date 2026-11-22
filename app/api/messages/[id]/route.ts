@@ -23,16 +23,16 @@ export async function DELETE(
     const doc = await MessageModel.findById(id)
     if (!doc) return NextResponse.json({ error: 'Message not found' }, { status: 404 })
 
-    if ((doc as any).from.toString() !== userId)
+    if (doc.from.toString() !== userId)
       return NextResponse.json({ error: 'Only the sender can delete a message' }, { status: 403 })
 
-    const toId     = (doc as any).to.toString()
-    const threadId = (doc as any).threadId
+    const toId     = doc.to.toString()
+    const threadId = doc.threadId
 
     await MessageModel.deleteOne({ _id: id })
 
     try {
-      const io = (global as any).io
+      const io = global.io
       if (io) io.to(`user:${toId}`).emit('message:deleted', { messageId: id, threadId, toId })
     } catch (err) {
       console.error('[DELETE /api/messages/:id] socket emit failed:', err)

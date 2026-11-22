@@ -20,7 +20,7 @@ import type {
 import Issue from '@/app/lib/models/issue'
 import Pledge from '@/app/lib/models/pledge'
 
-async function emitToUsers(event: string, data: any, userIds: string[]): Promise<void> {
+async function emitToUsers(event: string, data: unknown, userIds: string[]): Promise<void> {
 	const unique = [...new Set(userIds.filter(Boolean))]
 	await Promise.allSettled(unique.map((id) => emitViaAPI(event, data, `user:${id}`).catch(() => {})))
 }

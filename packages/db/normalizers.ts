@@ -1,5 +1,6 @@
 import type { User, Image, Message, MessageParticipant, ApiAvatar } from '@iam/shared-types'
 import type { UserDocument } from './models/user'
+import type { MessageDocument } from './models/message'
 
 export function normalizeUser(doc: UserDocument): User {
     return {
@@ -18,7 +19,7 @@ export function normalizeUser(doc: UserDocument): User {
                 userId: doc.avatar.userId?.toString(),
                 username: doc.avatar.username,
                 alt: doc.avatar.alt,
-                variants: doc.avatar.variants.map((v: any) => ({
+                variants: doc.avatar.variants.map((v) => ({
                     size: v.size,
                     filename: v.filename,
                     width: v.width,
@@ -42,7 +43,7 @@ export function normalizePublicUser(doc: UserDocument) {
         avatar: doc.avatar && typeof doc.avatar === 'object' && 'variants' in doc.avatar
             ? {
                 id: doc.avatar._id?.toString(),
-                variants: doc.avatar.variants.map((v: any) => ({
+                variants: doc.avatar.variants.map((v) => ({
                     size: v.size,
                     filename: v.filename,
                     width: v.width,
@@ -54,46 +55,55 @@ export function normalizePublicUser(doc: UserDocument) {
     }
 }
 
-function normalizeMessageParticipant(user: any): MessageParticipant {
+type ParticipantLike = { _id?: unknown; id?: unknown; username?: string; avatar?: unknown }
+
+function normalizeMessageParticipant(user: ParticipantLike): MessageParticipant {
   const avatar: ApiAvatar | null =
-    user?.avatar && typeof user.avatar === 'object' && '_id' in user.avatar
-      ? {
-          id: user.avatar._id.toString(),
-          variants: (user.avatar.variants ?? []).map((v: any) => ({
-            size: v.size,
-            filename: v.filename,
-            width: v.width,
-            height: v.height,
-            url: v.url,
-          })),
-        }
+    user?.avatar && typeof user.avatar === 'object' && '_id' in (user.avatar as object)
+      ? (() => {
+          const av = user.avatar as { _id: { toString(): string }; variants?: Array<{ size?: string; filename?: string; width?: number; height?: number; url?: string }> }
+          return {
+            id: av._id.toString(),
+            variants: (av.variants ?? []).map(v => ({
+              size: v.size,
+              filename: v.filename,
+              width: v.width,
+              height: v.height,
+              url: v.url,
+            })),
+          }
+        })()
       : null
   return {
-    id: user?._id?.toString() ?? user?.id ?? '',
+    id: (user?._id as { toString(): string } | undefined)?.toString() ?? (user?.id as string | undefined) ?? '',
     username: user?.username ?? '',
     avatar,
   }
 }
 
-export function normalizeMessage(doc: any): Message {
+type MsgLike = { _id: unknown; threadId: unknown; from: unknown; to: unknown; text: unknown; readAt?: unknown; createdAt: unknown; updatedAt: unknown }
+
+export function normalizeMessage(doc: MsgLike): Message {
   return {
-    id: doc._id.toString(),
-    threadId: doc.threadId,
-    from: normalizeMessageParticipant(doc.from),
-    to: normalizeMessageParticipant(doc.to),
-    text: doc.text,
-    readAt: doc.readAt ? new Date(doc.readAt).toISOString() : null,
-    createdAt: new Date(doc.createdAt).toISOString(),
-    updatedAt: new Date(doc.updatedAt).toISOString(),
+    id: (doc._id as { toString(): string }).toString(),
+    threadId: doc.threadId as string,
+    from: normalizeMessageParticipant(doc.from as ParticipantLike),
+    to: normalizeMessageParticipant(doc.to as ParticipantLike),
+    text: doc.text as string,
+    readAt: doc.readAt ? new Date(doc.readAt as string | number | Date).toISOString() : null,
+    createdAt: new Date(doc.createdAt as string | number | Date).toISOString(),
+    updatedAt: new Date(doc.updatedAt as string | number | Date).toISOString(),
   }
 }
 
-export function normalizeImage(img?: any): Image | undefined {
+type ImageLike = { _id?: { toString(): string }; id?: string; userId?: string; username?: string; alt?: string; variants?: unknown[] }
+
+export function normalizeImage(img?: ImageLike): Image | undefined {
     if (!img) return undefined
     return {
-        id: img._id?.toString?.() ?? img.id,
-        userId: img.userId,
-        username: img.username,
+        id: img._id?.toString() ?? img.id ?? '',
+        userId: img.userId ?? '',
+        username: img.username ?? '',
         alt: img.alt ?? '',
         variants: img.variants ?? [],
     }

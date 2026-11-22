@@ -195,21 +195,21 @@ export interface IssueCompletionPayload {
 		issueId: string
 		workerUserId: string
 		username: string | null
-		avatar: any | null
-		images: any[]
+		avatar: string | null
+		images: unknown[]
 		reviews: { userId: string; vote: 'approve' | 'deny' }[]
 		status: 'pending' | 'approved' | 'denied' | 'worker_decision'
 		createdAt: string
 		completedAt: string | null
 		autoApproveAt?: string | null
 	}
-	issue?: any
-	previousCompletions?: any[]
+	issue?: unknown
+	previousCompletions?: unknown[]
 }
 
 export interface IssueCreatedPayload {
 	actorId: string
-	issue: any
+	issue: unknown
 }
 
 export interface IssuePledgePayload {
@@ -222,7 +222,7 @@ export interface IssuePledgePayload {
 		amount: number
 		createdAt: string
 		username: string
-		avatar: any | null
+		avatar: string | null
 	}
 }
 

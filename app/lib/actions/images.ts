@@ -34,10 +34,11 @@ export async function getImages(
       .sort({ createdAt: -1 })
       .lean({ virtuals: true });
 
-    const imageIds = images.map((img: any) => img._id.toString());
+    type LeanImage = { _id: { toString(): string }; userId: { toString(): string }; username?: string; filename?: string; alt?: string; url?: string; variants?: Array<{ size?: string; filename?: string; width?: number; height?: number; url?: string }>; likes?: Array<{ toString(): string }>; createdAt?: { toISOString(): string }; updatedAt?: { toISOString(): string } }
+    const imageIds = images.map((img) => (img as LeanImage)._id.toString());
 
     // Batch fetch comment counts and entry references in parallel
-    const imageObjectIds = images.map((img: any) => img._id);
+    const imageObjectIds = images.map((img) => (img as LeanImage)._id);
     const [commentCounts, entriesWithImages] = await Promise.all([
       getCommentCountsForItems(imageIds),
       EntryModel.find({ image: { $in: imageObjectIds } })
@@ -47,7 +48,7 @@ export async function getImages(
 
     // Build imageId → usages map
     const usageMap: Record<string, Array<{ type: 'post' | 'memory'; id: string; title?: string }>> = {};
-    for (const entry of entriesWithImages as any[]) {
+    for (const entry of entriesWithImages as Array<{ _id: { toString(): string }; image: { toString(): string }; contentType?: string; title?: string }>) {
       const imgId = entry.image.toString();
       if (!usageMap[imgId]) usageMap[imgId] = [];
       usageMap[imgId].push({
@@ -58,10 +59,11 @@ export async function getImages(
     }
 
     const activeUserId = currentUserId || session?.user?.id;
-    return images.map((img: any) => {
+    return images.map((rawImg) => {
+      const img = rawImg as LeanImage;
       const imgId = img._id.toString();
       const likedByCurrentUser = activeUserId
-        ? (img.likes ?? []).some((id: string) => id.toString() === activeUserId)
+        ? (img.likes ?? []).some((id) => id.toString() === activeUserId)
         : false;
 
       return {
@@ -71,14 +73,14 @@ export async function getImages(
         filename: img.filename,
         alt: img.alt ?? "",
         url: img.url ?? "",
-        variants: (img.variants ?? []).map((v: any) => ({
+        variants: (img.variants ?? []).map(v => ({
           size: v.size,
           filename: v.filename,
           width: v.width,
           height: v.height,
           url: getS3ImageUrl(img.username, v.filename),
         })),
-        likes: (img.likes ?? []).map((id: any) => id.toString()),
+        likes: (img.likes ?? []).map(id => id.toString()),
         likedByCurrentUser,
         commentCount: commentCounts[imgId] || 0,
         usages: usageMap[imgId] || [],

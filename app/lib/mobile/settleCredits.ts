@@ -11,11 +11,13 @@ import Issue from '@/app/lib/models/issue'
 export async function settleCredits(issueId: string): Promise<number> {
   await connectToDatabase()
 
-  const acceptedApplicant = await Applicant.findOne({ issueId, status: 'accepted' }).lean() as any
+  type LeanApplicant = { userId: unknown }
+  type LeanAllocation = { amount?: number; userId?: unknown }
+  const acceptedApplicant = await Applicant.findOne({ issueId, status: 'accepted' }).lean() as LeanApplicant | null
   if (!acceptedApplicant) throw new Error('No accepted applicant')
 
   // Sum direct allocations for this issue
-  const allocations = await AllocationModel.find({ issueId }).lean() as any[]
+  const allocations = await AllocationModel.find({ issueId }).lean() as LeanAllocation[]
   const totalAllocated = allocations.reduce((sum, a) => sum + (a.amount ?? 0), 0)
 
   // General pool share: (total member credits − total allocated globally) / open issue count

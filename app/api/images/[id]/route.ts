@@ -18,7 +18,7 @@ export async function DELETE(req: Request) {
     await deleteImage(id);
 
     return NextResponse.json({ ok: true }, { status: 200 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (err?.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

@@ -38,7 +38,7 @@ export async function GET(req: Request) {
       .lean()
 
     return NextResponse.json({ pledges: pledges.map(serializePledge) })
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (err instanceof UnauthorizedError) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -86,7 +86,7 @@ export async function POST(req: Request) {
     })
 
     return NextResponse.json({ pledge: serialized }, { status: 201 })
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (err instanceof UnauthorizedError) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

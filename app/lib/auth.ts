@@ -93,7 +93,7 @@ export const authOptions: NextAuthConfig = {
     async jwt({ token, user }: { token: JWT; user?: User }) {
         if (user) {
             Object.assign(token, user, {
-                emailVerified: (user as any).emailVerified ?? null,
+                emailVerified: (user as { emailVerified?: Date | null }).emailVerified ?? null,
             });
         }
         return token;

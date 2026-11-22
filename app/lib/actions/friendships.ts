@@ -396,9 +396,9 @@ export async function getFriendshipStatus(userId: string): Promise<{
 			{ requester: userId, recipient: session.user.id }
 		]
 	}).lean<{
-		_id: any
-		requester: any
-		recipient: any
+		_id: unknown
+		requester: unknown
+		recipient: unknown
 		status: 'pending' | 'accepted' | 'rejected'
 	}>()
 

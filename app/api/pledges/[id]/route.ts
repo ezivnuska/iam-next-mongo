@@ -39,7 +39,7 @@ export async function GET(
     }
 
     return NextResponse.json({ pledge: serializePledge(pledge) })
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (err instanceof UnauthorizedError) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -96,7 +96,7 @@ export async function PATCH(
     })
 
     return NextResponse.json({ pledge: serialized })
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (err instanceof UnauthorizedError) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -124,12 +124,14 @@ export async function DELETE(
       return NextResponse.json({ error: 'Pledge not found' }, { status: 404 })
     }
 
-    const isOwner = (pledge as any).userId.toString() === user.id
+    type LeanPledge = { userId: { toString(): string }; issueId: { toString(): string }; amount: number }
+    const p = pledge as unknown as LeanPledge
+    const isOwner = p.userId.toString() === user.id
     const isAdmin = user.role === 'admin'
 
     if (!isOwner && !isAdmin) {
-      const need = await Issue.findById((pledge as any).issueId).lean()
-      if (!need || (need as any).author.toString() !== user.id) {
+      const need = await Issue.findById(p.issueId).lean()
+      if (!need || (need as unknown as { author: { toString(): string } }).author.toString() !== user.id) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     }
@@ -141,12 +143,12 @@ export async function DELETE(
       action: 'delete',
       entityType: 'pledge',
       entityId: id,
-      entityData: { issueId: (pledge as any).issueId.toString(), amount: (pledge as any).amount },
+      entityData: { issueId: p.issueId.toString(), amount: p.amount },
       metadata: getRequestMetadata(req),
     })
 
     return NextResponse.json({ ok: true })
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (err instanceof UnauthorizedError) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

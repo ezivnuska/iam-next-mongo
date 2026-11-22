@@ -17,32 +17,34 @@ import { releasePledgeHolds } from '@/app/lib/mobile/pledgePayments'
 import { deleteS3File } from '@/app/lib/aws/s3'
 
 export async function deleteIssueWithCleanup(issueId: string, force = false): Promise<void> {
-  const issue = await Issue.findById(issueId).lean() as any
+  type LeanDoc = Record<string, unknown>
+  const issue = await Issue.findById(issueId).lean() as LeanDoc | null
   if (!issue) return
 
-  if (!force && issue.status === 'completed')
+  if (!force && issue['status'] === 'completed')
     throw new Error(`Cannot delete completed issue ${issueId} — payment has already been settled`)
 
   // Refund the creation fee before removing DB records
-  const fee = await Fee.findOne({ issueId }).lean() as any
+  const fee = await Fee.findOne({ issueId }).lean() as LeanDoc | null
   if (fee?.stripePaymentIntentId) {
     try {
       await stripe.refunds.create({ payment_intent: fee.stripePaymentIntentId })
-    } catch (err: any) {
-      if (err?.code !== 'charge_already_refunded')
-        console.error(`[deleteIssueWithCleanup] fee refund failed for issue ${issueId}:`, err?.message ?? err)
+    } catch (err: unknown) {
+      const e = err as { code?: string; message?: string };
+      if (e?.code !== 'charge_already_refunded')
+        console.error(`[deleteIssueWithCleanup] fee refund failed for issue ${issueId}:`, e?.message ?? err)
     }
   }
 
   // Release Stripe holds on pledges before removing DB records
   await releasePledgeHolds(issueId)
 
-  const completionDocs  = await Completion.find({ issueId }).select('images').lean() as any[]
-  const applicantDocs   = await Applicant.find({ issueId }).select('startImageId').lean() as any[]
-  const completionImageIds = completionDocs.flatMap((c: any) => c.images ?? [])
-  const applicantImageIds  = applicantDocs.map((a: any) => a.startImageId).filter(Boolean)
-  const issueImageIds      = issue.images ?? []
-  const reportImageIds     = (issue.reports ?? []).map((r: any) => r.imageId).filter(Boolean)
+  const completionDocs  = await Completion.find({ issueId }).select('images').lean() as LeanDoc[]
+  const applicantDocs   = await Applicant.find({ issueId }).select('startImageId').lean() as LeanDoc[]
+  const completionImageIds = completionDocs.flatMap(c => (c['images'] as unknown[]) ?? [])
+  const applicantImageIds  = applicantDocs.map(a => a['startImageId']).filter(Boolean)
+  const issueImageIds      = (issue['images'] as unknown[]) ?? []
+  const reportImageIds     = ((issue['reports'] as LeanDoc[]) ?? []).map(r => r['imageId']).filter(Boolean)
   const allImageIds        = [...completionImageIds, ...applicantImageIds, ...issueImageIds, ...reportImageIds]
 
   const [completionImages, applicantImages, issueImages, reportImages] = await Promise.all([
@@ -62,17 +64,18 @@ export async function deleteIssueWithCleanup(issueId: string, force = false): Pr
     allImageIds.length > 0 ? ImageModel.deleteMany({ _id: { $in: allImageIds } }) : Promise.resolve(),
   ])
 
+  type LeanImage = { variants?: Array<{ url?: string }> }
   const allImages = [
-    ...(completionImages as any[]),
-    ...(applicantImages as any[]),
-    ...(issueImages as any[]),
-    ...(reportImages as any[]),
+    ...(completionImages as LeanImage[]),
+    ...(applicantImages as LeanImage[]),
+    ...(issueImages as LeanImage[]),
+    ...(reportImages as LeanImage[]),
   ]
   await Promise.allSettled(
-    allImages.flatMap((img: any) =>
+    allImages.flatMap(img =>
       (img.variants ?? [])
-        .filter((v: any) => v.url)
-        .map((v: any) => {
+        .filter(v => v.url)
+        .map(v => {
           const key = v.url.split(
             `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`
           )[1]

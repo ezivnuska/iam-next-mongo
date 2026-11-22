@@ -38,7 +38,7 @@ async function getCrossStreet(lat: number, lon: number, exclude: string): Promis
 
   const data = await res.json()
   const names: string[] = data.elements
-    .map((e: any) => e.tags?.name as string | undefined)
+    .map((e: { tags?: { name?: string } }) => e.tags?.name)
     .filter((n: string | undefined): n is string => !!n && n !== exclude)
 
   return names[0] ?? null

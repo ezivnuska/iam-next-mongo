@@ -20,7 +20,7 @@ function getS3Client() {
 }
 
 export async function uploadFileToS3(file: File | Blob, folder = "uploads") {
-  const fileName = `${Date.now()}-${(file as any).name || "file"}`;
+  const fileName = `${Date.now()}-${'name' in file ? (file as File).name : "file"}`;
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
 
@@ -28,7 +28,7 @@ export async function uploadFileToS3(file: File | Blob, folder = "uploads") {
     Bucket: process.env.AWS_BUCKET_NAME!,
     Key: `${folder}/${fileName}`,
     Body: buffer,
-    ContentType: (file as any).type || "application/octet-stream",
+    ContentType: file.type || "application/octet-stream",
     ACL: 'public-read',
   });
 

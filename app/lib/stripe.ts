@@ -15,7 +15,7 @@ const stripe = new Proxy({} as Stripe.Stripe, {
       if (!key) throw new Error('STRIPE_SECRET_KEY is not configured')
       _stripe = new Stripe(key)
     }
-    return (_stripe as any)[prop]
+    return Reflect.get(_stripe, prop)
   },
 })
 export default stripe

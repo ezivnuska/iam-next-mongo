@@ -4,19 +4,19 @@ import { transformPopulatedImage, transformPopulatedAuthor } from '@iam/db'
 import type { Entry } from '@/app/lib/definitions/entry'
 import type { Image as ImageType } from '@/app/lib/definitions/image'
 
-export function transformLikesArray(likes: any[] | undefined): string[] {
-  return likes?.map((id: any) => id.toString()) || []
+export function transformLikesArray(likes: Array<{ toString(): string }> | undefined): string[] {
+  return likes?.map(id => id.toString()) || []
 }
 
 export function isLikedByCurrentUser(
-  likes: any[] | undefined,
+  likes: Array<{ toString(): string }> | undefined,
   userId: string | undefined
 ): boolean {
   if (!userId) return false
-  return (likes || []).some((id: any) => id.toString() === userId)
+  return (likes || []).some(id => id.toString() === userId)
 }
 
-export function transformLinkPreview(linkPreview: any) {
+export function transformLinkPreview(linkPreview: { title?: string; description?: string; image?: string } | null | undefined) {
   if (!linkPreview) return undefined
   return {
     ...(linkPreview.title && { title: linkPreview.title }),
@@ -25,8 +25,10 @@ export function transformLinkPreview(linkPreview: any) {
   }
 }
 
+type RawDoc = Record<string, unknown> & { _id: { toString(): string }; createdAt: { toISOString(): string }; updatedAt: { toISOString(): string } }
+
 export function transformEntry(
-  entry: any,
+  entry: RawDoc,
   commentCounts: Record<string, number>,
   currentUserId?: string
 ): Entry {
@@ -56,7 +58,7 @@ export function transformEntry(
 
 // transformImage kept for standalone image content items
 export function transformImage(
-  image: any,
+  image: RawDoc,
   commentCounts: Record<string, number>,
   currentUserId?: string
 ): ImageType & { contentType: 'image' } {

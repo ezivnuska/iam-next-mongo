@@ -22,12 +22,12 @@ export async function PATCH(
 
     const doc = await MessageModel.findById(id)
     if (!doc) return NextResponse.json({ error: 'Message not found' }, { status: 404 })
-    if ((doc as any).to.toString() !== userId)
+    if (doc.to.toString() !== userId)
       return NextResponse.json({ error: 'Only the recipient can mark a message as read' }, { status: 403 })
-    if ((doc as any).readAt) return NextResponse.json({ ok: true })
+    if (doc.readAt) return NextResponse.json({ ok: true })
 
-    ;(doc as any).readAt = new Date()
-    await (doc as any).save()
+    doc.readAt = new Date()
+    await doc.save()
 
     return NextResponse.json({ ok: true })
   } catch (err) {

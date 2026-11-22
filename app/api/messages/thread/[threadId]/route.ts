@@ -38,12 +38,12 @@ export async function GET(
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .populate(populateParticipants as any)
+        .populate(populateParticipants)
         .lean(),
       MessageModel.countDocuments({ threadId }),
     ])
 
-    return NextResponse.json({ messages: (docs as any[]).map(normalizeMessage), total })
+    return NextResponse.json({ messages: docs.map(normalizeMessage), total })
   } catch (err) {
     if (err instanceof UnauthorizedError)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

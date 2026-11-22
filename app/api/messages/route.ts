@@ -42,7 +42,7 @@ export async function POST(req: Request) {
     const message = normalizeMessage(doc)
 
     try {
-      const io = (global as any).io
+      const io = global.io
       if (io) io.to(`user:${toId}`).emit('message:sent', { messageId: message.id, threadId, fromId: userId, toId })
     } catch (err) {
       console.error('[POST /api/messages] socket emit failed:', err)
@@ -89,10 +89,10 @@ export async function GET() {
 
     const lastMessageIds = threadGroups.map((t) => t.lastMessageId)
     const lastMessages = await MessageModel.find({ _id: { $in: lastMessageIds } })
-      .populate(populateParticipants as any)
+      .populate(populateParticipants)
       .lean()
 
-    const msgMap = new Map((lastMessages as any[]).map((m) => [m._id.toString(), m]))
+    const msgMap = new Map(lastMessages.map((m) => [m._id.toString(), m]))
 
     const threads = threadGroups
       .map((t) => {

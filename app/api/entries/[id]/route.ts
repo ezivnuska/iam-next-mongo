@@ -59,7 +59,7 @@ export async function PUT(req: Request) {
 
     await entry.save();
     await entry.populate(CONTENT_POPULATE_CONFIG);
-    const doc = entry.toObject() as any;
+    const doc = entry.toObject() as Record<string, unknown>;
 
     await logActivity({
       userId: user.id,
@@ -78,7 +78,7 @@ export async function PUT(req: Request) {
       author: transformPopulatedAuthor(doc.author),
       ...(doc.content && { content: doc.content }),
       ...(doc.image && { image: transformPopulatedImage(doc.image, user.id) }),
-      likes: (doc.likes || []).map((id: any) => id.toString()),
+      likes: (doc.likes || []).map((id: { toString(): string }) => id.toString()),
       ...(doc.contentType === 'memory' && {
         date: doc.date?.toISOString(),
         title: doc.title,
@@ -86,7 +86,7 @@ export async function PUT(req: Request) {
       }),
       ...(doc.contentType === 'post' && doc.linkUrl && { linkUrl: doc.linkUrl }),
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Error updating entry:", err);
     if (err instanceof UnauthorizedError) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -125,7 +125,7 @@ export async function DELETE(req: Request) {
     });
 
     return NextResponse.json({ success: true }, { status: 200 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Error deleting entry:", err);
     if (err instanceof UnauthorizedError) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

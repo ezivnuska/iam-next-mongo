@@ -5,7 +5,7 @@ import { USER_WITH_AVATAR_POPULATE, APPLICANT_USER_POPULATE } from '@iam/db'
 import Pledge from '@/app/lib/models/pledge'
 import Applicant from '@/app/lib/models/applicant'
 
-export async function attachIssueData(issues: any[]) {
+export async function attachIssueData(issues: Record<string, unknown>[]) {
   if (issues.length === 0) return []
 
   const ids = issues.map((n) => n._id)
@@ -15,15 +15,15 @@ export async function attachIssueData(issues: any[]) {
     Applicant.find({ issueId: { $in: ids } }).populate(APPLICANT_USER_POPULATE).lean(),
   ])
 
-  const pledgesByIssue: Record<string, any[]> = {}
+  const pledgesByIssue: Record<string, unknown[]> = {}
   for (const p of pledges) {
-    const key = p.issueId.toString()
+    const key = (p as { issueId: { toString(): string } }).issueId.toString()
     ;(pledgesByIssue[key] ??= []).push(p)
   }
 
-  const applicantsByIssue: Record<string, any[]> = {}
+  const applicantsByIssue: Record<string, unknown[]> = {}
   for (const a of applicants) {
-    const key = a.issueId.toString()
+    const key = (a as { issueId: { toString(): string } }).issueId.toString()
     ;(applicantsByIssue[key] ??= []).push(a)
   }
 

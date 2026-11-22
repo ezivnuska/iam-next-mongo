@@ -1,127 +1,136 @@
 // app/lib/mobile/serializers.ts
 
-export function serializeReport(r: any) {
-  const user = r.userId && typeof r.userId === 'object' ? r.userId : null
+type LeanDoc = { _id: { toString(): string }; [key: string]: unknown }
+type LeanVariant = { size?: string; filename?: string; width?: number; height?: number; url?: string }
+type LeanResource = { _id: { toString(): string }; variants?: LeanVariant[] }
+type LeanUser = { _id: { toString(): string }; username?: string; avatar?: LeanResource }
+
+export function serializeReport(r: LeanDoc) {
+  const user = r.userId && typeof r.userId === 'object' ? r.userId as LeanUser : null
   return {
     id: r._id.toString(),
-    userId: user ? user._id.toString() : r.userId.toString(),
+    userId: user ? user._id.toString() : (r.userId as { toString(): string }).toString(),
     username: user?.username ?? null,
     avatar: user?.avatar ? serializeResource(user.avatar) : null,
-    image: serializeResource(r.imageId) ?? null,
-    content: r.content ?? '',
-    createdAt: r.createdAt?.toISOString() ?? new Date().toISOString(),
+    image: serializeResource(r.imageId as LeanResource | null) ?? null,
+    content: (r.content as string) ?? '',
+    createdAt: (r.createdAt as { toISOString(): string } | undefined)?.toISOString() ?? new Date().toISOString(),
   }
 }
 
-export function serializeResource(obj: any): { id: string; variants: any[] } | null {
-  if (!obj || typeof obj !== "object" || !obj._id) return null;
-  return { id: obj._id.toString(), variants: obj.variants ?? [] };
+export function serializeResource(obj: unknown): { id: string; variants: LeanVariant[] } | null {
+  if (!obj || typeof obj !== "object") return null;
+  const doc = obj as Partial<LeanResource>;
+  if (!doc._id) return null;
+  return { id: doc._id.toString(), variants: doc.variants ?? [] };
 }
 
-export function serializeAuthor(author: any) {
-  if (!author || typeof author !== "object" || !author._id) return null;
+export function serializeAuthor(author: unknown) {
+  if (!author || typeof author !== "object") return null;
+  const a = author as Partial<LeanUser>;
+  if (!a._id) return null;
   return {
-    id: author._id.toString(),
-    username: author.username,
-    avatar: serializeResource(author.avatar),
+    id: a._id.toString(),
+    username: a.username,
+    avatar: serializeResource(a.avatar),
   };
 }
 
-export function serializePledge(p: any) {
-  const user = p.userId && typeof p.userId === 'object' ? p.userId : null
+export function serializePledge(p: LeanDoc) {
+  const user = p.userId && typeof p.userId === 'object' ? p.userId as LeanUser : null
   const anon = p.anonymous === true
   return {
     id: p._id.toString(),
-    userId: user ? user._id.toString() : p.userId.toString(),
-    issueId: p.issueId.toString(),
-    amount: p.amount,
-    createdAt: p.createdAt?.toISOString() ?? new Date().toISOString(),
+    userId: user ? user._id.toString() : (p.userId as { toString(): string }).toString(),
+    issueId: (p.issueId as { toString(): string }).toString(),
+    amount: p.amount as number,
+    createdAt: (p.createdAt as { toISOString(): string } | undefined)?.toISOString() ?? new Date().toISOString(),
     username: anon ? 'Anonymous' : (user?.username ?? ''),
     avatar: anon ? null : (serializeResource(user?.avatar) ?? null),
-    applicantId: p.applicantId ? p.applicantId.toString() : null,
-    rescindIfLost: p.rescindIfLost ?? false,
+    applicantId: p.applicantId ? (p.applicantId as { toString(): string }).toString() : null,
+    rescindIfLost: (p.rescindIfLost as boolean | undefined) ?? false,
     anonymous: anon,
   }
 }
 
-export function serializeApplicant(a: any) {
-  const user = a.userId && typeof a.userId === 'object' ? a.userId : null
-  const startImg = a.startImageId && typeof a.startImageId === 'object' ? a.startImageId : null
+export function serializeApplicant(a: LeanDoc) {
+  const user = a.userId && typeof a.userId === 'object' ? a.userId as LeanUser : null
+  const startImg = a.startImageId && typeof a.startImageId === 'object' ? a.startImageId as LeanResource : null
   return {
     id: a._id.toString(),
-    userId: user ? user._id.toString() : a.userId.toString(),
-    issueId: a.issueId.toString(),
+    userId: user ? user._id.toString() : (a.userId as { toString(): string }).toString(),
+    issueId: (a.issueId as { toString(): string }).toString(),
     username: user?.username ?? null,
     avatar: user?.avatar ? serializeResource(user.avatar) : null,
-    createdAt: a.createdAt?.toISOString() ?? new Date().toISOString(),
-    status: a.status ?? 'pending',
-    rate: a.rate ?? null,
-    acceptedAt: a.acceptedAt ? a.acceptedAt.toISOString() : null,
-    completionDeadline: a.completionDeadline ? a.completionDeadline.toISOString() : null,
-    startedAt: a.startedAt ? a.startedAt.toISOString() : null,
+    createdAt: (a.createdAt as { toISOString(): string } | undefined)?.toISOString() ?? new Date().toISOString(),
+    status: (a.status as string | undefined) ?? 'pending',
+    rate: (a.rate as number | null | undefined) ?? null,
+    acceptedAt: a.acceptedAt ? (a.acceptedAt as { toISOString(): string }).toISOString() : null,
+    completionDeadline: a.completionDeadline ? (a.completionDeadline as { toISOString(): string }).toISOString() : null,
+    startedAt: a.startedAt ? (a.startedAt as { toISOString(): string }).toISOString() : null,
     startImage: startImg ? {
       id: startImg._id.toString(),
-      variants: (startImg.variants ?? []).map((v: any) => ({ size: v.size, filename: v.filename, width: v.width, height: v.height, url: v.url })),
-      createdAt: startImg.createdAt?.toISOString() ?? new Date().toISOString(),
+      variants: (startImg.variants ?? []).map(v => ({ size: v.size, filename: v.filename, width: v.width, height: v.height, url: v.url })),
+      createdAt: (a.startImageId as LeanDoc & { createdAt?: { toISOString(): string } })?.createdAt?.toISOString() ?? new Date().toISOString(),
     } : null,
     votes: Array.isArray(a.votes)
-      ? a.votes.map((v: any) => ({ userId: v.userId.toString(), vote: v.vote }))
+      ? (a.votes as Array<{ userId: { toString(): string }; vote: string }>).map(v => ({ userId: v.userId.toString(), vote: v.vote }))
       : [],
   }
 }
 
-export function serializeCompletion(c: any, issueId?: string) {
-  const worker = c.workerUserId && typeof c.workerUserId === 'object' ? c.workerUserId : null
+export function serializeCompletion(c: LeanDoc, issueId?: string) {
+  const worker = c.workerUserId && typeof c.workerUserId === 'object' ? c.workerUserId as LeanUser : null
   return {
     id: c._id.toString(),
-    issueId: issueId ?? c.issueId?.toString(),
-    workerUserId: worker ? worker._id.toString() : (c.workerUserId?.toString() ?? null),
+    issueId: issueId ?? (c.issueId as { toString(): string } | undefined)?.toString(),
+    workerUserId: worker ? worker._id.toString() : ((c.workerUserId as { toString(): string } | undefined)?.toString() ?? null),
     username: worker?.username ?? null,
     avatar: worker?.avatar ? serializeResource(worker.avatar) : null,
     images: Array.isArray(c.images)
-      ? c.images.map((img: any) => serializeResource(img)).filter(Boolean)
+      ? (c.images as unknown[]).map(img => serializeResource(img)).filter(Boolean)
       : [],
     reviews: Array.isArray(c.reviews)
-      ? c.reviews.map((r: any) => ({ userId: r.userId.toString(), vote: r.vote }))
+      ? (c.reviews as Array<{ userId: { toString(): string }; vote: string }>).map(r => ({ userId: r.userId.toString(), vote: r.vote }))
       : [],
-    status: c.status ?? 'pending',
-    createdAt: c.createdAt?.toISOString() ?? new Date().toISOString(),
-    completedAt: c.status === 'approved' ? (c.updatedAt?.toISOString() ?? null) : null,
-    autoApproveAt: c.autoApproveAt ? c.autoApproveAt.toISOString() : null,
-    payoutAmount: c.payoutAmount ?? null,
-    totalPledged: c.totalPledged ?? null,
+    status: (c.status as string | undefined) ?? 'pending',
+    createdAt: (c.createdAt as { toISOString(): string } | undefined)?.toISOString() ?? new Date().toISOString(),
+    completedAt: c.status === 'approved' ? ((c.updatedAt as { toISOString(): string } | undefined)?.toISOString() ?? null) : null,
+    autoApproveAt: c.autoApproveAt ? (c.autoApproveAt as { toISOString(): string }).toISOString() : null,
+    payoutAmount: (c.payoutAmount as number | null | undefined) ?? null,
+    totalPledged: (c.totalPledged as number | null | undefined) ?? null,
   }
 }
 
-export function serializeIssue(n: any) {
-  const result: Record<string, any> = {
+export function serializeIssue(n: LeanDoc) {
+  const result: Record<string, unknown> = {
     id: n._id.toString(),
     issueType: n.issueType,
-    title: n.title ?? null,
-    content: n.content ?? "",
-    status: n.status ?? 'open',
-    pledged: Array.isArray(n.pledged) ? n.pledged.map(serializePledge) : [],
-    applicants: Array.isArray(n.applicants) ? n.applicants.map(serializeApplicant) : [],
-    acceptedApplicantId: n.acceptedApplicantId ? n.acceptedApplicantId.toString() : null,
-    createdAt: n.createdAt?.toISOString() ?? new Date().toISOString(),
+    title: (n.title as string | undefined) ?? null,
+    content: (n.content as string | undefined) ?? "",
+    status: (n.status as string | undefined) ?? 'open',
+    pledged: Array.isArray(n.pledged) ? (n.pledged as LeanDoc[]).map(serializePledge) : [],
+    applicants: Array.isArray(n.applicants) ? (n.applicants as LeanDoc[]).map(serializeApplicant) : [],
+    acceptedApplicantId: n.acceptedApplicantId ? (n.acceptedApplicantId as { toString(): string }).toString() : null,
+    createdAt: (n.createdAt as { toISOString(): string } | undefined)?.toISOString() ?? new Date().toISOString(),
   };
-  if (n.location?.latitude != null && n.location?.longitude != null) {
-    result.location = { latitude: n.location.latitude, longitude: n.location.longitude };
+  const loc = n.location as { latitude?: number; longitude?: number } | undefined;
+  if (loc?.latitude != null && loc?.longitude != null) {
+    result['location'] = { latitude: loc.latitude, longitude: loc.longitude };
   }
-  result.locationVisible = n.locationVisible === true;
+  result['locationVisible'] = n.locationVisible === true;
   const completionStatus = n.completionStatus ?? null
-  if (completionStatus != null) result.completionStatus = completionStatus
-  if (n.flagged === true) result.flagged = true
-  // Support both new `images[]` and legacy `image` field on old documents
-  const imageDocs = Array.isArray(n.images) && n.images.length > 0
-    ? n.images
+  if (completionStatus != null) result['completionStatus'] = completionStatus
+  if (n.flagged === true) result['flagged'] = true
+  const imageDocs = Array.isArray(n.images) && (n.images as unknown[]).length > 0
+    ? n.images as unknown[]
     : n.image ? [n.image] : []
-  const serializedImages = imageDocs.map(serializeResource).filter(Boolean)
-  if (serializedImages.length > 0) result.images = serializedImages
+  const serializedImages = imageDocs.map(img => serializeResource(img)).filter(Boolean)
+  if (serializedImages.length > 0) result['images'] = serializedImages
   const author = serializeAuthor(n.author);
-  if (author) result.author = author;
-  if (Array.isArray(n.reports) && n.reports.length > 0)
-    result.reports = n.reports.map(serializeReport)
+  if (author) result['author'] = author;
+  if (Array.isArray(n.reports) && (n.reports as unknown[]).length > 0)
+    result['reports'] = (n.reports as LeanDoc[]).map(serializeReport)
   return result;
 }
 
@@ -139,15 +148,15 @@ export function serializeFriendshipEntry(
 
 // For routes that fetch a single friendship document
 export function serializeFriendship(
-  friendship: any,
+  friendship: LeanDoc | null,
   currentUserId: string
 ): { id: string; status: string } | null {
   if (!friendship) return null;
-  const requesterId = friendship.requester.toString();
+  const requesterId = (friendship['requester'] as { toString(): string }).toString();
   const role = requesterId === currentUserId ? "requester" : "recipient";
   return serializeFriendshipEntry({
     id: friendship._id.toString(),
-    status: friendship.status,
+    status: friendship['status'] as string,
     role,
   });
 }

@@ -33,7 +33,7 @@ export const GET = async (req: NextRequest) => {
     const expired = await Completion.find({
       status: 'pending',
       autoApproveAt: { $lte: now },
-    }).lean() as any[]
+    }).lean() as Array<Record<string, unknown>>
 
     if (expired.length === 0) return NextResponse.json({ approved: 0 })
 
@@ -57,12 +57,12 @@ export const GET = async (req: NextRequest) => {
         const updatedCompletion = await Completion.findById(expiredCompletion._id)
           .populate('images')
           .populate({ path: 'workerUserId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
-          .lean() as any
+          .lean() as Record<string, unknown> | null
 
         const updatedIssue = await Issue.findById(issueId)
           .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
           .populate('images')
-          .lean() as any
+          .lean() as Record<string, unknown> | null
 
         const [pledges, applicants] = await Promise.all([
           Pledge.find({ issueId }).populate(USER_WITH_AVATAR_POPULATE).lean(),
@@ -76,7 +76,7 @@ export const GET = async (req: NextRequest) => {
 
         getIssueAudienceIds(issueId, ...(workerUserId ? [workerUserId] : [])).then((audience) =>
           emitIssueCompletionReviewed({ issueId, completion: serializedCompletion, issue: serializedIssue }, audience)
-        ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
+        ).catch((err: unknown) => console.warn('[socket]', err instanceof Error ? err.message : err))
 
         approved++
       } catch (err) {

@@ -27,7 +27,7 @@ export async function GET(
     return NextResponse.json({
       avatar: user.avatar ? transformPopulatedImage(user.avatar) : null
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Error fetching user avatar:", err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

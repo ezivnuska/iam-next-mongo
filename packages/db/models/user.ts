@@ -53,17 +53,18 @@ const UserSchema = new Schema<UserDocument>(
   {
     timestamps: true,
     toJSON: {
-      transform: (_doc, ret: any) => {
-        ret.id = ret._id.toString()
-        if (ret.avatar && typeof ret.avatar === 'object' && '_id' in ret.avatar) {
-          ret.avatar = {
-            _id: ret.avatar._id.toString(),
-            variants: ret.avatar.variants,
+      transform: (_doc, ret: Record<string, unknown>) => {
+        ret['id'] = (ret['_id'] as { toString(): string }).toString()
+        if (ret['avatar'] && typeof ret['avatar'] === 'object' && '_id' in (ret['avatar'] as object)) {
+          const av = ret['avatar'] as { _id: { toString(): string }; variants: unknown }
+          ret['avatar'] = {
+            _id: av._id.toString(),
+            variants: av.variants,
           }
         }
-        delete ret._id
-        delete ret.__v
-        delete ret.password
+        delete ret['_id']
+        delete ret['__v']
+        delete ret['password']
         return ret
       },
     },
