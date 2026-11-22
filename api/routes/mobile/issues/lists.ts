@@ -10,7 +10,7 @@ import { Hono } from 'hono'
 import mongoose from 'mongoose'
 import { authMiddleware, TokenPayload } from '../../../middleware/auth'
 import { connectToDatabase } from '@/app/lib/mongoose'
-import { serializeIssue } from '@/app/lib/mobile/serializers'
+import { serializeIssue, type LeanDoc } from '@/app/lib/mobile/serializers'
 import { attachIssueData } from '@/app/lib/mobile/attachIssueData'
 import Issue from '@/app/lib/models/issue'
 import Applicant from '@/app/lib/models/applicant'
@@ -62,7 +62,7 @@ lists.get('/api/mobile/issues/feed', authMiddleware, async (c) => {
       .lean()
 
     const issuesWithData = await attachIssueData(issues as any[])
-    return c.json({ issues: issuesWithData.map(serializeIssue) })
+    return c.json({ issues: issuesWithData.map(n => serializeIssue(n as unknown as LeanDoc)) })
   } catch (err) {
     console.error('[mobile/issues/feed GET]', err)
     return c.json({ error: 'Failed to fetch issues' }, 500)
@@ -80,7 +80,7 @@ lists.get('/api/mobile/issues/flagged', authMiddleware, async (c) => {
       .populate('images')
       .lean()
     const issuesWithData = await attachIssueData(issues as any[])
-    return c.json({ issues: issuesWithData.map(serializeIssue) })
+    return c.json({ issues: issuesWithData.map(n => serializeIssue(n as unknown as LeanDoc)) })
   } catch (err) {
     console.error('[mobile/issues/flagged GET]', err)
     return c.json({ error: 'Failed to fetch flagged issues' }, 500)
@@ -115,7 +115,7 @@ lists.get('/api/mobile/issues/nearby', authMiddleware, async (c) => {
     })
 
     if (!match) return c.json({ issue: null })
-    const issue = serializeIssue({ ...match, pledged: [], applicants: [] })
+    const issue = serializeIssue({ ...match, pledged: [], applicants: [] } as unknown as LeanDoc)
     return c.json({ issue })
   } catch (err) {
     console.error('[mobile/issues/nearby GET]', err)
@@ -151,7 +151,7 @@ lists.get('/api/mobile/issues/mine', authMiddleware, async (c) => {
       .lean()
 
     const issuesWithData = await attachIssueData(issues as any[])
-    return c.json({ issues: issuesWithData.map(serializeIssue) })
+    return c.json({ issues: issuesWithData.map(n => serializeIssue(n as unknown as LeanDoc)) })
   } catch (err) {
     console.error('[mobile/issues/mine GET]', err)
     return c.json({ error: 'Failed to fetch issues' }, 500)
@@ -175,7 +175,7 @@ lists.get('/api/mobile/issues/work', authMiddleware, async (c) => {
       .lean()
 
     const issuesWithData = await attachIssueData(issues as any[])
-    return c.json({ issues: issuesWithData.map(serializeIssue) })
+    return c.json({ issues: issuesWithData.map(n => serializeIssue(n as unknown as LeanDoc)) })
   } catch (err) {
     console.error('[mobile/issues/work GET]', err)
     return c.json({ error: 'Failed to fetch work issues' }, 500)

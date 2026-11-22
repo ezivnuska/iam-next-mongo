@@ -13,7 +13,7 @@ export function useFriendshipActions() {
         try {
             const result = await sendFriendRequest(userId);
             return result;
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Failed to send friend request:', error);
             throw error;
         } finally {
@@ -25,7 +25,7 @@ export function useFriendshipActions() {
         setActionLoading('accept');
         try {
             await acceptFriendRequest(friendshipId);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Failed to accept friend request:', error);
             throw error;
         } finally {
@@ -37,7 +37,7 @@ export function useFriendshipActions() {
         setActionLoading('reject');
         try {
             await rejectFriendRequest(friendshipId);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Failed to reject friend request:', error);
             throw error;
         } finally {
@@ -49,7 +49,7 @@ export function useFriendshipActions() {
         setActionLoading('remove');
         try {
             await removeFriend(friendshipId);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Failed to remove friend:', error);
             throw error;
         } finally {

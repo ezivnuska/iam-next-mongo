@@ -39,8 +39,8 @@ export default function AdminDeleteButton({ userId, username }: AdminDeleteButto
             await adminDeleteAccount(userId);
             close();
             router.push(`/users/${user?.username}?t=friends`);
-        } catch (e: any) {
-            setError(e?.message ?? 'Something went wrong.');
+        } catch (e: unknown) {
+            setError(e instanceof Error ? e.message : 'Something went wrong.');
             setLoading(false);
         }
     };

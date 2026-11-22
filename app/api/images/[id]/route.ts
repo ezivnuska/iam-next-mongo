@@ -18,11 +18,11 @@ export async function DELETE(req: Request) {
     await deleteImage(id);
 
     return NextResponse.json({ ok: true }, { status: 200 });
-  } catch (err: any) {
-    if (err?.message === 'Unauthorized') {
+  } catch (err: unknown) {
+    if (err instanceof Error && err.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    if (err?.message === 'Forbidden') {
+    if (err instanceof Error && err.message === 'Forbidden') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     console.error(err);

@@ -13,6 +13,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/app/lib/auth'
 import { signGamesToken } from '@/app/lib/jwt'
+import type { CrossAppTokenPayload } from '@iam/shared-types'
 
 const GAMES_ORIGIN = process.env.NEXT_PUBLIC_GAMES_URL ?? 'https://games.iameric.me'
 
@@ -25,11 +26,12 @@ export async function GET(req: NextRequest): Promise<Response> {
   const raw = req.nextUrl.searchParams.get('redirect') ?? '/'
   const redirect = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/'
 
-  const token = await signGamesToken({
+  const payload: CrossAppTokenPayload & Record<string, unknown> = {
     id: session.user.id,
     username: session.user.username,
     role: session.user.role,
-  })
+  }
+  const token = await signGamesToken(payload)
 
   const verifyUrl = new URL('/api/auth/verify', GAMES_ORIGIN)
   verifyUrl.searchParams.set('token', token)

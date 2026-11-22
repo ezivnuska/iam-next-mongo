@@ -41,5 +41,5 @@ export async function getContentDetailByUsername(
   }
 
   const commentCounts = await getCommentCountsForItems([id]);
-  return transformEntry(entry, commentCounts, currentUserId);
+  return transformEntry(entry as unknown as Parameters<typeof transformEntry>[0], commentCounts, currentUserId);
 }

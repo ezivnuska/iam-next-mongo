@@ -11,11 +11,11 @@ interface LogActivityParams {
   action: ActivityAction;
   entityType: ActivityEntityType;
   entityId: string | Types.ObjectId;
-  entityData?: Record<string, any>;
+  entityData?: Record<string, unknown>;
   metadata?: {
     ipAddress?: string;
     userAgent?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 

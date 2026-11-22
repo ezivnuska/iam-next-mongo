@@ -9,7 +9,6 @@ import { UserProvider } from '@/app/lib/providers/user-provider';
 import { ThemeProvider } from '@iam/ui';
 import { AuthModalProvider } from '@/app/lib/providers/auth-modal-provider';
 import { SocketProvider } from '@/app/lib/providers/socket-provider';
-import { TileProvider } from '@/app/lib/providers/tile-provider';
 import type { Viewport } from 'next';
 import AppShell from './ui/layout/screen/app-shell';
 
@@ -42,11 +41,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     <ThemeProvider>
                         <AuthModalProvider>
                             <SocketProvider>
-                                <TileProvider>
-                                    <AppShell>
-                                        {children}
-                                    </AppShell>
-                                </TileProvider>
+                                <AppShell>
+                                    {children}
+                                </AppShell>
                             </SocketProvider>
                         </AuthModalProvider>
                     </ThemeProvider>

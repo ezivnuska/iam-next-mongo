@@ -6,6 +6,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useRef } fro
 import { io as socketIO, Socket } from 'socket.io-client'
 import { useUser } from '@/app/lib/providers/user-provider'
 import { SOCKET_EVENTS } from '@/app/lib/socket/events'
+import type { PokerPlayerLeftPayload } from '@iam/shared-types'
 
 interface SocketContextValue {
 	socket: Socket | null
@@ -80,7 +81,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
 		// Listen for poker player removal (to clear guest credentials when away player is auto-removed)
 		// This listener stays active even when user navigates away from poker page
-		socketInstance.on(SOCKET_EVENTS.POKER_PLAYER_LEFT, (payload: { playerId: string; players: any[]; playerCount: number; gameReset?: boolean; actionHistory: any[] }) => {
+		socketInstance.on(SOCKET_EVENTS.POKER_PLAYER_LEFT, (payload: PokerPlayerLeftPayload) => {
 			// Use ref to get current user without causing socket reconnection
 			const currentUser = userRef.current
 			if (!currentUser?.isGuest) return
@@ -108,11 +109,21 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
 	// Register/re-register user when user changes (including when guest user is created)
 	useEffect(() => {
-		if (!socket || !isConnected) return
+		if (!socket || !isConnected || !user?.id) return
 
-		if (user?.id) {
+		if (user.isGuest) {
 			socket.emit('register', { userId: user.id, username: user.username })
+			return
 		}
+
+		fetch('/api/auth/socket-token')
+			.then(res => res.ok ? res.json() : Promise.reject())
+			.then(({ token }: { token: string }) => {
+				socket.emit('register', { userId: user.id, username: user.username, token })
+			})
+			.catch(() => {
+				// Token fetch failed — do not register to prevent unverified connections
+			})
 	}, [user?.id, user?.username, user?.isGuest, socket, isConnected])
 
 	return (

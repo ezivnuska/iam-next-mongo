@@ -59,13 +59,28 @@ export async function PUT(req: Request) {
 
     await entry.save();
     await entry.populate(CONTENT_POPULATE_CONFIG);
-    const doc = entry.toObject() as any;
+    type EntryDoc = {
+      _id: { toString(): string };
+      contentType: string;
+      content?: string;
+      image?: unknown;
+      author: unknown;
+      likes?: { toString(): string }[];
+      date?: Date;
+      title?: string;
+      shared?: boolean;
+      linkUrl?: string;
+      linkPreview?: unknown;
+      createdAt: Date;
+      updatedAt: Date;
+    }
+    const doc = entry.toObject() as unknown as EntryDoc;
 
     await logActivity({
       userId: user.id,
       action: 'update',
       entityType: 'entry',
-      entityId: doc._id,
+      entityId: doc._id.toString(),
       entityData: { contentType: doc.contentType, hasImage: !!doc.image },
       metadata: getRequestMetadata(req),
     });
@@ -75,18 +90,18 @@ export async function PUT(req: Request) {
       contentType: doc.contentType,
       createdAt: doc.createdAt.toISOString(),
       updatedAt: doc.updatedAt.toISOString(),
-      author: transformPopulatedAuthor(doc.author),
+      author: transformPopulatedAuthor(doc.author as Parameters<typeof transformPopulatedAuthor>[0]),
       ...(doc.content && { content: doc.content }),
-      ...(doc.image && { image: transformPopulatedImage(doc.image, user.id) }),
-      likes: (doc.likes || []).map((id: any) => id.toString()),
+      ...(doc.image ? { image: transformPopulatedImage(doc.image, user.id) } : {}),
+      likes: (doc.likes || []).map((id) => id.toString()),
       ...(doc.contentType === 'memory' && {
         date: doc.date?.toISOString(),
         title: doc.title,
         shared: doc.shared ?? false,
       }),
-      ...(doc.contentType === 'post' && doc.linkUrl && { linkUrl: doc.linkUrl }),
+      ...(doc.contentType === 'post' && doc.linkUrl ? { linkUrl: doc.linkUrl } : {}),
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Error updating entry:", err);
     if (err instanceof UnauthorizedError) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -125,7 +140,7 @@ export async function DELETE(req: Request) {
     });
 
     return NextResponse.json({ success: true }, { status: 200 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Error deleting entry:", err);
     if (err instanceof UnauthorizedError) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

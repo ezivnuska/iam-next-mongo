@@ -18,10 +18,10 @@ export async function sendPushToUsers(
   const users = await UserModel.find(
     { _id: { $in: unique }, expoPushToken: { $exists: true } },
     { expoPushToken: 1 },
-  ).lean() as any[]
+  ).lean() as Array<{ expoPushToken?: string }>
 
   const messages = users
-    .map((u: any) => u.expoPushToken as string | undefined)
+    .map(u => u.expoPushToken)
     .filter((t): t is string => !!t)
     .map((to) => ({ to, title, body, sound: 'default', ...(data ? { data } : {}) }))
 

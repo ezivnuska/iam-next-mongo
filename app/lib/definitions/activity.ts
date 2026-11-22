@@ -11,11 +11,11 @@ export interface IActivity extends Document {
   action: ActivityAction;
   entityType: ActivityEntityType;
   entityId: Types.ObjectId;
-  entityData?: Record<string, any>; // Optional snapshot of the entity at the time of action
+  entityData?: Record<string, unknown>; // Optional snapshot of the entity at the time of action
   metadata?: {
     ipAddress?: string;
     userAgent?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   createdAt?: Date;
   updatedAt?: Date;
@@ -27,11 +27,11 @@ export interface Activity {
   action: ActivityAction;
   entityType: ActivityEntityType;
   entityId: string;
-  entityData?: Record<string, any>;
+  entityData?: Record<string, unknown>;
   metadata?: {
     ipAddress?: string;
     userAgent?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   createdAt: string;
 }

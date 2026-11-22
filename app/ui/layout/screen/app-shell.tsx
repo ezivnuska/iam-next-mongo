@@ -114,7 +114,7 @@ function AppShellInner({ children }: AppShellProps) {
                         )}
                     </a>
                     <a
-                        href='https://games.iameric.me'
+                        href='/api/auth/games-token'
                         className='flex items-center justify-center text-gray-300 hover:text-white transition-colors'
                         aria-label='Games'
                     >

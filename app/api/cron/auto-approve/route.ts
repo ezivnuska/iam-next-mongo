@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { timingSafeEqual } from 'crypto'
 import { connectToDatabase } from '@/app/lib/mongoose'
-import { serializeCompletion, serializeIssue } from '@/app/lib/mobile/serializers'
+import { serializeCompletion, serializeIssue, type LeanDoc } from '@/app/lib/mobile/serializers'
 import { settleIssue } from '@/app/lib/mobile/settleIssue'
 import { getIssueAudienceIds, emitIssueCompletionReviewed } from '@/app/lib/socket/emit'
 import { USER_WITH_AVATAR_POPULATE, APPLICANT_FULL_POPULATE } from '@iam/db'
@@ -33,14 +33,14 @@ export const GET = async (req: NextRequest) => {
     const expired = await Completion.find({
       status: 'pending',
       autoApproveAt: { $lte: now },
-    }).lean() as any[]
+    }).lean() as Array<Record<string, unknown>>
 
     if (expired.length === 0) return NextResponse.json({ approved: 0 })
 
     let approved = 0
 
     await Promise.allSettled(expired.map(async (expiredCompletion) => {
-      const issueId = expiredCompletion.issueId.toString()
+      const issueId = (expiredCompletion.issueId as { toString(): string }).toString()
       try {
         const claimed = await Completion.findOneAndUpdate(
           { _id: expiredCompletion._id, status: 'pending' },
@@ -57,26 +57,28 @@ export const GET = async (req: NextRequest) => {
         const updatedCompletion = await Completion.findById(expiredCompletion._id)
           .populate('images')
           .populate({ path: 'workerUserId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
-          .lean() as any
+          .lean()
 
         const updatedIssue = await Issue.findById(issueId)
           .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
           .populate('images')
-          .lean() as any
+          .lean()
 
         const [pledges, applicants] = await Promise.all([
           Pledge.find({ issueId }).populate(USER_WITH_AVATAR_POPULATE).lean(),
           Applicant.find({ issueId }).populate(APPLICANT_FULL_POPULATE).lean(),
         ])
 
-        const serializedCompletion = serializeCompletion(updatedCompletion, issueId)
-        const serializedIssue = serializeIssue({ ...updatedIssue, pledged: pledges, applicants })
+        if (!updatedCompletion || !updatedIssue) return
+
+        const serializedCompletion = { ...serializeCompletion(updatedCompletion as unknown as LeanDoc, issueId), issueId }
+        const serializedIssue = serializeIssue({ ...(updatedIssue as unknown as LeanDoc), pledged: pledges, applicants })
 
         const workerUserId = expiredCompletion.workerUserId?.toString()
 
         getIssueAudienceIds(issueId, ...(workerUserId ? [workerUserId] : [])).then((audience) =>
-          emitIssueCompletionReviewed({ issueId, completion: serializedCompletion, issue: serializedIssue }, audience)
-        ).catch((err: any) => console.warn('[socket]', err?.message ?? err))
+          emitIssueCompletionReviewed({ issueId, completion: serializedCompletion as any, issue: serializedIssue as any }, audience)
+        ).catch((err: unknown) => console.warn('[socket]', err instanceof Error ? err.message : err))
 
         approved++
       } catch (err) {

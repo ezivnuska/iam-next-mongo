@@ -28,6 +28,9 @@ const entrySchema = new Schema<IEntry>(
   { timestamps: true }
 )
 
+entrySchema.index({ author: 1, createdAt: -1 })
+entrySchema.index({ image: 1 })
+
 entrySchema.pre('validate', function (next) {
   if (this.contentType === 'memory') {
     if (!this.date) this.invalidate('date', 'Memory must have a date')

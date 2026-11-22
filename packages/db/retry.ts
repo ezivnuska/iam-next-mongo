@@ -3,14 +3,15 @@ import type { Document } from 'mongoose';
 export interface RetryOptions {
   maxRetries?: number;
   baseDelay?: number;
-  isRetryable?: (error: any) => boolean;
+  isRetryable?: (error: unknown) => boolean;
 }
 
-export function isVersionConflictError(error: any): boolean {
-  return (
-    error.message?.includes('No matching document found') ||
-    error.message?.includes('version') ||
-    error.name === 'VersionError'
+export function isVersionConflictError(error: unknown): boolean {
+  const e = error instanceof Error ? error : null;
+  return !!(
+    e?.message?.includes('No matching document found') ||
+    e?.message?.includes('version') ||
+    e?.name === 'VersionError'
   );
 }
 
@@ -23,8 +24,8 @@ export async function withRetry<T>(
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       return await operation();
-    } catch (error: any) {
-      lastError = error;
+    } catch (error: unknown) {
+      lastError = error instanceof Error ? error : new Error(String(error));
       if (!isRetryable(error) || attempt === maxRetries - 1) throw error;
       const delay = baseDelay * Math.pow(2, attempt) + Math.random() * 50;
       await new Promise(resolve => setTimeout(resolve, delay));
@@ -44,9 +45,9 @@ export async function saveWithRetry<T extends Document>(
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       return await doc.save();
-    } catch (error: any) {
-      lastError = error;
-      if (error.name !== 'VersionError') throw error;
+    } catch (error: unknown) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      if ((error as { name?: string }).name !== 'VersionError') throw error;
       if (attempt === maxRetries - 1) throw error;
       await new Promise(resolve => setTimeout(resolve, MONGOOSE_INITIAL_DELAY_MS * Math.pow(2, attempt)));
     }
@@ -65,11 +66,11 @@ export async function executeWithRetry<T>(
       const doc = await loadFn();
       if (!doc) throw new Error('Document not found');
       await modifyFn(doc);
-      if (typeof (doc as any).save === 'function') await (doc as any).save();
+      if (typeof (doc as unknown as Document).save === 'function') await (doc as unknown as Document).save();
       return doc;
-    } catch (error: any) {
-      lastError = error;
-      if (error.name !== 'VersionError') throw error;
+    } catch (error: unknown) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      if ((error as { name?: string }).name !== 'VersionError') throw error;
       if (attempt === maxRetries - 1) throw error;
       await new Promise(resolve => setTimeout(resolve, MONGOOSE_INITIAL_DELAY_MS * Math.pow(2, attempt)));
     }

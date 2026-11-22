@@ -25,8 +25,8 @@ export default function AdminDeleteAccountSection({ userId, username }: AdminDel
         try {
             await adminDeleteAccount(userId);
             router.push('/profile?t=friends');
-        } catch (e: any) {
-            setError(e?.message ?? 'Something went wrong.');
+        } catch (e: unknown) {
+            setError(e instanceof Error ? e.message : 'Something went wrong.');
             setLoading(false);
         }
     };

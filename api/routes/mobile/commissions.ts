@@ -5,7 +5,7 @@ import { Hono } from 'hono'
 import mongoose from 'mongoose'
 import { authMiddleware, TokenPayload } from '../../middleware/auth'
 import { connectToDatabase } from '@/app/lib/mongoose'
-import { serializeIssue } from '@/app/lib/mobile/serializers'
+import { serializeIssue, type LeanDoc } from '@/app/lib/mobile/serializers'
 import { attachIssueData } from '@/app/lib/mobile/attachIssueData'
 import Applicant from '@/app/lib/models/applicant'
 import Issue from '@/app/lib/models/issue'
@@ -38,7 +38,7 @@ commissions.get('/api/mobile/commissions', authMiddleware, async (c) => {
       .lean()
 
     const issuesWithData = await attachIssueData(issues as any[])
-    return c.json({ issues: issuesWithData.map(serializeIssue) })
+    return c.json({ issues: issuesWithData.map(n => serializeIssue(n as unknown as LeanDoc)) })
   } catch (err) {
     console.error('[mobile/commissions GET]', err)
     return c.json({ error: 'Failed to fetch commissions' }, 500)

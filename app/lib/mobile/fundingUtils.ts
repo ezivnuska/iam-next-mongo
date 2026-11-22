@@ -3,8 +3,11 @@
 
 import Rating from '@/app/lib/models/rating'
 
+type PledgeDoc = { amount: number; applicantId?: { toString(): string } }
+type CandidateDoc = { _id: unknown; userId: { toString(): string }; rate?: number; createdAt: string | Date }
+
 /** Effective funding for an applicant = their directed pledges + all blanket pledges. */
-export function effectiveFunding(allPledges: any[], applicantId: string): number {
+export function effectiveFunding(allPledges: PledgeDoc[], applicantId: string): number {
   const blanket  = allPledges.filter((p) => !p.applicantId).reduce((s, p) => s + p.amount, 0)
   const directed = allPledges.filter((p) => p.applicantId?.toString() === applicantId).reduce((s, p) => s + p.amount, 0)
   return blanket + directed
@@ -16,17 +19,17 @@ export function effectiveFunding(allPledges: any[], applicantId: string): number
  * Returns null if no bidder is sufficiently funded.
  */
 export async function selectFundedWinner(
-  candidates: any[],
-  allPledges: any[],
-): Promise<any | null> {
-  const totalPledged = allPledges.reduce((sum: number, p: any) => sum + (p.amount ?? 0), 0)
+  candidates: CandidateDoc[],
+  allPledges: PledgeDoc[],
+): Promise<CandidateDoc | null> {
+  const totalPledged = allPledges.reduce((sum: number, p) => sum + (p.amount ?? 0), 0)
   const funded = candidates.filter(
     (a) => a.rate != null && totalPledged >= a.rate
   )
   if (funded.length === 0) return null
 
   const userIds = funded.map((a) => a.userId)
-  const ratingDocs = await Rating.find({ workerId: { $in: userIds } }).lean() as any[]
+  const ratingDocs = await Rating.find({ workerId: { $in: userIds } }).lean() as unknown as Array<{ workerId: { toString(): string }; vote: string }>
   const repMap = new Map<string, number>()
   for (const uid of userIds) {
     const uidStr = uid.toString()

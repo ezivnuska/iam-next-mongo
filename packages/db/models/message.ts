@@ -14,6 +14,8 @@ export interface MessageDocument extends Document {
   updatedAt: Date
 }
 
+type RetObj = Record<string, unknown>
+
 const MessageSchema = new Schema<MessageDocument>(
   {
     threadId: { type: String, required: true, index: true },
@@ -25,31 +27,36 @@ const MessageSchema = new Schema<MessageDocument>(
   {
     timestamps: true,
     toJSON: {
-      transform: (_doc, ret: any) => {
-        ret.id = ret._id.toString()
-        delete ret._id
-        delete ret.__v
+      transform: (_doc, ret: RetObj) => {
+        ret['id'] = (ret['_id'] as { toString(): string }).toString()
+        delete ret['_id']
+        delete ret['__v']
         for (const field of ['from', 'to'] as const) {
-          if (ret[field] && typeof ret[field] === 'object' && '_id' in ret[field]) {
-            const u = ret[field]
+          const val = ret[field]
+          if (val && typeof val === 'object' && '_id' in (val as object)) {
+            const u = val as RetObj
+            const avatarVal = u['avatar']
             ret[field] = {
-              id: u._id.toString(),
-              username: u.username,
-              avatar: u.avatar && typeof u.avatar === 'object' && '_id' in u.avatar
+              id: (u['_id'] as { toString(): string }).toString(),
+              username: u['username'],
+              avatar: avatarVal && typeof avatarVal === 'object' && '_id' in (avatarVal as object)
                 ? {
-                    id: u.avatar._id.toString(),
-                    variants: (u.avatar.variants ?? []).map((v: any) => ({
-                      size: v.size,
-                      filename: v.filename,
-                      width: v.width,
-                      height: v.height,
-                      url: v.url,
-                    })),
+                    id: ((avatarVal as RetObj)['_id'] as { toString(): string }).toString(),
+                    variants: ((avatarVal as RetObj)['variants'] as unknown[] ?? []).map((v) => {
+                      const variant = v as RetObj
+                      return {
+                        size: variant['size'],
+                        filename: variant['filename'],
+                        width: variant['width'],
+                        height: variant['height'],
+                        url: variant['url'],
+                      }
+                    }),
                   }
                 : null,
             }
-          } else if (ret[field]) {
-            ret[field] = { id: ret[field].toString() }
+          } else if (val) {
+            ret[field] = { id: (val as { toString(): string }).toString() }
           }
         }
         return ret

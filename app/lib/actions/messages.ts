@@ -51,10 +51,10 @@ export async function getThreads(): Promise<MessageThread[]> {
 
   const lastMessageIds = threadGroups.map((t) => t.lastMessageId)
   const lastMessages = await MessageModel.find({ _id: { $in: lastMessageIds } })
-    .populate(POPULATE_PARTICIPANTS as any)
+    .populate(POPULATE_PARTICIPANTS)
     .lean()
 
-  const msgMap = new Map((lastMessages as any[]).map((m) => [m._id.toString(), m]))
+  const msgMap = new Map(lastMessages.map((m) => [m._id.toString(), m]))
 
   return threadGroups
     .map((t) => {
@@ -88,12 +88,12 @@ export async function getThreadMessages(
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(Math.min(limit, 100))
-      .populate(POPULATE_PARTICIPANTS as any)
+      .populate(POPULATE_PARTICIPANTS)
       .lean(),
     MessageModel.countDocuments({ threadId }),
   ])
 
-  return { messages: (docs as any[]).map(normalizeMessage), total }
+  return { messages: docs.map(normalizeMessage), total }
 }
 
 export async function sendMessage(toId: string, text: string): Promise<Message> {
@@ -130,13 +130,13 @@ export async function markMessageRead(messageId: string): Promise<void> {
   await connectToDatabase()
 
   const doc = await MessageModel.findById(messageId)
-  if (!doc || (doc as any).readAt) return
+  if (!doc || doc.readAt) return
 
-  if ((doc as any).to.toString() !== userId)
+  if (doc.to.toString() !== userId)
     throw new Error('Only the recipient can mark a message as read')
 
-  ;(doc as any).readAt = new Date()
-  await (doc as any).save()
+  doc.readAt = new Date()
+  await doc.save()
 }
 
 export async function getUnreadCount(): Promise<number> {
@@ -155,11 +155,11 @@ export async function deleteMessage(messageId: string): Promise<void> {
 
   const doc = await MessageModel.findById(messageId)
   if (!doc) throw new Error('Message not found')
-  if ((doc as any).from.toString() !== userId)
+  if (doc.from.toString() !== userId)
     throw new Error('Only the sender can delete a message')
 
-  const toId     = (doc as any).to.toString()
-  const threadId = (doc as any).threadId
+  const toId     = doc.to.toString()
+  const threadId = doc.threadId
 
   await MessageModel.deleteOne({ _id: messageId })
 

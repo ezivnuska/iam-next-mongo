@@ -31,7 +31,7 @@ async function performToggleLike(
     );
     if (!updated) throw new Error(`${itemType} not found`);
 
-    const nowLiked = (updated.likes || []).some((id: any) => id.toString() === userId);
+    const nowLiked = (updated.likes || []).some((id: { toString(): string }) => id.toString() === userId);
 
     await logActivity({
         userId,

@@ -11,6 +11,9 @@ import stripe from '@/app/lib/stripe'
 import Pledge from '@/app/lib/models/pledge'
 import UserModel from '@/app/lib/models/user'
 
+type LeanPledge = { _id: unknown; userId: unknown; amount: number; stripePaymentIntentId?: string }
+type LeanUser = { stripeCustomerId?: string; stripeDefaultPaymentMethodId?: string }
+
 // Called in tryAutoAccept immediately after an applicant is accepted.
 // Creates a manual-capture hold on every pledge that doesn't yet have a PI.
 // Best-effort: individual failures are logged but don't block acceptance.
@@ -18,7 +21,7 @@ export async function holdPledges(issueId: string): Promise<void> {
   const pledges = await Pledge.find({
     issueId,
     stripePaymentIntentId: { $exists: false },
-  }).lean() as any[]
+  }).lean() as LeanPledge[]
 
   if (pledges.length === 0) return
 
@@ -26,7 +29,7 @@ export async function holdPledges(issueId: string): Promise<void> {
     pledges.map(async (pledge) => {
       try {
         const user = await UserModel.findById(pledge.userId)
-          .select('stripeCustomerId stripeDefaultPaymentMethodId').lean() as any
+          .select('stripeCustomerId stripeDefaultPaymentMethodId').lean() as LeanUser | null
         if (!user?.stripeCustomerId || !user?.stripeDefaultPaymentMethodId) {
           console.warn(`[holdPledges] pledge ${pledge._id} owner has no payment method — skipping`)
           return
@@ -46,8 +49,8 @@ export async function holdPledges(issueId: string): Promise<void> {
         )
 
         await Pledge.findByIdAndUpdate(pledge._id, { stripePaymentIntentId: pi.id })
-      } catch (err: any) {
-        console.error(`[holdPledges] failed for pledge ${pledge._id}:`, err?.message ?? err)
+      } catch (err: unknown) {
+        console.error(`[holdPledges] failed for pledge ${pledge._id}:`, err instanceof Error ? err.message : err)
       }
     })
   )
@@ -60,23 +63,26 @@ export async function releasePledgeHolds(issueId: string): Promise<void> {
   const pledges = await Pledge.find({
     issueId,
     stripePaymentIntentId: { $exists: true, $ne: null },
-  }).lean() as any[]
+  }).lean() as LeanPledge[]
 
   if (pledges.length === 0) return
 
   await Promise.allSettled(
     pledges.map(async (pledge) => {
+      if (!pledge.stripePaymentIntentId) return
+      const piId = pledge.stripePaymentIntentId
       try {
-        const pi = await stripe.paymentIntents.retrieve(pledge.stripePaymentIntentId)
+        const pi = await stripe.paymentIntents.retrieve(piId)
         if (pi.status === 'requires_capture') {
-          await stripe.paymentIntents.cancel(pledge.stripePaymentIntentId)
+          await stripe.paymentIntents.cancel(piId)
         } else if (pi.status === 'succeeded') {
-          await stripe.refunds.create({ payment_intent: pledge.stripePaymentIntentId })
+          await stripe.refunds.create({ payment_intent: piId })
         }
         // canceled / requires_payment_method / etc. — nothing to do
-      } catch (err: any) {
-        if (err?.code !== 'charge_already_refunded')
-          console.error(`[releasePledgeHolds] failed for pledge ${pledge._id}:`, err?.message ?? err)
+      } catch (err: unknown) {
+        const e = err as { code?: string; message?: string };
+        if (e?.code !== 'charge_already_refunded')
+          console.error(`[releasePledgeHolds] failed for pledge ${pledge._id}:`, e?.message ?? err)
       }
     })
   )

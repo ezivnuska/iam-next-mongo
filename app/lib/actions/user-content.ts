@@ -41,10 +41,10 @@ export async function getUserContent(username?: string): Promise<ContentItem[]> 
     .sort({ createdAt: -1 })
     .lean();
 
-  const commentCounts = await getCommentCountsForItems(entries.map((e: any) => e._id.toString()));
+  const commentCounts = await getCommentCountsForItems(entries.map((e) => (e as { _id: { toString(): string } })._id.toString()));
 
-  const transformedEntries = entries.map((e: any) =>
-    transformEntry(e, commentCounts, userId)
+  const transformedEntries = entries.map((e) =>
+    transformEntry(e as unknown as Parameters<typeof transformEntry>[0], commentCounts, userId)
   );
 
   return sortContentByDate(transformedEntries);
