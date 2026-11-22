@@ -5,7 +5,7 @@
 import { Hono } from 'hono'
 import { authMiddleware, TokenPayload } from '../../middleware/auth'
 import { connectToDatabase } from '@/app/lib/mongoose'
-import { serializeResource, serializeFriendshipEntry, serializeFriendship } from '@/app/lib/mobile/serializers'
+import { serializeResource, serializeFriendshipEntry, serializeFriendship, type LeanDoc } from '@/app/lib/mobile/serializers'
 import UserModel from '@/app/lib/models/user'
 import FriendshipModel from '@/app/lib/models/friendship'
 import Rating from '@/app/lib/models/rating'
@@ -114,7 +114,7 @@ users.get('/api/mobile/users/:id', authMiddleware, async (c) => {
         username: (userDoc as any).username,
         bio: (userDoc as any).bio ?? '',
         avatar: serializeResource((userDoc as any).avatar),
-        friendship: serializeFriendship(friendship, token.id),
+        friendship: serializeFriendship(friendship as unknown as LeanDoc | null, token.id),
         reputation,
       },
     })

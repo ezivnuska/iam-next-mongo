@@ -11,6 +11,7 @@ import {
   serializeCompletion,
   serializeApplicant,
   serializePledge,
+  type LeanDoc,
 } from '@/app/lib/mobile/serializers'
 import { isValidObjectId } from '@iam/shared-types'
 import { USER_WITH_AVATAR_POPULATE, APPLICANT_FULL_POPULATE } from '@iam/db'
@@ -85,7 +86,7 @@ sub.post('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
           Issue.findByIdAndUpdate(id, { acceptedApplicantId: applicant._id }),
         ])
         holdPledges(id).catch((err) => console.error('[acceptPledge] holdPledges failed:', err))
-        const serialized = serializeApplicant(accepted!.toObject())
+        const serialized = serializeApplicant(accepted!.toObject() as unknown as LeanDoc)
         emitIssueApplicantAccepted({ issueId: id, applicant: serialized })
           .catch((err: any) => console.warn('[socket]', err?.message ?? err))
         return c.json({ applicant: serialized }, 201)
@@ -102,7 +103,7 @@ sub.post('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
     }
 
     await applicant.populate(APPLICANT_FULL_POPULATE)
-    const serialized = serializeApplicant(applicant.toObject())
+    const serialized = serializeApplicant(applicant.toObject() as unknown as LeanDoc)
     emitIssueApplicantAdded({ issueId: id, applicant: serialized })
       .catch((err: any) => console.warn('[socket]', err?.message ?? err))
     return c.json({ applicant: serialized }, 201)
@@ -139,7 +140,7 @@ sub.patch('/api/mobile/issues/:id/applicants', authMiddleware, async (c) => {
     }
 
     await applicant.populate(APPLICANT_FULL_POPULATE)
-    const serialized = serializeApplicant(applicant.toObject())
+    const serialized = serializeApplicant(applicant.toObject() as unknown as LeanDoc)
     emitIssueApplicantAdded({ issueId: id, applicant: serialized })
       .catch((err: any) => console.warn('[socket]', err?.message ?? err))
     return c.json({ applicant: serialized })
@@ -232,7 +233,7 @@ sub.post('/api/mobile/issues/:id/pledges', authMiddleware, async (c) => {
     await pledge.save()
     await pledge.populate(USER_WITH_AVATAR_POPULATE)
 
-    const serialized = serializePledge(pledge.toObject())
+    const serialized = serializePledge(pledge.toObject() as unknown as LeanDoc)
     emitIssuePledgeAdded({ issueId: id, actorId: token.id, pledge: serialized })
       .catch((err: any) => console.warn('[socket]', err?.message ?? err))
 
@@ -332,7 +333,7 @@ sub.post('/api/mobile/issues/:id/reports', authMiddleware, async (c) => {
       Applicant.find({ issueId: id }).populate(APPLICANT_FULL_POPULATE).lean(),
     ])
 
-    return c.json({ issue: serializeIssue({ ...issue.toObject(), pledged: pledges, applicants }) })
+    return c.json({ issue: serializeIssue({ ...issue.toObject(), pledged: pledges, applicants } as unknown as LeanDoc) })
   } catch (err) {
     console.error('[mobile/issues/reports POST]', err)
     return c.json({ error: 'Failed to add report' }, 500)
@@ -519,7 +520,7 @@ sub.post('/api/mobile/issues/:id/commission', authMiddleware, async (c) => {
     await newCompletion.populate('images')
     await newCompletion.populate({ path: 'workerUserId', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
 
-    const serialized = serializeCompletion(newCompletion.toObject(), issueId)
+    const serialized = serializeCompletion(newCompletion.toObject() as unknown as LeanDoc, issueId)
     emitIssueCompletionSubmitted({ issueId, completion: serialized })
       .catch((err: any) => console.warn('[socket]', err?.message ?? err))
     ;(async () => {
@@ -563,7 +564,7 @@ sub.patch('/api/mobile/issues/:id/commission/start', authMiddleware, async (c) =
       { new: true }
     ).populate(APPLICANT_FULL_POPULATE)
     if (!applicant) return c.json({ error: 'Only the accepted applicant can start work' }, 403)
-    const serialized = serializeApplicant(applicant.toObject())
+    const serialized = serializeApplicant(applicant.toObject() as unknown as LeanDoc)
     emitIssueApplicantAccepted({ issueId, applicant: serialized })
       .catch((err: any) => console.warn('[socket]', err?.message ?? err))
     return c.json({ applicant: serialized })
@@ -592,7 +593,7 @@ sub.patch('/api/mobile/issues/:id/commission/extend', authMiddleware, async (c) 
     applicant.completionDeadline = midnightFollowingDay()
     await applicant.save()
 
-    const serialized = serializeApplicant(applicant.toObject())
+    const serialized = serializeApplicant(applicant.toObject() as unknown as LeanDoc)
     emitIssueApplicantAccepted({ issueId, applicant: serialized })
       .catch((err: any) => console.warn('[socket]', err?.message ?? err))
     return c.json({ applicant: serialized })
@@ -643,7 +644,7 @@ sub.post('/api/mobile/issues/:id/commission/cancel', authMiddleware, async (c) =
       Issue.findByIdAndUpdate(issueId, { acceptedApplicantId: winner._id }),
     ])
 
-    const nextSerialized = serializeApplicant(nextApplicant!.toObject())
+    const nextSerialized = serializeApplicant(nextApplicant!.toObject() as unknown as LeanDoc)
     holdPledges(issueId).catch((err) => console.error('[cancel] holdPledges failed:', err))
 
     emitIssueApplicantRemoved({ issueId, applicantId })
@@ -679,7 +680,7 @@ sub.post('/api/mobile/issues/:id/commission/reassign', authMiddleware, async (c)
     current.completionDeadline = undefined
     await current.save()
 
-    const releasedSerialized = serializeApplicant(current.toObject())
+    const releasedSerialized = serializeApplicant(current.toObject() as unknown as LeanDoc)
 
     const [allPledges, candidates] = await Promise.all([
       Pledge.find({ issueId }).lean() as Promise<any[]>,
@@ -708,7 +709,7 @@ sub.post('/api/mobile/issues/:id/commission/reassign', authMiddleware, async (c)
       Issue.findByIdAndUpdate(issueId, { acceptedApplicantId: winner._id }),
     ])
 
-    const nextSerialized = serializeApplicant(nextApplicant!.toObject())
+    const nextSerialized = serializeApplicant(nextApplicant!.toObject() as unknown as LeanDoc)
 
     holdPledges(issueId).catch((err) => console.error('[reassign] holdPledges failed:', err))
 
@@ -846,10 +847,10 @@ sub.post('/api/mobile/issues/:id/commission/rating', authMiddleware, async (c) =
       emitIssueCompletionReviewed({ issueId, completion: serializedCompletion, issue: serializedNeed })
         .catch((err: any) => console.warn('[socket]', err?.message ?? err))
 
-      const worker = serializedNeed.applicants.find((a: any) => a.status === 'accepted')
+      const worker = (serializedNeed.applicants as any[]).find((a: any) => a.status === 'accepted')
       const recipientIds = [
-        serializedNeed.author?.id,
-        ...serializedNeed.pledged.map((p: any) => p.userId),
+        (serializedNeed.author as any)?.id,
+        ...(serializedNeed.pledged as any[]).map((p: any) => p.userId),
         worker?.userId,
       ].filter((uid): uid is string => !!uid)
       sendPushToUsers(recipientIds, 'Work approved', 'Payment has been released — the issue is resolved.', { issueId })
@@ -1119,10 +1120,10 @@ sub.patch('/api/mobile/issues/:id/complete', authMiddleware, async (c) => {
         issue: serializedIssue,
       }).catch((err: any) => console.warn('[socket]', err?.message ?? err))
 
-      const worker = serializedIssue.applicants.find((a: any) => a.status === 'accepted')
+      const worker = (serializedIssue.applicants as any[]).find((a: any) => a.status === 'accepted')
       const recipientIds = [
-        serializedIssue.author?.id,
-        ...serializedIssue.pledged.map((p: any) => p.userId),
+        (serializedIssue.author as any)?.id,
+        ...(serializedIssue.pledged as any[]).map((p: any) => p.userId),
         worker?.userId,
       ].filter((uid): uid is string => !!uid)
       sendPushToUsers(recipientIds, 'Work approved', 'Payment has been released — the issue is resolved.', { issueId: id })

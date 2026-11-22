@@ -77,13 +77,27 @@ export async function POST(req: Request) {
     });
 
     await newEntry.populate(CONTENT_POPULATE_CONFIG);
-    const doc = newEntry.toObject() as Record<string, unknown>;
+    type EntryDoc = {
+      _id: { toString(): string };
+      contentType: string;
+      content?: string;
+      image?: unknown;
+      author: unknown;
+      date?: Date;
+      title?: string;
+      shared?: boolean;
+      linkUrl?: string;
+      linkPreview?: unknown;
+      createdAt: Date;
+      updatedAt: Date;
+    }
+    const doc = newEntry.toObject() as unknown as EntryDoc;
 
     await logActivity({
       userId,
       action: 'create',
       entityType: contentType,
-      entityId: doc._id,
+      entityId: doc._id.toString(),
       entityData: { contentType, hasImage: !!doc.image },
       metadata: getRequestMetadata(req),
     });
@@ -93,9 +107,9 @@ export async function POST(req: Request) {
       contentType: doc.contentType,
       createdAt: doc.createdAt.toISOString(),
       updatedAt: doc.updatedAt.toISOString(),
-      author: transformPopulatedAuthor(doc.author),
+      author: transformPopulatedAuthor(doc.author as Parameters<typeof transformPopulatedAuthor>[0]),
       ...(doc.content && { content: doc.content }),
-      ...(doc.image && { image: transformPopulatedImage(doc.image, userId) }),
+      ...(doc.image ? { image: transformPopulatedImage(doc.image, userId) } : {}),
       likes: [],
       likedByCurrentUser: false,
       ...(contentType === 'memory' && {
@@ -103,8 +117,8 @@ export async function POST(req: Request) {
         title: doc.title,
         shared: doc.shared ?? false,
       }),
-      ...(contentType === 'post' && doc.linkUrl && { linkUrl: doc.linkUrl }),
-      ...(contentType === 'post' && doc.linkPreview && { linkPreview: doc.linkPreview }),
+      ...(contentType === 'post' && doc.linkUrl ? { linkUrl: doc.linkUrl } : {}),
+      ...(contentType === 'post' && doc.linkPreview ? { linkPreview: doc.linkPreview } : {}),
     });
   } catch (err: unknown) {
     console.error("Error creating entry:", err);

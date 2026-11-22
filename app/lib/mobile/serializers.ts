@@ -1,6 +1,6 @@
 // app/lib/mobile/serializers.ts
 
-type LeanDoc = { _id: { toString(): string }; [key: string]: unknown }
+export type LeanDoc = { _id: { toString(): string }; [key: string]: unknown }
 type LeanVariant = { size?: string; filename?: string; width?: number; height?: number; url?: string }
 type LeanResource = { _id: { toString(): string }; variants?: LeanVariant[] }
 type LeanUser = { _id: { toString(): string }; username?: string; avatar?: LeanResource }

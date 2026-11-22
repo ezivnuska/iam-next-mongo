@@ -46,7 +46,7 @@ export async function settleIssue(issueId: string): Promise<void> {
 
   type LeanApplicant = { userId: unknown }
   type LeanUser = { stripeAccountId?: string }
-  type LeanPledge = { _id: unknown; stripePaymentIntentId?: string }
+  type LeanPledge = { _id: unknown; amount: number; stripePaymentIntentId?: string }
   const acceptedApplicant = await Applicant.findOne({ issueId, status: 'accepted' }).lean() as LeanApplicant | null
   if (!acceptedApplicant) throw new Error('No accepted applicant')
 
@@ -68,23 +68,26 @@ export async function settleIssue(issueId: string): Promise<void> {
   await Promise.allSettled(
     pledges.map(async (pledge) => {
       try {
-        let pi = await stripe.paymentIntents.retrieve(pledge.stripePaymentIntentId)
+        if (!pledge.stripePaymentIntentId) return
+        const piId = pledge.stripePaymentIntentId
+        let pi = await stripe.paymentIntents.retrieve(piId)
 
         // Pledges are held with capture_method: 'manual' — capture before transferring.
         if (pi.status === 'requires_capture') {
-          await stripe.paymentIntents.capture(pledge.stripePaymentIntentId)
-          pi = await stripe.paymentIntents.retrieve(pledge.stripePaymentIntentId)
+          await stripe.paymentIntents.capture(piId)
+          pi = await stripe.paymentIntents.retrieve(piId)
         }
 
         const chargeId = pi.latest_charge as string
         if (!chargeId) {
-          console.error('[settleIssue] no charge on PI', pledge.stripePaymentIntentId)
+          console.error('[settleIssue] no charge on PI', piId)
           return
         }
+        const accountId = applicantUser.stripeAccountId!
         await stripe.transfers.create({
           amount: pledge.amount * 100,
           currency: 'usd',
-          destination: applicantUser.stripeAccountId,
+          destination: accountId,
           source_transaction: chargeId,
           description: `Payment for issue ${issueId}`,
         })

@@ -7,7 +7,7 @@ import Pledge from '@/app/lib/models/pledge'
 import Issue from '@/app/lib/models/issue'
 import '@/app/lib/models/user'
 import '@/app/lib/models/image'
-import { serializePledge } from '@/app/lib/mobile/serializers'
+import { serializePledge, type LeanDoc } from '@/app/lib/mobile/serializers'
 import { logActivity, getRequestMetadata } from '@/app/lib/utils/activity-logger'
 import { requireAuthFlexible } from '@/app/lib/utils/auth/flexible'
 import { UnauthorizedError } from '@/app/lib/utils/auth'
@@ -38,7 +38,7 @@ export async function GET(
       return NextResponse.json({ error: 'Pledge not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ pledge: serializePledge(pledge) })
+    return NextResponse.json({ pledge: serializePledge(pledge as unknown as LeanDoc) })
   } catch (err: unknown) {
     if (err instanceof UnauthorizedError) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -84,7 +84,7 @@ export async function PATCH(
     await pledge.save()
     await pledge.populate(POPULATE_CONFIG)
 
-    const serialized = serializePledge(pledge.toObject())
+    const serialized = serializePledge(pledge.toObject() as unknown as LeanDoc)
 
     await logActivity({
       userId: user.id,

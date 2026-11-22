@@ -28,7 +28,7 @@ export async function deleteIssueWithCleanup(issueId: string, force = false): Pr
   const fee = await Fee.findOne({ issueId }).lean() as LeanDoc | null
   if (fee?.stripePaymentIntentId) {
     try {
-      await stripe.refunds.create({ payment_intent: fee.stripePaymentIntentId })
+      await stripe.refunds.create({ payment_intent: fee.stripePaymentIntentId as string })
     } catch (err: unknown) {
       const e = err as { code?: string; message?: string };
       if (e?.code !== 'charge_already_refunded')
@@ -74,7 +74,7 @@ export async function deleteIssueWithCleanup(issueId: string, force = false): Pr
   await Promise.allSettled(
     allImages.flatMap(img =>
       (img.variants ?? [])
-        .filter(v => v.url)
+        .filter((v): v is { url: string } => !!v.url)
         .map(v => {
           const key = v.url.split(
             `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`

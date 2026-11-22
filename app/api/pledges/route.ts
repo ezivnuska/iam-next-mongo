@@ -7,7 +7,7 @@ import Pledge from '@/app/lib/models/pledge'
 import Issue from '@/app/lib/models/issue'
 import '@/app/lib/models/user'
 import '@/app/lib/models/image'
-import { serializePledge } from '@/app/lib/mobile/serializers'
+import { serializePledge, type LeanDoc } from '@/app/lib/mobile/serializers'
 import { logActivity, getRequestMetadata } from '@/app/lib/utils/activity-logger'
 import { requireAuthFlexible } from '@/app/lib/utils/auth/flexible'
 import { UnauthorizedError } from '@/app/lib/utils/auth'
@@ -37,7 +37,7 @@ export async function GET(req: Request) {
       .populate(POPULATE_CONFIG)
       .lean()
 
-    return NextResponse.json({ pledges: pledges.map(serializePledge) })
+    return NextResponse.json({ pledges: pledges.map(p => serializePledge(p as unknown as LeanDoc)) })
   } catch (err: unknown) {
     if (err instanceof UnauthorizedError) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -74,7 +74,7 @@ export async function POST(req: Request) {
     const pledge = await Pledge.create({ userId, issueId: needId, amount })
     await pledge.populate(POPULATE_CONFIG)
 
-    const serialized = serializePledge(pledge.toObject())
+    const serialized = serializePledge(pledge.toObject() as unknown as LeanDoc)
 
     await logActivity({
       userId,

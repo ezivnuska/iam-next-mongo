@@ -29,8 +29,8 @@ export async function attachIssueData(issues: Record<string, unknown>[]) {
 
   return issues.map((n) => ({
     ...n,
-    pledged: pledgesByIssue[n._id.toString()] ?? [],
-    applicants: applicantsByIssue[n._id.toString()] ?? [],
+    pledged: pledgesByIssue[(n._id as { toString(): string }).toString()] ?? [],
+    applicants: applicantsByIssue[(n._id as { toString(): string }).toString()] ?? [],
     completionStatus: n.completionStatus ?? null,
   }))
 }

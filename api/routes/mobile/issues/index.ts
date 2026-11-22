@@ -6,7 +6,7 @@ import { Hono } from 'hono'
 import { ISSUE_TYPES } from '@/app/lib/definitions/issue'
 import { authMiddleware, TokenPayload } from '../../../middleware/auth'
 import { connectToDatabase } from '@/app/lib/mongoose'
-import { serializeIssue } from '@/app/lib/mobile/serializers'
+import { serializeIssue, type LeanDoc } from '@/app/lib/mobile/serializers'
 import { attachIssueData } from '@/app/lib/mobile/attachIssueData'
 import { createIssueFee } from '@/app/lib/mobile/createFee'
 import { generateIssueTitle } from '@/app/lib/mobile/generateTitle'
@@ -30,7 +30,7 @@ issues.get('/api/mobile/issues', authMiddleware, async (c) => {
       .lean()
 
     const issuesWithData = await attachIssueData(issueList as any[])
-    return c.json({ issues: issuesWithData.map(serializeIssue) })
+    return c.json({ issues: issuesWithData.map(n => serializeIssue(n as unknown as LeanDoc)) })
   } catch (err) {
     console.error('[mobile/issues GET]', err)
     return c.json({ error: 'Failed to fetch issues' }, 500)
@@ -101,7 +101,7 @@ issues.post('/api/mobile/issues', authMiddleware, async (c) => {
       throw err
     }
 
-    const serialized = serializeIssue({ ...issue.toObject(), pledged: [], applicants: [] })
+    const serialized = serializeIssue({ ...issue.toObject(), pledged: [], applicants: [] } as unknown as LeanDoc)
     emitIssueCreated({ actorId: token.id, issue: serialized })
       .catch((err: any) => console.warn('[socket]', err?.message ?? err))
 

@@ -26,7 +26,7 @@ export async function GET(req: NextRequest): Promise<Response> {
   const raw = req.nextUrl.searchParams.get('redirect') ?? '/'
   const redirect = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/'
 
-  const payload: CrossAppTokenPayload = {
+  const payload: CrossAppTokenPayload & Record<string, unknown> = {
     id: session.user.id,
     username: session.user.username,
     role: session.user.role,

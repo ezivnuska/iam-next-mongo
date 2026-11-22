@@ -6,7 +6,7 @@ import { Types } from 'mongoose'
 import Applicant from '../../app/lib/models/applicant'
 import Issue from '../../app/lib/models/issue'
 import Pledge from '../../app/lib/models/pledge'
-import { serializeApplicant } from '../../app/lib/mobile/serializers'
+import { serializeApplicant, type LeanDoc } from '../../app/lib/mobile/serializers'
 import { selectFundedWinner } from '../../app/lib/mobile/fundingUtils'
 import { midnightFollowingDay } from '../../app/lib/mobile/deadlines'
 import { holdPledges } from '../../app/lib/mobile/pledgePayments'
@@ -63,7 +63,7 @@ export async function tryAutoAccept(
   // non-winning bidders so funds aren't locked against a losing applicant.
   if (!candidateIds) {
     const loserIds = candidates
-      .filter((a: any) => a._id.toString() !== winner._id.toString())
+      .filter((a: any) => a._id.toString() !== String(winner._id))
       .map((a: any) => a._id)
     if (loserIds.length > 0) {
       await Promise.all([
@@ -80,7 +80,7 @@ export async function tryAutoAccept(
   // are logged inside holdPledges but don't block the acceptance from completing.
   holdPledges(issueId).catch((err) => console.error('[autoAccept] holdPledges failed:', err))
 
-  const accepted = await Applicant.findById(winner._id)
+  const accepted = await Applicant.findById(winner._id as string)
     .populate(APPLICANT_USER_POPULATE).lean()
-  return serializeApplicant(accepted)
+  return accepted ? serializeApplicant(accepted as unknown as LeanDoc) : null
 }

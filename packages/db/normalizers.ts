@@ -65,11 +65,11 @@ function normalizeMessageParticipant(user: ParticipantLike): MessageParticipant 
           return {
             id: av._id.toString(),
             variants: (av.variants ?? []).map(v => ({
-              size: v.size,
-              filename: v.filename,
-              width: v.width,
-              height: v.height,
-              url: v.url,
+              size: v.size ?? '',
+              filename: v.filename ?? '',
+              width: v.width ?? 0,
+              height: v.height ?? 0,
+              url: v.url ?? '',
             })),
           }
         })()
@@ -105,6 +105,6 @@ export function normalizeImage(img?: ImageLike): Image | undefined {
         userId: img.userId ?? '',
         username: img.username ?? '',
         alt: img.alt ?? '',
-        variants: img.variants ?? [],
+        variants: (img.variants ?? []) as Image['variants'],
     }
 }

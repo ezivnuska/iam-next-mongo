@@ -11,12 +11,13 @@ import stripe from '@/app/lib/stripe'
 import Pledge from '@/app/lib/models/pledge'
 import UserModel from '@/app/lib/models/user'
 
+type LeanPledge = { _id: unknown; userId: unknown; amount: number; stripePaymentIntentId?: string }
+type LeanUser = { stripeCustomerId?: string; stripeDefaultPaymentMethodId?: string }
+
 // Called in tryAutoAccept immediately after an applicant is accepted.
 // Creates a manual-capture hold on every pledge that doesn't yet have a PI.
 // Best-effort: individual failures are logged but don't block acceptance.
 export async function holdPledges(issueId: string): Promise<void> {
-  type LeanPledge = { _id: unknown; userId: unknown; amount: number; stripePaymentIntentId?: string }
-  type LeanUser = { stripeCustomerId?: string; stripeDefaultPaymentMethodId?: string }
   const pledges = await Pledge.find({
     issueId,
     stripePaymentIntentId: { $exists: false },
@@ -68,12 +69,14 @@ export async function releasePledgeHolds(issueId: string): Promise<void> {
 
   await Promise.allSettled(
     pledges.map(async (pledge) => {
+      if (!pledge.stripePaymentIntentId) return
+      const piId = pledge.stripePaymentIntentId
       try {
-        const pi = await stripe.paymentIntents.retrieve(pledge.stripePaymentIntentId)
+        const pi = await stripe.paymentIntents.retrieve(piId)
         if (pi.status === 'requires_capture') {
-          await stripe.paymentIntents.cancel(pledge.stripePaymentIntentId)
+          await stripe.paymentIntents.cancel(piId)
         } else if (pi.status === 'succeeded') {
-          await stripe.refunds.create({ payment_intent: pledge.stripePaymentIntentId })
+          await stripe.refunds.create({ payment_intent: piId })
         }
         // canceled / requires_payment_method / etc. — nothing to do
       } catch (err: unknown) {

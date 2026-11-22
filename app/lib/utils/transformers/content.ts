@@ -25,7 +25,26 @@ export function transformLinkPreview(linkPreview: { title?: string; description?
   }
 }
 
-type RawDoc = Record<string, unknown> & { _id: { toString(): string }; createdAt: { toISOString(): string }; updatedAt: { toISOString(): string } }
+type RawDoc = {
+  _id: { toString(): string }
+  createdAt: { toISOString(): string }
+  updatedAt: { toISOString(): string }
+  contentType: 'memory' | 'post'
+  author?: unknown
+  image?: unknown
+  likes?: Array<{ toString(): string }>
+  content?: string
+  date?: { toISOString(): string }
+  title?: string
+  shared?: boolean
+  linkUrl?: string
+  linkPreview?: { title?: string; description?: string; image?: string }
+  userId?: { toString(): string }
+  username?: string
+  alt?: string
+  variants?: ImageType['variants']
+  [key: string]: unknown
+}
 
 export function transformEntry(
   entry: RawDoc,
@@ -38,19 +57,19 @@ export function transformEntry(
     contentType: entry.contentType,
     createdAt: entry.createdAt.toISOString(),
     updatedAt: entry.updatedAt.toISOString(),
-    author: transformPopulatedAuthor(entry.author),
-    ...(entry.image && { image: transformPopulatedImage(entry.image, currentUserId) }),
+    author: transformPopulatedAuthor(entry.author as Parameters<typeof transformPopulatedAuthor>[0]),
+    ...(entry.image ? { image: transformPopulatedImage(entry.image, currentUserId) } : {}),
     likes: transformLikesArray(entry.likes),
     likedByCurrentUser: isLikedByCurrentUser(entry.likes, currentUserId),
     commentCount: commentCounts[entryId] || 0,
-    ...(entry.content && { content: entry.content }),
+    ...(entry.content ? { content: entry.content } : {}),
     ...(entry.contentType === 'memory' && {
       date: entry.date?.toISOString(),
       title: entry.title,
       shared: entry.shared ?? false,
     }),
     ...(entry.contentType === 'post' && {
-      ...(entry.linkUrl && { linkUrl: entry.linkUrl }),
+      ...(entry.linkUrl ? { linkUrl: entry.linkUrl } : {}),
       ...(entry.linkPreview && { linkPreview: transformLinkPreview(entry.linkPreview) }),
     }),
   }
@@ -65,10 +84,10 @@ export function transformImage(
   const imgId = image._id.toString()
   return {
     id: imgId,
-    userId: image.userId.toString(),
-    username: image.username,
+    userId: (image.userId as { toString(): string }).toString(),
+    username: image.username ?? '',
     alt: image.alt,
-    variants: image.variants,
+    variants: image.variants ?? [],
     likes: transformLikesArray(image.likes),
     likedByCurrentUser: isLikedByCurrentUser(image.likes, currentUserId),
     commentCount: commentCounts[imgId] || 0,

@@ -66,7 +66,7 @@ export async function executeWithRetry<T>(
       const doc = await loadFn();
       if (!doc) throw new Error('Document not found');
       await modifyFn(doc);
-      if (typeof (doc as Document).save === 'function') await (doc as Document).save();
+      if (typeof (doc as unknown as Document).save === 'function') await (doc as unknown as Document).save();
       return doc;
     } catch (error: unknown) {
       lastError = error instanceof Error ? error : new Error(String(error));

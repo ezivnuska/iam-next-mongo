@@ -19,10 +19,10 @@ export async function DELETE(req: Request) {
 
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (err: unknown) {
-    if (err?.message === 'Unauthorized') {
+    if (err instanceof Error && err.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    if (err?.message === 'Forbidden') {
+    if (err instanceof Error && err.message === 'Forbidden') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     console.error(err);

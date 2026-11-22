@@ -44,7 +44,7 @@ export async function getUserContent(username?: string): Promise<ContentItem[]> 
   const commentCounts = await getCommentCountsForItems(entries.map((e) => (e as { _id: { toString(): string } })._id.toString()));
 
   const transformedEntries = entries.map((e) =>
-    transformEntry(e as Parameters<typeof transformEntry>[0], commentCounts, userId)
+    transformEntry(e as unknown as Parameters<typeof transformEntry>[0], commentCounts, userId)
   );
 
   return sortContentByDate(transformedEntries);

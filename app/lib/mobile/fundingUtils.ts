@@ -29,7 +29,7 @@ export async function selectFundedWinner(
   if (funded.length === 0) return null
 
   const userIds = funded.map((a) => a.userId)
-  const ratingDocs = await Rating.find({ workerId: { $in: userIds } }).lean() as Array<{ workerId: { toString(): string }; vote: string }>
+  const ratingDocs = await Rating.find({ workerId: { $in: userIds } }).lean() as unknown as Array<{ workerId: { toString(): string }; vote: string }>
   const repMap = new Map<string, number>()
   for (const uid of userIds) {
     const uidStr = uid.toString()
