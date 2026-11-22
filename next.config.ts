@@ -3,7 +3,7 @@ import path from 'path';
 
 const nextConfig: NextConfig = {
     transpilePackages: ['@iam/shared-types', '@iam/db', '@iam/ui'],
-    serverExternalPackages: ['mongoose', 'bcrypt'],
+    serverExternalPackages: ['mongoose', 'bcrypt', 'next-auth', '@auth/core', 'jose'],
     // Add headers to force cache revalidation
     async headers() {
         return [
@@ -42,6 +42,7 @@ const nextConfig: NextConfig = {
         serverActions: {
             bodySizeLimit: '10mb',
         },
+        cpus: 1,
     },
     images: {
         remotePatterns: [
