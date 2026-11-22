@@ -59,7 +59,7 @@ else
 fi
 
 echo "Building Next.js application..."
-NODE_ENV=production NODE_OPTIONS="--max-old-space-size=1536" pnpm build
+NODE_ENV=production NODE_OPTIONS="--max-old-space-size=1536 --unhandled-rejections=warn" pnpm build
 
 echo "Clearing logs..."
 pm2 flush
