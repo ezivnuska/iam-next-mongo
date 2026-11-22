@@ -13,6 +13,14 @@ export interface TokenResponse {
   token: string;
 }
 
+// JWT payload for the cross-app SSO handoff between iameric.me and games.iameric.me.
+// Signed with GAMES_TOKEN_SECRET on the iam-next-mongo side; verified on the iam-games side.
+export interface CrossAppTokenPayload {
+  id: string;
+  username: string;
+  role: UserRole;
+}
+
 export interface MeResponse {
   id: string;
   username: string;
