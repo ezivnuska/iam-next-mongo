@@ -42,6 +42,7 @@ const nextConfig: NextConfig = {
         serverActions: {
             bodySizeLimit: '10mb',
         },
+        cpus: 1,
     },
     images: {
         remotePatterns: [
