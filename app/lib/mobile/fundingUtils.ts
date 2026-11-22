@@ -4,7 +4,7 @@
 import Rating from '@/app/lib/models/rating'
 
 type PledgeDoc = { amount: number; applicantId?: { toString(): string } }
-type CandidateDoc = { userId: { toString(): string }; rate?: number; createdAt: string | Date }
+type CandidateDoc = { _id: unknown; userId: { toString(): string }; rate?: number; createdAt: string | Date }
 
 /** Effective funding for an applicant = their directed pledges + all blanket pledges. */
 export function effectiveFunding(allPledges: PledgeDoc[], applicantId: string): number {
