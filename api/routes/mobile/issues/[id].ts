@@ -8,6 +8,7 @@ import { authMiddleware, TokenPayload } from '../../../middleware/auth'
 import { connectToDatabase } from '@/app/lib/mongoose'
 import { serializeIssue, serializeCompletion } from '@/app/lib/mobile/serializers'
 import { isValidObjectId } from '@iam/shared-types'
+import { ISSUE_TYPES } from '@/app/lib/definitions/issue'
 import { USER_WITH_AVATAR_POPULATE, APPLICANT_FULL_POPULATE } from '@iam/db'
 import Issue from '@/app/lib/models/issue'
 import Completion from '@/app/lib/models/completion'
@@ -65,8 +66,7 @@ issueById.patch('/api/mobile/issues/:id', authMiddleware, async (c) => {
   try {
     const { issueType, title, content, imageId, imageIds, location, locationVisible } = await c.req.json()
 
-    const validIssueTypes = ['Clean Up', 'Gardening', 'Hauling']
-    if (issueType !== undefined && !validIssueTypes.includes(issueType))
+    if (issueType !== undefined && !ISSUE_TYPES.includes(issueType))
       return c.json({ error: 'Invalid issue type' }, 400)
     if (content !== undefined && content.length > 5000)
       return c.json({ error: 'Content must be 5000 characters or less' }, 400)
