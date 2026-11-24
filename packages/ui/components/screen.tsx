@@ -17,6 +17,7 @@ interface ScreenProps {
     headerReady?: boolean;
     chromeVisible?: boolean;
     centerAside?: boolean;
+    layout?: 'default' | 'game';
 }
 
 export default function Screen({
@@ -29,6 +30,7 @@ export default function Screen({
     headerReady = true,
     chromeVisible = true,
     centerAside = false,
+    layout = 'default',
 }: ScreenProps) {
     const horizontalLayout = useHorizontalLayout();
     const loggedIn = !!userControls;
@@ -40,8 +42,9 @@ export default function Screen({
 
     const isSmallScreen = useSmallScreen();
 
-    const asideWidth = isLandscape ? (isSmallScreen ? '10vw' : '20vw') : undefined;
-    const mainMaxWidth = isLandscape ? (isSmallScreen ? '80vw' : '60vw') : undefined;
+    const leftAsideWidth = isLandscape ? (layout === 'game' ? '10vw' : (isSmallScreen ? '10vw' : '15vw')) : undefined;
+    const rightAsideWidth = isLandscape ? (layout === 'game' ? '40vw' : (isSmallScreen ? '10vw' : '15vw')) : undefined;
+    const mainMaxWidth = isLandscape ? (layout === 'game' ? '50vw' : (isSmallScreen ? '80vw' : '70vw')) : undefined;
 
     const chromeIn = chromeVisible && headerReady;
 
@@ -80,7 +83,7 @@ export default function Screen({
             {extras}
             {isLandscape && (
                 <aside
-                    style={{ width: asideWidth, paddingTop: 'clamp(8px, 2vw, 16px)', paddingBottom: 'clamp(12px, 3vw, 24px)' }}
+                    style={{ width: leftAsideWidth, paddingTop: 'clamp(8px, 2vw, 16px)', paddingBottom: 'clamp(12px, 3vw, 24px)' }}
                     className={clsx(
                         'fixed left-0 top-0 h-dvh flex flex-col bg-gray-900 text-white z-10',
                         'transition-transform duration-500',
@@ -134,7 +137,7 @@ export default function Screen({
             )}
             <main
                 style={{
-                    ...(isLandscape ? { marginLeft: asideWidth, marginRight: asideWidth, maxWidth: mainMaxWidth } : {}),
+                    ...(isLandscape ? { marginLeft: leftAsideWidth, marginRight: rightAsideWidth, maxWidth: mainMaxWidth } : {}),
                     ...(isPortrait ? { paddingTop: chromeIn ? 'var(--nav-height)' : '0px' } : {}),
                     ...(isPortrait && footer ? { paddingBottom: chromeIn ? 'var(--footer-height)' : '0px' } : {}),
                 }}
@@ -150,7 +153,7 @@ export default function Screen({
             {((footer && isPortrait) || isLandscape) && (
                 <div
                     ref={footerRef}
-                    style={isLandscape ? { width: asideWidth } : undefined}
+                    style={isLandscape ? { width: rightAsideWidth } : undefined}
                     className={clsx(
                         '@container fixed z-10 bg-gray-900 text-white',
                         'transition-transform duration-500',
@@ -160,7 +163,7 @@ export default function Screen({
                     )}
                 >
                     {isLandscape ? (
-                        <div className='flex flex-col h-full w-full max-w-[150px] mr-auto px-2'>
+                        <div className={clsx('flex flex-col h-full w-full px-2', layout !== 'game' && 'max-w-[150px] mr-auto')}>
                             {footer}
                         </div>
                     ) : footer}
