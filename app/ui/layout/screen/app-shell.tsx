@@ -4,11 +4,10 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { Screen } from '@iam/ui';
+import { Screen, FooterProvider, useFooter, useAppHeight } from '@iam/ui';
 import UserButton from '@/app/ui/header/user-button';
 import AuthRedirectHandler from '@/app/ui/auth/auth-redirect-handler';
 import { useUser } from '@/app/lib/providers/user-provider';
-import { FooterProvider, useFooter } from '@/app/lib/providers/footer-provider';
 import { getBestVariant } from '@iam/shared-types';
 import { useSocket } from '@/app/lib/providers/socket-provider';
 import { useSocketListener } from '@/app/lib/hooks/use-socket-listener';
@@ -86,12 +85,7 @@ function AppShellInner({ children }: AppShellProps) {
         if (pathname === '/messages') setUnreadMessages(0);
     }, [pathname]);
 
-    useEffect(() => {
-        const sync = () => document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
-        sync();
-        window.addEventListener('resize', sync);
-        return () => window.removeEventListener('resize', sync);
-    }, []);
+    useAppHeight();
 
     return (
         <Screen
