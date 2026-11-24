@@ -12,7 +12,9 @@ function makeRateLimiter(maxRequests: number, windowMs: number) {
     try {
       ip = getConnInfo(c).remote.address ?? 'unknown'
     } catch {
-      ip = c.req.header('x-real-ip') ?? c.req.header('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
+      const xff = c.req.header('x-forwarded-for')
+      const xffIp = xff ? xff.split(',')[xff.split(',').length - 1].trim() : undefined
+      ip = c.req.header('x-real-ip') ?? xffIp ?? 'unknown'
     }
 
     const now = Date.now()
