@@ -82,24 +82,7 @@ app.prepare().then(() => {
 	const onlineUsers = new Map<string, Set<string>>()
 	const onlineUsernames = new Map<string, string>()
 
-	let staleGameCheckInterval: ReturnType<typeof setInterval> | null = null
-
-	function startStaleGameCheck() {
-		if (!staleGameCheckInterval) {
-			staleGameCheckInterval = setInterval(async () => {
-				try {
-					await fetch(`http://localhost:${port}/api/poker/check-stale`, {
-						method: 'POST',
-						headers: internalHeaders,
-					})
-				} catch {
-					// Silently fail
-				}
-			}, 30000)
-		}
-	}
-
-	io.on('connection', (socket: AppSocket) => {
+io.on('connection', (socket: AppSocket) => {
 		socket.on('register', async (data: unknown) => {
 			if (!data || typeof data !== 'object') return
 			const { userId, token, username } = data as Record<string, string | undefined>
@@ -305,6 +288,5 @@ app.prepare().then(() => {
 			console.log(`> Ready on http://${hostname}:${port}`)
 			console.log(`> Socket.IO server running on path: /api/socket/io`)
 			console.log(`> Mobile API handled by Hono at /api/mobile/**`)
-			startStaleGameCheck()
 		})
 })
