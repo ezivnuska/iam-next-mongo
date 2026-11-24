@@ -61,6 +61,15 @@ fi
 echo "Stopping app to free RAM for build..."
 pm2 stop "$APP_NAME" 2>/dev/null || true
 
+# For staging, export .env.staging before the build so NEXT_PUBLIC_* vars
+# are baked into the bundle with staging values, not production values.
+if [ "$ENV" = "staging" ] && [ -f .env.staging ]; then
+  echo "Loading staging env for build..."
+  set -a
+  source .env.staging
+  set +a
+fi
+
 echo "Building Next.js application..."
 NODE_ENV=production pnpm build
 
