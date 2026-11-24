@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { PageContent, PageContentRow, PageContentList, PageHeader, useHorizontalLayout, useFooter } from '@iam/ui';
+import { PageContent, PageContentRow, PageContentList, PageHeader, useHorizontalLayout, useSmallScreen, useFooter } from '@iam/ui';
 import { useUser } from '@/app/lib/providers/user-provider';
 import EntryList from '@/app/ui/user/entry-list';
 import ImagesClient from '@/app/ui/images/images-client';
@@ -49,6 +49,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
     const { user: currentUser } = useUser();
     const isAdmin = currentUser?.role === UserRole.Admin;
     const isLandscape = useHorizontalLayout() === true;
+    const isSmallScreen = useSmallScreen();
     const searchParams = useSearchParams();
     const rawTab = searchParams.get('t') as Tab | null;
     const activeTab: Tab = isOwnProfile && rawTab && ALL_VALID_TABS.has(rawTab) ? rawTab : 'posts';
@@ -78,7 +79,7 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                     <button
                         key={tab.value}
                         onClick={() => { if (tab.value !== activeTab) router.push(`?t=${tab.value}`, { scroll: false }); }}
-                        className={`flex flex-1 items-center font-medium transition-colors cursor-pointer ${isLandscape ? 'flex-row justify-start gap-2 px-1.5 py-2 rounded-lg' : 'flex-col justify-center gap-0.5 py-3 rounded-lg @min-[220px]:py-1.5'} ${
+                        className={`flex flex-1 items-center font-medium transition-colors cursor-pointer ${isLandscape ? `flex-row ${isSmallScreen ? 'justify-center' : 'justify-start gap-2'} px-1.5 py-2 rounded-lg` : 'flex-col justify-center gap-0.5 py-3 rounded-lg @min-[220px]:py-1.5'} ${
                             activeTab === tab.value
                                 ? 'text-white bg-gray-700'
                                 : 'text-white hover:bg-white/10 active:bg-white/20'
@@ -90,13 +91,13 @@ export default function ProfilePage({ username, userId, isOwnProfile, initialCon
                                 <span className='absolute -top-1 -right-1 w-3 h-3 bg-red-500 text-white rounded-full text-[8px] font-bold flex items-center justify-center leading-none'>{pendingCount > 9 ? '9+' : pendingCount}</span>
                             )}
                         </div>
-                        <span className={`text-xs ${isLandscape ? '' : 'hidden min-[375px]:block'}`}>{tab.label}</span>
+                        <span className={`text-xs ${isLandscape ? (isSmallScreen ? 'hidden' : '') : 'hidden min-[375px]:block'}`}>{tab.label}</span>
                     </button>
                 ))}
             </nav>
         );
         return () => setFooter(null);
-    }, [isOwnProfile, activeTab, pendingCount, router, setFooter, isLandscape]);
+    }, [isOwnProfile, activeTab, pendingCount, router, setFooter, isLandscape, isSmallScreen]);
 
     const activeTabLabel = CONTENT_TABS.find(t => t.value === activeTab)?.label ?? '';
 
