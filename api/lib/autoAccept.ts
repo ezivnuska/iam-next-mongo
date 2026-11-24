@@ -50,14 +50,17 @@ export async function tryAutoAccept(
   const winner = await selectFundedWinner(candidates, allPledges)
   if (!winner) return null
 
-  await Promise.all([
-    Applicant.findByIdAndUpdate(winner._id, {
-      status: 'accepted',
-      acceptedAt: new Date(),
-      completionDeadline: midnightFollowingDay(),
-    }),
-    Issue.findByIdAndUpdate(issueId, { acceptedApplicantId: winner._id }),
-  ])
+  // Atomic claim: only accept if this applicant is still pending.
+  // Guards against concurrent tryAutoAccept calls both selecting a winner
+  // and double-accepting — the second caller gets null and bails out.
+  const claimed = await Applicant.findOneAndUpdate(
+    { _id: winner._id, status: 'pending' },
+    { $set: { status: 'accepted', acceptedAt: new Date(), completionDeadline: midnightFollowingDay() } },
+    { new: true },
+  )
+  if (!claimed) return null
+
+  await Issue.findByIdAndUpdate(issueId, { acceptedApplicantId: winner._id })
 
   // On the pledge path (no filter), redirect or remove directed pledges from
   // non-winning bidders so funds aren't locked against a losing applicant.
