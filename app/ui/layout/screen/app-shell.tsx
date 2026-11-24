@@ -100,7 +100,7 @@ function AppShellInner({ children }: AppShellProps) {
             chromeVisible={loggedIn}
             userControls={loggedIn ? <UserButton /> : undefined}
             nav={loggedIn ? (
-                <>
+                <div className='flex flex-row landscape:flex-col gap-4'>
                     <a
                         href='/messages'
                         className='relative flex items-center justify-center text-gray-300 hover:text-white transition-colors'
@@ -120,7 +120,7 @@ function AppShellInner({ children }: AppShellProps) {
                     >
                         <PuzzleIcon className='w-7 h-7' />
                     </a>
-                </>
+                </div>
             ) : undefined}
             extras={
                 <Suspense fallback={null}>
