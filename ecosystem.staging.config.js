@@ -22,6 +22,8 @@ module.exports = {
           NEXTAUTH_URL: 'https://staging.iameric.me',
           NEXT_PUBLIC_APP_URL: 'https://staging.iameric.me',
           NEXT_PUBLIC_BASE_URL: 'https://staging.iameric.me',
+          GAMES_URL: 'https://games.iameric.me',
+          NEXT_PUBLIC_GAMES_URL: 'https://games.iameric.me',
         },
         max_memory_restart: '512M',
       },
