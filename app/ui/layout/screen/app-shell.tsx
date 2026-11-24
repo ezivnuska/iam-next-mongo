@@ -114,7 +114,7 @@ function AppShellInner({ children }: AppShellProps) {
                         )}
                     </a>
                     <a
-                        href='/api/auth/games-token'
+                        href={process.env.NEXT_PUBLIC_GAMES_URL ?? 'https://games.iameric.me'}
                         className='flex items-center justify-center text-gray-300 hover:text-white transition-colors'
                         aria-label='Games'
                     >
