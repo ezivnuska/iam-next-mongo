@@ -4,8 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { PageContent, PageContentRow, PageContentList, PageHeader, useHorizontalLayout } from '@iam/ui';
-import { useFooter } from '@/app/lib/providers/footer-provider';
+import { PageContent, PageContentRow, PageContentList, PageHeader, useHorizontalLayout, useFooter } from '@iam/ui';
 import { useUser } from '@/app/lib/providers/user-provider';
 import EntryList from '@/app/ui/user/entry-list';
 import ImagesClient from '@/app/ui/images/images-client';

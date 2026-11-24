@@ -10,8 +10,10 @@ export { default as PageHeader } from './components/page-header';
 export { default as UserAvatar } from './components/user-avatar';
 export { ThemeProvider, useTheme } from './providers/theme-provider';
 export { BreadcrumbProvider, useSetBreadcrumbLabel } from './providers/breadcrumb-provider';
+export { FooterProvider, useFooter } from './providers/footer-provider';
 export { default as SetBreadcrumbLabel } from './components/set-breadcrumb-label';
 export { useHorizontalLayout } from './hooks/use-horizontal-layout';
+export { useAppHeight } from './hooks/use-app-height';
 export { ubuntu } from './fonts';
 export {
     HeartIcon,
