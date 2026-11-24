@@ -18,10 +18,20 @@ export async function connectToDatabase() {
   if (!uri)
     throw new Error('Invalid/Missing environment variable: "MONGODB_URI"')
 
-  if (cached.conn) return cached.conn
+  if (cached.conn && mongoose.connection.readyState === 1) return cached.conn
+
+  // Connection is stale or missing — reset and reconnect
+  if (cached.conn && mongoose.connection.readyState !== 1) {
+    cached.conn = null
+    cached.promise = null
+  }
+
+  mongoose.set('bufferCommands', false)
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(uri, { bufferCommands: false }).then(m => m)
+    cached.promise = mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 5000,
+    }).then(m => m)
   }
 
   try {

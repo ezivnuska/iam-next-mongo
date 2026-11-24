@@ -43,8 +43,8 @@ export default function Screen({
     const isSmallScreen = useSmallScreen();
 
     const leftAsideWidth = isLandscape ? (layout === 'game' ? '10vw' : (isSmallScreen ? '10vw' : '15vw')) : undefined;
-    const rightAsideWidth = isLandscape ? (layout === 'game' ? '40vw' : (isSmallScreen ? '10vw' : '15vw')) : undefined;
-    const mainMaxWidth = isLandscape ? (layout === 'game' ? '50vw' : (isSmallScreen ? '80vw' : '70vw')) : undefined;
+    const rightAsideWidth = (isLandscape && layout !== 'game') ? (isSmallScreen ? '10vw' : '15vw') : undefined;
+    const mainMaxWidth = (isLandscape && layout !== 'game') ? (isSmallScreen ? '80vw' : '70vw') : undefined;
 
     const chromeIn = chromeVisible && headerReady;
 
@@ -63,7 +63,7 @@ export default function Screen({
     }, [isLandscape, isPortrait]);
 
     useEffect(() => {
-        if (!isPortrait || !footer) {
+        if (!isPortrait || !footer || layout === 'game') {
             document.documentElement.style.setProperty('--footer-height', '0px');
             return;
         }
@@ -150,7 +150,7 @@ export default function Screen({
             >
                 {content}
             </main>
-            {((footer && isPortrait) || isLandscape) && (
+            {layout !== 'game' && ((footer && isPortrait) || isLandscape) && (
                 <div
                     ref={footerRef}
                     style={isLandscape ? { width: rightAsideWidth } : undefined}
@@ -163,7 +163,7 @@ export default function Screen({
                     )}
                 >
                     {isLandscape ? (
-                        <div className={clsx('flex flex-col h-full w-full px-2', layout !== 'game' && 'max-w-[150px] mr-auto')}>
+                        <div className='flex flex-col h-full w-full max-w-[150px] mr-auto px-2'>
                             {footer}
                         </div>
                     ) : footer}
