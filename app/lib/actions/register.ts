@@ -2,6 +2,7 @@
 
 "use server";
 
+import { headers } from "next/headers";
 import { connectToDatabase } from "@/app/lib/mongoose";
 import UserModel from "@/app/lib/models/user";
 import Invitation from "@/app/lib/models/invitation";
@@ -9,11 +10,19 @@ import Friendship from "@/app/lib/models/friendship";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { sendVerificationEmail } from "@/app/lib/email";
+import { checkRegisterRateLimit } from "@/app/lib/utils/rate-limit";
 
 export type RegisterResult = { error: string } | { success: true } | undefined;
 
 export async function register(formData: FormData): Promise<RegisterResult> {
   try {
+    const h = await headers();
+    const forwarded = h.get('x-forwarded-for');
+    const ip = h.get('x-real-ip')?.trim()
+      ?? (forwarded ? forwarded.split(',').filter(Boolean).pop()?.trim() : undefined)
+      ?? 'unknown';
+    if (!checkRegisterRateLimit(ip)) return { error: 'Too many registration attempts. Please try again later.' };
+
     const email = formData.get("email")?.toString().trim();
     const password = formData.get("password")?.toString();
     const username = formData.get("username")?.toString().trim();
