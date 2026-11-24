@@ -15,6 +15,7 @@ import { normalizeMessage } from '@/packages/db/normalizers'
 import { emitMessageSent, emitMessageDeleted } from '../../lib/socketEmit'
 import { sendMessageRequestSchema } from '../../lib/schemas/message'
 import { isValidObjectId } from '@iam/shared-types'
+import UserModel from '@/app/lib/models/user'
 
 const messages = new Hono<{ Variables: { token: TokenPayload } }>()
 
@@ -38,6 +39,9 @@ messages.post('/api/mobile/messages', authMiddleware, async (c) => {
       return c.json({ error: 'Cannot message yourself' }, 400)
 
     await connectToDatabase()
+
+    const recipient = await UserModel.exists({ _id: toId })
+    if (!recipient) return c.json({ error: 'Recipient not found' }, 404)
 
     const threadId = deriveThreadId(token.id, toId)
     const doc = await MessageModel.create({ threadId, from: token.id, to: toId, text })
