@@ -3,6 +3,7 @@
 import { Suspense, useRef, useEffect } from 'react';
 import clsx from 'clsx';
 import { useHorizontalLayout } from '../hooks/use-horizontal-layout';
+import { useSmallScreen } from '../hooks/use-small-screen';
 import { BreadcrumbProvider } from '../providers/breadcrumb-provider';
 import Brand from './brand';
 
@@ -36,6 +37,11 @@ export default function Screen({
 
     const isLandscape = horizontalLayout === true;
     const isPortrait = horizontalLayout === false;
+
+    const isSmallScreen = useSmallScreen();
+
+    const asideWidth = isLandscape ? (isSmallScreen ? '10vw' : '20vw') : undefined;
+    const mainMaxWidth = isLandscape ? (isSmallScreen ? '80vw' : '60vw') : undefined;
 
     const chromeIn = chromeVisible && headerReady;
 
@@ -74,7 +80,7 @@ export default function Screen({
             {extras}
             {isLandscape && (
                 <aside
-                    style={{ width: '25vw', paddingTop: 'clamp(8px, 2vw, 16px)', paddingBottom: 'clamp(12px, 3vw, 24px)' }}
+                    style={{ width: asideWidth, paddingTop: 'clamp(8px, 2vw, 16px)', paddingBottom: 'clamp(12px, 3vw, 24px)' }}
                     className={clsx(
                         'fixed left-0 top-0 h-dvh flex flex-col bg-gray-900 text-white z-10',
                         'transition-transform duration-500',
@@ -87,12 +93,12 @@ export default function Screen({
                                 <div>{userControls}</div>
                                 <div className='flex flex-col items-center gap-4'>
                                     <div className='flex flex-col w-full'>{nav}</div>
-                                    <Brand href={brandHref} compact />
+                                    <Brand href={brandHref} compact short={isSmallScreen} />
                                 </div>
                             </>
                         ) : (
                             <>
-                                <Brand href={brandHref} compact />
+                                <Brand href={brandHref} compact short={isSmallScreen} />
                                 {nav && <div className='flex flex-col w-full'>{nav}</div>}
                             </>
                         )}
@@ -128,13 +134,12 @@ export default function Screen({
             )}
             <main
                 style={{
-                    ...(isLandscape ? { marginLeft: '25vw', marginRight: '25vw' } : {}),
+                    ...(isLandscape ? { marginLeft: asideWidth, marginRight: asideWidth, maxWidth: mainMaxWidth } : {}),
                     ...(isPortrait ? { paddingTop: chromeIn ? 'var(--nav-height)' : '0px' } : {}),
                     ...(isPortrait && footer ? { paddingBottom: chromeIn ? 'var(--footer-height)' : '0px' } : {}),
                 }}
                 className={clsx(
                     '@container/main flex flex-col flex-1 min-h-0 overflow-x-hidden',
-                    isLandscape && 'max-w-[50vw]',
                     isPortrait && 'mx-auto w-full',
                     chromeVisible && 'transition-opacity duration-300',
                     !chromeVisible || headerReady ? 'opacity-100' : 'opacity-0',
@@ -145,7 +150,7 @@ export default function Screen({
             {((footer && isPortrait) || isLandscape) && (
                 <div
                     ref={footerRef}
-                    style={isLandscape ? { width: '25vw' } : undefined}
+                    style={isLandscape ? { width: asideWidth } : undefined}
                     className={clsx(
                         '@container fixed z-10 bg-gray-900 text-white',
                         'transition-transform duration-500',
