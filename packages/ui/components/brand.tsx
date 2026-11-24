@@ -5,9 +5,10 @@ import Link from 'next/link';
 interface BrandProps {
     href?: string;
     compact?: boolean;
+    short?: boolean;
 }
 
-export default function Brand({ href = '/', compact = false }: BrandProps) {
+export default function Brand({ href = '/', compact = false, short = false }: BrandProps) {
     return (
         <Link
             href={href}
@@ -18,7 +19,7 @@ export default function Brand({ href = '/', compact = false }: BrandProps) {
                 className='font-bold leading-none text-white whitespace-nowrap'
                 style={{ fontSize: compact ? '18px' : 'clamp(18px, 4vw, 32px)' }}
             >
-                iameric
+                {short ? 'iam' : 'iameric'}
             </span>
         </Link>
     );
