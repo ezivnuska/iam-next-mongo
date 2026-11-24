@@ -20,7 +20,7 @@ users.get('/api/mobile/users', authMiddleware, async (c) => {
     await connectToDatabase()
 
     const [userList, friendships] = await Promise.all([
-      UserModel.find({ _id: { $ne: token.id } }).populate('avatar', '_id variants').lean(),
+      UserModel.find({ _id: { $ne: token.id } }).populate('avatar', '_id variants').limit(100).lean(),
       FriendshipModel.find({
         $or: [{ requester: token.id }, { recipient: token.id }],
       }).lean(),
