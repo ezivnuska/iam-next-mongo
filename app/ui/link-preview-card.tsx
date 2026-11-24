@@ -15,7 +15,8 @@ interface LinkPreviewCardProps {
 }
 
 export default function LinkPreviewCard({ linkUrl, linkPreview, compact = false, onClick }: LinkPreviewCardProps) {
-  const { title, description, image, siteName } = linkPreview;
+  const { title, description, siteName } = linkPreview;
+  const image = linkPreview.image && /^https?:\/\//i.test(linkPreview.image) ? linkPreview.image : undefined;
   const domain = (() => {
     try { return new URL(linkUrl).hostname.replace(/^www\./, ''); } catch { return linkUrl; }
   })();

@@ -91,7 +91,8 @@ export async function fetchLinkPreview(url: string): Promise<LinkPreview | null>
 
     const title = extractOgMeta(html, 'og:title') || extractTitle(html);
     const description = extractOgMeta(html, 'og:description') || extractNameMeta(html, 'description');
-    const image = extractOgMeta(html, 'og:image');
+    const rawImage = extractOgMeta(html, 'og:image');
+    const image = rawImage && isSafeExternalUrl(rawImage) ? rawImage : undefined;
     const siteName = extractOgMeta(html, 'og:site_name');
 
     if (!title && !description && !image) return null;
