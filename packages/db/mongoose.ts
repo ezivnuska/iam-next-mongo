@@ -1,5 +1,7 @@
 import mongoose from 'mongoose'
 
+mongoose.set('bufferCommands', false)
+
 interface MongooseCache {
   conn: typeof mongoose | null
   promise: Promise<typeof mongoose> | null
@@ -25,8 +27,6 @@ export async function connectToDatabase() {
     cached.conn = null
     cached.promise = null
   }
-
-  mongoose.set('bufferCommands', false)
 
   if (!cached.promise) {
     cached.promise = mongoose.connect(uri, {
