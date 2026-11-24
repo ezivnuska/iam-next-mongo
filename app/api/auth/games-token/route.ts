@@ -15,9 +15,10 @@ import { auth } from '@/app/lib/auth'
 import { signGamesToken } from '@/app/lib/jwt'
 import type { CrossAppTokenPayload } from '@iam/shared-types'
 
-const GAMES_ORIGIN = process.env.GAMES_URL ?? 'https://games.iameric.me'
-
 export async function GET(req: NextRequest): Promise<Response> {
+  const GAMES_ORIGIN = process.env.GAMES_URL ?? 'https://games.iameric.me'
+  console.log('[games-token] GAMES_ORIGIN:', GAMES_ORIGIN)
+
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.redirect(new URL('/signin', req.url))
