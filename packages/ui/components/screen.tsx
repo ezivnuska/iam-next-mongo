@@ -15,6 +15,7 @@ interface ScreenProps {
     brandHref?: string;
     headerReady?: boolean;
     chromeVisible?: boolean;
+    centerAside?: boolean;
 }
 
 export default function Screen({
@@ -26,6 +27,7 @@ export default function Screen({
     brandHref,
     headerReady = true,
     chromeVisible = true,
+    centerAside = false,
 }: ScreenProps) {
     const horizontalLayout = useHorizontalLayout();
     const loggedIn = !!userControls;
@@ -79,7 +81,7 @@ export default function Screen({
                         chromeIn ? 'translate-x-0' : '-translate-x-full',
                     )}
                 >
-                    <div className={clsx('flex flex-col h-full w-full max-w-[150px] ml-auto px-2', { 'justify-between': loggedIn || !!nav })}>
+                    <div className={clsx('flex flex-col h-full w-full max-w-[150px] ml-auto px-2', { 'justify-between': loggedIn || !!nav, 'items-center': centerAside })}>
                         {loggedIn ? (
                             <>
                                 <div>{userControls}</div>
