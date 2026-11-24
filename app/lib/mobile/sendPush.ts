@@ -6,12 +6,18 @@ import UserModel from '../models/user'
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send'
 
+function sanitize(str: string, maxLen: number): string {
+  return str.replace(/https?:\/\/\S+/g, '').trim().slice(0, maxLen)
+}
+
 export async function sendPushToUsers(
   userIds: string[],
   title: string,
   body: string,
   data?: Record<string, string>,
 ): Promise<void> {
+  title = sanitize(title, 100)
+  body  = sanitize(body, 200)
   const unique = [...new Set(userIds.filter(Boolean))]
   if (!unique.length) return
 
