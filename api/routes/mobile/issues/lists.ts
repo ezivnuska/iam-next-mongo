@@ -76,6 +76,7 @@ lists.get('/api/mobile/issues/flagged', authMiddleware, async (c) => {
     await connectToDatabase()
     const issues = await Issue.find({ flagged: true })
       .sort({ createdAt: -1 })
+      .limit(100)
       .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
       .populate('images')
       .lean()
@@ -146,6 +147,7 @@ lists.get('/api/mobile/issues/mine', authMiddleware, async (c) => {
       ],
     })
       .sort({ createdAt: -1 })
+      .limit(100)
       .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
       .populate('images')
       .lean()
@@ -170,6 +172,7 @@ lists.get('/api/mobile/issues/work', authMiddleware, async (c) => {
 
     const issues = await Issue.find({ _id: { $in: issueIds } })
       .sort({ createdAt: -1 })
+      .limit(100)
       .populate({ path: 'author', select: '_id username avatar', populate: { path: 'avatar', select: '_id variants' } })
       .populate('images')
       .lean()
