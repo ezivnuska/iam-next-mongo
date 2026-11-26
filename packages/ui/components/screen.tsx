@@ -7,7 +7,7 @@ import { useSmallScreen } from '../hooks/use-small-screen';
 import { BreadcrumbProvider } from '../providers/breadcrumb-provider';
 import Brand from './brand';
 
-interface ScreenProps {
+export interface ScreenProps {
     children: React.ReactNode;
     userControls?: React.ReactNode;
     nav?: React.ReactNode;

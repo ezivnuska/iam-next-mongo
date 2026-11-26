@@ -1,5 +1,6 @@
 export { default as LoadingSpinner } from './components/loading-spinner';
 export { default as Screen } from './components/screen';
+export type { ScreenProps } from './components/screen';
 export { default as Brand } from './components/brand';
 export { Button } from './components/button';
 export { default as Modal } from './components/modal';
