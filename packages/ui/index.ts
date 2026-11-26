@@ -15,6 +15,7 @@ export { default as SetBreadcrumbLabel } from './components/set-breadcrumb-label
 export { useHorizontalLayout } from './hooks/use-horizontal-layout';
 export { useAppHeight } from './hooks/use-app-height';
 export { useSmallScreen } from './hooks/use-small-screen';
+export { useScreenOrientation } from './hooks/use-screen-orientation';
 export { ubuntu } from './fonts';
 export {
     HeartIcon,

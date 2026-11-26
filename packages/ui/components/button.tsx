@@ -29,7 +29,7 @@ export function Button({
     };
 
     const variantClasses = {
-        default: 'bg-blue-500 text-white enabled:hover:bg-blue-400 active:bg-blue-600',
+        default: 'bg-white text-blue-500 enabled:hover:bg-blue-50 active:bg-blue-100',
         secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300 active:bg-gray-400',
         outline: 'border border-blue-500 text-blue-500 hover:bg-blue-50',
         ghost: 'bg-transparent text-blue-500',

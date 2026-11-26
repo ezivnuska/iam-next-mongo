@@ -20,13 +20,9 @@ export default function GlobalError({
   }, [error])
 
   return (
-    <html>
-      <body>
-        <div className='p-8 font-sans'>
-          <h2>Something went wrong</h2>
-          <button onClick={reset}>Try again</button>
-        </div>
-      </body>
-    </html>
+    <div className='p-8 font-sans'>
+      <h2>Something went wrong</h2>
+      <button onClick={reset}>Try again</button>
+    </div>
   )
 }

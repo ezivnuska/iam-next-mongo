@@ -64,8 +64,12 @@ export default function ImagesClient({ userId, authorized, triggerUpload, showUp
                 : <LoadingSpinner fullscreen={false} />
             }
 
-            <Modal isOpen={isModalOpen} onClose={closeModal}>
-                <h1 className='mb-4 text-2xl font-semibold'>Upload a File</h1>
+            <Modal
+                isOpen={isModalOpen}
+                onClose={closeModal}
+                className='bg-black/90'
+                contentClassName='relative w-full max-w-md rounded-lg bg-transparent p-2 max-h-[90vh] overflow-hidden'
+            >
                 <UploadForm
                     onUploadSuccess={handleUploadSuccess}
                     onClose={closeModal}
