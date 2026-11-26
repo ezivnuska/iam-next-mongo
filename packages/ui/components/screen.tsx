@@ -18,6 +18,7 @@ interface ScreenProps {
     chromeVisible?: boolean;
     centerAside?: boolean;
     layout?: 'default' | 'game';
+    headerEnd?: React.ReactNode;
 }
 
 export default function Screen({
@@ -31,6 +32,7 @@ export default function Screen({
     chromeVisible = true,
     centerAside = false,
     layout = 'default',
+    headerEnd,
 }: ScreenProps) {
     const horizontalLayout = useHorizontalLayout();
     const loggedIn = !!userControls;
@@ -90,7 +92,7 @@ export default function Screen({
                         chromeIn ? 'translate-x-0' : '-translate-x-full',
                     )}
                 >
-                    <div className={clsx('flex flex-col h-full w-full max-w-[150px] ml-auto px-2', { 'justify-between': loggedIn, 'items-center': centerAside })}>
+                    <div className={clsx('flex flex-col h-full w-full max-w-[150px] ml-auto px-2', { 'justify-between': loggedIn || !!headerEnd, 'items-center': centerAside })}>
                         {loggedIn ? (
                             <>
                                 <div>{userControls}</div>
@@ -101,8 +103,11 @@ export default function Screen({
                             </>
                         ) : (
                             <>
-                                <Brand href={brandHref} compact short={isSmallScreen} />
-                                {nav && <div className='flex flex-col w-full'>{nav}</div>}
+                                <div>
+                                    <Brand href={brandHref} compact short={isSmallScreen} />
+                                    {nav && <div className='flex flex-col w-full'>{nav}</div>}
+                                </div>
+                                {headerEnd && <div>{headerEnd}</div>}
                             </>
                         )}
                     </div>
@@ -127,10 +132,13 @@ export default function Screen({
                                 </div>
                             </>
                         ) : (
-                            <div className='flex flex-row items-center gap-2'>
-                                <Brand href={brandHref} />
-                                {nav}
-                            </div>
+                            <>
+                                <div className='flex flex-row items-center gap-2'>
+                                    <Brand href={brandHref} />
+                                    {nav}
+                                </div>
+                                {headerEnd && <div>{headerEnd}</div>}
+                            </>
                         )}
                     </div>
                 </header>
