@@ -120,24 +120,7 @@ export interface MembershipResponse {
 }
 
 // ---------------------------------------------------------------------------
-// Shared primitive — avatar (used by several API contract types above)
-// ---------------------------------------------------------------------------
-
-export interface ApiVariant {
-  size: string;
-  filename: string;
-  width: number;
-  height: number;
-  url: string;
-}
-
-export interface ApiAvatar {
-  id: string;
-  variants: ApiVariant[];
-}
-
-// ---------------------------------------------------------------------------
-// Image
+// Shared primitives — image variant and avatar
 // ---------------------------------------------------------------------------
 
 export interface ImageVariant {
@@ -147,6 +130,15 @@ export interface ImageVariant {
   height: number;
   url: string;
 }
+
+export interface ApiAvatar {
+  id: string;
+  variants: ImageVariant[];
+}
+
+// ---------------------------------------------------------------------------
+// Image
+// ---------------------------------------------------------------------------
 
 export interface ImageUsage {
   type: 'post' | 'memory';
