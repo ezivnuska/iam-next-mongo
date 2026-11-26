@@ -90,7 +90,7 @@ export default function Screen({
                         chromeIn ? 'translate-x-0' : '-translate-x-full',
                     )}
                 >
-                    <div className={clsx('flex flex-col h-full w-full max-w-[150px] ml-auto px-2', { 'justify-between': loggedIn || !!nav, 'items-center': centerAside })}>
+                    <div className={clsx('flex flex-col h-full w-full max-w-[150px] ml-auto px-2', { 'justify-between': loggedIn, 'items-center': centerAside })}>
                         {loggedIn ? (
                             <>
                                 <div>{userControls}</div>
@@ -127,10 +127,10 @@ export default function Screen({
                                 </div>
                             </>
                         ) : (
-                            <>
+                            <div className='flex flex-row items-center gap-2'>
                                 <Brand href={brandHref} />
-                                {nav && <div>{nav}</div>}
-                            </>
+                                {nav}
+                            </div>
                         )}
                     </div>
                 </header>
