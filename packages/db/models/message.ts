@@ -26,6 +26,7 @@ const MessageSchema = new Schema<MessageDocument>(
   },
   {
     timestamps: true,
+    bufferCommands: false,
     toJSON: {
       transform: (_doc, ret: RetObj) => {
         ret['id'] = (ret['_id'] as { toString(): string }).toString()

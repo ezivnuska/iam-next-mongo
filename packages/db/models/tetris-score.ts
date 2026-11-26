@@ -13,7 +13,7 @@ const tetrisScoreSchema = new Schema<TetrisScoreDocument>(
     username: { type: String, required: true },
     score:    { type: Number, required: true },
   },
-  { timestamps: true }
+  { timestamps: true, bufferCommands: false }
 )
 
 const TetrisScoreModel: Model<TetrisScoreDocument> =

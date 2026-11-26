@@ -52,6 +52,7 @@ const UserSchema = new Schema<UserDocument>(
   },
   {
     timestamps: true,
+    bufferCommands: false,
     toJSON: {
       transform: (_doc, ret: Record<string, unknown>) => {
         ret['id'] = (ret['_id'] as { toString(): string }).toString()

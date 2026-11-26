@@ -57,7 +57,7 @@ const wordDuelRoomSchema = new Schema<WordDuelRoomDocument>(
     roundNumber:      { type: Number, default: 1 },
     currentStreak:    { type: Number, default: 0 },
   },
-  { timestamps: true }
+  { timestamps: true, bufferCommands: false }
 )
 
 // Auto-delete rooms 24 hours after creation

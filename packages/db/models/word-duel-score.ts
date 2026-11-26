@@ -15,7 +15,7 @@ const wordDuelScoreSchema = new Schema<WordDuelScoreDocument>(
     score:    { type: Number, required: true, default: 0 },
     won:      { type: Boolean, required: true, default: false },
   },
-  { timestamps: true }
+  { timestamps: true, bufferCommands: false }
 )
 
 const WordDuelScoreModel: Model<WordDuelScoreDocument> =

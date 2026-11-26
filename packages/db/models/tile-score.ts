@@ -13,7 +13,7 @@ const tileScoreSchema = new Schema<TileScoreDocument>(
     username: { type: String, required: true },
     score:    { type: String, required: true },
   },
-  { timestamps: true }
+  { timestamps: true, bufferCommands: false }
 )
 
 const TileScoreModel: Model<TileScoreDocument> =

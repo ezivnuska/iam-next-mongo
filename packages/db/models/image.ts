@@ -35,7 +35,7 @@ const ImageSchema = new Schema<ImageDocument>(
     variants: { type: [VariantSchema], default: [] },
     likes:    { type: [Schema.Types.ObjectId], ref: 'User', default: [] },
   },
-  { timestamps: true }
+  { timestamps: true, bufferCommands: false }
 )
 
 const ImageModel: Model<ImageDocument> =
