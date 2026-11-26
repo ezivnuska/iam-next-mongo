@@ -80,17 +80,6 @@ export interface TetrisScoreEntry {
 // API contract — leaderboard
 // ---------------------------------------------------------------------------
 
-export interface WordDuelEntry {
-  userId: string;
-  username: string;
-  score: number;
-  wins: number;
-  gamesPlayed: number;
-  game: 'word-duel';
-  rank: number;
-  avatar: ApiAvatar | null;
-}
-
 export interface TilePuzzleEntry {
   userId: string;
   username: string;
@@ -112,7 +101,6 @@ export interface TetrisEntry {
 }
 
 export interface LeaderboardResponse {
-  entries: WordDuelEntry[];
   tileEntries: TilePuzzleEntry[];
   tetrisEntries: TetrisEntry[];
 }

@@ -260,7 +260,6 @@ io.on('connection', (socket: AppSocket) => {
 			} catch { /* Silently fail */ }
 		})
 
-		// TODO: registerWordDuelHandlers(io, socket) — add once word-duel is moved here
 
 		socket.on('disconnect', () => {
 			if (socket.data.userId) {
