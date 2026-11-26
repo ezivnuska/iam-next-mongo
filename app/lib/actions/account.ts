@@ -18,7 +18,7 @@ import GameScoreModel from "@/app/lib/models/gameScore";
 import AllocationModel from "@/app/lib/models/allocation";
 import Pledge from "@/app/lib/models/pledge";
 import Fee from "@/app/lib/models/fee";
-import { TetrisScoreModel, TileScoreModel, WordDuelScoreModel } from "@iam/db";
+import { TetrisScoreModel, TileScoreModel } from "@iam/db";
 import MessageModel from "@/packages/db/models/message";
 
 async function deleteUserData(userId: string) {
@@ -68,7 +68,6 @@ async function deleteUserData(userId: string) {
     await GameScoreModel.deleteMany({ userId: oid });
     await TetrisScoreModel.deleteMany({ userId });
     await TileScoreModel.deleteMany({ userId });
-    await WordDuelScoreModel.deleteMany({ userId });
 
     // --- Membership / billing ---
     await MembershipModel.deleteMany({ userId: oid });
